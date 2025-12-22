@@ -44,3 +44,4 @@ exp_results/**/*.nc
 .vscode/
 mod/ctrl_mod.txt
 temp_local/
+sim_output/
