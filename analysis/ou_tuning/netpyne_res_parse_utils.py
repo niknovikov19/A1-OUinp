@@ -201,7 +201,7 @@ def get_voltages_xr(
         tmask = (tvec >= t_limits[0]) & (tvec <= t_limits[1])
         tvec = tvec[tmask]
     else:
-        tmask = np.full_like(tvec, True)
+        tmask = np.ones_like(tvec, dtype=bool)
 
     # Extract voltages and the corresponding cell gids
     V_data = {pop: [] for pop in pop_names}
@@ -211,7 +211,6 @@ def get_voltages_xr(
         pop = sim_result['net']['cells'][gid]['tags']['pop']
         V_data[pop].append(np.array(V_vec)[tmask])
         cell_gids[pop].append(gid)
-
 
     # Convert to xarray
     for pop, V_ in V_data.items():

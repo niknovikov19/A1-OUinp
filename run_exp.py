@@ -280,6 +280,9 @@ if need_run:
         print([name for name in dir(seg.kBK)])
         #print([name for name in seg.__dict__]) """
     
+    print("Rank/nhosts:", sim.rank, sim.nhosts, flush=True)
+    print("Local cells:", len(sim.net.cells), flush=True)
+
     # Run
     #if sim.rank == 0:
     print(f'Rank {sim.rank}: running...', flush=True)
@@ -402,3 +405,8 @@ if comm.is_host():
     """ out_json = json.dumps({'loss': 0})
     comm.send(out_json)
     comm.close() """
+
+
+# Experiment-specific final actions
+if hasattr(cfg_mod, 'final'):
+    cfg_mod.final(sim)

@@ -1,0 +1,8 @@
+- Unconnected
+- Input current increases from 1st cell to the last
+- Brief stimulus in the middle of the sim
+- Rates and voltage stats are calculated before and after the stimulus
+- Rates are used for plotting f-I curves (automatically)
+- V-I curves can be explored with `explore_fi_curve.ipynb`
+- gKDR increased for pyramidal cells to prevent multistability (`mech_changes_1.json`)
+- Static IClamp is added to compensate for gKDR increase annd return the restin voltage to -70 mV (`ibkg_mech1_vrest_-70.json`)

@@ -181,8 +181,8 @@ def create_net_params(cfg):
     
     # Selecting a subset of pops is not supported in some cases
     if hasattr(cfg, 'pops_active') and cfg.pops_active:
-        if cfg.addConn:
-            raise ValueError("cfg.pops_active is not supported for connected networks.")
+        #if cfg.addConn:
+        #    raise ValueError("cfg.pops_active is not supported for connected networks.")
         if cfg.cochlearThalInput:
             raise ValueError("cfg.pops_active is not supported for cochlear thalamic input.")
     
@@ -892,22 +892,28 @@ def create_net_params(cfg):
     # Current inputs (IClamp)
     #------------------------------------------------------------------------------
     
-    def setupIClamp (d):
+    def setupIClamp(d):
         # print('setupIClamp : ', d)
         idx = 0
         for pop in d.keys():
             # add stim source
-            dur, amp = d[pop]['dur'], d[pop]['amp']
+            #dur, amp = d[pop]['dur'], 
             # print('adding IClamp',pop,dur,amp)
-            if dur <= 0.0 or amp == 0.0: continue
+            #if dur <= 0.0 or amp == 0.0: continue
             src = 'IClamp' + str(idx)
-            netParams.stimSourceParams[src] = {'type': 'IClamp', 'delay': d[pop]['delay'], 'dur': dur, 'amp': amp}
-            # connect stim source to target
+            netParams.stimSourceParams[src] = {
+                'type': 'IClamp',
+                'delay': d[pop].get('delay', 0.0),
+                'dur': d[pop].get('dur', 1e5),
+                'amp': d[pop]['amp']
+            }
+            # Connect stim source to target
             netParams.stimTargetParams[src+'_'+pop] =  {
                 'source': src, 
                 'conds': {'pop': pop},
-                'sec': d[pop]['sec'], 
-                'loc': d[pop]['loc']}   
+                'sec': d[pop].get('sec', 'soma'), 
+                'loc': d[pop].get('loc', 0.5)
+            }
             idx+=1
 
     if cfg.addIClamp:
@@ -1036,6 +1042,30 @@ def create_net_params(cfg):
                 'loc': 0.5,
                 'conds': {'pop': pop}
             }
+
+    #------------------------------------------------------------------------------
+    # NetStim E-I background inputs
+    #------------------------------------------------------------------------------
+    
+    if cfg.add_bkg_spike_input:
+        mech_default = {'exc': 'AMPA', 'inh': 'GABAA'}
+        for pop, inp in cfg.bkg_spike_inputs.items():
+            for s, inp_ in inp.items():
+                netParams.stimSourceParams[f'bkg_src_{pop}_{s}'] = {
+                    'type': 'NetStim',
+                    'rate': inp_['r'],
+                    'noise': inp_.get('noise', 1.0),
+                    'start': inp_.get('start', 0),
+                    'seed': inp_.get('seed', cfg.seeds['stim'])
+                }
+                netParams.stimTargetParams[f'bkg_targ_{pop}_{s}'] =  {
+                    'source': f'bkg_src_{pop}_{s}',
+                    'conds': {'pop': pop},
+                    'sec': inp_.get('sec', 'soma'),
+                    'loc': 0.5,
+                    'synMech': inp_.get('mech', mech_default.get(s, 'AMPA')),
+                    'weight': inp_['w']
+                }
 
     #------------------------------------------------------------------------------
     # NetStim inputs (to simulate short external stimuli; not bkg)
