@@ -238,3 +238,63 @@ def conn_distance_percentiles(sim, bins_um=None):
     #print(f'Distance-to-soma approx percentiles (um): '
     #      f'N={total} p50~{p50:.1f} p90~{p90:.1f} p99~{p99:.1f}')
     print('Dist. counts:\n', global_counts)
+
+
+def print_cell_nseg(sim, pop_name):
+    """
+    Print the number of segments (nseg) for each section of one cell from a given population.
+    Works in multi-rank simulations by checking which rank has cells from this population.
+    
+    Parameters
+    ----------
+    sim : NetPyNE sim module
+        The simulation module (from netpyne import sim)
+    pop_name : str
+        Name of the population
+    
+    Example
+    -------
+    from netpyne import sim
+    print_cell_nseg(sim, 'IT2')
+    """
+    from neuron import h
+    
+    # Find a cell from this population on the current rank
+    target_cell = None
+    for cell in sim.net.cells:
+        if cell.tags.get('pop') == pop_name:
+            target_cell = cell
+            break
+    
+    # If no cell found on this rank, report and exit
+    if target_cell is None:
+        if sim.rank == 0:
+            print(f"[Rank {sim.rank}] No cells from population '{pop_name}' on this rank.")
+        return
+    
+    # Print header
+    print(f"\n[Rank {sim.rank}] Cell gid={target_cell.gid}, pop='{pop_name}'")
+    print(f"{'Section':<20} {'nseg':<10} {'L (um)':<15} {'nodes':<10}")
+    print("-" * 60)
+    
+    # Iterate through sections and print nseg
+    for sec_name, sec in target_cell.secs.items():
+        if 'hObj' in sec and sec['hObj'] is not None:
+            # Get values from NEURON section object
+            nseg = sec['hObj'].nseg
+            L = sec['hObj'].L
+            nnode = nseg + 1  # number of nodes = nseg + 1
+            
+            print(f"{sec_name:<20} {nseg:<10} {L:<15.2f} {nnode:<10}")
+        else:
+            # If NEURON object not created yet, try to get from geom dict
+            nseg = sec.get('geom', {}).get('nseg', 'N/A')
+            L = sec.get('geom', {}).get('L', 'N/A')
+            print(f"{sec_name:<20} {nseg:<10} {L if L == 'N/A' else f'{L:.2f}':<15} {'N/A':<10}")
+    
+    print("-" * 60)
+    
+    # Calculate total segments
+    if all('hObj' in sec for sec in target_cell.secs.values()):
+        total_nseg = sum(sec['hObj'].nseg for sec in target_cell.secs.values() if 'hObj' in sec)
+        print(f"Total segments: {total_nseg}\n")

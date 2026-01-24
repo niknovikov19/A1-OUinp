@@ -1,0 +1,7 @@
+pop_group,pop_names,all,apic,apic_lowertrunk,apic_trunk,apic_tuft,apic_uppertrunk,dend_all,proximal
+group_1,"ITP4, PT5B, IT3, IT2, IT6, IT5A, IT5B, CT5B, CT5A, CT6","Adend1, Adend2, Adend3, Bdend, soma","Adend1, Adend2, Adend3",Adend1,"Adend1, Adend2",Adend3,Adend2,"Adend1, Adend2, Adend3, Bdend","Adend1, Bdend, soma"
+group_2,"TC, RE, HTC",,,,,,,,
+group_3,"NGF, TI, TI, TI","dend, soma",,,,,,dend,"dend, soma"
+group_4,ITS4,"Adend1, Adend2, Adend3, Bdend, soma","Adend1, Adend2, Adend3",Adend1,"Adend1, Adend2",Adend3,Adend2,"Adend1, Adend2, Adend3, Bdend","Adend1, Bdend, soma"
+group_5,"SOM, PV","dend, soma",,,,,,dend,"dend, soma"
+group_6,VIP,"ori1, ori2, rad1, rad2, soma",,,,,,"ori1, ori2, rad1, rad2","ori1, rad1, soma"

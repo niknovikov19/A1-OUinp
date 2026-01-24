@@ -13,6 +13,7 @@ import numpy as np
 
 from analysis.ou_tuning import sim_res_proc_utils as proc
 import diagnostics as diag
+from analysis.model_utils.split_conn import split_conn_by_sections
 
 
 EXP_LABEL = 'it2_som2'
@@ -35,8 +36,17 @@ ADD_SUBCON = 0
 SUBCON_USED = ['E->E2,3,4']
 SUBCON_NAME = 'ee'
 
+# Split conns from sec-list 1-sec form (length-based)
+SPLIT_CONNS = 1
+
 # Choose a section from a list: 0=first, 1=random
 RAND_SEC = 1
+
+# Uniformly distribute locs within a section
+UNI_LOCS = 1
+
+# Number of different loc values (used when UNI_LOCS=0)
+N_LOCS = 1
 
 CONN_MOD = [
     {'name': 'EE_IT2_IT2_2', 'label': 'ee', 'sec': 'proximal'}
@@ -138,9 +148,24 @@ def modify_net_params(cfg, params):
             sec['mechs'][v['mech']][v['par']] *= v['mult']
             sec['mechs'][v['mech']][v['par']] += v['add']
     
+    # Possible loc values
+    if UNI_LOCS:
+        locs = 'uniform(0, 1)'
+    else:
+        if N_LOCS == 1:
+            locs = 0.5
+        else:
+            l = 1 / N_LOCS
+            locs_ = np.round(np.arange(0, 1, l) + 0.5 * l, 3).tolist()
+            locs = f'[{", ".join(locs_)}][int(rand.discunif(0, {N_LOCS - 1}))]'
+    
     # Modify connections
     for c in CONN_MOD:
         params.connParams[c['name']]['sec'] = c['sec']
+        params.connParams[c['name']]['loc'] = (
+            'uniform(0, 1)' if UNI_LOCS else 0.5)
+        if SPLIT_CONNS:
+            split_conn_by_sections(params, c['name'])
     
     # Subconn
     if ADD_SUBCON and (SUBCON_USED is not None):
@@ -162,6 +187,11 @@ def gen_exp_name_sub(sim):
         exp_name_sub += f'_vrest_{V_REST}'
     exp_name_sub += f'_wmult_{cfg.wmult}_ee_{cfg.EEGain}'
     exp_name_sub += f'_randsec_{RAND_SEC}'
+    exp_name_sub += f'_splitcon_{SPLIT_CONNS}'
+    if UNI_LOCS:
+        exp_name_sub += '_loc_uni'
+    else:
+        exp_name_sub += f'_loc_{N_LOCS}'
         
     if len(CONN_MOD) > 0:
         mods = []
@@ -264,4 +294,6 @@ def final(sim):
         
         # Print diagnostic info
         print('Conn targets by sec group:', sec_counts)
+
+        diag.print_cell_nseg(sim, 'IT2')
     
