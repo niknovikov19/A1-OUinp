@@ -12,12 +12,18 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from analysis.ou_tuning import sim_res_proc_utils as proc
+from analysis.model_utils.split_conn import split_conn_by_sections
 
 
-EXP_LABEL = 'it2'
-POPS_USED = ['IT2']
+#EXP_LABEL = 'it2'
+#POPS_USED = ['IT2']
+EXP_LABEL = 'pyr'
+POPS_USED = ['IT2', 'IT3', 'ITS4', 'ITP4', 'IT5A', 'CT5A',
+             'IT5B', 'CT5B', 'PT5B', 'IT6', 'CT6']
 
-RXE, RXI = 15000, 2000
+#RXE, RXI = 15000, 2000
+RXE, RXI = 1, 1
+
 WXE, WXI = 1.25, 5
 
 NOISE = 1
@@ -27,8 +33,23 @@ T0_XE, T0_XI = 0, 0
 USE_IBKG = 1
 V_REST = -70
 
-REC_TRACES = 1
-PLOT_TRACES = 1
+REC_TRACES = 0
+PLOT_TRACES = 0
+
+# Use subConn
+ADD_SUBCON = 0
+
+# Split conns from sec-list 1-sec form (length-based)
+SPLIT_CONNS = 0
+
+# Choose a section from a list: 0=first, 1=random
+RAND_SEC = 1
+
+# Uniformly distribute locs within a section
+UNI_LOCS = 0
+
+# Number of different loc values (used when UNI_LOCS=0)
+N_LOCS = 5
 
 
 def apply_exp_cfg(cfg):
@@ -56,7 +77,10 @@ def apply_exp_cfg(cfg):
     #cfg.EEGain = 1
 
     # Turn subConn on / off
-    cfg.addSubConn = 0
+    cfg.addSubConn = ADD_SUBCON
+
+    # Choose a section from a list: 0=first, 1=random
+    cfg.connRandomSecFromList = RAND_SEC
 
     # Background spiking input
     cfg.add_bkg_spike_input = 1
@@ -123,6 +147,23 @@ def modify_net_params(cfg, params):
             sec['mechs'][v['mech']][v['par']] *= v['mult']
             sec['mechs'][v['mech']][v['par']] += v['add']
 
+    # Possible loc values
+    if UNI_LOCS:
+        locs = 'uniform(0, 1)'
+    else:
+        if N_LOCS == 1:
+            locs = 0.5
+        else:
+            l = 1 / N_LOCS
+            locs = f'{l / 2} + {l} * (int({N_LOCS} * uniform(0, 1)))'
+    
+    # Modify connections
+    conn_names = list(params.connParams.keys())
+    for cname in conn_names:
+        params.connParams[cname]['loc'] = locs
+        if SPLIT_CONNS:
+            split_conn_by_sections(params, cname)
+
 
 def post_run(sim):
     """Called in the end of a job (after runnig and saving). """
@@ -142,6 +183,13 @@ def post_run(sim):
         exp_name_sub += f'_vrest_{V_REST}'
     exp_name_sub += f'_wmult_{cfg.wmult}_ee_{cfg.EEGain}'
     exp_name_sub += f'_subcon_{cfg.addSubConn}'
+    exp_name_sub += f'_randsec_{RAND_SEC}'
+    exp_name_sub += f'_splitcon_{SPLIT_CONNS}'
+    if UNI_LOCS:
+        exp_name_sub += '_loc_uni'
+    else:
+        exp_name_sub += f'_loc_{N_LOCS}'
+    exp_name_sub += f'_vrec_{REC_TRACES}'
 
     # Create a subfolder to put the results
     dirpath_res = Path(cfg.saveFolder)
@@ -162,7 +210,8 @@ def post_run(sim):
     
     # Save rates, CVs, voltage stats, and timings to a json file
     res = proc.calc_rates_and_cvs(sim, t_limits, nspikes_min=3)
-    res |= proc.calc_v_stats(sim, t_limits, med_win=0.05)
+    if REC_TRACES:
+        res |= proc.calc_v_stats(sim, t_limits, med_win=0.05)
     res['timing'] = sim.timingData
     fpath_res = dirpath_res_sub / f'{exp_name}_result.json'
     with open(fpath_res, 'w') as fid:

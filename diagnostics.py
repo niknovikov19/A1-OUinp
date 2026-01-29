@@ -298,3 +298,108 @@ def print_cell_nseg(sim, pop_name):
     if all('hObj' in sec for sec in target_cell.secs.values()):
         total_nseg = sum(sec['hObj'].nseg for sec in target_cell.secs.values() if 'hObj' in sec)
         print(f"Total segments: {total_nseg}\n")
+
+
+def print_conn_locs_by_sec(sim, sec_groups, pops_pre, pops_post):
+    """
+    Print all connection locations for each section separately.
+    
+    Parameters
+    ----------
+    sim : NetPyNE sim object
+        Simulation object
+    sec_groups : dict
+        Dictionary mapping group names to lists of section names
+        e.g., {'proximal': ['soma', 'Bdend'], 'apical': ['Adend1', 'Adend2']}
+    pops_pre : list
+        List of presynaptic population names to include
+    pops_post : list
+        List of postsynaptic population names to include
+    """
+    from collections import defaultdict
+    import numpy as np
+    
+    # Build gid to population mapping
+    gid2pop = _build_gid2pop(sim)
+    gid2pop = sim.pc.py_broadcast(gid2pop, 0)
+    
+    if sim.rank not in [0, 1]:
+        return
+
+    # Collect locations for each section on this rank
+    # Format: sec_locs[sec_name] = [loc1, loc2, ...]
+    sec_locs = defaultdict(list)
+    sec_conn_labels = defaultdict(list)  # Track connection labels too
+    
+    for cell in sim.net.cells:
+        # Filter by postsynaptic population
+        if cell.tags['pop'] not in pops_post:
+            continue
+        
+        for conn in cell.conns:
+            # Filter by presynaptic population
+            pre_pop = gid2pop.get(conn.get('preGid'))
+            if pre_pop not in pops_pre:
+                continue
+            
+            # Get section and location
+            sec = conn.get('sec', None) or conn.get('postSec', None) or 'UNKNOWN'
+            loc = conn.get('loc', None)
+            label = conn.get('label', 'UNKNOWN')
+            
+            # Store location
+            sec_locs[sec].append(loc)
+            sec_conn_labels[sec].append(label)
+    
+    # Print results for this rank
+    print(f'\n{"=" * 80}')
+    print(f'Rank {sim.rank}: Connection locations by section')
+    print(f'{"=" * 80}')
+    
+    # Print by section groups
+    for group_name, sec_names in sec_groups.items():
+        print(f'\n--- Section Group: {group_name} ---')
+        
+        for sec_name in sec_names:
+            if sec_name in sec_locs:
+                locs = sec_locs[sec_name]
+                locs = [np.round(x, 3).item() for x in locs]
+                labels = sec_conn_labels[sec_name]
+                unique_labels = sorted(set(labels))
+                
+                print(f'\n  Section: {sec_name}')
+                print(f'    Total connections: {len(locs)}')
+                print(f'    Connection types: {unique_labels}')
+                print(f'    Locations: {locs}')
+                
+                # Optional: print some statistics
+                if locs:
+                    import numpy as np
+                    locs_array = np.array([l for l in locs if l is not None])
+                    if len(locs_array) > 0:
+                        print(f'    Location stats: min={locs_array.min():.3f}, '
+                              f'max={locs_array.max():.3f}, '
+                              f'mean={locs_array.mean():.3f}, '
+                              f'std={locs_array.std():.3f}')
+            else:
+                print(f'\n  Section: {sec_name}')
+                print(f'    No connections')
+    
+    # Print sections not in any group
+    ungrouped_secs = set(sec_locs.keys()) - set(sum(sec_groups.values(), []))
+    if ungrouped_secs:
+        print(f'\n--- Ungrouped Sections ---')
+        for sec_name in sorted(ungrouped_secs):
+            locs = sec_locs[sec_name]
+            labels = sec_conn_labels[sec_name]
+            unique_labels = sorted(set(labels))
+            
+            print(f'\n  Section: {sec_name}')
+            print(f'    Total connections: {len(locs)}')
+            print(f'    Connection types: {unique_labels}')
+            print(f'    Locations: {sorted(locs)}')
+    
+    print(f'\n{"=" * 80}\n')
+    
+    return sec_locs  # Return data in case you want to analyze it further
+

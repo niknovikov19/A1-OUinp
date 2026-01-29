@@ -43,10 +43,10 @@ SPLIT_CONNS = 1
 RAND_SEC = 1
 
 # Uniformly distribute locs within a section
-UNI_LOCS = 1
+UNI_LOCS = 0
 
 # Number of different loc values (used when UNI_LOCS=0)
-N_LOCS = 1
+N_LOCS = 100
 
 CONN_MOD = [
     {'name': 'EE_IT2_IT2_2', 'label': 'ee', 'sec': 'proximal'}
@@ -156,14 +156,14 @@ def modify_net_params(cfg, params):
             locs = 0.5
         else:
             l = 1 / N_LOCS
-            locs_ = np.round(np.arange(0, 1, l) + 0.5 * l, 3).tolist()
-            locs = f'[{", ".join(locs_)}][int(rand.discunif(0, {N_LOCS - 1}))]'
+            #locs_ = np.round(np.arange(0, 1, l) + 0.5 * l, 3)
+            #locs_ = [str(x) for x in locs_]
+            locs = f'{l / 2} + {l} * (int({N_LOCS} * uniform(0, 1)))'
     
     # Modify connections
     for c in CONN_MOD:
         params.connParams[c['name']]['sec'] = c['sec']
-        params.connParams[c['name']]['loc'] = (
-            'uniform(0, 1)' if UNI_LOCS else 0.5)
+        params.connParams[c['name']]['loc'] = locs
         if SPLIT_CONNS:
             split_conn_by_sections(params, c['name'])
     
@@ -280,6 +280,7 @@ def final(sim):
         res = {
             'subConn': subcon,
             'connRandomSecFromList': RAND_SEC,
+            'locs': 'uni' if UNI_LOCS else N_LOCS,
             'conn_targets': {
                 'pops_pre': pops_pre,
                 'pops_post': pops_post,
@@ -296,4 +297,8 @@ def final(sim):
         print('Conn targets by sec group:', sec_counts)
 
         diag.print_cell_nseg(sim, 'IT2')
+    
+    # Print conn locations
+    diag.print_conn_locs_by_sec(
+        sim, sec_groups, pops_pre, pops_post)
     
