@@ -261,7 +261,7 @@ if need_run:
     # Setup variables to record for each cell (spikes, V traces, etc)
     sim.setupRecording()
 
-    # Add OU current or conductance input to each Cell
+    # Add OU current or conductance input to each cell
     ctrl_dict = None
     if sim.cfg.add_ou_current:
         if hasattr(sim.cfg, 'ou_ctrl_params'):

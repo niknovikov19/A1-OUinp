@@ -184,12 +184,13 @@ def get_voltages(sim_result, t_limits=None):
 # =============================================================================
 
 
-def get_voltages_xr(
+def get_trace_xr(
         sim_result: Dict,
+        trace_name: str,
         t_limits: Tuple[float, float] | None = None,
         ms: bool = True
         ) -> Dict[str, xr.Dataset]:
-    """Returns a dict: {pop: Vmat (cells x time)}. """
+    """Returns a dict: {pop: X (cells x time)}, where X is a recorded trace. """
 
     pop_names = get_pop_names(sim_result)
 
@@ -203,22 +204,22 @@ def get_voltages_xr(
     else:
         tmask = np.ones_like(tvec, dtype=bool)
 
-    # Extract voltages and the corresponding cell gids
-    V_data = {pop: [] for pop in pop_names}
+    # Extract traces and the corresponding cell gids
+    X_data = {pop: [] for pop in pop_names}
     cell_gids = {pop: [] for pop in pop_names}
-    for cell, V_vec in sim_result['simData']['V_soma'].items():
+    for cell, X_vec in sim_result['simData'][trace_name].items():
         gid = int(cell.split('_')[-1])
         pop = sim_result['net']['cells'][gid]['tags']['pop']
-        V_data[pop].append(np.array(V_vec)[tmask])
+        X_data[pop].append(np.array(X_vec)[tmask])
         cell_gids[pop].append(gid)
 
     # Convert to xarray
-    for pop, V_ in V_data.items():
-        if len(V_) == 0:
-            V_data[pop] = None
+    for pop, X_ in X_data.items():
+        if len(X_) == 0:
+            X_data[pop] = None
             continue
-        V_data[pop] = xr.DataArray(
-            np.array(V_),
+        X_data[pop] = xr.DataArray(
+            np.array(X_),
             dims=['cell_gid', 'time'],
             coords={
                 'cell_gid': cell_gids[pop],
@@ -226,7 +227,17 @@ def get_voltages_xr(
             }
         )
 
-    return V_data
+    return X_data
+
+
+def get_voltages_xr(
+        sim_result: Dict,
+        t_limits: Tuple[float, float] | None = None,
+        ms: bool = True
+        ) -> Dict[str, xr.Dataset]:
+    """Returns a dict: {pop: Vmat (cells x time)}. """
+
+    return get_trace_xr(sim_result, 'V_soma', t_limits, ms)
 
 
 def prepare_sim_result(sim) -> Dict:

@@ -6,6 +6,7 @@ dirpath_self = Path(__file__).resolve().parent
 sys.path.append(str(dirpath_repo_root))
 #sys.path.append(str(dirpath_self))
 
+import numpy as np
 from scipy.ndimage import median_filter
 
 from analysis.ou_tuning import netpyne_res_parse_utils as utils
@@ -36,6 +37,31 @@ def calc_rates_and_cvs(
     # Combine the result
     res = {'rates': rates, 'cvs': cvs, 't_limits_r': t_limits,
            'nspikes_min': nspikes_min}
+    return res
+
+def calc_trace_stats(
+        sim,   # NetPyNE sim object obtained after a simulation
+        trace_name: str,
+        t_limits: tuple[float, float] | None = None,   # time window used for calculation
+        ) -> dict:
+    if t_limits is None:
+        t_limits = (0, sim.cfg.duration / 1000)
+    # Convert NetPyNE object to a dict (same as stored in pkl files)
+    sim_result = utils.prepare_sim_result(sim)
+    # Extract traces
+    X = utils.get_trace_xr(sim_result, trace_name, t_limits, ms=False)
+    # Calculate stats
+    res = {'min': {}, 'max': {}, 'mean': {}, 'std': {}, 'median': {}, 
+           't_limits_v': t_limits}
+    for pop, Xmat in X.items():
+        if Xmat is None:
+            continue
+        x = Xmat.values.ravel()
+        res['min'][pop] = x.min()
+        res['max'][pop] = x.max()
+        res['mean'][pop] = np.mean(x)
+        res['std'][pop] = np.std(x)
+        res['median'][pop] = np.median(x)
     return res
 
 def calc_v_stats(

@@ -741,41 +741,44 @@ def create_net_params(cfg):
                 'spkTimes': spkTimes
             }
 
-        # excBkg/I -> thalamus + cortex
-        with open('cells/bkgWeightPops.json', 'r') as f:
-            weightBkg = json.load(f)
-        pops = list(cfg.allpops)
-        if 'cochlea' in pops:
-            pops.remove('cochlea')
-        if 'IC' in pops:
-            pops.remove('IC')
+        OLD_BKG = 0
 
-        for pop in ['TC', 'TCM', 'HTC']:
-            weightBkg[pop] *= cfg.EbkgThalamicGain
-        for pop in ['IRE', 'IREM', 'TI', 'TIM']:
-            weightBkg[pop] *= cfg.IbkgThalamicGain
+        if OLD_BKG:
+            # excBkg/I -> thalamus + cortex
+            with open('cells/bkgWeightPops.json', 'r') as f:
+                weightBkg = json.load(f)
+            pops = list(cfg.allpops)
+            if 'cochlea' in pops:
+                pops.remove('cochlea')
+            if 'IC' in pops:
+                pops.remove('IC')
 
-        # Define bkg targets
-        for pop in pops:
-            netParams.stimTargetParams['excBkg->'+pop] =  {     
-                'source': 'excBkg',
-                'conds': {'pop': pop},
-                'sec': 'apic',
-                'loc': 0.5,
-                'synMech': ESynMech,
-                'weight': weightBkg[pop],
-                'synMechWeightFactor': cfg.synWeightFractionEE,
-                'delay': cfg.delayBkg
-            }
-            netParams.stimTargetParams['inhBkg->'+pop] =  {
-                'source': 'inhBkg',
-                'conds': {'pop': pop},
-                'sec': 'proximal',
-                'loc': 0.5,
-                'synMech': 'GABAA',
-                'weight': weightBkg[pop],
-                'delay': cfg.delayBkg
-            }
+            for pop in ['TC', 'TCM', 'HTC']:
+                weightBkg[pop] *= cfg.EbkgThalamicGain
+            for pop in ['IRE', 'IREM', 'TI', 'TIM']:
+                weightBkg[pop] *= cfg.IbkgThalamicGain
+
+            # Define bkg targets
+            for pop in pops:
+                netParams.stimTargetParams['excBkg->'+pop] =  {     
+                    'source': 'excBkg',
+                    'conds': {'pop': pop},
+                    'sec': 'apic',
+                    'loc': 0.5,
+                    'synMech': ESynMech,
+                    'weight': weightBkg[pop],
+                    'synMechWeightFactor': cfg.synWeightFractionEE,
+                    'delay': cfg.delayBkg
+                }
+                netParams.stimTargetParams['inhBkg->'+pop] =  {
+                    'source': 'inhBkg',
+                    'conds': {'pop': pop},
+                    'sec': 'proximal',
+                    'loc': 0.5,
+                    'synMech': 'GABAA',
+                    'weight': weightBkg[pop],
+                    'delay': cfg.delayBkg
+                }
                
         # cochlea/IC -> thal
         if cfg.ICThalInput:
@@ -1049,23 +1052,65 @@ def create_net_params(cfg):
     
     if cfg.add_bkg_spike_input:
         mech_default = {'exc': 'AMPA', 'inh': 'GABAA'}
+        
+        # Replace Netstim's by equivalent OU conductances
+        if hasattr(cfg, 'replace_bkg_spikes_by_ou'):
+            use_ou_bkg = cfg.replace_bkg_spikes_by_ou
+        else:
+            use_ou_bkg = False
+        
+        if use_ou_bkg:
+            netParams.NoiseOUParams = {}
+
         for pop, inp in cfg.bkg_spike_inputs.items():
             for s, inp_ in inp.items():
-                netParams.stimSourceParams[f'bkg_src_{pop}_{s}'] = {
-                    'type': 'NetStim',
-                    'rate': inp_['r'],
-                    'noise': inp_.get('noise', 1.0),
-                    'start': inp_.get('start', 0),
-                    'seed': inp_.get('seed', cfg.seeds['stim'])
-                }
-                netParams.stimTargetParams[f'bkg_targ_{pop}_{s}'] =  {
-                    'source': f'bkg_src_{pop}_{s}',
-                    'conds': {'pop': pop},
-                    'sec': inp_.get('sec', 'soma'),
-                    'loc': 0.5,
-                    'synMech': inp_.get('mech', mech_default.get(s, 'AMPA')),
-                    'weight': inp_['w']
-                }
+                rx = inp_['r']
+                wx = inp_['w']
+                inp_name = f'{pop}_{s}'
+                syn_mech_name = inp_.get('mech', mech_default.get(s, 'AMPA'))
+                syn_mech = netParams.synMechParams[syn_mech_name]                
+
+                if not use_ou_bkg:
+                    netParams.stimSourceParams[f'bkg_src_{inp_name}'] = {
+                        'type': 'NetStim',
+                        'rate': rx,
+                        'noise': inp_.get('noise', 1.0),
+                        'start': inp_.get('start', 0),
+                        'seed': inp_.get('seed', cfg.seeds['stim'])
+                    }
+                    netParams.stimTargetParams[f'bkg_targ_{inp_name}'] =  {
+                        'source': f'bkg_src_{inp_name}',
+                        'conds': {'pop': pop},
+                        'sec': inp_.get('sec', 'soma'),
+                        'loc': 0.5,
+                        'synMech': syn_mech_name,
+                        'weight': wx
+                    }
+                
+                else:
+                    if syn_mech.get('mod', None) != 'MyExp2SynBB':
+                        raise ValueError('For replacing NetStim bkg by OU conductance, '
+                                         'synaptic mechanism must be MyExp2SynBB')
+                    tau = syn_mech['tau2']
+                    e_rev = syn_mech['e']
+
+                    mu = wx * rx * tau * 0.001 * 1e-3
+                    sigma = wx * np.sqrt(rx * tau * 0.001 / 2) * 1e-3
+                    netParams.NoiseOUParams[inp_name] = {'mean': mu, 'sigma': sigma}
+
+                    cfg.add_ou_conductance = True
+                    
+                    netParams.stimSourceParams[f'NoiseOU_source_{inp_name}'] = {
+                        'type': 'ConductanceSource2',
+                        'dur1': cfg.duration,
+                        'amp1': e_rev
+                    }
+                    netParams.stimTargetParams[f'NoiseOU_target_{inp_name}'] = {
+                        'source': f'NoiseOU_source_{inp_name}',
+                        'conds': {'pop': pop},
+                        'sec': inp_.get('sec', 'soma'),
+                        'loc': 0.5
+                    }
 
     #------------------------------------------------------------------------------
     # NetStim inputs (to simulate short external stimuli; not bkg)

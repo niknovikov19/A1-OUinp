@@ -96,6 +96,11 @@ def generate_ou_signal(tau, sigma, mean, duration, dt=0.025,
         if verbose:
             print(f'Proportion of clamped OU values: {np.mean(mask_neg)}')
 
+    if verbose:
+        print(f'generate_ou_signal(): '
+              f'mean={np.mean(svec_np)}, std={np.std(svec_np)}',
+              flush=True)
+
     # Take the inverse of the signal if needed
     if invert_output:
         #print('generate_ou_signal(): inverse', flush=True)
@@ -127,10 +132,10 @@ def add_noise_gclamp(sim):
     vecs_dict = {}
     OUFlags = {}
 
-    ramp_dur = sim.cfg.ou_ramp_dur if hasattr(sim.cfg, 'ou_ramp_dur') else None
-    ramp_offset = sim.cfg.ou_ramp_offset if hasattr(sim.cfg, 'ou_ramp_offset') else 0
-    ramp_mult = sim.cfg.ou_ramp_mult if hasattr(sim.cfg, 'ou_ramp_mult') else 0
-    raise NotImplementedError('Ramp not supported for g OU')
+    #ramp_dur = sim.cfg.ou_ramp_dur if hasattr(sim.cfg, 'ou_ramp_dur') else None
+    #ramp_offset = sim.cfg.ou_ramp_offset if hasattr(sim.cfg, 'ou_ramp_offset') else 0
+    #ramp_mult = sim.cfg.ou_ramp_mult if hasattr(sim.cfg, 'ou_ramp_mult') else 0
+    #raise NotImplementedError('Ramp not supported for g OU')
 
     # Generate OU signal(s)
     #print(f'add_noise_gclamp(): create OU inputs (dt={sim.cfg.dt})', flush=True)
@@ -140,24 +145,33 @@ def add_noise_gclamp(sim):
         if pop not in OUFlags:
             OUFlags[pop] = True
         vecs_dict.update({cell_ind: {'tvecs': {}, 'svecs': {}}})
-        cell_seed = (sim.cfg.seeds['stim'] + cell.gid) * 2
+        #cell_seed = (sim.cfg.seeds['stim'] + cell.gid) * 2
 
-        for stim_ind, stim in enumerate(sim.net.cells[cell_ind].stims):
+        for stim_ind, stim in enumerate(cell.stims):
             if 'NoiseOU' in stim['label']:
-                mean = sim.net.params.NoiseOUParams[cell.tags['pop']]['mean']
-                sigma = sim.net.params.NoiseOUParams[cell.tags['pop']]['sigma']
+                inp_name = stim['label'][len('NoiseOU_target_'):]
+                ou_par = sim.net.params.NoiseOUParams[inp_name]
+
+                mean = ou_par['mean']
+                sigma = ou_par['sigma']
+                tau = ou_par.get('tau', sim.cfg.ou_tau)
+                    
+                seed = sim.cfg.seeds['stim'] + cell.gid * 1000 + stim_ind
+
+                verbose = (cell_ind == 0) and (sim.rank == 0)
+                if verbose:
+                    print(f'====== {inp_name} ======')
+                    print(f'Params: mean={mean}, std={sigma}')
 
                 tvec, svec = generate_ou_signal(
-                    tau=sim.cfg.ou_tau,
+                    tau=tau,
                     sigma=sigma,
                     mean=mean,
                     duration=stim['dur1'],
                     dt=sim.cfg.dt,
-                    seed=cell_seed,
+                    seed=seed,
                     plotFig=False,
-                    #ramp_offset=ramp_offset,
-                    #ramp_mult=ramp_mult,
-                    #ramp_dur=ramp_dur
+                    verbose=verbose
                 )
 
                 """ if (cell_ind == 0) and (stim_ind == 0):
@@ -168,8 +182,8 @@ def add_noise_gclamp(sim):
                 if any(val < 0.0 for val in svec):
                     raise ValueError('Negative values in the conductance signal are not allowed')
                 else:
-                    vecs_dict[cell_ind]['tvecs'].update({stim_ind: tvec})
-                    vecs_dict[cell_ind]['svecs'].update({stim_ind: svec})
+                    vecs_dict[cell_ind]['tvecs'].update({inp_name: tvec})
+                    vecs_dict[cell_ind]['svecs'].update({inp_name: svec})
 
     # Play the OU signals to the cells
     # (via "rs" variable of ConductanceSource.mod)
@@ -180,10 +194,11 @@ def add_noise_gclamp(sim):
             continue
         for stim_ind, stim in enumerate(cell.stims):
             if 'NoiseOU' in stim['label']:
-                stim_vec = vecs_dict[cell_ind]['svecs'][stim_ind]
+                inp_name = stim['label'][len('NoiseOU_target_'):]
+                stim_vec = vecs_dict[cell_ind]['svecs'][inp_name]
                 stim_vec.play(
                     stim['hObj']._ref_rs,
-                    vecs_dict[cell_ind]['tvecs'][stim_ind]
+                    vecs_dict[cell_ind]['tvecs'][inp_name]
                 )
                 #if (cell_ind == 0) and (stim_ind == 0):
                 #    print('play()')
@@ -211,13 +226,14 @@ def add_noise_iclamp(sim):
     for cell_ind, cell in enumerate(sim.net.cells):
 
         vecs_dict.update({cell_ind: {'tvecs': {}, 'svecs': {}}})
-        cell_seed = sim.cfg.seeds['stim'] + cell.gid
 
         for stim_ind, stim in enumerate(cell.stims):
             if 'NoiseOU' in stim['label']:
                 pop = cell.tags['pop']
                 mean = sim.net.params.NoiseOUParams[pop]['mean']
                 sigma = sim.net.params.NoiseOUParams[pop]['sigma']
+
+                seed = sim.cfg.seeds['stim'] + cell.gid * 1000 + stim_ind
 
                 if (sim.rank == 0) and (cell_ind == 0) and (stim_ind == 0):
                     print(f'Create OU ({pop}): mean = {mean}, sigma = {sigma}', flush=True)
@@ -245,7 +261,7 @@ def add_noise_iclamp(sim):
                     mean=mean,
                     duration=stim['dur'],
                     dt=sim.cfg.dt,
-                    seed=cell_seed,
+                    seed=seed,
                     invert_output=False,
                     cutoff=None,   # don't prune negative values
                     plotFig=False,
