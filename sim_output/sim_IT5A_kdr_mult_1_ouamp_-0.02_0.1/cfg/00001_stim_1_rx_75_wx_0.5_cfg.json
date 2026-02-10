@@ -164,7 +164,7 @@
         "L4L3VIP": 1.0,
         "OUamp": [
             -0.02,
-            0.08
+            0.1
         ],
         "OUstd": 0,
         "TEpops": [
@@ -329,7 +329,7 @@
         "ou_pop_inputs": {},
         "ou_ramp_dur": 1000,
         "ou_ramp_mult": 0,
-        "ou_ramp_offset": 1.5,
+        "ou_ramp_offset": 1,
         "ou_ramp_t0": 3500,
         "ou_ramp_type": "up",
         "ou_tau": 10,
@@ -1109,7 +1109,7 @@
         "saveDipoleCells": false,
         "saveDipolePops": false,
         "saveDpk": false,
-        "saveFolder": "sim_output/sim_IT5A_kdr_mult_1_ramp_1.5_rx_75_wx_0.5",
+        "saveFolder": "sim_output/sim_IT5A_kdr_mult_1_ouamp_-0.02_0.1",
         "saveHDF5": false,
         "saveJson": false,
         "saveLFPCells": false,
@@ -1125,7 +1125,7 @@
             "loc": 1,
             "stim": 1
         },
-        "simLabel": "sim_IT5A_kdr_mult_1_ramp_1.5_rx_75_wx_0.5",
+        "simLabel": "00001",
         "singleCellPops": false,
         "singlePop": "",
         "sizeX": 200.0,

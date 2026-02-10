@@ -31,16 +31,39 @@ cfg.add_ou_current = 1
 cfg.ou_common = 1    # all pops receive the same OU input
 cfg.ou_noise_duration = cfg.duration
 cfg.ou_tau = 10
-cfg.OUamp = [-0.02, 0.18]   # interpolate between 2 values from 1st to last cell
+cfg.OUamp = [-0.02, 0.1]   # interpolate between 2 values from 1st to last cell
 cfg.OUstd = 0   # zero std. -> constant input
 
+# Mechanisms to modify
+cfg.mech_changes = {
+    'sec': 'all',
+    'mech': 'kdr',
+    'par': 'gbar',
+    'mult': 1
+}
+
+# Strong ramp-up pulse for switching between the steady-states
+cfg.ou_ramp_dur = 1000   # duration
+cfg.ou_ramp_t0 = 3500    # start time
+cfg.ou_ramp_offset = 1.75   # amplitude (current to soma)
+cfg.ou_ramp_mult = 0
+cfg.ou_ramp_type = 'up'
+
 # NetStim inputs (weak, just to randomly jitter the cells between steady-states)
-cfg.bkg_r = 75    # firing rate
+cfg.bkg_r = 150    # firing rate
 cfg.bkg_w = 0.5   # weight
 cfg.bkg_spike_inputs = {
     pop: {'r': cfg.bkg_r, 'w': cfg.bkg_w}
     for pop in cfg.pops_active
 }
+
+# Experiment folder and name
+cfg.saveFolder = 'sim_output/' + (
+    f'sim_{POP_ACTIVE}_{cfg.mech_changes["mech"]}'
+    f'_mult_{cfg.mech_changes["mult"]}'
+    f'_ouamp_{cfg.OUamp[0]}_{cfg.OUamp[1]}'
+)
+cfg.simLabel = '00005'
 
 # Load a table of pop sizes
 dirpath_self = Path(__file__).resolve().parent
@@ -69,29 +92,5 @@ cfg.recordStep =  0.1
     'saveFig': True, 'showFig': False, 'figSize': (18, 12)
 } """
 
-# Strong ramp-up pulse for switching between the steady-states
-cfg.ou_ramp_dur = 1000   # duration
-cfg.ou_ramp_t0 = 3500    # start time
-cfg.ou_ramp_offset = 1.5   # amplitude (current to soma)
-cfg.ou_ramp_mult = 0
-cfg.ou_ramp_type = 'up'
-
-# Mechanisms to modify
-cfg.mech_changes = {
-    'sec': 'all',
-    'mech': 'kdr',
-    'par': 'gbar',
-    'mult': 3
-}
-
 # Update via batchtools
 cfg.update_cfg()
-
-cfg.simLabel = (
-    f'sim_{POP_ACTIVE}_{cfg.mech_changes["mech"]}'
-    f'_mult_{cfg.mech_changes["mult"]}'
-    f'_ramp_{cfg.ou_ramp_offset}'
-    f'_rx_{cfg.bkg_r}_wx_{cfg.bkg_w}'
-    f'_ouamp_{cfg.OUamp[0]}_{cfg.OUamp[1]}'
-)
-cfg.saveFolder = 'sim_output/' + cfg.simLabel

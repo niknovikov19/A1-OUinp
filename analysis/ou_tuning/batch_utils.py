@@ -77,7 +77,7 @@ def collect_batch_xr_data(
         job_idx_xr: xr.DataArray,
         dirpath_data: str | Path,
         fname_data_templ: str = 'rates_{job:05d}_*.nc'
-        ) -> xr.DataArray:
+        ) -> xr.DataArray | xr.Dataset:
     """Merges xarrays resulting from batch jobs to one large xarray. """
     
     dirpath_data = Path(dirpath_data)
