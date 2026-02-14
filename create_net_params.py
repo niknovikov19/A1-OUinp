@@ -230,7 +230,9 @@ def create_net_params(cfg):
         for post in wmat[pre].keys():
             wmat[pre][post] *= cfg.wmult
     
-    def wireCortex ():
+    SKIP_ZERO_PROB = 1
+
+    def wireCortex():
         layerGainLabels = ['1', '2', '3', '4', '5A', '5B', '6']
         #------------------------------------------------------------------------------
         ## E -> E
@@ -239,6 +241,7 @@ def create_net_params(cfg):
                 for post in Epops:
                     for l in layerGainLabels:  # used to tune each layer group independently
                         scaleFactor = 1.0
+                        if (pmat[pre][post] == 0) and SKIP_ZERO_PROB: continue
                         if connDataSource['E->E/I'] in ['Allen_V1', 'Allen_custom']:
                             prob = '%f * exp(-dist_2D/%f)' % (pmat[pre][post], lmat[pre][post])
                         else:
@@ -266,10 +269,11 @@ def create_net_params(cfg):
                         if postType in post: # only create rule if celltype matches pop
                             for l in layerGainLabels:  # used to tune each layer group independently
                                 scaleFactor = 1.0
+                                if (pmat[pre][post] == 0) and SKIP_ZERO_PROB: continue
                                 if connDataSource['E->E/I'] in ['Allen_V1', 'Allen_custom']:
                                     prob = '%f * exp(-dist_2D/%f)' % (pmat[pre][post], lmat[pre][post])
                                 else:
-                                    prob = pmat[pre][post]                        
+                                    prob = pmat[pre][post]              
                                 if 'NGF' in post:
                                     synWeightFactor = cfg.synWeightFractionENGF   
                                 elif 'PV' in post:
@@ -306,7 +310,8 @@ def create_net_params(cfg):
                     for preType in Itypes:
                         if preType in pre:  # only create rule if celltype matches pop
                             for post in Epops:
-                                for l in layerGainLabels:  # used to tune each layer group independently                            
+                                for l in layerGainLabels:  # used to tune each layer group independently
+                                    if (pmat[pre][post] == 0) and SKIP_ZERO_PROB: continue
                                     prob = '%f * exp(-dist_2D/%f)' % (pmat[pre][post], lmat[pre][post])
                                     synWeightFactor = cfg.synWeightFractionIE
                                     if 'SOM' in pre:
@@ -336,7 +341,8 @@ def create_net_params(cfg):
             if connDataSource['I->E/I'] == 'Allen_custom':
                 for pre in Ipops:
                     for post in Ipops:
-                        for l in layerGainLabels:                     
+                        for l in layerGainLabels:
+                            if (pmat[pre][post] == 0) and SKIP_ZERO_PROB: continue
                             prob = '%f * exp(-dist_2D/%f)' % (pmat[pre][post], lmat[pre][post])
                             synWeightFactor = cfg.synWeightFractionII
                             if 'SOM' in pre:
@@ -383,6 +389,7 @@ def create_net_params(cfg):
             for post in TEpops+TIpops:
                 if post not in pmat[pre]:
                     continue
+                if (pmat[pre][post] == 0) and SKIP_ZERO_PROB: continue
                 gain = cfg.intraThalamicGain
                 # for syns use ESynMech, ThalIESynMech and ThalIISynMech
                 if pre in TEpops:     # E->E/I
@@ -441,6 +448,7 @@ def create_net_params(cfg):
             for post in TEpops+TIpops:
                 if post not in pmat[pre]:
                     continue
+                if (pmat[pre][post] == 0) and SKIP_ZERO_PROB: continue
                 if IsThalamicCore(post): # use spatially dependent wiring for thalamic core
                     prob = '%f * exp(-dist_x/%f)' % (pmat[pre][post], cfg.ThalamicCoreLambda)
                 else:
@@ -462,12 +470,13 @@ def create_net_params(cfg):
 
     #------------------------------------------------------------------------------
     ## Thalamocortical - this was added from Christoph Metzner's branch
-    def connectThalToCortex ():
+    def connectThalToCortex():
         # thalamocortical connections, some params added from Christoph Metzner's branch
         for pre in TEpops+TIpops:
             for post in Epops+Ipops:
                 if post not in pmat[pre]:
                     continue
+                if (pmat[pre][post] == 0) and SKIP_ZERO_PROB: continue
                 scaleFactor = 1.0
                 if IsThalamicCore(pre): # use spatially dependent wiring for thalamic core
                     prob = '%f * exp(-dist_x/%f)' % (pmat[pre][post], cfg.ThalamicCoreLambda) # NB: should check if this is ok 

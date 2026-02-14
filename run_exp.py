@@ -400,7 +400,10 @@ if comm.is_host():
 
     avgRates['loss'] = 700
     out_json = json.dumps({**inputs, **avgRates})
-    comm.send(out_json)
+    try:
+        comm.send(out_json)
+    except:
+        print('COMM SEND FAILED')
     comm.close()
     """ out_json = json.dumps({'loss': 0})
     comm.send(out_json)

@@ -32,7 +32,7 @@ def split_conn_by_sections(netParams, conn_name):
     """
     
     # Step 1: Find the connection and extract post-synaptic population and section list
-    if conn_name not in netParams. connParams:
+    if conn_name not in netParams.connParams:
         raise ValueError(f"Connection '{conn_name}' not found in netParams. connParams")    
     conn = netParams.connParams[conn_name]
     
@@ -65,7 +65,10 @@ def split_conn_by_sections(netParams, conn_name):
     original_probability = conn.get('probability', 1.0)
     
     # Step 2: Load the cell params file
-    cell_params_file = f"cells/{post_pop}_reduced_cellParams.json"    
+    cell_params_file = Path('cells') / f'{post_pop}_reduced_cellParams.json'
+    if not cell_params_file.exists():
+        cell_type = netParams.popParams[post_pop]['cellType']
+        cell_params_file = Path('cells') / f'{cell_type}_reduced_cellParams.json'
     try:
         with open(cell_params_file, 'r') as f:
             cell_params = json.load(f)
@@ -73,11 +76,14 @@ def split_conn_by_sections(netParams, conn_name):
         raise FileNotFoundError(f"Cell params file not found:  {cell_params_file}")
     
     # Step 3: Get section list and calculate section lengths
-    if 'secLists' not in cell_params: 
-        raise ValueError(f"Cell params file {cell_params_file} does not contain 'secLists'")    
-    if sec_list_name not in cell_params['secLists']:
-        raise ValueError(f"Section list '{sec_list_name}' not found in cell params")    
-    section_names = cell_params['secLists'][sec_list_name]
+    if isinstance(sec_list_name, str):
+        if 'secLists' not in cell_params: 
+            raise ValueError(f"Cell params file {cell_params_file} does not contain 'secLists'")    
+        if sec_list_name not in cell_params['secLists']:
+            raise ValueError(f"Section list '{sec_list_name}' not found in cell params")    
+        section_names = cell_params['secLists'][sec_list_name]
+    else:
+        section_names = list(sec_list_name)
     
     # Get section lengths
     section_lengths = {}
@@ -108,7 +114,15 @@ def split_conn_by_sections(netParams, conn_name):
     new_conns = {}
     for sec_name, sec_length in section_lengths.items():
         # Calculate probability weighted by section length
-        sec_probability = original_probability * (sec_length / total_length)
+        try:
+            q = sec_length / total_length
+            if isinstance(original_probability, str):
+                sec_probability = f'{q} * {original_probability}'
+            else:
+                sec_probability = q * original_probability
+        except Exception as e:
+            raise ValueError(f'Cannot multiply probability: {original_probability}')
+            #raise e
         
         # Create new connection name
         new_conn_name = f"{conn_name}_{sec_name}"

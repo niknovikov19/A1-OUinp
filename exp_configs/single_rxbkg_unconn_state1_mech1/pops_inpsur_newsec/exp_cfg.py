@@ -12,48 +12,40 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 from analysis.ou_tuning import sim_res_proc_utils as proc
-import diagnostics as diag
 from analysis.model_utils.split_conn import split_conn_by_sections
+import diagnostics as diag
 
 
-EXP_LABEL = 'it2_som2'
-POPS_USED = ['IT2', 'SOM2']
+EXP_LABEL = 'itp4'
+POPS_USED = ['ITP4']
 
-#RXE, RXI = 15000, 2000
-RXE, RXI = 250, 1
-WXE, WXI = 1.25, 5
+#EXP_LABEL = 'pyr'
+#POPS_USED = ['IT2', 'IT3', 'ITS4', 'ITP4', 'IT5A', 'CT5A',
+#             'IT5B', 'CT5B', 'PT5B', 'IT6', 'CT6']
 
+# Background spiking input
+RXE, RXI = 1500, 300
+WXE, WXI = 0.65, 2.5
+
+k = 10
+RXE, RXI = RXE * k, RXI * k
+WXE, WXI = WXE / k, WXI / k
+
+# Constant input to set Vrest
 USE_IBKG = 1
 V_REST = -70
 
-REC_TRACES = 0
-PLOT_TRACES = 0
+# Surrogate inputs
+SURR_INP_ON = 0
 
-ADD_SUBCON = 0
+REC_TRACES = 1
+PLOT_TRACES = 1
 
-# SUBCON_USED = None   # don't modify subConnParams
-#SUBCON_USED = ['E->E2,3,4', 'E->I', 'SOM->E']
-SUBCON_USED = ['E->E2,3,4']
-SUBCON_NAME = 'ee'
+# Split conns from sec-list to 1-sec form (length-based)
+SPLIT_CONNS = 0
 
-# Split conns from sec-list 1-sec form (length-based)
-SPLIT_CONNS = 1
-
-# Defines cfg.distributeSynsUniformly
-UNI_SYNS = 1
-
-# Choose a section from a list: 0=first, 1=random
-RAND_SEC = 1
-
-# Uniformly distribute locs within a section
-UNI_LOCS = 0
-
-# Number of different loc values (used when UNI_LOCS=0)
-N_LOCS = 1
-
-CONN_MOD = [
-    {'name': 'EE_IT2_IT2_2', 'label': 'ee', 'sec': 'proximal'}
-]
+# Length-weighted random selection from sec lists
+SEC_DISTR_BY_LEN = 1
 
 DIAG = 1
 
@@ -61,28 +53,36 @@ DIAG = 1
 def apply_exp_cfg(cfg):
 
     # Duration
-    cfg.duration = 3 * 1e3
+    cfg.duration = 5 * 1e3
 
     # Left point (ms) of the calculation time window (r, cv, ...)
-    cfg.t0_calc = 2000
+    cfg.t0_calc = 3000
 
     # Populations to use
-    cfg.pops_active = POPS_USED
+    pops_active = POPS_USED
+
+    # Subnet parameters
+    cfg.subnet_build_flag = SURR_INP_ON
+    cfg.subnet_params = {
+        'pops_active': pops_active,   
+        'conns_frozen': 'all',   # all inputs are surrogate, no recurrent connections
+        'fpath_frozen_rates': str(dirpath_self / 'target_state_1.csv'),   # surrogate input
+    }
+
+    if not SURR_INP_ON:
+        cfg.pops_active = POPS_USED
+        cfg.addConn = 0
+
+    cfg.need_run = 1
 
     # Weight multipliers
     cfg.wmult = 0.25
     cfg.EEGain = 0.5
 
-    # Turn connections on / off
-    cfg.addConn = 1
-
-    # Turn subConn on / off
-    cfg.addSubConn = ADD_SUBCON
-
-    # Choose a section from a list: 0=first, 1=random
-    cfg.connRandomSecFromList = RAND_SEC
-
-    cfg.distributeSynsUniformly = UNI_SYNS
+    # Connectivity params
+    cfg.addSubConn = 0
+    cfg.connRandomSecFromList = 1
+    cfg.connWeightSecByLength = SEC_DISTR_BY_LEN
 
     if DIAG:
         cfg.createNEURONObj = True      # Create NEURON hoc objects
@@ -94,6 +94,7 @@ def apply_exp_cfg(cfg):
 
     # Background spiking input
     cfg.add_bkg_spike_input = 1
+    cfg.replace_bkg_spikes_by_ou = 0   # use NetStim's
     cfg.bkg_spike_inputs = {}
     for n, pop in enumerate(POPS_USED):
         cfg.bkg_spike_inputs[pop] = {
@@ -109,8 +110,7 @@ def apply_exp_cfg(cfg):
         fname_ibkg = f'ibkg_mech1_vrest_{V_REST}.json'
         with open(dirpath_self / fname_ibkg, 'r') as fid:
             ibkg = json.load(fid)
-        cfg.IClamp = {pop: {'amp': ibkg[pop]} for pop in POPS_USED
-                      if pop in ibkg}
+        cfg.IClamp = {pop: {'amp': ibkg[pop]} for pop in POPS_USED}
 
     # Cell mechanisms to modify
     with open(dirpath_self / 'mech_changes_1.json', 'r') as fid:
@@ -123,13 +123,13 @@ def apply_exp_cfg(cfg):
     if 'plotTraces' in cfg.analysis:
         cfg.analysis['plotTraces']['include'] = POPS_USED
     
-    cfg.analysis['plotRaster'] = False
+    #cfg.analysis['plotRaster'] = False
     cfg.analysis['plotSpikeStats'] = False
 
     # Record voltage traces
     if REC_TRACES:
         ncells_rec = 5
-        ncells_plot = 2
+        ncells_plot = 3
         cfg.recordCells = [(pop, list(range(ncells_rec))) for pop in POPS_USED]
         cfg.recordTraces = {'V_soma': {'sec': 'soma', 'loc': 0.5, 'var': 'v'}}
         cfg.recordStep =  0.1
@@ -156,60 +156,29 @@ def modify_net_params(cfg, params):
             sec['mechs'][v['mech']][v['par']] *= v['mult']
             sec['mechs'][v['mech']][v['par']] += v['add']
     
-    # Possible loc values
-    if UNI_LOCS:
-        locs = 'uniform(0, 1)'
-    else:
-        if N_LOCS == 1:
-            locs = 0.5
-        else:
-            l = 1 / N_LOCS
-            #locs_ = np.round(np.arange(0, 1, l) + 0.5 * l, 3)
-            #locs_ = [str(x) for x in locs_]
-            locs = f'{l / 2} + {l} * (int({N_LOCS} * uniform(0, 1)))'
+    # Set target sections from json file
+    with open(dirpath_self / 'target_sec_1.json', 'r') as fid:
+        target_sec = json.load(fid)
+    for cname, conn in params.connParams.items():
+        pop_pre = conn['preConds'].get('pop', None)
+        pop_post = conn['postConds'].get('pop', None)
+        if (pop_pre is None) or (pop_post is None):
+            raise ValueError(f'Pre or post pop is not specified for conn {cname}')
+        conn['sec'] = None
+        for ts_name, ts in target_sec.items():
+            if (pop_pre in ts['pops_pre']) and (pop_post in ts['pops_post']):
+                #print(f'Sec info: {cname} {ts_name}')
+                conn['sec'] = ts['sec']
+                break
+        if conn['sec'] is None:
+            raise ValueError(f'No target sec info found for conn {cname}')
     
-    # Modify connections
-    for c in CONN_MOD:
-        params.connParams[c['name']]['sec'] = c['sec']
-        params.connParams[c['name']]['loc'] = locs
-        if SPLIT_CONNS:
-            split_conn_by_sections(params, c['name'])
+    # Split connections (1 sec per conn)
+    if SPLIT_CONNS:
+        conn_names = list(params.connParams.keys())
+        for cname in conn_names:
+            split_conn_by_sections(params, cname)
     
-    # Subconn
-    if ADD_SUBCON and (SUBCON_USED is not None):
-        params.subConnParams = {
-            c: params.subConnParams[c] for c in SUBCON_USED
-        }
-
-
-def gen_exp_name_sub(sim):
-    cfg = sim.cfg
-    t_limits = (cfg.t0_calc / 1000, cfg.duration / 1000)
-    exp_name_sub = f'exp_{EXP_LABEL}'
-    exp_name_sub += f'_rx_{RXE}_{RXI}_wx_{WXE}_{WXI}'
-    exp_name_sub += f'_conn_{cfg.addConn}'
-    subcon_str = SUBCON_NAME if ADD_SUBCON else '0'
-    exp_name_sub += f'_subcon_{subcon_str}'
-    exp_name_sub += f'_t_{t_limits[0]}_{t_limits[1]}'
-    if USE_IBKG:
-        exp_name_sub += f'_vrest_{V_REST}'
-    exp_name_sub += f'_wmult_{cfg.wmult}_ee_{cfg.EEGain}'
-    exp_name_sub += f'_randsec_{RAND_SEC}'
-    exp_name_sub += f'_splitcon_{SPLIT_CONNS}'
-    if UNI_LOCS:
-        exp_name_sub += '_loc_uni'
-    else:
-        exp_name_sub += f'_loc_{N_LOCS}'        
-    if len(CONN_MOD) > 0:
-        mods = []
-        for c in CONN_MOD:
-            mods.append(f"{c['label']}_{c['sec']}")
-        exp_name_sub += '_seclst_' + '_'.join(mods)
-    exp_name_sub += f'_diag_{DIAG}'
-    exp_name_sub += f'_unisyn_{UNI_SYNS}'
-
-    return exp_name_sub
-
 
 def post_run(sim):
     """Called in the end of a job (after runnig and saving). """
@@ -220,7 +189,14 @@ def post_run(sim):
     # Metric calculation time interval in seconds
     t_limits = (cfg.t0_calc / 1000, cfg.duration / 1000)
 
-    exp_name_sub = gen_exp_name_sub(sim)
+    exp_name_sub = f'exp_{EXP_LABEL}'
+    if not SURR_INP_ON:
+        exp_name_sub += '_nosurr'
+    exp_name_sub += f'_rx_{RXE / 1000}_{RXI / 1000}_wx_{WXE}_{WXI}'
+    exp_name_sub += f'_t_{t_limits[0]}_{t_limits[1]}'
+    exp_name_sub += f'_wmult_{cfg.wmult}_ee_{cfg.EEGain}'
+    exp_name_sub += f'_splitcon_{SPLIT_CONNS}'
+    exp_name_sub += f'_lensec_{SEC_DISTR_BY_LEN}'
 
     # Create a subfolder to put the results
     dirpath_res = Path(cfg.saveFolder)
@@ -240,13 +216,15 @@ def post_run(sim):
         fpath.rename(dirpath_res_sub / 'traces' / fpath.name)
     
     # Save rates, CVs, voltage stats, and timings to a json file
-    res = proc.calc_rates_and_cvs(sim, t_limits, nspikes_min=3)
-    res |= proc.calc_v_stats(sim, t_limits, med_win=0.05)
+    res = {}
     res['timing'] = sim.timingData
+    res |= proc.calc_rates_and_cvs(sim, t_limits, nspikes_min=3)
+    if REC_TRACES:
+        res |= proc.calc_v_stats(sim, t_limits, med_win=0.05)
     fpath_res = dirpath_res_sub / f'{exp_name}_result.json'
     with open(fpath_res, 'w') as fid:
         json.dump(res, fid, indent=4)
-    
+
 
 def final(sim):
     if not DIAG:
@@ -260,9 +238,8 @@ def final(sim):
     #diag.conn_distance_percentiles(sim)
 
     # Count post-synaptic sections
-    #pops_pre = ['IT2', 'SOM2']
-    pops_pre = ['IT2']
-    pops_post = ['IT2']
+    pops_pre = ['ITP4frz']
+    pops_post = ['ITP4']
     sec_groups = {
         'soma': ['soma'],
         #'Adend': ['Adend1', 'Adend2', 'Adend3'],
@@ -273,44 +250,6 @@ def final(sim):
     }
     sec_counts = diag.count_conn_target_secs(
         sim, sec_groups, pops_pre, pops_post)
-
-    # Output folder
-    exp_name_sub = gen_exp_name_sub(sim)
-    dirpath_res = Path(sim.cfg.saveFolder)
-    dirpath_res_sub = dirpath_res / exp_name_sub
-
-    # Timings
-    timings = {'duration': sim.cfg.duration}
-    t_keys_used = ['runTime', 'totalTime']
-    timings |= {k: sim.timingData[k] for k in t_keys_used}
-
-    if ADD_SUBCON: subcon = SUBCON_USED or 'ALL'
-    else: subcon = 'NONE'
-
     if sim.rank == 0:
-        # Save diagnostic info
-        res = {
-            'subConn': subcon,
-            'connRandomSecFromList': RAND_SEC,
-            'locs': 'uni' if UNI_LOCS else N_LOCS,
-            'conn_targets': {
-                'pops_pre': pops_pre,
-                'pops_post': pops_post,
-                'sec_groups': sec_groups,
-                'sec_counts': sec_counts
-            },
-            'timings': timings
-        }
-        fpath_res = dirpath_res_sub / f'diag.json'
-        with open(fpath_res, 'w') as fid:
-            json.dump(res, fid, indent=4)
-        
-        # Print diagnostic info
         print('Conn targets by sec group:', sec_counts)
-
-        diag.print_cell_nseg(sim, 'IT2')
-    
-    # Print conn locations
-    #diag.print_conn_locs_by_sec(
-    #    sim, sec_groups, pops_pre, pops_post)
-    
+        #diag.print_cell_nseg(sim, 'IT2')

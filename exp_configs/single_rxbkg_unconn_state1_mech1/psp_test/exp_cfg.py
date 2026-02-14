@@ -15,15 +15,18 @@ from analysis.ou_tuning import netpyne_res_parse_utils as parse_utils
 from analysis.ou_tuning import sim_res_proc_utils as proc
 
 
-EXP_NAME = 'it2'
-POPS_USED = ['IT2']
+EXP_NAME = 'pyr6'
+POPS_USED = ['IT6', 'CT6']
 
 RXE, RXI = 1, 1
-WXE, WXI = 1.25, 5
+WXE, WXI = 0.65, 2.5
 
-NOISE = 1
+SEC_XE = 'Bdend'
+SEC_XI = 'soma'
+
+NOISE = 0
 T0_XE = 0
-T0_XI = 0
+T0_XI = 500
 
 USE_IBKG = 1
 V_REST = -70
@@ -54,10 +57,10 @@ def apply_exp_cfg(cfg):
     cfg.bkg_spike_inputs = {}
     for n, pop in enumerate(POPS_USED):
         cfg.bkg_spike_inputs[pop] = {
-            'exc': {'r': RXE, 'w': WXE, 'sec': 'apic',
+            'exc': {'r': RXE, 'w': WXE, 'sec': SEC_XE,
                     'noise': NOISE, 'start': T0_XE,
                     'seed': cfg.seeds['stim'] + 10000 + n},
-            'inh': {'r': RXI, 'w': WXI, 'sec': 'soma',
+            'inh': {'r': RXI, 'w': WXI, 'sec': SEC_XI,
                     'noise': NOISE, 'start': T0_XI,
                     'seed': cfg.seeds['stim'] + 20000 + n},
         }
@@ -129,6 +132,7 @@ def post_run(sim):
     exp_name_sub += f'_rx_{RXE}_{RXI}_wx_{WXE}_{WXI}'
     exp_name_sub += f'_noise_{NOISE}_tx0_{T0_XE}_{T0_XI}'
     exp_name_sub += f'_t_{t_limits[0]}_{t_limits[1]}'
+    exp_name_sub += f'_esec_{SEC_XE}_isec_{SEC_XI}'
     if USE_IBKG:
         exp_name_sub += f'_vrest_{V_REST}'
     if ONE_CELL:

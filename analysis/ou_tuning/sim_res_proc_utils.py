@@ -67,7 +67,8 @@ def calc_trace_stats(
 def calc_v_stats(
         sim,   # NetPyNE sim object obtained after a simulation
         t_limits: tuple[float, float] | None = None,   # time window used for calculation
-        med_win: float = 0.1   # time window of the median filter
+        med_win: float = 0.1,   # time window of the median filter,
+        thresh: float = -40   # upper limit of voltages used for std calculation
         ) -> dict:
     if t_limits is None:
         t_limits = (0, sim.cfg.duration / 1000)
@@ -76,8 +77,11 @@ def calc_v_stats(
     # Extract voltage traces
     V = utils.get_voltages_xr(sim_result, t_limits, ms=False)
     # Calculate voltage stats
-    res = {'v_med_min': {}, 'v_med_max': {}, 'v_med_avg': {},
-           't_limits_v': t_limits, 'med_win': med_win}
+    res = {
+        'v_med_min': {}, 'v_med_max': {}, 'v_med_avg': {},
+        'v_avg': {}, 'v_std': {}, 'v_thresh_avg': {}, 'v_thresh_std': {},
+        't_limits_v': t_limits, 'med_win': med_win, 'thresh': thresh
+    }
     dt = utils.get_timestep(sim_result)
     for pop, Vmat in V.items():
         if Vmat is None:
@@ -86,6 +90,11 @@ def calc_v_stats(
         res['v_med_min'][pop] = Vmed.ravel().min()
         res['v_med_max'][pop] = Vmed.ravel().max()
         res['v_med_avg'][pop] = Vmed.ravel().mean()
+        Vmat_ = Vmat.values.ravel()
+        res['v_avg'][pop] = Vmat_.mean()
+        res['v_std'][pop] = Vmat_.std()
+        res['v_thresh_avg'][pop] = Vmat_[Vmat_ < thresh].mean()
+        res['v_thresh_std'][pop] = Vmat_[Vmat_ < thresh].std()
     return res
 
 def calc_rate_dynamics(

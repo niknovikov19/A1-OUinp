@@ -1,6 +1,7 @@
 from collections import Counter, defaultdict
 
 from neuron import h
+from netpyne.cell import PointCell
 import numpy as np
 
 
@@ -30,12 +31,18 @@ def count_conns(sim):
 def count_synmechs(sim):
     local = 0
     for c in sim.net.cells:
-        # only for compartmental cells
+        # Skip point cells - they don't have synMechs in sections
+        if isinstance(c, PointCell):
+            continue
         if hasattr(c, "secs"):
-            for secName, sec in c.secs.items():
-                # NetPyNE keeps synMechs list per sec
-                if "synMechs" in sec:
-                    local += len(sec["synMechs"])
+            try:
+                for secName, sec in c.secs.items():
+                    # NetPyNE keeps synMechs list per sec
+                    if "synMechs" in sec:
+                        local += len(sec["synMechs"])
+            except Exception as e:
+                print(f'>>>>>> secs: {c.secs}')
+                raise e
     total = sim.pc.allreduce(local, 1)
     if sim.rank == 0:
         print("Total synMech instances:", total)
