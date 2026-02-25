@@ -16,20 +16,24 @@ from analysis.model_utils.split_conn import split_conn_by_sections
 import diagnostics as diag
 
 
-EXP_LABEL = 'itp4'
-POPS_USED = ['ITP4']
+EXP_LABEL = 'it5a'
+POPS_USED = ['IT5A']
 
 #EXP_LABEL = 'pyr'
 #POPS_USED = ['IT2', 'IT3', 'ITS4', 'ITP4', 'IT5A', 'CT5A',
 #             'IT5B', 'CT5B', 'PT5B', 'IT6', 'CT6']
 
 # Background spiking input
-RXE, RXI = 1500, 300
+RXE, RXI = 1000, 200
 WXE, WXI = 0.65, 2.5
 
 k = 10
 RXE, RXI = RXE * k, RXI * k
 WXE, WXI = WXE / k, WXI / k
+
+# Target sections of bkg inputs
+XE_SEC = 'Aend1'
+XI_SEC = 'soma'
 
 # Constant input to set Vrest
 USE_IBKG = 1
@@ -47,7 +51,7 @@ SPLIT_CONNS = 0
 # Length-weighted random selection from sec lists
 SEC_DISTR_BY_LEN = 1
 
-DIAG = 1
+DIAG = 0
 
 
 def apply_exp_cfg(cfg):
@@ -98,9 +102,9 @@ def apply_exp_cfg(cfg):
     cfg.bkg_spike_inputs = {}
     for n, pop in enumerate(POPS_USED):
         cfg.bkg_spike_inputs[pop] = {
-            'exc': {'r': RXE, 'w': WXE, 'sec': 'apic', 'noise': 1,
+            'exc': {'r': RXE, 'w': WXE, 'sec': XE_SEC, 'noise': 1,
                     'seed': cfg.seeds['stim'] + 10000 + n},
-            'inh': {'r': RXI, 'w': WXI, 'sec': 'soma', 'noise': 1,
+            'inh': {'r': RXI, 'w': WXI, 'sec': XI_SEC, 'noise': 1,
                     'seed': cfg.seeds['stim'] + 20000 + n},
         }
     
@@ -110,7 +114,8 @@ def apply_exp_cfg(cfg):
         fname_ibkg = f'ibkg_mech1_vrest_{V_REST}.json'
         with open(dirpath_self / fname_ibkg, 'r') as fid:
             ibkg = json.load(fid)
-        cfg.IClamp = {pop: {'amp': ibkg[pop]} for pop in POPS_USED}
+        cfg.IClamp = {pop: {'amp': ibkg[pop]}
+                      for pop in POPS_USED if pop in ibkg}
 
     # Cell mechanisms to modify
     with open(dirpath_self / 'mech_changes_1.json', 'r') as fid:
@@ -197,6 +202,7 @@ def post_run(sim):
     exp_name_sub += f'_wmult_{cfg.wmult}_ee_{cfg.EEGain}'
     exp_name_sub += f'_splitcon_{SPLIT_CONNS}'
     exp_name_sub += f'_lensec_{SEC_DISTR_BY_LEN}'
+    exp_name_sub += f'_xsec_{XE_SEC}_{XI_SEC}'
 
     # Create a subfolder to put the results
     dirpath_res = Path(cfg.saveFolder)

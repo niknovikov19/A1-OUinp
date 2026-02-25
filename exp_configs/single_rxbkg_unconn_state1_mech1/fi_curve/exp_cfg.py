@@ -18,17 +18,19 @@ import analysis.ou_tuning.data_proc_utils as proc_utils
 
 #EXP_NAME = 'it2'
 #POPS_USED = ['IT2'] 
-
-EXP_NAME = 'pyr'
-POPS_USED = ['IT2', 'IT3', 'ITS4', 'ITP4', 'IT5A', 'CT5A',
-             'IT5B', 'CT5B', 'PT5B', 'IT6', 'CT6']
+#EXP_NAME = 'pyr'
+#POPS_USED = ['IT2', 'IT3', 'ITS4', 'ITP4', 'IT5A', 'CT5A',
+#             'IT5B', 'CT5B', 'PT5B', 'IT6', 'CT6']
+EXP_NAME = 'tc'
+POPS_USED = ['TC', 'HTC', 'TCM'] 
 
 RX = 1
 WX = 0.001
 
 # Static IClamp that sets the resting voltage
-use_ibkg = 1
+use_ibkg = 0
 v_rest = -70
+
 
 def apply_exp_cfg(cfg):
     """Applied after default cfg creation and before netParams creation. """
@@ -59,7 +61,7 @@ def apply_exp_cfg(cfg):
     cfg.ou_common = 1    # all pops receive the same OU input
     cfg.ou_noise_duration = cfg.duration
     cfg.ou_tau = 2
-    cfg.OUamp = [-0.02, 0.1]
+    cfg.OUamp = [-0.03, 0.01]
     cfg.OUstd = 0
 
     # NetStim inputs

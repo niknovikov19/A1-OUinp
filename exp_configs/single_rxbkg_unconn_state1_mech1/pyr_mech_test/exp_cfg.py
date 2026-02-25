@@ -15,39 +15,22 @@ from analysis.ou_tuning import sim_res_proc_utils as proc
 from analysis.model_utils.split_conn import split_conn_by_sections
 import diagnostics as diag
 
-from batch_params import (
-    N_RXE, N_RXI, RXE_MAX, RXI_MAX, RXE_MIN, RXI_MIN
-)
 
+EXP_LABEL = 'it2'
+POPS_USED = ['IT2']
 
-#EXP_LABEL = 'pyr'
-#POPS_USED = ['IT2', 'IT3', 'ITS4', 'ITP4', 'IT5A', 'CT5A',
-#             'IT5B', 'CT5B', 'PT5B', 'IT6', 'CT6']
-#EXP_LABEL = 'pv'
-#POPS_USED = ['PV2', 'PV3', 'PV4', 'PV5A', 'PV5B', 'PV6']
-#EXP_LABEL = 'it5a'
-#POPS_USED = ['IT5A']
-#EXP_LABEL = 'som'
-#POPS_USED = ['SOM2', 'SOM3', 'SOM4', 'SOM5A', 'SOM5B', 'SOM6']
-EXP_LABEL = 'tc'
-POPS_USED = ['TC']
-
-# Weights of background exc/inh inputs
-WXE, WXI = 0.65, 2.5
-#WXE, WXI = 0.05, 0.25
-#WXE, WXI = 0.1, 0.55   # PSP=0.2 mV in PV
-#WXE, WXI = 0.25, 2   # PSP=0.5 mV in PV
-#WXE, WXI = 0.25, 0.55   # PSP=0.5 mV in SOM
-#WXE, WXI = 0.05, 0.25
+# Background spiking input
+RXE, RXI = 15000, 1500
+WXE, WXI = 0.05, 0.25
 
 # Target sections of bkg inputs
-#XE_SEC = 'Adend1'
-#XE_SEC = 'apic'
-XE_SEC = 'soma'
+XE_SEC = 'Adend1'
+#XE_SEC = 'soma'
 XI_SEC = 'soma'
+#XI_SEC = 'Adend1'
 
 # Constant input to set Vrest
-USE_IBKG = 0
+USE_IBKG = 1
 V_REST = -70
 
 # Surrogate inputs
@@ -65,7 +48,7 @@ DIAG = 0
 MECH_FROM_JSON = 0
 
 # Mechanism changes (for MECH_FROM_JSON=0)
-GKDR_MULT = 1
+GKDR_MULT = 1.5
 GKAP_MULT = 1
 GLEAK_MULT = 1
 GCAT_MULT = 1
@@ -75,29 +58,29 @@ GKBK_MULT = 1
 GIH_MULT = 1
 GNAX_MULT = 1
 
+# Use one cell per population
+ONE_CELL = 1
+
 
 def gen_exp_name_sub(cfg):
     t_limits = (cfg.t0_calc / 1000, cfg.duration / 1000)
     exp_name_sub = f'exp_{EXP_LABEL}'
-    if not SURR_INP_ON:
-        exp_name_sub += '_nosurr'
-    exp_name_sub += f'_wx_{WXE}_{WXI}'
-    exp_name_sub += f'_sz_{N_RXE}_{N_RXI}'
-    exp_name_sub += f'_rxmax_{RXE_MAX / 1000}_{RXI_MAX / 1000}'
-    exp_name_sub += f'_rxmin_{RXE_MIN}_{RXI_MIN}'
+    exp_name_sub += f'_rx_{RXE}_{RXI}_wx_{WXE}_{WXI}'
     exp_name_sub += f'_t_{t_limits[0]}_{t_limits[1]}'
-    exp_name_sub += f'_wmult_{cfg.wmult}_ee_{cfg.EEGain}'
-    exp_name_sub += f'_lensec_{SEC_DISTR_BY_LEN}'
     exp_name_sub += f'_xsec_{XE_SEC}_{XI_SEC}'
     if not MECH_FROM_JSON:
-        exp_name_sub += f'_gkdr_{GKDR_MULT}'
-        mechs = {'gkap': GKAP_MULT, 'gl': GLEAK_MULT, 
-                 'gcat': GCAT_MULT, 'gcal': GCAL_MULT,
-                 'gcan': GCAN_MULT, 'gkbk': GKBK_MULT,
-                 'gih': GIH_MULT, 'gnax': GNAX_MULT}
+        mechs = {'gkdr': GKDR_MULT, 'gkap': GKAP_MULT, 'gl': GLEAK_MULT, 
+                 'gih': GIH_MULT, 'gnax': GNAX_MULT, 'gkbk': GKBK_MULT}
+        if (GCAT_MULT == 0) and (GCAL_MULT == 0) and (GCAN_MULT == 0):
+            mechs |= {'gca': 0}
+        else:
+            mechs |= {'gcat': GCAT_MULT, 'gcal': GCAL_MULT,
+                      'gcan': GCAN_MULT}                 
         for name, mult in mechs.items():
             if mult != 1:
                 exp_name_sub += f'_{name}_{mult}'
+    if ONE_CELL:
+        exp_name_sub += '_1cell'
     return exp_name_sub
 
 
@@ -124,7 +107,7 @@ def get_mech_changes():
                     'pop': f'{pop}_reduced', 'sec': 'all',
                     'mech': ch[0], 'par': ch[1], 'mult': ch[2]
                 }
-    return mech_changes    
+    return mech_changes
 
 
 def apply_exp_cfg(cfg):
@@ -133,10 +116,14 @@ def apply_exp_cfg(cfg):
     cfg.duration = 5 * 1e3
 
     # Left point (ms) of the calculation time window (r, cv, ...)
-    cfg.t0_calc = 3000
+    cfg.t0_calc = 1000
 
     # Populations to use
     pops_active = POPS_USED
+
+    # Use one cell per population
+    if ONE_CELL:
+        cfg.singleCellPops = 1
 
     # Subnet parameters
     cfg.subnet_build_flag = SURR_INP_ON
@@ -171,14 +158,13 @@ def apply_exp_cfg(cfg):
 
     # Background spiking input
     cfg.add_bkg_spike_input = 1
-    cfg.replace_bkg_spikes_by_ou = 0   # 1 = use NetStim's
+    cfg.replace_bkg_spikes_by_ou = 0   # use NetStim's
     cfg.bkg_spike_inputs = {}
     for n, pop in enumerate(POPS_USED):
-        # Values of r will be set in batch
         cfg.bkg_spike_inputs[pop] = {
-            'exc': {'r': 0, 'w': WXE, 'sec': XE_SEC, 'noise': 1,
+            'exc': {'r': RXE, 'w': WXE, 'sec': XE_SEC, 'noise': 1,
                     'seed': cfg.seeds['stim'] + 10000 + n},
-            'inh': {'r': 0, 'w': WXI, 'sec': XI_SEC, 'noise': 1,
+            'inh': {'r': RXI, 'w': WXI, 'sec': XI_SEC, 'noise': 1,
                     'seed': cfg.seeds['stim'] + 20000 + n},
         }
     
@@ -190,7 +176,7 @@ def apply_exp_cfg(cfg):
             ibkg = json.load(fid)
         cfg.IClamp = {pop: {'amp': ibkg[pop]}
                       for pop in POPS_USED if pop in ibkg}
-    
+
     # Determine cell mechs to modify
     cfg.mech_changes = get_mech_changes()
 
@@ -201,21 +187,30 @@ def apply_exp_cfg(cfg):
     if 'plotTraces' in cfg.analysis:
         cfg.analysis['plotTraces']['include'] = POPS_USED
     
-    cfg.analysis['plotRaster'] = False
+    #cfg.analysis['plotRaster'] = False
     cfg.analysis['plotSpikeStats'] = False
 
     # Record voltage traces
     if REC_TRACES:
-        ncells_rec = 5
-        ncells_plot = 1
+        if ONE_CELL:
+            ncells_rec = 1
+            ncells_plot = 1
+        else:
+            ncells_rec = 5
+            ncells_plot = 3
         cfg.recordCells = [(pop, list(range(ncells_rec))) for pop in POPS_USED]
-        cfg.recordTraces = {'V_soma': {'sec': 'soma', 'loc': 0.5, 'var': 'v'}}
+        cfg.recordTraces = {
+            'V_soma': {'sec': 'soma', 'loc': 0.5, 'var': 'v'},
+            'V_Adend1': {'sec': 'Adend1', 'loc': 0.5, 'var': 'v'},
+            'ik_soma': {'sec': 'soma', 'loc': 0.5, 'var': 'ik'},
+            'ik_Adend1': {'sec': 'Adend1', 'loc': 0.5, 'var': 'ik'},
+        }
         cfg.recordStep =  0.1
         if PLOT_TRACES:
             cfg.analysis['plotTraces'] = {
                 'include': [(pop, list(range(ncells_plot))) for pop in cfg.allpops],
-                'timeRange': [1000, cfg.duration],
-                'oneFigPer': 'cell', 'overlay': True,
+                'timeRange': [1500, cfg.duration],
+                'oneFigPer': 'cell', 'overlay': False,
                 'saveFig': True, 'showFig': False, 'figSize': (18, 12)
             }
 
@@ -252,11 +247,6 @@ def modify_net_params(cfg, params):
         if conn['sec'] is None:
             raise ValueError(f'No target sec info found for conn {cname}')
     
-    # Create experiment subfolder
-    exp_name_sub = gen_exp_name_sub(cfg)
-    dirpath_res_sub = Path(cfg.saveFolder) / exp_name_sub
-    os.makedirs(dirpath_res_sub, exist_ok=True)
-
 
 def post_run(sim):
     """Called in the end of a job (after runnig and saving). """
@@ -270,48 +260,31 @@ def post_run(sim):
     # Experiment sub-name
     exp_name_sub = gen_exp_name_sub(cfg)
 
-    # Generate filename postfix with batch param values
-    inp = cfg.bkg_spike_inputs[POPS_USED[0]]
-    rxe, rxi = inp['exc']['r'], inp['inh']['r']
-    exp_id = exp_name.split('_')[-1]
-    postfix = (f'{exp_id}_rxe_{int(rxe)}_rxi_{int(rxi)}')
-
-    # Create subfolders to put the results
+    # Create a subfolder to put the results
     dirpath_res = Path(cfg.saveFolder)
     dirpath_res_sub = dirpath_res / exp_name_sub
     os.makedirs(dirpath_res_sub, exist_ok=True)
-    dirnames_sub = ['rasters', 'results', 'cfg', 'pkl', 'netpar', 'traces']
-    for dirname in dirnames_sub:
-        os.makedirs(dirpath_res_sub / dirname, exist_ok=True)
 
-    # Move results to a subfolder
-    data_info = [
-        ('raster', 'png', 'rasters'),
-        ('data', 'pkl', 'pkl'),
-        ('cfg', 'json', 'cfg'),
-        ('netParams', 'json', 'netpar')
-    ]
-    for di in data_info:
-        data_name, ext, dirname_sub = di
-        fpath_old = dirpath_res / f'{exp_name}_{data_name}.{ext}'
-        fpath_new = dirpath_res_sub / dirname_sub / f'{data_name}_{postfix}.{ext}'
-        if fpath_old.exists():
-            fpath_old.rename(fpath_new)
-        else:
-            print('RESULT NOT FOUND: ', fpath_old)
+    # Move results to the subfolder
+    res_names = ['cfg.json', 'netParams.json', 'raster.png', 'data.pkl']
+    for res_name in res_names:
+        fname = f'{exp_name}_{res_name}'
+        if (dirpath_res / fname).exists():
+            (dirpath_res / fname).rename(dirpath_res_sub / fname)
+        
+    # Move traces to the subfodler
+    #os.makedirs(dirpath_res_sub / 'traces', exist_ok=True)
+    for fpath in dirpath_res.glob(f'{exp_name}_*traces*.png'):
+        #fpath.rename(dirpath_res_sub / 'traces' / fpath.name)
+        fpath.rename(dirpath_res_sub / fpath.name)
     
-    # Move traces to a subfolder
-    trace_files = list(dirpath_res.glob(f'{exp_name}*_traces*.png'))
-    for n, fpath_old in enumerate(trace_files):
-        fpath_new = dirpath_res_sub / 'traces' / f'trace_{postfix}_{n}.png'
-        fpath_old.rename(fpath_new)
-    
-    # Save rates, CVs, and voltage stats to a json file
+    # Save rates, CVs, voltage stats, and timings to a json file
     res = {}
     res['timing'] = sim.timingData
     res |= proc.calc_rates_and_cvs(sim, t_limits, nspikes_min=3)
-    res |= proc.calc_v_stats(sim, t_limits, med_win=0.05)
-    fpath_res = dirpath_res_sub / 'results' / f'result_{postfix}.json'
+    if REC_TRACES:
+        res |= proc.calc_v_stats(sim, t_limits, med_win=0.05)
+    fpath_res = dirpath_res_sub / f'{exp_name}_result.json'
     with open(fpath_res, 'w') as fid:
         json.dump(res, fid, indent=4)
 
@@ -328,16 +301,15 @@ def final(sim):
     #diag.conn_distance_percentiles(sim)
 
     # Count post-synaptic sections
-    pops_pre = ['PV2frz']
-    pops_post = ['PV2']
+    pops_pre = ['ITP4frz']
+    pops_post = ['ITP4']
     sec_groups = {
         'soma': ['soma'],
-        'dend': ['dend'],
         #'Adend': ['Adend1', 'Adend2', 'Adend3'],
-        #'Bdend': ['Bdend'],
-        #'Adend1': ['Adend1'],
-        #'Adend2': ['Adend2'],
-        #'Adend3': ['Adend3']
+        'Bdend': ['Bdend'],
+        'Adend1': ['Adend1'],
+        'Adend2': ['Adend2'],
+        'Adend3': ['Adend3']
     }
     sec_counts = diag.count_conn_target_secs(
         sim, sec_groups, pops_pre, pops_post)

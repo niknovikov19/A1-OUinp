@@ -80,6 +80,7 @@ def calc_v_stats(
     res = {
         'v_med_min': {}, 'v_med_max': {}, 'v_med_avg': {},
         'v_avg': {}, 'v_std': {}, 'v_thresh_avg': {}, 'v_thresh_std': {},
+        'v_min': {}, 'v_max': {},
         't_limits_v': t_limits, 'med_win': med_win, 'thresh': thresh
     }
     dt = utils.get_timestep(sim_result)
@@ -95,6 +96,8 @@ def calc_v_stats(
         res['v_std'][pop] = Vmat_.std()
         res['v_thresh_avg'][pop] = Vmat_[Vmat_ < thresh].mean()
         res['v_thresh_std'][pop] = Vmat_[Vmat_ < thresh].std()
+        res['v_min'][pop] = Vmat_.min()
+        res['v_max'][pop] = Vmat_.max()
     return res
 
 def calc_rate_dynamics(

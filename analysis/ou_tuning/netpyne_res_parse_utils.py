@@ -143,6 +143,32 @@ def get_net_spikes(sim_result, pop_names=None, combine_cells=True,
 
     return V_data, tvec '''
 
+def get_pop_voltages(sim_result, pop, t_limits=None):
+
+    # Full time vector + mask
+    tvec = np.array(sim_result['simData']['t'])
+    if t_limits is not None:
+        mask = (tvec >= t_limits[0]) & (tvec <= t_limits[1])
+        tvec = tvec[mask]
+    else:
+        mask = np.ones_like(tvec, bool)
+
+    # Cell gids for a given pop.
+    gids = sorted( get_pop_cell_gids(sim_result, pop))
+
+    # Map gid -> V_vec[mask]
+    V_map = {}
+    for cell_name, V_vec in sim_result['simData']['V_soma'].items():
+        gid = int(cell_name.split('_')[-1])
+        if gid in gids:
+            V_map[gid] = np.array(V_vec)[mask]
+
+    # Stack into array shape (pop_sz, nsamples)
+    vv = [V_map[gid] for gid in gids if gid in V_map]
+    V = np.stack(vv, axis=0)
+    
+    return V, tvec
+
 def get_voltages(sim_result, t_limits=None):
     pop_names = get_pop_names(sim_result)
 

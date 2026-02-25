@@ -1050,7 +1050,7 @@ def create_net_params(cfg):
             netParams.stimSourceParams[f'NoiseOU_source_{pop}'] = deepcopy(src_par)
             netParams.stimTargetParams[f'NoiseOU_target_{pop}'] = {
                 'source': f'NoiseOU_source_{pop}',
-                'sec':'soma',
+                'sec': getattr(cfg, 'ou_sec', 'soma'),
                 'loc': 0.5,
                 'conds': {'pop': pop}
             }

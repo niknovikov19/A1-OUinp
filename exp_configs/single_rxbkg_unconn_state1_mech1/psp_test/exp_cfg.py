@@ -15,13 +15,17 @@ from analysis.ou_tuning import netpyne_res_parse_utils as parse_utils
 from analysis.ou_tuning import sim_res_proc_utils as proc
 
 
-EXP_NAME = 'pyr6'
-POPS_USED = ['IT6', 'CT6']
+EXP_NAME = 'tc'
+POPS_USED = ['TC', 'TCM', 'HTC']
 
 RXE, RXI = 1, 1
-WXE, WXI = 0.65, 2.5
+#WXE, WXI = 0.65, 2.5
+#WXE, WXI = 0.1, 0.55   # PSP=0.2 mV in PV
+#WXE, WXI = 0.25, 2   # PSP=0.5 mV in PV
+#WXE, WXI = 0.25, 0.55   # PSP=0.5 mV in SOM
+WXE, WXI = 0, 0
 
-SEC_XE = 'Bdend'
+SEC_XE = 'soma'
 SEC_XI = 'soma'
 
 NOISE = 0
@@ -29,7 +33,7 @@ T0_XE = 0
 T0_XI = 500
 
 USE_IBKG = 1
-V_REST = -70
+IBKG_LABEL = '-70_pyr_tc'
 
 ONE_CELL = 1
 
@@ -40,7 +44,8 @@ def apply_exp_cfg(cfg):
     cfg.duration = 3 * 1e3
 
     # Left point (ms) of the calculation time window (r, cv, ...)
-    cfg.t0_calc = cfg.duration - 1000
+    #cfg.t0_calc = cfg.duration - 1000
+    cfg.t0_calc = 1000
 
     # Populations to use
     cfg.pops_active = POPS_USED
@@ -53,7 +58,7 @@ def apply_exp_cfg(cfg):
     cfg.addConn = 0
 
     # Background spiking input
-    cfg.add_bkg_spike_input = 1
+    cfg.add_bkg_spike_input = 0
     cfg.bkg_spike_inputs = {}
     for n, pop in enumerate(POPS_USED):
         cfg.bkg_spike_inputs[pop] = {
@@ -68,10 +73,11 @@ def apply_exp_cfg(cfg):
     # Static IClamp that sets the resting voltage
     if USE_IBKG:
         cfg.addIClamp = 1
-        fname_ibkg = f'ibkg_mech1_vrest_{V_REST}.json'
+        fname_ibkg = f'ibkg_mech1_vrest_{IBKG_LABEL}.json'
         with open(dirpath_self / fname_ibkg, 'r') as fid:
             ibkg = json.load(fid)
-        cfg.IClamp = {pop: {'amp': ibkg[pop]} for pop in cfg.pops_active}
+        cfg.IClamp = {pop: {'amp': ibkg[pop]}
+                      for pop in cfg.pops_active if pop in ibkg}
 
     # Cell mechanisms to modify
     with open(dirpath_self / 'mech_changes_1.json', 'r') as fid:
@@ -84,7 +90,7 @@ def apply_exp_cfg(cfg):
     if 'plotTraces' in cfg.analysis:
         cfg.analysis['plotTraces']['include'] = POPS_USED
     
-    cfg.analysis['plotRaster'] = False
+    cfg.analysis['plotRaster'] = True
     cfg.analysis['plotSpikeStats'] = False
 
     # Record voltage traces
@@ -134,7 +140,7 @@ def post_run(sim):
     exp_name_sub += f'_t_{t_limits[0]}_{t_limits[1]}'
     exp_name_sub += f'_esec_{SEC_XE}_isec_{SEC_XI}'
     if USE_IBKG:
-        exp_name_sub += f'_vrest_{V_REST}'
+        exp_name_sub += f'_ibkg_{IBKG_LABEL}'
     if ONE_CELL:
         exp_name_sub += f'_1cell'
     exp_name_sub += f'_trec_{cfg.recordStep}'
@@ -145,7 +151,7 @@ def post_run(sim):
     os.makedirs(dirpath_res_sub, exist_ok=True)
 
     # Move results to the subfolder
-    res_names = ['cfg.json', 'netParams.json']
+    res_names = ['cfg.json', 'netParams.json', 'raster.png']
     for res_name in res_names:
         fname = f'{exp_name}_{res_name}'
         if (dirpath_res / fname).exists():

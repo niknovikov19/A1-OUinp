@@ -1,19 +1,20 @@
 import numpy as np
 
 
-N_RXE = 5
-N_RXI = 5
+N_RXE = 20
+N_RXI = 1
 
-RXE_MAX = 100000
-RXI_MAX = 6000
+RXE_MAX = 10000
+RXI_MAX = 2000
 
-RX_MIN = 0.1
+RXE_MIN = 5000
+RXI_MIN = 2000
 
 def get_batch_params():
     """Generate params for batchtools to probe. """
     params = {
-        'rxe': np.linspace(RX_MIN, RXE_MAX, N_RXE).tolist(),
-        'rxi': np.linspace(RX_MIN, RXI_MAX, N_RXI).tolist()
+        'rxe': np.linspace(RXE_MIN, RXE_MAX, N_RXE).tolist(),
+        'rxi': np.linspace(RXI_MIN, RXI_MAX, N_RXI).tolist()
     }
     return params
 
