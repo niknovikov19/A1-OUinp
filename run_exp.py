@@ -283,6 +283,10 @@ if need_run:
     print("Rank/nhosts:", sim.rank, sim.nhosts, flush=True)
     print("Local cells:", len(sim.net.cells), flush=True)
 
+    # Experiment-specific modification of the network
+    if hasattr(cfg_mod, 'modify_network'):
+        cfg_mod.modify_network(sim) 
+
     # Run
     #if sim.rank == 0:
     print(f'Rank {sim.rank}: running...', flush=True)

@@ -1,0 +1,75 @@
+{
+    "regions": {
+        "NGF1": {
+            "rxe0": 10370,
+            "rxi0": 0,
+            "drxe": 12320,
+            "drxi": 820,
+            "rxi_rxe_slope": 0.148
+        },
+        "NGF2": {
+            "rxe0": 7060,
+            "rxi0": 0,
+            "drxe": 12250,
+            "drxi": 1330,
+            "rxi_rxe_slope": 0.151
+        },
+        "NGF3": {
+            "rxe0": 7120,
+            "rxi0": 0,
+            "drxe": 11830,
+            "drxi": 1360,
+            "rxi_rxe_slope": 0.156
+        },
+        "NGF4": {
+            "rxe0": 5540,
+            "rxi0": 0,
+            "drxe": 13080,
+            "drxi": 1560,
+            "rxi_rxe_slope": 0.149
+        },
+        "NGF5A": {
+            "rxe0": 9030,
+            "rxi0": 0,
+            "drxe": 11190,
+            "drxi": 1130,
+            "rxi_rxe_slope": 0.166
+        },
+        "NGF5B": {
+            "rxe0": 9160,
+            "rxi0": 0,
+            "drxe": 11780,
+            "drxi": 1070,
+            "rxi_rxe_slope": 0.159
+        },
+        "NGF6": {
+            "rxe0": 7160,
+            "rxi0": 0,
+            "drxe": 11690,
+            "drxi": 1360,
+            "rxi_rxe_slope": 0.157
+        }
+    },
+    "params": {
+        "exp_name": "batch_rxbkg_unconn_state1_mech1/pops_inpsur_newsec_var_rxe_rxi",
+        "exp_name_sub": "2d_psp_0.5_xsec_soma_soma/exp_ngf_wx_psp_0.5_sz_20_20_rxmax_15.0_3.0_rxmin_1_1_t_3.0_5.0_wmult_0.25_ee_0.5_lensec_0_xsec_soma_soma",
+        "exp_label": "ngf",
+        "pops": [
+            "NGF1",
+            "NGF2",
+            "NGF3",
+            "NGF4",
+            "NGF5A",
+            "NGF5B",
+            "NGF6"
+        ],
+        "r_levels": [
+            0.5,
+            10
+        ],
+        "r_margins": [
+            0.3,
+            0.1
+        ]
+    }
+}

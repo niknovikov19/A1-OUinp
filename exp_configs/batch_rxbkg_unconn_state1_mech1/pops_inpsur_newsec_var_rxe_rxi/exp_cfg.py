@@ -20,6 +20,8 @@ from batch_params import (
 )
 
 
+#EXP_LABEL = 'it2'
+#POPS_USED = ['IT2']
 #EXP_LABEL = 'pyr'
 #POPS_USED = ['IT2', 'IT3', 'ITS4', 'ITP4', 'IT5A', 'CT5A',
 #             'IT5B', 'CT5B', 'PT5B', 'IT6', 'CT6']
@@ -29,16 +31,31 @@ from batch_params import (
 #POPS_USED = ['IT5A']
 #EXP_LABEL = 'som'
 #POPS_USED = ['SOM2', 'SOM3', 'SOM4', 'SOM5A', 'SOM5B', 'SOM6']
-EXP_LABEL = 'tc'
-POPS_USED = ['TC']
+#EXP_LABEL = 'vip'
+#POPS_USED = ['VIP2', 'VIP3', 'VIP4', 'VIP5A', 'VIP5B', 'VIP6']
+#EXP_LABEL = 'tc'
+#POPS_USED = ['TC']
+#EXP_LABEL = 'ngf'
+#POPS_USED = ['NGF1', 'NGF2', 'NGF3', 'NGF4', 'NGF5A', 'NGF5B', 'NGF6']
+#EXP_LABEL = 'ct'
+#POPS_USED = ['CT5A', 'CT5B', 'CT6']
+EXP_LABEL = 'it6'
+POPS_USED = ['IT6']
+#EXP_LABEL = 'it4'
+#POPS_USED = ['ITP4', 'ITS4']
 
-# Weights of background exc/inh inputs
-WXE, WXI = 0.65, 2.5
-#WXE, WXI = 0.05, 0.25
+# Weights of background exc/inh inputs (custom)
+#WXE, WXI = 0.65, 2.5
+WXE, WXI = 0.05, 0.25
 #WXE, WXI = 0.1, 0.55   # PSP=0.2 mV in PV
 #WXE, WXI = 0.25, 2   # PSP=0.5 mV in PV
 #WXE, WXI = 0.25, 0.55   # PSP=0.5 mV in SOM
 #WXE, WXI = 0.05, 0.25
+
+# Weights of background exc/inh inputs (from json file)
+WX_FROM_JSON = 1
+WX_JSON_LABEL = 'psp_0.5'
+WX_JSON_NAME = 'wx_target_psp_0.5_soma_mech1_vrest_pyr_-70'
 
 # Target sections of bkg inputs
 #XE_SEC = 'Adend1'
@@ -47,22 +64,22 @@ XE_SEC = 'soma'
 XI_SEC = 'soma'
 
 # Constant input to set Vrest
-USE_IBKG = 0
+USE_IBKG = 1
 V_REST = -70
 
 # Surrogate inputs
-SURR_INP_ON = 0
+SURR_INP_ON = 1
 
 REC_TRACES = 1
-PLOT_TRACES = 1
+PLOT_TRACES = 0
 
 # Length-weighted random selection from sec lists
-SEC_DISTR_BY_LEN = 1
+SEC_DISTR_BY_LEN = 0
 
-DIAG = 0
+DIAG = 1
 
 # Load mech multipliers from json
-MECH_FROM_JSON = 0
+MECH_FROM_JSON = 1
 
 # Mechanism changes (for MECH_FROM_JSON=0)
 GKDR_MULT = 1
@@ -81,7 +98,10 @@ def gen_exp_name_sub(cfg):
     exp_name_sub = f'exp_{EXP_LABEL}'
     if not SURR_INP_ON:
         exp_name_sub += '_nosurr'
-    exp_name_sub += f'_wx_{WXE}_{WXI}'
+    if WX_FROM_JSON:
+        exp_name_sub += f'_wx_{WX_JSON_LABEL}'
+    else:
+        exp_name_sub += f'_wx_{WXE}_{WXI}'
     exp_name_sub += f'_sz_{N_RXE}_{N_RXI}'
     exp_name_sub += f'_rxmax_{RXE_MAX / 1000}_{RXI_MAX / 1000}'
     exp_name_sub += f'_rxmin_{RXE_MIN}_{RXI_MIN}'
@@ -169,16 +189,27 @@ def apply_exp_cfg(cfg):
         cfg.compactConnFormat = False   # Keep full dict format for conns
         cfg.includeParamsLabel=True
 
+    # Load bkg weights from json
+    if WX_FROM_JSON:
+        fname_json = dirpath_self / f'{WX_JSON_NAME}.json'
+        with open(fname_json, 'r') as fid:
+            wx_json = json.load(fid)
+    
     # Background spiking input
     cfg.add_bkg_spike_input = 1
     cfg.replace_bkg_spikes_by_ou = 0   # 1 = use NetStim's
     cfg.bkg_spike_inputs = {}
     for n, pop in enumerate(POPS_USED):
+        if WX_FROM_JSON:
+            wxe = wx_json['wx_target'][pop]['xe']
+            wxi = wx_json['wx_target'][pop]['xi']
+        else:
+            wxe, wxi = WXE, WXI
         # Values of r will be set in batch
         cfg.bkg_spike_inputs[pop] = {
-            'exc': {'r': 0, 'w': WXE, 'sec': XE_SEC, 'noise': 1,
+            'exc': {'r': 0, 'w': wxe, 'sec': XE_SEC, 'noise': 1,
                     'seed': cfg.seeds['stim'] + 10000 + n},
-            'inh': {'r': 0, 'w': WXI, 'sec': XI_SEC, 'noise': 1,
+            'inh': {'r': 0, 'w': wxi, 'sec': XI_SEC, 'noise': 1,
                     'seed': cfg.seeds['stim'] + 20000 + n},
         }
     
@@ -328,16 +359,20 @@ def final(sim):
     #diag.conn_distance_percentiles(sim)
 
     # Count post-synaptic sections
-    pops_pre = ['PV2frz']
-    pops_post = ['PV2']
+    pops_pre = ['IT2frz']
+    pops_post = ['IT2']
     sec_groups = {
         'soma': ['soma'],
-        'dend': ['dend'],
+        #'dend': ['dend'],
+        #'ori1': ['ori1'],
+        #'ori2': ['ori2'],
+        #'rad1': ['rad1'],
+        #'rad2': ['rad2']
         #'Adend': ['Adend1', 'Adend2', 'Adend3'],
-        #'Bdend': ['Bdend'],
-        #'Adend1': ['Adend1'],
-        #'Adend2': ['Adend2'],
-        #'Adend3': ['Adend3']
+        'Bdend': ['Bdend'],
+        'Adend1': ['Adend1'],
+        'Adend2': ['Adend2'],
+        'Adend3': ['Adend3']
     }
     sec_counts = diag.count_conn_target_secs(
         sim, sec_groups, pops_pre, pops_post)

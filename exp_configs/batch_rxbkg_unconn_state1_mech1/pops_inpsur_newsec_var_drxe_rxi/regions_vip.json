@@ -1,0 +1,67 @@
+{
+    "regions": {
+        "VIP2": {
+            "rxe0": 1180,
+            "rxi0": 0,
+            "drxe": 9780,
+            "drxi": 1510,
+            "rxi_rxe_slope": 0.158
+        },
+        "VIP3": {
+            "rxe0": 1180,
+            "rxi0": 0,
+            "drxe": 9190,
+            "drxi": 1520,
+            "rxi_rxe_slope": 0.16
+        },
+        "VIP4": {
+            "rxe0": 0,
+            "rxi0": 120,
+            "drxe": 9640,
+            "drxi": 1840,
+            "rxi_rxe_slope": 0.172
+        },
+        "VIP5A": {
+            "rxe0": 3610,
+            "rxi0": 0,
+            "drxe": 10000,
+            "drxi": 990,
+            "rxi_rxe_slope": 0.139
+        },
+        "VIP5B": {
+            "rxe0": 3640,
+            "rxi0": 0,
+            "drxe": 9350,
+            "drxi": 990,
+            "rxi_rxe_slope": 0.141
+        },
+        "VIP6": {
+            "rxe0": 0,
+            "rxi0": 1260,
+            "drxe": 10660,
+            "drxi": 2310,
+            "rxi_rxe_slope": 0.214
+        }
+    },
+    "params": {
+        "exp_name": "batch_rxbkg_unconn_state1_mech1/pops_inpsur_newsec_var_rxe_rxi",
+        "exp_name_sub": "2d_psp_0.5_xsec_soma_soma/exp_vip_wx_psp_0.5_sz_20_20_rxmax_10.0_5.0_rxmin_1_1_t_3.0_5.0_wmult_0.25_ee_0.5_lensec_0_xsec_soma_soma",
+        "exp_label": "vip",
+        "pops": [
+            "VIP2",
+            "VIP3",
+            "VIP4",
+            "VIP5A",
+            "VIP5B",
+            "VIP6"
+        ],
+        "r_levels": [
+            0.5,
+            60
+        ],
+        "r_margins": [
+            0.3,
+            0.1
+        ]
+    }
+}

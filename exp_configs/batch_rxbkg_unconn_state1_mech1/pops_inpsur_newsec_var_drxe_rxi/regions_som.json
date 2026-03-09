@@ -1,0 +1,67 @@
+{
+    "regions": {
+        "SOM2": {
+            "rxe0": 0,
+            "rxi0": 1030,
+            "drxe": 6250,
+            "drxi": 3140,
+            "rxi_rxe_slope": 0.3
+        },
+        "SOM3": {
+            "rxe0": 0,
+            "rxi0": 1040,
+            "drxe": 6100,
+            "drxi": 3140,
+            "rxi_rxe_slope": 0.3
+        },
+        "SOM4": {
+            "rxe0": 0,
+            "rxi0": 480,
+            "drxe": 5860,
+            "drxi": 3170,
+            "rxi_rxe_slope": 0.303
+        },
+        "SOM5A": {
+            "rxe0": 480,
+            "rxi0": 0,
+            "drxe": 5520,
+            "drxi": 3070,
+            "rxi_rxe_slope": 0.309
+        },
+        "SOM5B": {
+            "rxe0": 400,
+            "rxi0": 0,
+            "drxe": 5450,
+            "drxi": 3100,
+            "rxi_rxe_slope": 0.31
+        },
+        "SOM6": {
+            "rxe0": 1910,
+            "rxi0": 0,
+            "drxe": 5180,
+            "drxi": 2580,
+            "rxi_rxe_slope": 0.305
+        }
+    },
+    "params": {
+        "exp_name": "batch_rxbkg_unconn_state1_mech1/pops_inpsur_newsec_var_rxe_rxi",
+        "exp_name_sub": "2d_psp_0.5_xsec_soma_soma/exp_som_wx_psp_0.5_sz_20_20_rxmax_10.0_5.0_rxmin_1_1_t_3.0_5.0_wmult_0.25_ee_0.5_lensec_0_xsec_soma_soma",
+        "exp_label": "som",
+        "pops": [
+            "SOM2",
+            "SOM3",
+            "SOM4",
+            "SOM5A",
+            "SOM5B",
+            "SOM6"
+        ],
+        "r_levels": [
+            0.5,
+            60
+        ],
+        "r_margins": [
+            0.3,
+            0.1
+        ]
+    }
+}

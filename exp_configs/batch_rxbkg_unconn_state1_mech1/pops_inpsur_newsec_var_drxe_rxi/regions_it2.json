@@ -1,0 +1,24 @@
+{
+    "regions": {
+        "IT2": {
+            "rxe0": 9480,
+            "rxi0": 0,
+            "drxe": 9250,
+            "drxi": 2010,
+            "rxi_rxe_slope": 0.179
+        }
+    },
+    "params": {
+        "exp_name": "batch_rxbkg_unconn_state1_mech1/pops_inpsur_newsec_var_rxe_rxi",
+        "exp_name_sub": "2d_psp_0.5_xsec_soma_soma/exp_it2_wx_psp_0.5_sz_20_20_rxmax_20.0_4.0_rxmin_1_1_t_3.0_5.0_wmult_0.25_ee_0.5_lensec_0_xsec_soma_soma",
+        "exp_label": "it2",
+        "r_levels": [
+            0.5,
+            30
+        ],
+        "r_margins": [
+            0.3,
+            0.1
+        ]
+    }
+}

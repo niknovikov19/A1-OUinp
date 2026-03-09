@@ -2,13 +2,13 @@ import numpy as np
 
 
 N_RXE = 20
-N_RXI = 1
+N_RXI = 20
 
-RXE_MAX = 10000
-RXI_MAX = 2000
+RXE_MAX = 25000
+RXI_MAX = 5000
 
-RXE_MIN = 5000
-RXI_MIN = 2000
+RXE_MIN = 1
+RXI_MIN = 1
 
 def get_batch_params():
     """Generate params for batchtools to probe. """

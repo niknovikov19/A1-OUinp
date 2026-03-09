@@ -16,8 +16,8 @@ from analysis.ou_tuning import sim_res_proc_utils as proc
 from batch_params import N_RXE, N_RXI
 
 
-#EXP_LABEL = 'pv'
-#POPS_USED = ['PV2', 'PV3', 'PV4', 'PV5A', 'PV5B', 'PV6']
+EXP_LABEL = 'pv'
+POPS_USED = ['PV2', 'PV3', 'PV4', 'PV5A', 'PV5B', 'PV6']
 #EXP_LABEL = 'som'
 #POPS_USED = ['SOM2', 'SOM3', 'SOM4', 'SOM5A', 'SOM5B', 'SOM6']
 #EXP_LABEL = 'it2'
@@ -26,11 +26,11 @@ from batch_params import N_RXE, N_RXI
 #POPS_USED = ['VIP2', 'VIP3', 'VIP4', 'VIP5A', 'VIP5B', 'VIP6']
 #EXP_LABEL = 'ngf'
 #POPS_USED = ['NGF1', 'NGF2', 'NGF3', 'NGF4', 'NGF5A', 'NGF5B', 'NGF6']
-EXP_LABEL = 'pyr'
-POPS_USED = ['IT2', 'IT3', 'ITS4', 'ITP4', 'IT5A', 'CT5A',
-             'IT5B', 'CT5B', 'PT5B', 'IT6', 'CT6']
+#EXP_LABEL = 'pyr'
+#POPS_USED = ['IT2', 'IT3', 'ITS4', 'ITP4', 'IT5A', 'CT5A',
+#             'IT5B', 'CT5B', 'PT5B', 'IT6', 'CT6']
 
-# Weights of background exc/inh inputs
+# Weights of background exc/inh inputs (custom)
 WXE, WXI = 1.25, 5
 
 NOISE = 1
