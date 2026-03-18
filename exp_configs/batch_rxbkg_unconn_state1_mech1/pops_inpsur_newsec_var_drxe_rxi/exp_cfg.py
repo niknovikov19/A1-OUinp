@@ -33,14 +33,20 @@ from batch_params import N_DRXE, N_RXI
 #POPS_USED = ['VIP2', 'VIP3', 'VIP4', 'VIP5A', 'VIP5B', 'VIP6']
 #EXP_LABEL = 'tc'
 #POPS_USED = ['TC']
-EXP_LABEL = 'ngf'
-POPS_USED = ['NGF1', 'NGF2', 'NGF3', 'NGF4', 'NGF5A', 'NGF5B', 'NGF6']
+#EXP_LABEL = 'ngf'
+#POPS_USED = ['NGF1', 'NGF2', 'NGF3', 'NGF4', 'NGF5A', 'NGF5B', 'NGF6']
 #EXP_LABEL = 'ct'
 #POPS_USED = ['CT5A', 'CT5B', 'CT6']
 #EXP_LABEL = 'it6'
 #POPS_USED = ['IT6']
 #EXP_LABEL = 'it4'
 #POPS_USED = ['ITP4', 'ITS4']
+#EXP_LABEL = 'it5'
+#POPS_USED = ['IT5A', 'IT5B']
+#EXP_LABEL = 'pt5b'
+#POPS_USED = ['PT5B']
+EXP_LABEL = 'it3'
+POPS_USED = ['IT3']
 
 # File with the info about (drxe, rxi) regions
 RGN_JSON_NAME = f'regions_{EXP_LABEL}'
@@ -140,7 +146,7 @@ def apply_exp_cfg(cfg):
         wx_json = json.load(fid)
     
     # Load info about (drxe, rxi) regions
-    fname_rgn = dirpath_self / f'{RGN_JSON_NAME}.json'
+    fname_rgn = dirpath_self / 'regions' / f'{RGN_JSON_NAME}.json'
     with open(fname_rgn, 'r') as fid:
         cfg.drxe_rxi_regions = json.load(fid)
     

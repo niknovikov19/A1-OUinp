@@ -10,62 +10,38 @@ sys.path.append(str(dirpath_self))
 
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 
 from analysis.ou_tuning import sim_res_proc_utils as proc
-from analysis.model_utils.split_conn import split_conn_by_sections
 import diagnostics as diag
 
-from batch_params import (
-    N_RXE, N_RXI, RXE_MAX, RXI_MAX, RXE_MIN, RXI_MIN
-)
+from batch_params import N_SEEDS
 
 
-#EXP_LABEL = 'it2'
-#POPS_USED = ['IT2']
-#EXP_LABEL = 'pyr'
-#POPS_USED = ['IT2', 'IT3', 'ITS4', 'ITP4', 'IT5A', 'CT5A',
-#             'IT5B', 'CT5B', 'PT5B', 'IT6', 'CT6']
-#EXP_LABEL = 'pv'
-#POPS_USED = ['PV2', 'PV3', 'PV4', 'PV5A', 'PV5B', 'PV6']
-#EXP_LABEL = 'som'
-#POPS_USED = ['SOM2', 'SOM3', 'SOM4', 'SOM5A', 'SOM5B', 'SOM6']
-#EXP_LABEL = 'vip'
-#POPS_USED = ['VIP2', 'VIP3', 'VIP4', 'VIP5A', 'VIP5B', 'VIP6']
-#EXP_LABEL = 'tc'
-#POPS_USED = ['TC']
-#EXP_LABEL = 'ngf'
-#POPS_USED = ['NGF1', 'NGF2', 'NGF3', 'NGF4', 'NGF5A', 'NGF5B', 'NGF6']
-#EXP_LABEL = 'ct'
-#POPS_USED = ['CT5A', 'CT5B', 'CT6']
-#EXP_LABEL = 'it6'
-#POPS_USED = ['IT6']
-#EXP_LABEL = 'it4'
-#POPS_USED = ['ITP4', 'ITS4']
-#EXP_LABEL = 'it5'
-#POPS_USED = ['IT5A', 'IT5B']
-#EXP_LABEL = 'pt5b'
-#POPS_USED = ['PT5B']
-EXP_LABEL = 'it3'
-POPS_USED = ['IT3']
+PYR_POPS = ['IT2', 'IT3', 'ITP4', 'ITS4', 'IT5A', 'IT5B', 'IT6',
+            'CT5A', 'CT5B', 'CT6', 'PT5B']
+PV_POPS = ['PV2', 'PV3', 'PV4', 'PV5A', 'PV5B', 'PV6']
+SOM_POPS = ['SOM2', 'SOM3', 'SOM4', 'SOM5A', 'SOM5B', 'SOM6']
+VIP_POPS = ['VIP2', 'VIP3', 'VIP4', 'VIP5A', 'VIP5B', 'VIP6']
+NGF_POPS = ['NGF1', 'NGF2', 'NGF3', 'NGF4', 'NGF5A', 'NGF5B', 'NGF6']
 
-# Weights of background exc/inh inputs (custom)
-#WXE, WXI = 0.65, 2.5
-WXE, WXI = 0.05, 0.25
-#WXE, WXI = 0.1, 0.55   # PSP=0.2 mV in PV
-#WXE, WXI = 0.25, 2   # PSP=0.5 mV in PV
-#WXE, WXI = 0.25, 0.55   # PSP=0.5 mV in SOM
-#WXE, WXI = 0.05, 0.25
+L2_POPS = ['IT2', 'PV2', 'SOM2', 'VIP2', 'NGF2']
+L4_POPS = ['ITP4', 'ITS4', 'PV4', 'SOM4', 'VIP4', 'NGF4']
 
-# Weights of background exc/inh inputs (from json file)
-WX_FROM_JSON = 1
-WX_JSON_LABEL = 'psp_0.5'
-WX_JSON_NAME = 'wx_target_psp_0.5_soma_mech1_vrest_pyr_-70'
+CONNS_EE = [(p1, p2) for p1 in PYR_POPS for p2 in PYR_POPS]
 
-# Target sections of bkg inputs
-#XE_SEC = 'Adend1'
-#XE_SEC = 'apic'
-XE_SEC = 'soma'
-XI_SEC = 'soma'
+#EXP_LABEL = 'ctx_unconn'
+EXP_LABEL = 'ctx_ee_1'
+
+POPS_USED = PYR_POPS + PV_POPS + SOM_POPS + VIP_POPS + NGF_POPS
+#POPS_USED = L4_POPS
+
+#CONNS_FROZEN = 'all'
+#CONNS_FROZEN = CONNS_EE
+CONNS_FROZEN = []
+
+# Background spiking input
+XBKG_NAME = 'rx_bkg_mid_sm_21'
 
 # Constant input to set Vrest
 USE_IBKG = 1
@@ -77,24 +53,7 @@ SURR_INP_ON = 1
 REC_TRACES = 1
 PLOT_TRACES = 0
 
-# Length-weighted random selection from sec lists
-SEC_DISTR_BY_LEN = 0
-
 DIAG = 0
-
-# Load mech multipliers from json
-MECH_FROM_JSON = 1
-
-# Mechanism changes (for MECH_FROM_JSON=0)
-GKDR_MULT = 1
-GKAP_MULT = 1
-GLEAK_MULT = 1
-GCAT_MULT = 1
-GCAL_MULT = 1
-GCAN_MULT = 1
-GKBK_MULT = 1
-GIH_MULT = 1
-GNAX_MULT = 1
 
 
 def gen_exp_name_sub(cfg):
@@ -102,79 +61,39 @@ def gen_exp_name_sub(cfg):
     exp_name_sub = f'exp_{EXP_LABEL}'
     if not SURR_INP_ON:
         exp_name_sub += '_nosurr'
-    if WX_FROM_JSON:
-        exp_name_sub += f'_wx_{WX_JSON_LABEL}'
-    else:
-        exp_name_sub += f'_wx_{WXE}_{WXI}'
-    exp_name_sub += f'_sz_{N_RXE}_{N_RXI}'
-    exp_name_sub += f'_rxmax_{RXE_MAX / 1000}_{RXI_MAX / 1000}'
-    exp_name_sub += f'_rxmin_{RXE_MIN}_{RXI_MIN}'
+    exp_name_sub += f'_nseed_{N_SEEDS}'
     exp_name_sub += f'_t_{t_limits[0]}_{t_limits[1]}'
     exp_name_sub += f'_wmult_{cfg.wmult}_ee_{cfg.EEGain}'
-    exp_name_sub += f'_lensec_{SEC_DISTR_BY_LEN}'
-    exp_name_sub += f'_xsec_{XE_SEC}_{XI_SEC}'
-    if not MECH_FROM_JSON:
-        exp_name_sub += f'_gkdr_{GKDR_MULT}'
-        mechs = {'gkap': GKAP_MULT, 'gl': GLEAK_MULT, 
-                 'gcat': GCAT_MULT, 'gcal': GCAL_MULT,
-                 'gcan': GCAN_MULT, 'gkbk': GKBK_MULT,
-                 'gih': GIH_MULT, 'gnax': GNAX_MULT}
-        for name, mult in mechs.items():
-            if mult != 1:
-                exp_name_sub += f'_{name}_{mult}'
     return exp_name_sub
-
-
-def get_mech_changes():
-    if MECH_FROM_JSON:
-        with open(dirpath_self / 'mech_changes_1.json', 'r') as fid:
-            mech_changes = json.load(fid)
-    else:
-        mech_change_info = {
-            'gkdr': ('kdr', 'gbar', GKDR_MULT),
-            'gkap': ('kap', 'gbar', GKAP_MULT),
-            'gleak': ('pas', 'g', GLEAK_MULT),
-            'gcat': ('cat', 'gcatbar', GCAT_MULT),
-            'gcal': ('cal', 'gcalbar', GCAL_MULT),
-            'gcan': ('can', 'gcanbar', GCAN_MULT),
-            'gkbk': ('kBK', 'gpeak', GKBK_MULT),
-            'gih': ('ih', 'gbar', GIH_MULT),
-            'gnax': ('nax', 'gbar', GNAX_MULT)
-        }
-        mech_changes = {}
-        for pop in POPS_USED:
-            for name, ch in mech_change_info.items():
-                mech_changes[f'{name}_{pop}'] = {
-                    'pop': f'{pop}_reduced', 'sec': 'all',
-                    'mech': ch[0], 'par': ch[1], 'mult': ch[2]
-                }
-    return mech_changes    
 
 
 def apply_exp_cfg(cfg):
 
     # Duration
-    cfg.duration = 5 * 1e3
+    cfg.duration = 10 * 1e3
 
     # Left point (ms) of the calculation time window (r, cv, ...)
-    cfg.t0_calc = 3000
+    cfg.t0_calc = 6000
 
     # Populations to use
     pops_active = POPS_USED
+
+    # Random seeds
+    cfg.seeds['stim'] = None   # set in batch_params.py
+    cfg.seeds['conn'] = None   # set in batch_params.py
 
     # Subnet parameters
     cfg.subnet_build_flag = SURR_INP_ON
     cfg.subnet_params = {
         'pops_active': pops_active,   
-        'conns_frozen': 'all',   # all inputs are surrogate, no recurrent connections
+        'conns_frozen': CONNS_FROZEN,
         'fpath_frozen_rates': str(dirpath_self / 'target_state_1.csv'),   # surrogate input
+        'global_seed': None   # set in batch_params.py
     }
 
     if not SURR_INP_ON:
         cfg.pops_active = POPS_USED
         cfg.addConn = 0
-
-    cfg.need_run = 1
 
     # Weight multipliers
     cfg.wmult = 0.25
@@ -183,7 +102,7 @@ def apply_exp_cfg(cfg):
     # Connectivity params
     cfg.addSubConn = 0
     cfg.connRandomSecFromList = 1
-    cfg.connWeightSecByLength = SEC_DISTR_BY_LEN
+    cfg.connWeightSecByLength = 0
 
     if DIAG:
         cfg.createNEURONObj = True      # Create NEURON hoc objects
@@ -193,28 +112,25 @@ def apply_exp_cfg(cfg):
         cfg.compactConnFormat = False   # Keep full dict format for conns
         cfg.includeParamsLabel=True
 
-    # Load bkg weights from json
-    if WX_FROM_JSON:
-        fname_json = dirpath_self / f'{WX_JSON_NAME}.json'
-        with open(fname_json, 'r') as fid:
-            wx_json = json.load(fid)
+    # Load bkg spiking input info
+    fpath_xbkg = dirpath_self / f'{XBKG_NAME}.csv'
+    df = pd.read_csv(fpath_xbkg).set_index('pop')
+    df.drop(columns=['Unnamed: 0'], errors='ignore')
+    df['rxe'] = np.maximum(df['rxe'], 1e-3)
+    df['rxi'] = np.maximum(df['rxi'], 1e-3)
+    xbkg_info = df.T.to_dict()
     
     # Background spiking input
     cfg.add_bkg_spike_input = 1
-    cfg.replace_bkg_spikes_by_ou = 0   # 1 = use NetStim's
+    cfg.replace_bkg_spikes_by_ou = 0   # use NetStim's
     cfg.bkg_spike_inputs = {}
     for n, pop in enumerate(POPS_USED):
-        if WX_FROM_JSON:
-            wxe = wx_json['wx_target'][pop]['xe']
-            wxi = wx_json['wx_target'][pop]['xi']
-        else:
-            wxe, wxi = WXE, WXI
-        # Values of r will be set in batch
+        x = xbkg_info[pop]
         cfg.bkg_spike_inputs[pop] = {
-            'exc': {'r': 0, 'w': wxe, 'sec': XE_SEC, 'noise': 1,
-                    'seed': cfg.seeds['stim'] + 10000 + n},
-            'inh': {'r': 0, 'w': wxi, 'sec': XI_SEC, 'noise': 1,
-                    'seed': cfg.seeds['stim'] + 20000 + n},
+            'exc': {'r': x['rxe'], 'w': x['wxe'], 'sec': x['xe_sec'],
+                    'noise': 1, 'seed': None},   # set in batch_params.py
+            'inh': {'r': x['rxi'], 'w': x['wxi'], 'sec': x['xi_sec'],
+                    'noise': 1, 'seed': None}   # set in batch_params.py
         }
     
     # Static IClamp that sets the resting voltage
@@ -225,9 +141,10 @@ def apply_exp_cfg(cfg):
             ibkg = json.load(fid)
         cfg.IClamp = {pop: {'amp': ibkg[pop]}
                       for pop in POPS_USED if pop in ibkg}
-    
-    # Determine cell mechs to modify
-    cfg.mech_changes = get_mech_changes()
+
+    # Cell mechanisms to modify
+    with open(dirpath_self / 'mech_changes_1.json', 'r') as fid:
+        cfg.mech_changes = json.load(fid)
 
     if 'plotRaster' in cfg.analysis:
         cfg.analysis['plotRaster']['include'] = POPS_USED
@@ -236,13 +153,13 @@ def apply_exp_cfg(cfg):
     if 'plotTraces' in cfg.analysis:
         cfg.analysis['plotTraces']['include'] = POPS_USED
     
-    cfg.analysis['plotRaster'] = False
+    #cfg.analysis['plotRaster'] = False
     cfg.analysis['plotSpikeStats'] = False
 
     # Record voltage traces
     if REC_TRACES:
         ncells_rec = 5
-        ncells_plot = 1
+        ncells_plot = 2
         cfg.recordCells = [(pop, list(range(ncells_rec))) for pop in POPS_USED]
         cfg.recordTraces = {'V_soma': {'sec': 'soma', 'loc': 0.5, 'var': 'v'}}
         cfg.recordStep =  0.1
@@ -266,9 +183,8 @@ def modify_net_params(cfg, params):
         else:
             secs = [secs_all[v['sec']]]
         for sec in secs:
-            if v['mech'] in sec['mechs']:
-                sec['mechs'][v['mech']][v['par']] *= v['mult']
-                #sec['mechs'][v['mech']][v['par']] += v['add']
+            sec['mechs'][v['mech']][v['par']] *= v['mult']
+            sec['mechs'][v['mech']][v['par']] += v['add']
     
     # Set target sections from json file
     with open(dirpath_self / 'target_sec_1.json', 'r') as fid:
@@ -279,7 +195,7 @@ def modify_net_params(cfg, params):
         if (pop_pre is None) or (pop_post is None):
             raise ValueError(f'Pre or post pop is not specified for conn {cname}')
         conn['sec'] = None
-        for _, ts in target_sec.items():
+        for ts_name, ts in target_sec.items():
             if (pop_pre in ts['pops_pre']) and (pop_post in ts['pops_post']):
                 #print(f'Sec info: {cname} {ts_name}')
                 conn['sec'] = ts['sec']
@@ -291,7 +207,7 @@ def modify_net_params(cfg, params):
     exp_name_sub = gen_exp_name_sub(cfg)
     dirpath_res_sub = Path(cfg.saveFolder) / exp_name_sub
     os.makedirs(dirpath_res_sub, exist_ok=True)
-
+    
 
 def post_run(sim):
     """Called in the end of a job (after runnig and saving). """
@@ -306,10 +222,8 @@ def post_run(sim):
     exp_name_sub = gen_exp_name_sub(cfg)
 
     # Generate filename postfix with batch param values
-    inp = cfg.bkg_spike_inputs[POPS_USED[0]]
-    rxe, rxi = inp['exc']['r'], inp['inh']['r']
     exp_id = exp_name.split('_')[-1]
-    postfix = (f'{exp_id}_rxe_{int(rxe)}_rxi_{int(rxi)}')
+    postfix = (f'{exp_id}_seed_{cfg.seed_main}')
 
     # Create subfolders to put the results
     dirpath_res = Path(cfg.saveFolder)
@@ -334,7 +248,7 @@ def post_run(sim):
             fpath_old.rename(fpath_new)
         else:
             print('RESULT NOT FOUND: ', fpath_old)
-    
+
     # Move traces to a subfolder
     trace_files = list(dirpath_res.glob(f'{exp_name}*_traces*.png'))
     for n, fpath_old in enumerate(trace_files):
@@ -345,7 +259,8 @@ def post_run(sim):
     res = {}
     res['timing'] = sim.timingData
     res |= proc.calc_rates_and_cvs(sim, t_limits, nspikes_min=3)
-    res |= proc.calc_v_stats(sim, t_limits, med_win=0.05)
+    if REC_TRACES:
+        res |= proc.calc_v_stats(sim, t_limits, med_win=0.05)
     fpath_res = dirpath_res_sub / 'results' / f'result_{postfix}.json'
     with open(fpath_res, 'w') as fid:
         json.dump(res, fid, indent=4)
@@ -363,15 +278,10 @@ def final(sim):
     #diag.conn_distance_percentiles(sim)
 
     # Count post-synaptic sections
-    pops_pre = ['IT2frz']
-    pops_post = ['IT2']
+    pops_pre = ['ITP4frz']
+    pops_post = ['ITP4']
     sec_groups = {
         'soma': ['soma'],
-        #'dend': ['dend'],
-        #'ori1': ['ori1'],
-        #'ori2': ['ori2'],
-        #'rad1': ['rad1'],
-        #'rad2': ['rad2']
         #'Adend': ['Adend1', 'Adend2', 'Adend3'],
         'Bdend': ['Bdend'],
         'Adend1': ['Adend1'],

@@ -18,8 +18,8 @@ import analysis.ou_tuning.netpyne_res_parse_utils as parse_utils
 import fi_utils
 
 
-EXP_NAME = 'tc'
-POPS_USED = ['TC']
+EXP_NAME = 'it5a'
+POPS_USED = ['IT5A']
 
 CELL_TYPES = {'IRE': 'RE', 'PV3': 'PV', 'SOM3': 'SOM',
               'VIP3': 'VIP', 'NGF3': 'NGF'}
@@ -29,7 +29,8 @@ I_RANGE = [-0.02, 0]
 I_SEC = 'soma'
 
 # Input std.
-I_STD = 0.002
+#I_STD = 0.002
+I_STD = 0
 
 # Strong ramp-up pulse for switching between the steady-states
 STIM_AMP = 0.75

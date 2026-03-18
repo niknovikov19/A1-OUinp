@@ -44,20 +44,22 @@ BREAKPOINT {
 }
 
 DERIVATIVE states {
+  rate' = -rate/tau
   if (t < t0) {
-    rate' = 0
+    :rate' = 0
     u'    = 0
     s'    = 0
   } else {
-    rate' = -rate/tau
+    :rate' = -rate/tau
     u'    = k * (r0 - rate)
     s'    = (z - s) / taus
   }
 }
 
 NET_RECEIVE (w) {
+  rate = rate + w * (1000.0/tau)
   if (t >= t0) {
     : Each spike bumps the EMA by 1000/tau (so steady-state == spike freq in Hz)
-    rate = rate + w * (1000.0/tau)
+    :rate = rate + w * (1000.0/tau)
   }
 }

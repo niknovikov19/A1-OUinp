@@ -10,51 +10,59 @@ sys.path.append(str(dirpath_self))
 
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 
 from analysis.ou_tuning import sim_res_proc_utils as proc
-from analysis.model_utils.split_conn import split_conn_by_sections
 import diagnostics as diag
 
 
-#EXP_LABEL = 'it5a'
-#POPS_USED = ['IT5A']
+PV_POPS = ['PV2', 'PV3', 'PV4', 'PV5A', 'PV5B', 'PV6']
+SOM_POPS = ['SOM2', 'SOM3', 'SOM4', 'SOM5A', 'SOM5B', 'SOM6']
+VIP_POPS = ['VIP2', 'VIP3', 'VIP4', 'VIP5A', 'VIP5B', 'VIP6']
+NGF_POPS = ['NGF1', 'NGF2', 'NGF3', 'NGF4', 'NGF5A', 'NGF5B', 'NGF6']
 
-EXP_LABEL = 'pyr'
-POPS_USED = ['IT2', 'IT3', 'ITS4', 'ITP4', 'IT5A', 'CT5A',
-             'IT5B', 'CT5B', 'PT5B', 'IT6', 'CT6']
+""" EXP_LABEL = 'it246_ictx_unconn'
+POPS_USED = (
+    ['IT2', 'ITP4', 'ITS4', 'IT6'] + 
+    PV_POPS + SOM_POPS + VIP_POPS + NGF_POPS
+) """
+
+EXP_LABEL = 'pv_unconn'
+POPS_USED = PV_POPS
+
+CONNS_FROZEN = 'all'
+
+# Target firing rates (for surrogate inp. and rate ctrl)
+TARGET_STATE_LABEL = 'target_state_1'
+
+# Rate-controlling feedback via tonic current
+I_CTRL = 1
+
+CTRL_PARAMS = {
+    'mu_gain': 2e-1,
+    'sigma_gain': 0.0,
+    'tau_ctrl': 1000,
+    'taus_ctrl': 10000,
+    'target_rates': None,   # set later
+    'k_ctrl': 1e-5,
+    'kp_ctrl': 0e-2,
+    'z0': 0,
+    't0': 20000,
+    'tlock': 90000
+}
 
 # Background spiking input
-#RXE, RXI = 1000, 200
-#WXE, WXI = 0.65, 2.5
-#RXE, RXI = 27000, 5000
-#WXE, WXI = 0.05, 0.25
-RXE, RXI = 1e-3, 1e-3
-WXE, WXI = 1e-3, 1e-3
-
-k = 1
-RXE, RXI = RXE * k, RXI * k
-WXE, WXI = WXE / k, WXI / k
-
-# Target sections of bkg inputs
-XE_SEC = 'soma'
-XI_SEC = 'soma'
+XBKG_NAME = 'rx_bkg_mid_sm_21'
 
 # Constant input to set Vrest
 USE_IBKG = 1
 V_REST = -70
-IBKG_STIM = 0.0   # custom addition
 
 # Surrogate inputs
-SURR_INP_ON = 0
+SURR_INP_ON = 1
 
 REC_TRACES = 1
-PLOT_TRACES = 1
-
-# Split conns from sec-list to 1-sec form (length-based)
-SPLIT_CONNS = 0
-
-# Length-weighted random selection from sec lists
-SEC_DISTR_BY_LEN = 0
+PLOT_TRACES = 0
 
 DIAG = 0
 
@@ -62,27 +70,30 @@ DIAG = 0
 def apply_exp_cfg(cfg):
 
     # Duration
-    cfg.duration = 5 * 1e3
+    cfg.duration = 150 * 1e3
 
     # Left point (ms) of the calculation time window (r, cv, ...)
-    cfg.t0_calc = 3000
+    cfg.t0_calc = cfg.duration - 2000
+
+    # Required for rate controller
+    cfg.cache_efficient = 0
 
     # Populations to use
     pops_active = POPS_USED
 
-    # Subnet parameters
+    # Subnet parameters (surrogate inputs)
     cfg.subnet_build_flag = SURR_INP_ON
     cfg.subnet_params = {
         'pops_active': pops_active,   
-        'conns_frozen': 'all',   # all inputs are surrogate, no recurrent connections
-        'fpath_frozen_rates': str(dirpath_self / 'target_state_1.csv'),   # surrogate input
+        'conns_frozen': CONNS_FROZEN,
+        'fpath_frozen_rates': (
+            str(dirpath_self / f'{TARGET_STATE_LABEL}.csv')
+        )
     }
 
     if not SURR_INP_ON:
         cfg.pops_active = POPS_USED
         cfg.addConn = 0
-
-    cfg.need_run = 1
 
     # Weight multipliers
     cfg.wmult = 0.25
@@ -91,7 +102,7 @@ def apply_exp_cfg(cfg):
     # Connectivity params
     cfg.addSubConn = 0
     cfg.connRandomSecFromList = 1
-    cfg.connWeightSecByLength = SEC_DISTR_BY_LEN
+    cfg.connWeightSecByLength = 0
 
     if DIAG:
         cfg.createNEURONObj = True      # Create NEURON hoc objects
@@ -101,16 +112,25 @@ def apply_exp_cfg(cfg):
         cfg.compactConnFormat = False   # Keep full dict format for conns
         cfg.includeParamsLabel=True
 
+    # Load bkg spiking input info
+    fpath_xbkg = dirpath_self / f'{XBKG_NAME}.csv'
+    df = pd.read_csv(fpath_xbkg).set_index('pop')
+    df.drop(columns=['Unnamed: 0'], errors='ignore')
+    df['rxe'] = np.maximum(df['rxe'], 1e-3)
+    df['rxi'] = np.maximum(df['rxi'], 1e-3)
+    xbkg_info = df.T.to_dict()
+    
     # Background spiking input
-    cfg.add_bkg_spike_input = 0
+    cfg.add_bkg_spike_input = 1
     cfg.replace_bkg_spikes_by_ou = 0   # use NetStim's
     cfg.bkg_spike_inputs = {}
     for n, pop in enumerate(POPS_USED):
+        x = xbkg_info[pop]
         cfg.bkg_spike_inputs[pop] = {
-            'exc': {'r': RXE, 'w': WXE, 'sec': XE_SEC, 'noise': 1,
-                    'seed': cfg.seeds['stim'] + 10000 + n},
-            'inh': {'r': RXI, 'w': WXI, 'sec': XI_SEC, 'noise': 1,
-                    'seed': cfg.seeds['stim'] + 20000 + n},
+            'exc': {'r': x['rxe'], 'w': x['wxe'], 'sec': x['xe_sec'],
+                    'noise': 1, 'seed': cfg.seeds['stim'] + 10000 + n},
+            'inh': {'r': x['rxi'], 'w': x['wxi'], 'sec': x['xi_sec'],
+                    'noise': 1, 'seed': cfg.seeds['stim'] + 20000 + n}
         }
     
     # Static IClamp that sets the resting voltage
@@ -119,8 +139,28 @@ def apply_exp_cfg(cfg):
         fname_ibkg = f'ibkg_mech1_vrest_{V_REST}.json'
         with open(dirpath_self / fname_ibkg, 'r') as fid:
             ibkg = json.load(fid)
-        cfg.IClamp = {pop: {'amp': ibkg[pop] + IBKG_STIM}
+        cfg.IClamp = {pop: {'amp': ibkg[pop]}
                       for pop in POPS_USED if pop in ibkg}
+    
+    # Read target rates
+    df = pd.read_csv(dirpath_self / f'{TARGET_STATE_LABEL}.csv')
+    target_rates = df.set_index('pop_name')['target_rate'].to_dict()
+    cfg.target_rates = target_rates
+
+    # OU inputs controlled by a rate feedback
+    if I_CTRL:
+        # Add the inputs
+        cfg.add_ou_current = 1
+        cfg.ou_common = 0
+        cfg.ou_noise_duration = cfg.duration
+        cfg.ou_tau = 10
+        cfg.ou_pop_inputs = {}
+        for pop in POPS_USED:
+            cfg.ou_pop_inputs[pop] = {'ou_mean': 0, 'ou_std': 0}
+
+        # Controller params
+        cfg.ou_ctrl_params = CTRL_PARAMS
+        cfg.ou_ctrl_params['target_rates'] = target_rates
 
     # Cell mechanisms to modify
     with open(dirpath_self / 'mech_changes_1.json', 'r') as fid:
@@ -139,7 +179,7 @@ def apply_exp_cfg(cfg):
     # Record voltage traces
     if REC_TRACES:
         ncells_rec = 5
-        ncells_plot = 3
+        ncells_plot = 2
         cfg.recordCells = [(pop, list(range(ncells_rec))) for pop in POPS_USED]
         cfg.recordTraces = {'V_soma': {'sec': 'soma', 'loc': 0.5, 'var': 'v'}}
         cfg.recordStep =  0.1
@@ -183,12 +223,6 @@ def modify_net_params(cfg, params):
         if conn['sec'] is None:
             raise ValueError(f'No target sec info found for conn {cname}')
     
-    # Split connections (1 sec per conn)
-    if SPLIT_CONNS:
-        conn_names = list(params.connParams.keys())
-        for cname in conn_names:
-            split_conn_by_sections(params, cname)
-    
 
 def post_run(sim):
     """Called in the end of a job (after runnig and saving). """
@@ -202,17 +236,16 @@ def post_run(sim):
     exp_name_sub = f'exp_{EXP_LABEL}'
     if not SURR_INP_ON:
         exp_name_sub += '_nosurr'
-    if cfg.add_bkg_spike_input:
-        exp_name_sub += f'_rx_{RXE / 1000}_{RXI / 1000}_wx_{WXE}_{WXI}'
-    else:
-        exp_name_sub += '_noxbkg'
     exp_name_sub += f'_t_{t_limits[0]}_{t_limits[1]}'
     exp_name_sub += f'_wmult_{cfg.wmult}_ee_{cfg.EEGain}'
-    exp_name_sub += f'_splitcon_{SPLIT_CONNS}'
-    exp_name_sub += f'_lensec_{SEC_DISTR_BY_LEN}'
-    exp_name_sub += f'_xsec_{XE_SEC}_{XI_SEC}'
-    if IBKG_STIM != 0:
-        exp_name_sub += f'_iclamp_{IBKG_STIM}'    
+    if I_CTRL:
+        par = cfg.ou_ctrl_params
+        exp_name_sub += (
+            f'_kmu_{par["mu_gain"]}_ksigma_{par["sigma_gain"]}'
+            f'_tau_{par["tau_ctrl"]}_taus_{par["taus_ctrl"]}'
+            f'_tc0_{par["t0"]}_tlock_{par["tlock"]}'
+            f'_kci_{par["k_ctrl"]}_kcp_{par["kp_ctrl"]}'
+        )
 
     # Create a subfolder to put the results
     dirpath_res = Path(cfg.saveFolder)
@@ -220,7 +253,7 @@ def post_run(sim):
     os.makedirs(dirpath_res_sub, exist_ok=True)
 
     # Move results to the subfolder
-    res_names = ['cfg.json', 'netParams.json', 'raster.png']
+    res_names = ['cfg.json', 'netParams.json', 'raster.png', 'ctrl.pkl']
     for res_name in res_names:
         fname = f'{exp_name}_{res_name}'
         if (dirpath_res / fname).exists():
@@ -240,6 +273,25 @@ def post_run(sim):
     fpath_res = dirpath_res_sub / f'{exp_name}_result.json'
     with open(fpath_res, 'w') as fid:
         json.dump(res, fid, indent=4)
+    
+    # Plot and save rate dynamics
+    os.makedirs(dirpath_res_sub / 'rvec_figs', exist_ok=True)
+    r_data = proc.calc_rate_dynamics(
+        sim, t_limits=(1, None), tau_smooth=1.5, pops_used=POPS_USED)
+    colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
+    plt.figure()
+    for n, pop in enumerate(POPS_USED):
+        tt, rr = r_data[pop]
+        r0 = cfg.target_rates[pop]
+        plt.plot(tt, rr, label=pop, color=colors[n])
+        plt.plot([tt[0], tt[-1]], [r0, r0], '--', color=colors[n])
+    plt.xlabel('Time')
+    plt.ylabel('Firing rate')
+    plt.legend(bbox_to_anchor=(1, 1))
+    #plt.yscale('log')
+    #plt.ylim(0.05, None)
+    plt.savefig(dirpath_res_sub / 'rvec_figs' / f'{exp_name}.png',
+                bbox_inches='tight', dpi=300)
 
 
 def final(sim):

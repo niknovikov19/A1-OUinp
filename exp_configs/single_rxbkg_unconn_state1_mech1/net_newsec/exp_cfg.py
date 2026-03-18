@@ -10,79 +10,81 @@ sys.path.append(str(dirpath_self))
 
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 
 from analysis.ou_tuning import sim_res_proc_utils as proc
-from analysis.model_utils.split_conn import split_conn_by_sections
 import diagnostics as diag
 
 
-#EXP_LABEL = 'it5a'
-#POPS_USED = ['IT5A']
+PYR_POPS = ['IT2', 'IT3', 'ITP4', 'ITS4', 'IT5A', 'IT5B', 'IT6',
+            'CT5A', 'CT5B', 'CT6', 'PT5B']
+PV_POPS = ['PV2', 'PV3', 'PV4', 'PV5A', 'PV5B', 'PV6']
+SOM_POPS = ['SOM2', 'SOM3', 'SOM4', 'SOM5A', 'SOM5B', 'SOM6']
+VIP_POPS = ['VIP2', 'VIP3', 'VIP4', 'VIP5A', 'VIP5B', 'VIP6']
+NGF_POPS = ['NGF1', 'NGF2', 'NGF3', 'NGF4', 'NGF5A', 'NGF5B', 'NGF6']
 
-EXP_LABEL = 'pyr'
-POPS_USED = ['IT2', 'IT3', 'ITS4', 'ITP4', 'IT5A', 'CT5A',
-             'IT5B', 'CT5B', 'PT5B', 'IT6', 'CT6']
+L2_POPS = ['IT2', 'PV2', 'SOM2', 'VIP2', 'NGF2']
+L4_POPS = ['ITP4', 'ITS4', 'PV4', 'SOM4', 'VIP4', 'NGF4']
+
+CONNS_EE = [(p1, p2) for p1 in PYR_POPS for p2 in PYR_POPS]
+
+#EXP_LABEL = 'ctx_unconn_sm_21'
+EXP_LABEL = 'ctx_ee_1'
+#EXP_LABEL = 'L4_unconn'
+#EXP_LABEL = 'L4_ee_0'
+
+POPS_USED = PYR_POPS + PV_POPS + SOM_POPS + VIP_POPS + NGF_POPS
+#POPS_USED = L4_POPS
+
+#CONNS_FROZEN = 'all'
+#CONNS_FROZEN = CONNS_EE
+CONNS_FROZEN = []
 
 # Background spiking input
-#RXE, RXI = 1000, 200
-#WXE, WXI = 0.65, 2.5
-#RXE, RXI = 27000, 5000
-#WXE, WXI = 0.05, 0.25
-RXE, RXI = 1e-3, 1e-3
-WXE, WXI = 1e-3, 1e-3
-
-k = 1
-RXE, RXI = RXE * k, RXI * k
-WXE, WXI = WXE / k, WXI / k
-
-# Target sections of bkg inputs
-XE_SEC = 'soma'
-XI_SEC = 'soma'
+XBKG_NAME = 'rx_bkg_mid_sm_21'
 
 # Constant input to set Vrest
 USE_IBKG = 1
 V_REST = -70
-IBKG_STIM = 0.0   # custom addition
 
 # Surrogate inputs
-SURR_INP_ON = 0
+SURR_INP_ON = 1
 
 REC_TRACES = 1
 PLOT_TRACES = 1
 
-# Split conns from sec-list to 1-sec form (length-based)
-SPLIT_CONNS = 0
-
-# Length-weighted random selection from sec lists
-SEC_DISTR_BY_LEN = 0
-
 DIAG = 0
+
+SEED = 1111
 
 
 def apply_exp_cfg(cfg):
 
     # Duration
-    cfg.duration = 5 * 1e3
+    cfg.duration = 10 * 1e3
 
     # Left point (ms) of the calculation time window (r, cv, ...)
-    cfg.t0_calc = 3000
+    cfg.t0_calc = 6000
 
     # Populations to use
     pops_active = POPS_USED
+
+    # Random seeds
+    cfg.seeds['stim'] = SEED
+    cfg.seeds['conn'] = SEED * 2
 
     # Subnet parameters
     cfg.subnet_build_flag = SURR_INP_ON
     cfg.subnet_params = {
         'pops_active': pops_active,   
-        'conns_frozen': 'all',   # all inputs are surrogate, no recurrent connections
+        'conns_frozen': CONNS_FROZEN,
         'fpath_frozen_rates': str(dirpath_self / 'target_state_1.csv'),   # surrogate input
+        'global_seed': SEED * 3
     }
 
     if not SURR_INP_ON:
         cfg.pops_active = POPS_USED
         cfg.addConn = 0
-
-    cfg.need_run = 1
 
     # Weight multipliers
     cfg.wmult = 0.25
@@ -91,7 +93,7 @@ def apply_exp_cfg(cfg):
     # Connectivity params
     cfg.addSubConn = 0
     cfg.connRandomSecFromList = 1
-    cfg.connWeightSecByLength = SEC_DISTR_BY_LEN
+    cfg.connWeightSecByLength = 0
 
     if DIAG:
         cfg.createNEURONObj = True      # Create NEURON hoc objects
@@ -101,16 +103,25 @@ def apply_exp_cfg(cfg):
         cfg.compactConnFormat = False   # Keep full dict format for conns
         cfg.includeParamsLabel=True
 
+    # Load bkg spiking input info
+    fpath_xbkg = dirpath_self / f'{XBKG_NAME}.csv'
+    df = pd.read_csv(fpath_xbkg).set_index('pop')
+    df.drop(columns=['Unnamed: 0'], errors='ignore')
+    df['rxe'] = np.maximum(df['rxe'], 1e-3)
+    df['rxi'] = np.maximum(df['rxi'], 1e-3)
+    xbkg_info = df.T.to_dict()
+    
     # Background spiking input
-    cfg.add_bkg_spike_input = 0
+    cfg.add_bkg_spike_input = 1
     cfg.replace_bkg_spikes_by_ou = 0   # use NetStim's
     cfg.bkg_spike_inputs = {}
     for n, pop in enumerate(POPS_USED):
+        x = xbkg_info[pop]
         cfg.bkg_spike_inputs[pop] = {
-            'exc': {'r': RXE, 'w': WXE, 'sec': XE_SEC, 'noise': 1,
-                    'seed': cfg.seeds['stim'] + 10000 + n},
-            'inh': {'r': RXI, 'w': WXI, 'sec': XI_SEC, 'noise': 1,
-                    'seed': cfg.seeds['stim'] + 20000 + n},
+            'exc': {'r': x['rxe'], 'w': x['wxe'], 'sec': x['xe_sec'],
+                    'noise': 1, 'seed': cfg.seeds['stim'] + 10000 + n},
+            'inh': {'r': x['rxi'], 'w': x['wxi'], 'sec': x['xi_sec'],
+                    'noise': 1, 'seed': cfg.seeds['stim'] + 20000 + n}
         }
     
     # Static IClamp that sets the resting voltage
@@ -119,7 +130,7 @@ def apply_exp_cfg(cfg):
         fname_ibkg = f'ibkg_mech1_vrest_{V_REST}.json'
         with open(dirpath_self / fname_ibkg, 'r') as fid:
             ibkg = json.load(fid)
-        cfg.IClamp = {pop: {'amp': ibkg[pop] + IBKG_STIM}
+        cfg.IClamp = {pop: {'amp': ibkg[pop]}
                       for pop in POPS_USED if pop in ibkg}
 
     # Cell mechanisms to modify
@@ -139,7 +150,7 @@ def apply_exp_cfg(cfg):
     # Record voltage traces
     if REC_TRACES:
         ncells_rec = 5
-        ncells_plot = 3
+        ncells_plot = 2
         cfg.recordCells = [(pop, list(range(ncells_rec))) for pop in POPS_USED]
         cfg.recordTraces = {'V_soma': {'sec': 'soma', 'loc': 0.5, 'var': 'v'}}
         cfg.recordStep =  0.1
@@ -183,12 +194,6 @@ def modify_net_params(cfg, params):
         if conn['sec'] is None:
             raise ValueError(f'No target sec info found for conn {cname}')
     
-    # Split connections (1 sec per conn)
-    if SPLIT_CONNS:
-        conn_names = list(params.connParams.keys())
-        for cname in conn_names:
-            split_conn_by_sections(params, cname)
-    
 
 def post_run(sim):
     """Called in the end of a job (after runnig and saving). """
@@ -202,17 +207,9 @@ def post_run(sim):
     exp_name_sub = f'exp_{EXP_LABEL}'
     if not SURR_INP_ON:
         exp_name_sub += '_nosurr'
-    if cfg.add_bkg_spike_input:
-        exp_name_sub += f'_rx_{RXE / 1000}_{RXI / 1000}_wx_{WXE}_{WXI}'
-    else:
-        exp_name_sub += '_noxbkg'
     exp_name_sub += f'_t_{t_limits[0]}_{t_limits[1]}'
     exp_name_sub += f'_wmult_{cfg.wmult}_ee_{cfg.EEGain}'
-    exp_name_sub += f'_splitcon_{SPLIT_CONNS}'
-    exp_name_sub += f'_lensec_{SEC_DISTR_BY_LEN}'
-    exp_name_sub += f'_xsec_{XE_SEC}_{XI_SEC}'
-    if IBKG_STIM != 0:
-        exp_name_sub += f'_iclamp_{IBKG_STIM}'    
+    exp_name_sub += f'_seed_{SEED}'
 
     # Create a subfolder to put the results
     dirpath_res = Path(cfg.saveFolder)

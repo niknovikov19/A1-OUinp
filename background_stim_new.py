@@ -303,7 +303,8 @@ def make_rate_controller(sim, pop_name):
     gids = _get_all_gids(sim, pop_name)
     if len(local_cells) == 0:
         return {'ctrl_mech': None, 'netcon_list': [],
-                'tvec': None, 'zvec': None, 'rvec': None, 'r0': None}
+                'tvec': None, 'zvec': None, 'rvec': None,
+                'r0': None, 'svec': None}
 
     if sim.rank == 0:
         print(f'>>> {pop_name}: ngids={len(gids)}, ncells={len(local_cells)}', flush=True)
@@ -341,12 +342,18 @@ def make_rate_controller(sim, pop_name):
     # Record the controller
     #tvec, zvec, rvec = None, None, None
     tvec, zvec, rvec = h.Vector(), h.Vector(), h.Vector()
+    svec = h.Vector()
     tvec.record(h._ref_t)
     zvec.record(ctrl._ref_z)
     rvec.record(ctrl._ref_rate)
+    svec.record(ctrl._ref_s)
     
-    return {'ctrl_mech': ctrl, 'netcon_list': netcon_list,
-            'tvec': tvec, 'zvec': zvec, 'rvec': rvec, 'r0': ctrl.r0}
+    return {
+        'ctrl_mech': ctrl, 'netcon_list': netcon_list,
+        'tvec': tvec, 'zvec': zvec, 'rvec': rvec,
+        'svec': svec,
+        'r0': ctrl.r0,
+    }
 
 
 def _decimate(vec, n):
@@ -356,13 +363,14 @@ def _decimate(vec, n):
 
 def _get_ctrl_for_gather(ctrl_dict):
     res = {}
-    n = 100
+    n = 500
     for pop, d in ctrl_dict.items():
         res[pop] = {
             'r0': d['r0'],
             'tvec': _decimate(d['tvec'], n),
             'zvec': _decimate(d['zvec'], n),
-            'rvec': _decimate(d['rvec'], n)
+            'rvec': _decimate(d['rvec'], n),
+            'svec': _decimate(d['svec'], n)
         }
     return res
 
@@ -392,6 +400,7 @@ def plot_save_ctrl_traces(sim, ctrl_dict):
         tvec_ctrl = ctrl_dict[pop_vis]['tvec']
         rvec_ctrl = ctrl_dict[pop_vis]['rvec']
         zvec_ctrl = ctrl_dict[pop_vis]['zvec']
+        svec_ctrl = ctrl_dict[pop_vis]['svec']
         r0 = ctrl_dict[pop_vis]['r0']
 
         plt.figure(111); plt.clf()
@@ -401,6 +410,7 @@ def plot_save_ctrl_traces(sim, ctrl_dict):
         plt.title(f'Controller rate, {pop_vis}')
         plt.subplot(2, 1, 2)
         plt.plot(np.array(tvec_ctrl), np.array(zvec_ctrl))
+        plt.plot(np.array(tvec_ctrl), np.array(svec_ctrl), 'k')
         plt.title(f'Controller z, {pop_vis}')
         plt.xlabel('Time')
         plt.savefig(f'{sim.cfg.saveFolder}/'

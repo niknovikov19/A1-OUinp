@@ -182,11 +182,20 @@ if hasattr(cfg, 'subnet_build_flag') and cfg.subnet_build_flag:
         frozen_cvs = df.set_index('pop_name')['target_cv'].to_dict()
     else:
         frozen_cvs = {pop: 1.0 for pop in pop_names}
+    
+    # Get base seed for frozen populations
+    base_seed = cfg.subnet_params.get('global_seed', cfg.seeds['stim'])
+
     for pop in pop_names:
+        # Generate deterministic seed from base_seed and pop name
+        pop_offset = sum([ord(c) for c in pop])  # hash from pop name
+        seed = base_seed + pop_offset
+
         desc.inp_surrogates[pop] = {
             'type': 'irregular',
             'rate': frozen_rates[pop],
-            'noise': frozen_cvs[pop]
+            'noise': frozen_cvs[pop],
+            'seed': seed
         }
     
     # Build subnet

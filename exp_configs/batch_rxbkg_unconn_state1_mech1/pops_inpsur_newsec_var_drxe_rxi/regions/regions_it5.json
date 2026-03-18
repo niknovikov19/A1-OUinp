@@ -1,0 +1,35 @@
+{
+    "regions": {
+        "IT5A": {
+            "rxe0": 1730,
+            "rxi0": 0,
+            "drxe": 6100,
+            "drxi": 4990,
+            "rxi_rxe_slope": 0.218
+        },
+        "IT5B": {
+            "rxe0": 1720,
+            "rxi0": 0,
+            "drxe": 6730,
+            "drxi": 4980,
+            "rxi_rxe_slope": 0.209
+        }
+    },
+    "params": {
+        "exp_name": "batch_rxbkg_unconn_state1_mech1/pops_inpsur_newsec_var_rxe_rxi",
+        "exp_name_sub": "2d_20x20_psp_0.5_xsec_soma_soma/exp_it5_wx_psp_0.5_sz_20_20_rxmax_25.0_5.0_rxmin_1_1_t_3.0_5.0_wmult_0.25_ee_0.5_lensec_0_xsec_soma_soma",
+        "exp_label": "it5",
+        "pops": [
+            "IT5A",
+            "IT5B"
+        ],
+        "r_levels": [
+            0.5,
+            10
+        ],
+        "r_margins": [
+            0.3,
+            0.1
+        ]
+    }
+}
