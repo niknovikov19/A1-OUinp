@@ -9,47 +9,43 @@ sys.path.append(str(dirpath_repo_root))
 sys.path.append(str(dirpath_self))
 
 import matplotlib.pyplot as plt
+from neuron import h
 import numpy as np
 import pandas as pd
 
+from analysis.model_utils.net_utils import get_2pop_conns
 from analysis.ou_tuning import sim_res_proc_utils as proc
+from conn_fader import ConnFader
 import diagnostics as diag
+from syn_mech_relabel import _rule_kind_and_base_pops, _relabel_conn_synmech
 
 
+PYR_POPS = ['IT2', 'IT3', 'ITP4', 'ITS4', 'IT5A', 'IT5B', 'IT6',
+            'CT5A', 'CT5B', 'CT6', 'PT5B']
 PV_POPS = ['PV2', 'PV3', 'PV4', 'PV5A', 'PV5B', 'PV6']
 SOM_POPS = ['SOM2', 'SOM3', 'SOM4', 'SOM5A', 'SOM5B', 'SOM6']
 VIP_POPS = ['VIP2', 'VIP3', 'VIP4', 'VIP5A', 'VIP5B', 'VIP6']
 NGF_POPS = ['NGF1', 'NGF2', 'NGF3', 'NGF4', 'NGF5A', 'NGF5B', 'NGF6']
 
-""" EXP_LABEL = 'it246_ictx_unconn'
-POPS_USED = (
-    ['IT2', 'ITP4', 'ITS4', 'IT6'] + 
-    PV_POPS + SOM_POPS + VIP_POPS + NGF_POPS
-) """
+L2_POPS = ['IT2', 'PV2', 'SOM2', 'VIP2', 'NGF2']
+L4_POPS = ['ITP4', 'ITS4', 'PV4', 'SOM4', 'VIP4', 'NGF4']
 
-EXP_LABEL = 'pv_unconn'
-POPS_USED = PV_POPS
+CONNS_EE = [(p1, p2) for p1 in PYR_POPS for p2 in PYR_POPS]
 
-CONNS_FROZEN = 'all'
+EXP_LABEL = 'ctx_ee_0'
+#EXP_LABEL = 'L2'
+#EXP_LABEL = 'L2_unconn'
 
-# Target firing rates (for surrogate inp. and rate ctrl)
-TARGET_STATE_LABEL = 'target_state_1'
+POPS_USED = PYR_POPS + PV_POPS + SOM_POPS + VIP_POPS + NGF_POPS
+#POPS_USED = L2_POPS
 
-# Rate-controlling feedback via tonic current
-I_CTRL = 1
+#CONNS_FROZEN = 'all'
+CONNS_FROZEN = CONNS_EE
+#CONNS_FROZEN = []
 
-CTRL_PARAMS = {
-    'mu_gain': 2e-1,
-    'sigma_gain': 0.0,
-    'tau_ctrl': 1000,
-    'taus_ctrl': 10000,
-    'target_rates': None,   # set later
-    'k_ctrl': 1e-5,
-    'kp_ctrl': 0e-2,
-    'z0': 0,
-    't0': 20000,
-    'tlock': 90000
-}
+#CONNS_SPLIT = [(p1, p2) for p1, p2 in CONNS_EE
+#               if (p1 in POPS_USED) and (p2 in POPS_USED)]
+CONNS_SPLIT = []
 
 # Background spiking input
 XBKG_NAME = 'rx_bkg_mid_sm_21'
@@ -66,30 +62,42 @@ PLOT_TRACES = 0
 
 DIAG = 0
 
+SEED = 1113
+
 
 def apply_exp_cfg(cfg):
 
     # Duration
-    cfg.duration = 150 * 1e3
+    cfg.duration = 7 * 1e3
 
     # Left point (ms) of the calculation time window (r, cv, ...)
-    cfg.t0_calc = cfg.duration - 2000
-
-    # Required for rate controller
-    cfg.cache_efficient = 0
+    cfg.t0_calc = 5000
 
     # Populations to use
     pops_active = POPS_USED
 
-    # Subnet parameters (surrogate inputs)
+    # Random seeds
+    cfg.seeds['stim'] = SEED
+    cfg.seeds['conn'] = SEED * 2
+
+    # Add labels to conns
+    cfg.includeParamsLabel = True
+
+    # Required for reference broadcasting
+    cfg.cache_efficient = 0
+
+    # Subnet parameters
     cfg.subnet_build_flag = SURR_INP_ON
     cfg.subnet_params = {
         'pops_active': pops_active,   
         'conns_frozen': CONNS_FROZEN,
-        'fpath_frozen_rates': (
-            str(dirpath_self / f'{TARGET_STATE_LABEL}.csv')
-        )
+        'fpath_frozen_rates': str(dirpath_self / 'target_state_1.csv'),   # surrogate input
+        'global_seed': SEED * 3
     }
+    if len(CONNS_SPLIT) > 0:
+        cfg.subnet_params['conns_split'] = {
+            f'{c[0]}, {c[1]}': 0.5 for c in CONNS_SPLIT
+        }
 
     if not SURR_INP_ON:
         cfg.pops_active = POPS_USED
@@ -141,27 +149,12 @@ def apply_exp_cfg(cfg):
             ibkg = json.load(fid)
         cfg.IClamp = {pop: {'amp': ibkg[pop]}
                       for pop in POPS_USED if pop in ibkg}
-    
+
     # Read target rates
-    df = pd.read_csv(dirpath_self / f'{TARGET_STATE_LABEL}.csv')
+    df = pd.read_csv(dirpath_self / 'target_state_1.csv')
     target_rates = df.set_index('pop_name')['target_rate'].to_dict()
     cfg.target_rates = target_rates
-
-    # OU inputs controlled by a rate feedback
-    if I_CTRL:
-        # Add the inputs
-        cfg.add_ou_current = 1
-        cfg.ou_common = 0
-        cfg.ou_noise_duration = cfg.duration
-        cfg.ou_tau = 10
-        cfg.ou_pop_inputs = {}
-        for pop in POPS_USED:
-            cfg.ou_pop_inputs[pop] = {'ou_mean': 0, 'ou_std': 0}
-
-        # Controller params
-        cfg.ou_ctrl_params = CTRL_PARAMS
-        cfg.ou_ctrl_params['target_rates'] = target_rates
-
+    
     # Cell mechanisms to modify
     with open(dirpath_self / 'mech_changes_1.json', 'r') as fid:
         cfg.mech_changes = json.load(fid)
@@ -221,8 +214,65 @@ def modify_net_params(cfg, params):
                 conn['sec'] = ts['sec']
                 break
         if conn['sec'] is None:
-            raise ValueError(f'No target sec info found for conn {cname}')
+            raise ValueError(f'No target sec info found for conn {cname}')  
+
+
+def modify_net_params_2(cfg, params):
+    """Applied after subnet netParams creation. """
     
+    if len(CONNS_SPLIT) == 0:
+        return
+
+    # Set distinct synMech labels for surrogate and recurrent inputs
+    split_pairs = set(CONNS_SPLIT)
+    rank = int(h.ParallelContext().id())
+    for cname, conn in params.connParams.items():
+        kind, pops_pre_base, pops_post = _rule_kind_and_base_pops(
+            conn  #, verbose=(rank == 0)
+        )
+        if kind is None:
+            continue
+        needs_split = any(
+            (p_pre, p_post) in split_pairs
+            for p_pre in pops_pre_base
+            for p_post in pops_post
+        )
+        if needs_split:
+           _relabel_conn_synmech(params, conn, kind)
+
+
+def modify_network(sim):
+
+    if len(CONNS_SPLIT) == 0:
+        return
+
+    # Fader object
+    fader = ConnFader(
+        sim, T=sim.cfg.duration, dt=sim.cfg.dt    
+    )
+
+    # Find recurrent/surrogate conns for positive/inverse modulation
+    conns_pos, conns_neg = [], []
+    for pop_pre, pop_post in CONNS_SPLIT:
+        conns_pos_ = get_2pop_conns(sim, pop_pre, pop_post)   # recurrent conns
+        conns_neg_ = get_2pop_conns(sim, pop_pre + 'frz', pop_post)   # surrogate inputs
+        conns_pos += conns_pos_
+        conns_neg += conns_neg_
+    
+    fader.add_conn_group(
+        group_name='ee',
+        conns_pos=conns_pos,
+        conns_neg=conns_neg,
+        pts=[(0, 0), (2000, 0), (4000, 1), (sim.cfg.duration, 1)]
+        #pts=[(0, 1), (sim.cfg.duration, 1)]
+    )
+
+    fader.create_modulators()
+    fader.connect_modulators()
+    fader.setup_recording(rec_dt=1)
+
+    sim.ee_fader = fader
+
 
 def post_run(sim):
     """Called in the end of a job (after runnig and saving). """
@@ -238,14 +288,7 @@ def post_run(sim):
         exp_name_sub += '_nosurr'
     exp_name_sub += f'_t_{t_limits[0]}_{t_limits[1]}'
     exp_name_sub += f'_wmult_{cfg.wmult}_ee_{cfg.EEGain}'
-    if I_CTRL:
-        par = cfg.ou_ctrl_params
-        exp_name_sub += (
-            f'_kmu_{par["mu_gain"]}_ksigma_{par["sigma_gain"]}'
-            f'_tau_{par["tau_ctrl"]}_taus_{par["taus_ctrl"]}'
-            f'_tc0_{par["t0"]}_tlock_{par["tlock"]}'
-            f'_kci_{par["k_ctrl"]}_kcp_{par["kp_ctrl"]}'
-        )
+    exp_name_sub += f'_seed_{SEED}'
 
     # Create a subfolder to put the results
     dirpath_res = Path(cfg.saveFolder)
@@ -253,7 +296,7 @@ def post_run(sim):
     os.makedirs(dirpath_res_sub, exist_ok=True)
 
     # Move results to the subfolder
-    res_names = ['cfg.json', 'netParams.json', 'raster.png', 'ctrl.pkl']
+    res_names = ['cfg.json', 'netParams.json', 'raster.png']
     for res_name in res_names:
         fname = f'{exp_name}_{res_name}'
         if (dirpath_res / fname).exists():
@@ -274,24 +317,41 @@ def post_run(sim):
     with open(fpath_res, 'w') as fid:
         json.dump(res, fid, indent=4)
     
+    # Plot weight modulation signals
+    if len(CONNS_SPLIT) > 0:
+        #gathered = sim.ee_fader.gather_recs()
+        sim.ee_fader.plot_recs()
+        fpath_wmod = dirpath_res_sub / f'{exp_name}_wmod.png'
+        plt.savefig(fpath_wmod, dpi=300)
+
     # Plot and save rate dynamics
-    #os.makedirs(dirpath_res_sub / 'rvec_figs', exist_ok=True)
-    r_data = proc.calc_rate_dynamics(
-        sim, t_limits=(1, None), tau_smooth=1.5, pops_used=POPS_USED)
-    colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
-    plt.figure()
-    for n, pop in enumerate(POPS_USED):
-        tt, rr = r_data[pop]
-        r0 = cfg.target_rates[pop]
-        plt.plot(tt, rr, label=pop, color=colors[n])
-        plt.plot([tt[0], tt[-1]], [r0, r0], '--', color=colors[n])
-    plt.xlabel('Time')
-    plt.ylabel('Firing rate')
-    plt.legend(bbox_to_anchor=(1, 1))
-    #plt.yscale('log')
-    #plt.ylim(0.05, None)
-    plt.savefig(dirpath_res_sub / f'{exp_name}.png',
-                bbox_inches='tight', dpi=300)
+    os.makedirs(dirpath_res_sub / 'rvec_figs', exist_ok=True)
+    pop_groups = {'PYR': PYR_POPS, 'PV': PV_POPS, 'SOM': SOM_POPS,
+                  'VIP': VIP_POPS, 'NGF': NGF_POPS}
+    for pop_group_name, pops in pop_groups.items():
+
+        # Compute rate dynamics
+        r_data = proc.calc_rate_dynamics(
+            sim, t_limits=(0, None), tau_smooth=1, pops_used=pops)
+
+        colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
+        plt.figure()
+
+        for n, pop in enumerate(pops):
+            tt, rr = r_data[pop]
+            r0 = cfg.target_rates[pop]
+            col = colors[n % len(colors)]
+            plt.plot(tt, rr, label=pop, color=col)
+            plt.plot([tt[0], tt[-1]], [r0, r0], '--', color=col)
+
+        plt.xlabel('Time')
+        plt.ylabel('Firing rate')
+        plt.legend(bbox_to_anchor=(1, 1))
+        #plt.yscale('log')
+        #plt.ylim(0.05, None)
+
+        plt.savefig(dirpath_res_sub/ 'rvec_figs' / f'{pop_group_name}.png',
+            bbox_inches='tight', dpi=300)
 
 
 def final(sim):

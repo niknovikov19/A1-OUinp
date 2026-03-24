@@ -204,6 +204,10 @@ if hasattr(cfg, 'subnet_build_flag') and cfg.subnet_build_flag:
     par_sub = spb.build(par_dict, desc)
     netParams = specs.NetParams(par_sub)
 
+# Experiment-specific modification of netParams (after subnet)
+if hasattr(cfg_mod, 'modify_net_params_2'):
+    cfg_mod.modify_net_params_2(cfg, netParams)
+
 # Create a folder for the results
 os.makedirs(cfg.saveFolder, exist_ok=True)
 
