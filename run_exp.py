@@ -103,7 +103,8 @@ dirpath_self = Path(__file__).resolve().parent
 if is_batch:
     # Get simLabel from batchtools to identify exp_name,
     # which is then used to generate the path to exp_cfg.py
-    exp_name = specs.mappings['simLabel'][:-6]  # cut away job id
+    sim_label = comm.runner.mappings['simLabel']
+    exp_name = sim_label[:-6]  # cut away job id
     print(f'>>>> EXP_NAME: {exp_name}', flush=True)
 
 # Import experiment-specific config and batch py-files
@@ -136,7 +137,7 @@ if not is_batch:
     cfg.saveFolder = str(cfg.saveFolder)
 
 # Update config by batchtools (if applicable)
-cfg.update_cfg()
+cfg.update()
 
 comm.initialize()
 
@@ -332,7 +333,7 @@ if need_run:
 if comm.is_host():
     netParams.save("{}/{}_params.json".format(cfg.saveFolder, cfg.simLabel))
     print('transmitting data...')
-    inputs = specs.get_mappings()
+    inputs = cfg.get_mappings()
     
     if need_run:    
         # Save average firing rates to a separate json file
@@ -415,18 +416,17 @@ if comm.is_host():
         print(f'>>>>>>>>>>> {cfg.simLabel} SKIPPED', flush=True)
         avgRates = {}
 
-    avgRates['loss'] = 700
+    # Finish and report to batchtools
+    """ avgRates['loss'] = 700
     out_json = json.dumps({**inputs, **avgRates})
     try:
         comm.send(out_json)
     except:
-        print('COMM SEND FAILED')
+        print('COMM SEND FAILED') """
+    comm.send({'done': 1})
     comm.close()
-    """ out_json = json.dumps({'loss': 0})
-    comm.send(out_json)
-    comm.close() """
 
 
 # Experiment-specific final actions
-if hasattr(cfg_mod, 'final'):
-    cfg_mod.final(sim)
+#if hasattr(cfg_mod, 'final'):
+#    cfg_mod.final(sim)

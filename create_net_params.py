@@ -190,18 +190,21 @@ def create_net_params(cfg):
     # Synaptic mechanism parameters
     #------------------------------------------------------------------------------
 
-    cfg.GABABThal['mod'] = 'MyExp2SynBBModulated'
-    cfg.GABABCtx['mod'] = 'MyExp2SynBBModulated'
+    SYN_MECH, SYN_MECH_NMDA = 'MyExp2SynBBModulated', 'MyExp2SynNMDABBModulated'
+    #SYN_MECH, SYN_MECH_NMDA = 'MyExp2SynBB', 'MyExp2SynNMDABB'
+
+    cfg.GABABThal['mod'] = SYN_MECH
+    cfg.GABABCtx['mod'] = SYN_MECH
 
     ### From M1 detailed netParams.py
-    netParams.synMechParams['NMDA'] = {'mod': 'MyExp2SynNMDABBModulated', 'tau1NMDA': 15, 'tau2NMDA': 150, 'e': 0}
-    netParams.synMechParams['AMPA'] = {'mod':'MyExp2SynBBModulated', 'tau1': 0.05, 'tau2': 5.3*cfg.AMPATau2Factor, 'e': 0}
+    netParams.synMechParams['NMDA'] = {'mod': SYN_MECH_NMDA, 'tau1NMDA': 15, 'tau2NMDA': 150, 'e': 0}
+    netParams.synMechParams['AMPA'] = {'mod': SYN_MECH, 'tau1': 0.05, 'tau2': 5.3*cfg.AMPATau2Factor, 'e': 0}
     netParams.synMechParams['GABABThal'] =  cfg.GABABThal
     netParams.synMechParams['GABABCtx'] = cfg.GABABCtx
-    netParams.synMechParams['GABAA'] = {'mod':'MyExp2SynBBModulated', 'tau1': 0.07, 'tau2': 18.2, 'e': -80}
-    netParams.synMechParams['GABAA_VIP'] = {'mod':'MyExp2SynBBModulated', 'tau1': 0.3, 'tau2': 6.4, 'e': -80}  # Pi et al 2013
-    netParams.synMechParams['GABAASlow'] = {'mod': 'MyExp2SynBBModulated','tau1': 2, 'tau2': 100, 'e': -80}
-    netParams.synMechParams['GABAASlowSlow'] = {'mod': 'MyExp2SynBBModulated', 'tau1': 200, 'tau2': 400, 'e': -80}
+    netParams.synMechParams['GABAA'] = {'mod': SYN_MECH, 'tau1': 0.07, 'tau2': 18.2, 'e': -80}
+    netParams.synMechParams['GABAA_VIP'] = {'mod': SYN_MECH, 'tau1': 0.3, 'tau2': 6.4, 'e': -80}  # Pi et al 2013
+    netParams.synMechParams['GABAASlow'] = {'mod': SYN_MECH,'tau1': 2, 'tau2': 100, 'e': -80}
+    netParams.synMechParams['GABAASlowSlow'] = {'mod': SYN_MECH, 'tau1': 200, 'tau2': 400, 'e': -80}
 
     ESynMech = ['AMPA', 'NMDA']
     SOMESynMech = ['GABAASlow','GABABCtx']

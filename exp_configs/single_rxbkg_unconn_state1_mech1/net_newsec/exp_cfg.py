@@ -29,16 +29,18 @@ L4_POPS = ['ITP4', 'ITS4', 'PV4', 'SOM4', 'VIP4', 'NGF4']
 CONNS_EE = [(p1, p2) for p1 in PYR_POPS for p2 in PYR_POPS]
 
 #EXP_LABEL = 'ctx_unconn_sm_21'
-EXP_LABEL = 'ctx_ee_1'
+EXP_LABEL = 'ctx_ee_0'
 #EXP_LABEL = 'L4_unconn'
 #EXP_LABEL = 'L4_ee_0'
+#EXP_LABEL = 'L2_ee_0'
 
 POPS_USED = PYR_POPS + PV_POPS + SOM_POPS + VIP_POPS + NGF_POPS
 #POPS_USED = L4_POPS
+#POPS_USED = L2_POPS
 
 #CONNS_FROZEN = 'all'
-#CONNS_FROZEN = CONNS_EE
-CONNS_FROZEN = []
+CONNS_FROZEN = CONNS_EE
+#CONNS_FROZEN = []
 
 # Background spiking input
 XBKG_NAME = 'rx_bkg_mid_sm_21'
@@ -51,20 +53,20 @@ V_REST = -70
 SURR_INP_ON = 1
 
 REC_TRACES = 1
-PLOT_TRACES = 1
+PLOT_TRACES = 0
 
 DIAG = 0
 
-SEED = 1111
+SEED = 1115
 
 
 def apply_exp_cfg(cfg):
 
     # Duration
-    cfg.duration = 10 * 1e3
+    cfg.duration = 3 * 1e3
 
     # Left point (ms) of the calculation time window (r, cv, ...)
-    cfg.t0_calc = 6000
+    cfg.t0_calc = 2000
 
     # Populations to use
     pops_active = POPS_USED

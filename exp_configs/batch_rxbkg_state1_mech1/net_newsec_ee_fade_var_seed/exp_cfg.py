@@ -17,6 +17,8 @@ from analysis.model_utils.net_utils import get_2pop_conns
 from analysis.ou_tuning import sim_res_proc_utils as proc
 from conn_fader import ConnFader
 import diagnostics as diag
+
+from batch_params import N_SEEDS
 from syn_mech_relabel import _rule_kind_and_base_pops, _relabel_conn_synmech
 
 
@@ -34,13 +36,14 @@ CONNS_EE = [(p1, p2) for p1 in PYR_POPS for p2 in PYR_POPS]
 
 
 # Duration and rate calculation window
-SIM_DURATION = 3 * 1e3
-T0_CALC = 2 * 1e3
+SIM_DURATION = 10 * 1e3
+T0_CALC = 7 * 1e3
 
 #EXP_LABEL = 'ctx_ee_fade'
-EXP_LABEL = 'ctx_ee_fade_0'
-#EXP_LABEL = 'L2_ee_0_ceff_nomod'
+EXP_LABEL = 'ctx_ee_1'
+#EXP_LABEL = 'L2_ee_0'
 #EXP_LABEL = 'L2_unconn'
+#EXP_LABEL = 'L2_ee_fade'
 
 POPS_USED = PYR_POPS + PV_POPS + SOM_POPS + VIP_POPS + NGF_POPS
 #POPS_USED = L2_POPS
@@ -49,7 +52,7 @@ POPS_USED = PYR_POPS + PV_POPS + SOM_POPS + VIP_POPS + NGF_POPS
 #CONNS_FROZEN = CONNS_EE
 CONNS_FROZEN = []
 
-EE_FADER_ON = 1
+EE_FADER_ON = 0
 
 #CONNS_SPLIT = []
 CONNS_SPLIT = [(p1, p2) for p1, p2 in CONNS_EE
@@ -74,7 +77,19 @@ PLOT_TRACES = 0
 
 DIAG = 0
 
-SEED = 1111
+# Actual net creation and simulation
+NEED_RUN = 1
+
+
+def gen_exp_name_sub(cfg):
+    t_limits = (cfg.t0_calc / 1000, cfg.duration / 1000)
+    exp_name_sub = f'exp_{EXP_LABEL}'
+    if not SURR_INP_ON:
+        exp_name_sub += '_nosurr'
+    exp_name_sub += f'_nseed_{N_SEEDS}'
+    exp_name_sub += f'_t_{t_limits[0]}_{t_limits[1]}'
+    exp_name_sub += f'_wmult_{cfg.wmult}_ee_{cfg.EEGain}'
+    return exp_name_sub
 
 
 def apply_exp_cfg(cfg):
@@ -88,9 +103,13 @@ def apply_exp_cfg(cfg):
     # Populations to use
     pops_active = POPS_USED
 
+    # Actual net creation and simulation
+    cfg.need_run = NEED_RUN
+
     # Random seeds
-    cfg.seeds['stim'] = SEED
-    cfg.seeds['conn'] = SEED * 2
+    cfg.seed_main = None   # batch param
+    cfg.seeds['stim'] = None   # set in batch_params.py
+    cfg.seeds['conn'] = None   # set in batch_params.py
 
     # Add labels to conns
     if EE_FADER_ON:
@@ -106,7 +125,7 @@ def apply_exp_cfg(cfg):
         'pops_active': pops_active,   
         'conns_frozen': CONNS_FROZEN,
         'fpath_frozen_rates': str(dirpath_self / 'target_state_1.csv'),   # surrogate input
-        'global_seed': SEED * 3
+        'global_seed': None   # set in batch_params.py
     }
     if EE_FADER_ON:
         cfg.subnet_params['conns_split'] = {
@@ -150,9 +169,9 @@ def apply_exp_cfg(cfg):
         x = xbkg_info[pop]
         cfg.bkg_spike_inputs[pop] = {
             'exc': {'r': x['rxe'], 'w': x['wxe'], 'sec': x['xe_sec'],
-                    'noise': 1, 'seed': cfg.seeds['stim'] + 10000 + n},
+                    'noise': 1, 'seed': None},   # set in batch_params.py
             'inh': {'r': x['rxi'], 'w': x['wxi'], 'sec': x['xi_sec'],
-                    'noise': 1, 'seed': cfg.seeds['stim'] + 20000 + n}
+                    'noise': 1, 'seed': None},   # set in batch_params.py
         }
     
     # Static IClamp that sets the resting voltage
@@ -294,60 +313,76 @@ def post_run(sim):
     # Metric calculation time interval in seconds
     t_limits = (cfg.t0_calc / 1000, cfg.duration / 1000)
 
-    exp_name_sub = f'exp_{EXP_LABEL}'
-    if not SURR_INP_ON:
-        exp_name_sub += '_nosurr'
-    exp_name_sub += f'_t_{t_limits[0]}_{t_limits[1]}'
-    exp_name_sub += f'_wmult_{cfg.wmult}_ee_{cfg.EEGain}'
-    exp_name_sub += f'_seed_{SEED}'
+    # Experiment sub-name
+    exp_name_sub = gen_exp_name_sub(cfg)
 
-    # Create a subfolder to put the results
+    # Generate filename postfix with batch param values
+    exp_id = exp_name.split('_')[-1]
+    postfix = (f'{exp_id}_seed_{cfg.seed_main}')
+
+    # Create subfolders to put the results
     dirpath_res = Path(cfg.saveFolder)
     dirpath_res_sub = dirpath_res / exp_name_sub
     os.makedirs(dirpath_res_sub, exist_ok=True)
+    dirnames_sub = ['rasters', 'results', 'cfg', 'pkl', 'netpar', 
+                    'traces', 'wmod_figs', 'rvec_figs']
+    for dirname in dirnames_sub:
+        os.makedirs(dirpath_res_sub / dirname, exist_ok=True)
 
-    # Move results to the subfolder
-    res_names = ['cfg.json', 'netParams.json', 'raster.png']
-    for res_name in res_names:
-        fname = f'{exp_name}_{res_name}'
-        if (dirpath_res / fname).exists():
-            (dirpath_res / fname).rename(dirpath_res_sub / fname)
-        
-    # Move traces to the subfodler
-    os.makedirs(dirpath_res_sub / 'traces', exist_ok=True)
-    for fpath in dirpath_res.glob(f'{exp_name}_*traces*.png'):
-        fpath.rename(dirpath_res_sub / 'traces' / fpath.name)
+    # Move results to a subfolder
+    data_info = [
+        ('raster', 'png', 'rasters'),
+        ('data', 'pkl', 'pkl'),
+        ('cfg', 'json', 'cfg'),
+        ('netParams', 'json', 'netpar')
+    ]
+    for di in data_info:
+        data_name, ext, dirname_sub = di
+        fpath_old = dirpath_res / f'{exp_name}_{data_name}.{ext}'
+        fpath_new = dirpath_res_sub / dirname_sub / f'{data_name}_{postfix}.{ext}'
+        if fpath_old.exists():
+            fpath_old.rename(fpath_new)
+        else:
+            print('RESULT NOT FOUND: ', fpath_old)
+
+    # Move traces to a subfolder
+    trace_files = list(dirpath_res.glob(f'{exp_name}*_traces*.png'))
+    for n, fpath_old in enumerate(trace_files):
+        fpath_new = dirpath_res_sub / 'traces' / f'trace_{postfix}_{n}.png'
+        fpath_old.rename(fpath_new)
     
-    # Save rates, CVs, voltage stats, and timings to a json file
-    res = {}
-    res['timing'] = sim.timingData
-    res |= proc.calc_rates_and_cvs(sim, t_limits, nspikes_min=3)
-    if REC_TRACES:
-        res |= proc.calc_v_stats(sim, t_limits, med_win=0.05)
-    fpath_res = dirpath_res_sub / f'{exp_name}_result.json'
-    with open(fpath_res, 'w') as fid:
-        json.dump(res, fid, indent=4)
+    # Save rates, CVs, and voltage stats to a json file
+    if NEED_RUN:
+        res = {}
+        res['timing'] = sim.timingData
+        res |= proc.calc_rates_and_cvs(sim, t_limits, nspikes_min=3)
+        if REC_TRACES:
+            res |= proc.calc_v_stats(sim, t_limits, med_win=0.05)
+        fpath_res = dirpath_res_sub / 'results' / f'result_{postfix}.json'
+        with open(fpath_res, 'w') as fid:
+            json.dump(res, fid, indent=4)
     
     # Plot weight modulation signals
-    if EE_FADER_ON:
+    if EE_FADER_ON and NEED_RUN:
         #gathered = sim.ee_fader.gather_recs()
         sim.ee_fader.plot_recs()
-        fpath_wmod = dirpath_res_sub / f'{exp_name}_wmod.png'
+        fpath_wmod = (dirpath_res_sub / 'wmod_figs' / f'wmod_{postfix}.png')
         plt.savefig(fpath_wmod, dpi=300)
 
     # Plot and save rate dynamics
     os.makedirs(dirpath_res_sub / 'rvec_figs', exist_ok=True)
     pop_groups = {'PYR': PYR_POPS, 'PV': PV_POPS, 'SOM': SOM_POPS,
                   'VIP': VIP_POPS, 'NGF': NGF_POPS}
+    colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
     for pop_group_name, pops in pop_groups.items():
+
         pops = [p for p in pops if p in POPS_USED]
 
         # Compute rate dynamics
         r_data = proc.calc_rate_dynamics(
-            sim, t_limits=(0, None), tau_smooth=1, pops_used=pops)
+            sim, t_limits=(1, None), tau_smooth=1, pops_used=pops)
 
-        colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
-        plt.figure()
+        plt.figure(111); plt.clf()
 
         for n, pop in enumerate(pops):
             tt, rr = r_data[pop]
@@ -362,12 +397,13 @@ def post_run(sim):
         #plt.yscale('log')
         #plt.ylim(0.05, None)
 
-        plt.savefig(dirpath_res_sub/ 'rvec_figs' / f'{pop_group_name}.png',
-            bbox_inches='tight', dpi=300)
+        fname_out = f'{pop_group_name}_{postfix}.png'
+        plt.savefig(dirpath_res_sub / 'rvec_figs' / fname_out,
+                    bbox_inches='tight', dpi=300)
 
 
 def final(sim):
-    if not DIAG:
+    if not DIAG or not NEED_RUN:
         return
 
     diag.count_conns(sim)

@@ -1,0 +1,278 @@
+{
+    "e_som_vip->e": {
+        "pops_pre": [
+            "IT2", "IT3", "ITP4", "ITS4", "IT5A", "CT5A", 
+            "IT5B", "CT5B", "PT5B", "IT6", "CT6",
+            "SOM2", "SOM3", "SOM4", "SOM5A", "SOM5B", "SOM6",
+            "VIP2", "VIP3", "VIP4", "VIP5A", "VIP5B", "VIP6"
+        ],
+        "pops_post": [
+            "IT2", "IT3", "ITP4", "ITS4", "IT5A", "CT5A", 
+            "IT5B", "CT5B", "PT5B", "IT6", "CT6"
+        ],
+        "sec": [
+            "Adend1", "Adend2", "Adend3", "Bdend"
+        ]
+    },
+    "pv->e": {
+        "pops_pre": [
+            "PV2", "PV3", "PV4", "PV5A", "PV5B", "PV6"
+        ],
+        "pops_post": [
+            "IT2", "IT3", "ITP4", "ITS4", "IT5A", "CT5A", 
+            "IT5B", "CT5B", "PT5B", "IT6", "CT6"
+        ],
+        "sec": [
+            "Adend1", "Bdend", "soma"
+        ]
+    },
+    "ngf1->e": {
+        "pops_pre": [
+            "NGF1"
+        ],
+        "pops_post": [
+            "IT2", "IT3", "ITP4", "ITS4", "IT5A", "CT5A", 
+            "IT5B", "CT5B", "PT5B", "IT6", "CT6"
+        ],
+        "sec": [
+            "Adend3"
+        ]
+    },
+    "ngf234->e234": {
+        "pops_pre": [
+            "NGF2", "NGF3", "NGF4"
+        ],
+        "pops_post": [
+            "IT2", "IT3", "ITP4", "ITS4"
+        ],
+        "sec": [
+            "Adend1", "Adend2"
+        ]
+    },
+    "ngf234->e56": {
+        "pops_pre": [
+            "NGF2", "NGF3", "NGF4"
+        ],
+        "pops_post": [
+            "IT5A", "CT5A", "IT5B", "CT5B", "PT5B", "IT6", "CT6"
+        ],
+        "sec": [
+            "Adend2"
+        ]
+    },
+    "ngf56->e56": {
+        "pops_pre": [
+            "NGF5A", "NGF5B", "NGF6"
+        ],
+        "pops_post": [
+            "IT5A", "CT5A", "IT5B", "CT5B", "PT5B", "IT6", "CT6"
+        ],
+        "sec": [
+            "Adend1"
+        ]
+    },
+    "ngf56->e234": {
+        "pops_pre": [
+            "NGF5A", "NGF5B", "NGF6"
+        ],
+        "pops_post": [
+            "IT2", "IT3", "ITP4", "ITS4"
+        ],
+        "sec": [
+            "Bdend"
+        ]
+    },
+    "tc_htc->e": {
+        "pops_pre": [
+            "TC", "HTC"
+        ],
+        "pops_post": [
+            "IT2", "IT3", "ITP4", "ITS4", "IT5A", "CT5A", 
+            "IT5B", "CT5B", "PT5B", "IT6", "CT6"
+        ],
+        "sec": [
+            "Adend1", "Bdend"
+        ]
+    },
+    "tcm->e": {
+        "pops_pre": [
+            "TCM"
+        ],
+        "pops_post": [
+            "IT2", "IT3", "ITP4", "ITS4", "IT5A", "CT5A", 
+            "IT5B", "CT5B", "PT5B", "IT6", "CT6"
+        ],
+        "sec": [
+            "Adend1", "Adend2", "Adend3"
+        ]
+    },
+    "e->pv_som_ngf": {
+        "pops_pre": [
+            "IT2", "IT3", "ITP4", "ITS4", "IT5A", "CT5A", 
+            "IT5B", "CT5B", "PT5B", "IT6", "CT6"
+        ],
+        "pops_post": [
+            "PV2", "PV3", "PV4", "PV5A", "PV5B", "PV6",
+            "SOM2", "SOM3", "SOM4", "SOM5A", "SOM5B", "SOM6",
+            "NGF1", "NGF2", "NGF3", "NGF4", "NGF5A", "NGF5B", "NGF6"
+        ],
+        "sec": [
+            "dend"
+        ]
+    },
+    "e->vip": {
+        "pops_pre": [
+            "IT2", "IT3", "ITP4", "ITS4", "IT5A", "CT5A", 
+            "IT5B", "CT5B", "PT5B", "IT6", "CT6"
+        ],
+        "pops_post": [
+            "VIP2", "VIP3", "VIP4", "VIP5A", "VIP5B", "VIP6"    
+        ],
+        "sec": [
+            "ori1", "ori2", "rad1", "rad2"
+        ]
+    },
+    "ngf_pv_som->pv": {
+        "pops_pre": [
+            "NGF1", "NGF2", "NGF3", "NGF4", "NGF5A", "NGF5B", "NGF6",
+            "PV2", "PV3", "PV4", "PV5A", "PV5B", "PV6",
+            "SOM2", "SOM3", "SOM4", "SOM5A", "SOM5B", "SOM6"
+        ],
+        "pops_post": [
+            "PV2", "PV3", "PV4", "PV5A", "PV5B", "PV6"
+        ],
+        "sec": [
+            "dend"
+        ]
+    },
+    "vip->pv": {
+        "pops_pre": [
+            "VIP2", "VIP3", "VIP4", "VIP5A", "VIP5B", "VIP6"
+        ],
+        "pops_post": [
+            "PV2", "PV3", "PV4", "PV5A", "PV5B", "PV6"
+        ],
+        "sec": [
+            "soma"
+        ]
+    },
+    "pv_vip->som": {
+        "pops_pre": [
+            "PV2", "PV3", "PV4", "PV5A", "PV5B", "PV6",
+            "VIP2", "VIP3", "VIP4", "VIP5A", "VIP5B", "VIP6"
+        ],
+        "pops_post": [
+            "SOM2", "SOM3", "SOM4", "SOM5A", "SOM5B", "SOM6"
+        ],
+        "sec": [
+            "soma", "dend"
+        ]
+    },
+    "ngf_som->som": {
+        "pops_pre": [
+            "NGF1", "NGF2", "NGF3", "NGF4", "NGF5A", "NGF5B", "NGF6",
+            "SOM2", "SOM3", "SOM4", "SOM5A", "SOM5B", "SOM6"
+        ],
+        "pops_post": [
+            "SOM2", "SOM3", "SOM4", "SOM5A", "SOM5B", "SOM6"
+        ],
+        "sec": [
+            "dend"
+        ]
+    },
+    "ngf_pv_som_vip->ngf": {
+        "pops_pre": [
+            "NGF1", "NGF2", "NGF3", "NGF4", "NGF5A", "NGF5B", "NGF6",
+            "PV2", "PV3", "PV4", "PV5A", "PV5B", "PV6",
+            "SOM2", "SOM3", "SOM4", "SOM5A", "SOM5B", "SOM6",
+            "VIP2", "VIP3", "VIP4", "VIP5A", "VIP5B", "VIP6"
+        ],
+        "pops_post": [
+            "NGF1", "NGF2", "NGF3", "NGF4", "NGF5A", "NGF5B", "NGF6"
+        ],
+        "sec": [
+            "dend"
+        ]
+    },
+    "pv->vip": {
+        "pops_pre": [
+            "PV2", "PV3", "PV4", "PV5A", "PV5B", "PV6"
+        ],
+        "pops_post": [
+            "VIP2", "VIP3", "VIP4", "VIP5A", "VIP5B", "VIP6"
+        ],
+        "sec": [
+            "ori1", "ori2", "rad1", "soma"
+        ]
+    },
+    "som->vip": {
+        "pops_pre": [
+            "SOM2", "SOM3", "SOM4", "SOM5A", "SOM5B", "SOM6"
+        ],
+        "pops_post": [
+            "VIP2", "VIP3", "VIP4", "VIP5A", "VIP5B", "VIP6"
+        ],
+        "sec": [
+            "ori1", "ori2", "rad1", "rad2"
+        ]
+    },
+    "vip->vip": {
+        "pops_pre": [
+            "VIP2", "VIP3", "VIP4", "VIP5A", "VIP5B", "VIP6"
+        ],
+        "pops_post": [
+            "VIP2", "VIP3", "VIP4", "VIP5A", "VIP5B", "VIP6"
+        ],
+        "sec": [
+            "ori1", "ori2", "rad1", "rad2", "soma"
+        ]
+    },
+    "ngf->vip": {
+        "pops_pre": [
+            "NGF1", "NGF2", "NGF3", "NGF4", "NGF5A", "NGF5B", "NGF6"
+        ],
+        "pops_post": [
+            "VIP2", "VIP3", "VIP4", "VIP5A", "VIP5B", "VIP6"
+        ],
+        "sec": [
+            "ori1", "ori2", "rad1", "rad2"
+        ]
+    },
+    "e_thal->thal": {
+        "pops_pre": [
+            "IT2", "IT3", "ITP4", "ITS4", "IT5A", "CT5A", 
+            "IT5B", "CT5B", "PT5B", "IT6", "CT6",
+            "TC", "HTC", "TCM", "TI", "TIM", "IRE", "IREM"
+        ],
+        "pops_post": [
+            "TC", "HTC", "TCM", "TI", "TIM", "IRE", "IREM"
+        ],
+        "sec": [
+            "soma"
+        ]
+    },
+    "thal->pv_som_ngf": {
+        "pops_pre": [
+            "TC", "HTC", "TCM", "TI", "TIM", "IRE", "IREM"
+        ],
+        "pops_post": [
+            "PV2", "PV3", "PV4", "PV5A", "PV5B", "PV6",
+            "SOM2", "SOM3", "SOM4", "SOM5A", "SOM5B", "SOM6",
+            "NGF1", "NGF2", "NGF3", "NGF4", "NGF5A", "NGF5B", "NGF6"
+        ],
+        "sec": [
+            "dend"
+        ]
+    },
+    "thal->vip": {
+        "pops_pre": [
+            "TC", "HTC", "TCM", "TI", "TIM", "IRE", "IREM"
+        ],
+        "pops_post": [
+            "VIP2", "VIP3", "VIP4", "VIP5A", "VIP5B", "VIP6"    
+        ],
+        "sec": [
+            "ori1", "ori2", "rad1", "rad2"
+        ]
+    }
+}
