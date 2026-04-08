@@ -40,7 +40,8 @@ SIM_DURATION = 10 * 1e3
 T0_CALC = 7 * 1e3
 
 #EXP_LABEL = 'ctx_ee_fade'
-EXP_LABEL = 'ctx_ee_1'
+#EXP_LABEL = 'ctx_ee_0'
+EXP_LABEL = 'ctx_unconn'
 #EXP_LABEL = 'L2_ee_0'
 #EXP_LABEL = 'L2_unconn'
 #EXP_LABEL = 'L2_ee_fade'
@@ -48,9 +49,9 @@ EXP_LABEL = 'ctx_ee_1'
 POPS_USED = PYR_POPS + PV_POPS + SOM_POPS + VIP_POPS + NGF_POPS
 #POPS_USED = L2_POPS
 
-#CONNS_FROZEN = 'all'
+CONNS_FROZEN = 'all'
 #CONNS_FROZEN = CONNS_EE
-CONNS_FROZEN = []
+#CONNS_FROZEN = []
 
 EE_FADER_ON = 0
 
