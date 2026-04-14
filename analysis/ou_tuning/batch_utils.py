@@ -14,6 +14,7 @@ def _extract_nested(x: dict, key_seq: str):
         val = val[key]
     return val
 
+
 def extract_batch_params_to_xr(
         dirpath_exp: str | Path,
         cfg_param_fields: dict[str, str],
@@ -138,10 +139,178 @@ def collect_batch_xr_data(
     return X
 
 
+def collect_batch_json_data(
+        job_idx_xr: xr.DataArray,
+        dirpath_data: str | Path,
+        var_mappings: dict[str, str],
+        fname_data_templ: str = 'result_{job:05d}_*.json',
+        extra_dims: dict[str, list] | None = None,
+        extra_coords: dict[str, tuple[str, list]] | None = None,
+        skip_missing: bool = True
+        ) -> xr.Dataset:
+    """
+    Collects batch results from JSON files into an xarray Dataset.
+    
+    Parameters
+    ----------
+    job_idx_xr : xr.DataArray
+        DataArray mapping parameter grid coordinates to job IDs.
+        Created by extract_batch_params_to_xr().
+    dirpath_data : str | Path
+        Directory containing the JSON result files.
+    var_mappings : dict[str, str]
+        Mapping from xarray variable names to JSON keys.
+        Example: {'rate': 'rates', 'cv': 'cvs'}
+        Supports nested keys with dot notation: {'rate': 'simData.popRates'}
+    fname_data_templ : str, optional
+        Template for result filenames with {job} placeholder.
+        Default: 'result_{job:05d}_*.json'
+    extra_dims : dict[str, list], optional
+        Additional dimensions to add beyond job parameters.
+        Example: {'pop': ['IT2', 'IT5A', 'IT5B']}
+    extra_coords : dict[str, tuple[str, list]], optional
+        Additional coordinates to add to specific dimensions.
+        Example: {'drxe_pos': ('drxe', drxe_vals), 'rxi_pos': ('rxi', rxi_vals)}
+        Keys are dimension names, values are (coord_name, coord_values) tuples.
+    skip_missing : bool, optional
+        If True, skip jobs with missing files. If False, raise error.
+        Default: True
+    
+    Returns
+    -------
+    xr.Dataset
+        Dataset with all batch results organized by parameter space dimensions.
+    
+    Examples
+    --------
+    Basic usage with population dimension:
+    
+    >>> job_idx_xr = batch_utils.extract_batch_params_to_xr(
+    ...     'exp_results/cfg',
+    ...     cfg_param_fields={'rxe': 'rxe'}
+    ... )
+    >>> X = batch_utils.collect_batch_json_data(
+    ...     job_idx_xr,
+    ...     'exp_results/results',
+    ...     var_mappings={'rate': 'rates', 'cv': 'cvs'},
+    ...     extra_dims={'pop': ['IT2', 'IT6frz']}
+    ... )
+    
+    2D batch with region-specific coordinates:
+    
+    >>> job_idx_xr = batch_utils.extract_batch_params_to_xr(
+    ...     'exp_results/cfg',
+    ...     cfg_param_fields={'drxe_pos': 'drxe_num', 'rxi_pos': 'rxi_num'}
+    ... )
+    >>> drxe_vals = np.linspace(-10000, 0, 20)
+    >>> rxi_vals = np.linspace(5000, 15000, 20)
+    >>> X = batch_utils.collect_batch_json_data(
+    ...     job_idx_xr,
+    ...     'exp_results/results',
+    ...     var_mappings={'rate': 'rates', 'vavg': 'v_thresh_avg'},
+    ...     extra_dims={'pop': ['IT5A', 'IT5B']},
+    ...     extra_coords={
+    ...         'drxe_pos': ('drxe', drxe_vals),
+    ...         'rxi_pos': ('rxi', rxi_vals)
+    ...     }
+    ... )
+    >>> # Swap to physical coordinates
+    >>> X = X.swap_dims({'drxe_pos': 'drxe', 'rxi_pos': 'rxi'})
+    """
+    dirpath_data = Path(dirpath_data)
+    
+    # Build dimensions and coordinates
+    job_dims = list(job_idx_xr.dims)
+    all_dims = job_dims.copy()
+    all_coords = dict(job_idx_xr.coords)
+    
+    # Add extra dimensions if specified
+    if extra_dims:
+        for dim_name, dim_values in extra_dims.items():
+            all_dims.append(dim_name)
+            all_coords[dim_name] = dim_values
+    
+    # Add extra coordinates if specified
+    if extra_coords:
+        for dim_name, (coord_name, coord_values) in extra_coords.items():
+            if dim_name not in all_dims:
+                raise ValueError(f"Dimension '{dim_name}' not found. "
+                                 f"Available dims: {all_dims}")
+            all_coords[coord_name] = (dim_name, coord_values)
+    
+    # Determine array shape
+    shape = [job_idx_xr.sizes[d] for d in job_dims]
+    if extra_dims:
+        shape.extend(len(v) for v in extra_dims.values())
+    
+    # Create empty Dataset
+    data_vars = {
+        var_name: (all_dims, np.full(shape, np.nan, dtype=np.float64))
+        for var_name in var_mappings.keys()
+    }
+    X = xr.Dataset(data_vars, coords=all_coords)
+    
+    # Iterate over all parameter combinations
+    n_loaded = 0
+    n_skipped = 0
+    for idx in np.ndindex(job_idx_xr.shape):
+        job_id = job_idx_xr.values[idx]
+        
+        # Skip NaN job IDs (sparse parameter grids)
+        if np.isnan(job_id):
+            n_skipped += 1
+            continue
+        
+        job_id = int(job_id)
+        sel = {dim: idx[i] for i, dim in enumerate(job_dims)}
+        
+        # Generate file path
+        fname_data = fname_data_templ.format(job=job_id)
+        try:
+            fpath_data = _get_fpath_by_templ(dirpath_data, fname_data)
+        except RuntimeError:
+            if skip_missing:
+                n_skipped += 1
+                continue
+            else:
+                raise
+        
+        # Load JSON data
+        with open(fpath_data, 'r') as fid:
+            result_data = json.load(fid)
+        
+        # Extract and assign data for each variable
+        for var_name, json_key in var_mappings.items():
+            # Extract nested value from JSON
+            json_value = _extract_nested(result_data, json_key)
+            
+            # Handle different data structures
+            if extra_dims:
+                # If we have extra dimensions (e.g., populations),
+                # assume json_value is a dict keyed by those dimension values
+                for extra_dim_name, extra_dim_values in extra_dims.items():
+                    for extra_dim_val in extra_dim_values:
+                        if extra_dim_val in json_value:
+                            extra_sel = {extra_dim_name: extra_dim_val}
+                            combined_sel = {**sel, **extra_sel}
+                            X[var_name].loc[combined_sel] = json_value[extra_dim_val]
+            else:
+                # Simple case: direct assignment
+                X[var_name][sel] = json_value
+        
+        n_loaded += 1
+    
+    print(f"Loaded {n_loaded} jobs, skipped {n_skipped}")
+    
+    return X
+
+
+
 if __name__ == '__main__':
 
     dirpath_exp = Path(
-    '/ddn/niknovikov19/repo/A1_OUinp/exp_results/batch_i_ou/batch_i_ou_IT5B_rx_switch_var_oumean'
+        '/ddn/niknovikov19/repo/A1_OUinp/exp_results/batch_rxbkg_state1_mech1/'
+        'net_newsec_ee_fade_var_rpop/exp_L2_ee_1_frz_IT2_0.1_10_PV2_1_50_npts_15_t_3.0_5.0_wmult_0.25_ee_0.5'
     )
 
     cfg_param_fields = {
@@ -156,6 +325,7 @@ if __name__ == '__main__':
         job_pos_in_fname=1
     )
 
-    R = collect_batch_xr_data(
-        job_idx_xr, dirpath_exp / 'rates', 'rates_{job:05d}_*.nc'
-    )
+    #R = collect_batch_xr_data(
+    #    job_idx_xr, dirpath_exp / 'rates', 'rates_{job:05d}_*.nc')
+
+

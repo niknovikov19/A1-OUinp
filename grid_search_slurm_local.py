@@ -46,15 +46,15 @@ wait
 
 
 # Experiment name
-exp_name = 'batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed'
+exp_name = 'batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_rpop'
 
 # HPC partition
 #PARTITION = 'bigmem.q'
 PARTITION = 'cpu.q'
 
 # Resources to allocate
-N_CORES = 30
-MEM_SZ = 150
+N_CORES = 60
+MEM_SZ = 256
 
 
 # Repository folder
