@@ -22,11 +22,15 @@ from batch_params import (
 )
 
 
-EXP_NAME = 'tc'
-POPS_USED = ['TC']
+EXP_NAME = 'ti'
+POPS_USED = ['TI']
+
+CELL_TYPES = {'IRE': 'RE', 'PV3': 'PV', 'SOM3': 'SOM',
+              'VIP3': 'VIP', 'NGF3': 'NGF'}
 
 # Constant input increasing across the cells ("I" of the f-I curve)
-I_RANGE = [-0.01, 0]
+#I_RANGE = [-0.002, 0.01]
+I_RANGE = [-0.02, 0.03]
 
 # Mechanism changes
 GKDR_MULT = 1
@@ -38,6 +42,29 @@ GCAN_MULT = 1
 GKBK_MULT = 1
 GIH_MULT = 1
 GNAX_MULT = 1
+
+
+def get_mech_changes():
+    mech_change_info = {
+        'gkdr': ('kdr', 'gbar', GKDR_MULT),
+        'gkap': ('kap', 'gbar', GKAP_MULT),
+        'gleak': ('pas', 'g', GLEAK_MULT),
+        'gcat': ('cat', 'gcatbar', GCAT_MULT),
+        'gcal': ('cal', 'gcalbar', GCAL_MULT),
+        'gcan': ('can', 'gcanbar', GCAN_MULT),
+        'gkbk': ('kBK', 'gpeak', GKBK_MULT),
+        'gih': ('ih', 'gbar', GIH_MULT),
+        'gnax': ('nax', 'gbar', GNAX_MULT)
+    }
+    mech_changes = {}
+    for pop in POPS_USED:
+        ct = CELL_TYPES[pop] if pop in CELL_TYPES else pop
+        for name, ch in mech_change_info.items():
+            mech_changes[f'{name}_{pop}'] = {
+                'pop': f'{ct}_reduced', 'sec': 'all',
+                'mech': ch[0], 'par': ch[1], 'mult': ch[2]
+            }
+    return mech_changes
 
 
 def apply_exp_cfg(cfg):
@@ -86,53 +113,7 @@ def apply_exp_cfg(cfg):
     cfg.bkg_w = 0   # from batch
 
     # Cell mechanisms to modify
-    cfg.mech_changes = {}
-    for pop in POPS_USED:
-        cfg.mech_changes[f'gkdr_{pop}'] = {
-            'pop': f'{pop}_reduced', 'sec': 'all',
-            'mech': 'kdr', 'par': 'gbar',
-            'mult': GKDR_MULT
-        }
-        cfg.mech_changes[f'gkap_{pop}'] = {
-            'pop': f'{pop}_reduced', 'sec': 'all',
-            'mech': 'kap', 'par': 'gbar',
-            'mult': GKAP_MULT
-        }
-        cfg.mech_changes[f'gleak_{pop}'] = {
-            'pop': f'{pop}_reduced', 'sec': 'all',
-            'mech': 'pas', 'par': 'g',
-            'mult': GLEAK_MULT
-        }
-        cfg.mech_changes[f'gcat_{pop}'] = {
-            'pop': f'{pop}_reduced', 'sec': 'all',
-            'mech': 'cat', 'par': 'gcatbar',
-            'mult': GCAT_MULT
-        }
-        cfg.mech_changes[f'gcal_{pop}'] = {
-            'pop': f'{pop}_reduced', 'sec': 'all',
-            'mech': 'cal', 'par': 'gcalbar',
-            'mult': GCAL_MULT
-        }
-        cfg.mech_changes[f'gcan_{pop}'] = {
-            'pop': f'{pop}_reduced', 'sec': 'all',
-            'mech': 'can', 'par': 'gcanbar',
-            'mult': GCAN_MULT
-        }
-        cfg.mech_changes[f'gkbk_{pop}'] = {
-            'pop': f'{pop}_reduced', 'sec': 'all',
-            'mech': 'kBK', 'par': 'gpeak',
-            'mult': GKBK_MULT
-        }
-        cfg.mech_changes[f'gih_{pop}'] = {
-            'pop': f'{pop}_reduced', 'sec': 'all',
-            'mech': 'ih', 'par': 'gbar',
-            'mult': GIH_MULT
-        }
-        cfg.mech_changes[f'gnax_{pop}'] = {
-            'pop': f'{pop}_reduced', 'sec': 'all',
-            'mech': 'nax', 'par': 'gbar',
-            'mult': GNAX_MULT
-        }
+    cfg.mech_changes = get_mech_changes()
     
     # Load a table of pop sizes
     fpath_csv = dirpath_self / 'pops_sz.csv'

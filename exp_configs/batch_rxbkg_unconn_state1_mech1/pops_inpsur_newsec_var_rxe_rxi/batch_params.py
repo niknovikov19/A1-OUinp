@@ -4,8 +4,8 @@ import numpy as np
 N_RXE = 20
 N_RXI = 20
 
-RXE_MAX = 25000
-RXI_MAX = 5000
+RXE_MAX = 15000
+RXI_MAX = 1500
 
 RXE_MIN = 1
 RXI_MIN = 1

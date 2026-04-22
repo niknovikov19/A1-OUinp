@@ -10,11 +10,12 @@ BKG_SEC = 'soma'
 
 #AMP_VALS = [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2]
 #AMP_VALS = [0.75, 1.5]
-AMP_VALS = [0.25, 1, 2]
+#AMP_VALS = [0.25, 1, 2]
+AMP_VALS = [-4, -2, 2, 4]
 #RX_VALS = [50, 75, 100, 125, 150]
 #RX_VALS = [1, 50, 100, 150]
 RX_VALS = [1, 250, 500]
-WX_VALS = [0.1]
+WX_VALS = [1]
 #RX_VALS = [5000, 10000, 15000]
 #WX_VALS = [0.01]
 

@@ -18,6 +18,7 @@ import background_stim_new as bs
 from create_base_cfg import create_base_cfg
 from create_net_params import create_net_params
 from load_module import load_module
+import rate_ctrl as ctrl
 
 from subnet_tuner import SubnetDesc, SubnetParamBuilder2
 
@@ -279,7 +280,6 @@ if need_run:
     ctrl_dict = None
     if sim.cfg.add_ou_current:
         if hasattr(sim.cfg, 'ou_ctrl_params'):
-        #if False:
             sim, vecs_dict, ctrl_dict = bs.add_noise_iclamp_ctrl(sim)
         else:
             sim, vecs_dict = bs.add_noise_iclamp(sim)
@@ -320,7 +320,7 @@ if need_run:
     # Gather controller traces
     if ctrl_dict is not None:
         print('>>> Gather controller data...', flush=True)
-        ctrl_dict = bs.gather_ctrl_data(sim, ctrl_dict)
+        ctrl_dict = ctrl.gather_ctrl_data(sim, ctrl_dict)
     
     # Save and plot the result
     sim.saveData()
@@ -353,65 +353,12 @@ if comm.is_host():
 
         # Plot controller signals and save the figures
         if ctrl_dict is not None:
-            bs.plot_save_ctrl_traces(sim, ctrl_dict)
+            ctrl.plot_save_ctrl_traces(sim, ctrl_dict)
         
         # Experiment-specific result processing
         if hasattr(cfg_mod, 'post_run'):
             cfg_mod.post_run(sim)
-        
-        """ # Gather controller data
-        if ctrl_dict is not None:
-            #pprint(rank_ctrl_dicts)
-            ctrl_dict_all = {}
-            for rank_ctrl_dict in rank_ctrl_dicts:
-                for pop, ctrl_data in rank_ctrl_dict.items():
-                    #print('Gather ctrl data: ', pop, flush=True)
-                    if ((pop not in ctrl_dict_all) or 
-                            (ctrl_dict_all[pop]['tvec'] is None)):
-                        ctrl_dict_all[pop] = ctrl_data
-                #print('----------', flush=True)
-            ctrl_dict = ctrl_dict_all """
-        
-        """ # Plot and save controller signals
-        for pop_vis in ctrl_dict.keys():
-            #cells = bs._get_local_cells(sim, pop_vis)
-            #if len(cells) == 0:
-            #    continue
-            #print('CELL TYPE: ', type(cells[0]))
-            #print('SECS TYPE: ', type(cells[0].secs))
-            #print('SECS: ', cells[0].secs.keys())
-            #pprint(cells[0].__dict__)
-            #print(f'CTRL KEYS ({pop_vis}): ', ctrl_dict[pop_vis].keys())            
 
-            tvec_ctrl = ctrl_dict[pop_vis]['tvec']
-            rvec_ctrl = ctrl_dict[pop_vis]['rvec']
-            zvec_ctrl = ctrl_dict[pop_vis]['zvec']
-            r0 = ctrl_dict[pop_vis]['r0']
-
-            print(f'Plot {pop_vis}, t: ', np.array(tvec_ctrl))
-            print(f'Plot {pop_vis}, r: ', np.array(rvec_ctrl))
-            print(f'Plot {pop_vis}, z: ', np.array(zvec_ctrl))
-            
-            #stim = cells[0].secs['soma']['stims'][0]
-            #tvec_stim = stim['tvec']
-            #zvec_stim = stim['zvec']
-
-            plt.figure()
-            plt.subplot(3, 1, 1)
-            plt.plot(np.array(tvec_ctrl), np.array(rvec_ctrl))
-            plt.plot([0, cfg.duration], [r0, r0], '--')
-            plt.title(f'Controller rate, {pop_vis}')
-            plt.subplot(3, 1, 2)
-            plt.plot(np.array(tvec_ctrl), np.array(zvec_ctrl))
-            plt.title(f'Controller z, {pop_vis}')
-            #plt.subplot(3, 1, 3)
-            #plt.plot(np.array(tvec_stim), np.array(zvec_stim))
-            #plt.title(f'IClamp i, {pop_vis}')
-            #plt.title(f'Voltage, {pop_vis}')
-            plt.xlabel('Time')
-            plt.savefig(f'{cfg.saveFolder}/{cfg.simLabel}_ctrl_traces_{pop_vis}.png') """
-
-        
     else:
         print(f'>>>>>>>>>>> {cfg.simLabel} SKIPPED', flush=True)
         avgRates = {}

@@ -47,3 +47,4 @@ temp_local/
 sim_output/
 BACKUP
 **/*.err
+*.sgl

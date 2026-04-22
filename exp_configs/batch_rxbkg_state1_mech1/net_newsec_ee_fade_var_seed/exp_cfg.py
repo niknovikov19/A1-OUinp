@@ -29,28 +29,72 @@ SOM_POPS = ['SOM2', 'SOM3', 'SOM4', 'SOM5A', 'SOM5B', 'SOM6']
 VIP_POPS = ['VIP2', 'VIP3', 'VIP4', 'VIP5A', 'VIP5B', 'VIP6']
 NGF_POPS = ['NGF1', 'NGF2', 'NGF3', 'NGF4', 'NGF5A', 'NGF5B', 'NGF6']
 
+THAL_E_POPS = ['TC', 'HTC', 'TCM']
+THAL_I_POPS = ['TI', 'TIM', 'IRE', 'IREM']
+THAL_POPS = THAL_E_POPS + THAL_I_POPS
+
+CORE_E_POPS = ['TC', 'HTC']
+CORE_I_POPS = ['TI', 'IRE']
+CORE_POPS = CORE_E_POPS + CORE_I_POPS
+
+MATX_E_POPS = ['TCM']
+MATX_I_POPS = ['TIM', 'IREM']
+MATX_POPS = MATX_E_POPS + MATX_I_POPS
+
 L2_POPS = ['IT2', 'PV2', 'SOM2', 'VIP2', 'NGF2']
 L4_POPS = ['ITP4', 'ITS4', 'PV4', 'SOM4', 'VIP4', 'NGF4']
 
-CONNS_EE = [(p1, p2) for p1 in PYR_POPS for p2 in PYR_POPS]
+E_POPS = PYR_POPS + THAL_E_POPS
+CONNS_EE = [(p1, p2) for p1 in E_POPS for p2 in E_POPS]
+CONNS_IRE_TC = [
+    (p1, p2) for p1 in ['IRE', 'IREM'] for p2 in ['TC', 'HTC', 'TCM']
+]
+CONNS_THAL = [(p1, p2) for p1 in THAL_POPS for p2 in THAL_POPS]
+CONNS_THAL_ETHAL = [(p1, p2) for p1 in THAL_POPS for p2 in THAL_E_POPS]
 
 
 # Duration and rate calculation window
-SIM_DURATION = 10 * 1e3
-T0_CALC = 7 * 1e3
+SIM_DURATION = 15 * 1e3
+T0_CALC = 10 * 1e3
 
 #EXP_LABEL = 'ctx_ee_fade'
 #EXP_LABEL = 'ctx_ee_0'
-EXP_LABEL = 'ctx_unconn'
+#EXP_LABEL = 'ctx_unconn'
 #EXP_LABEL = 'L2_ee_0'
 #EXP_LABEL = 'L2_unconn'
 #EXP_LABEL = 'L2_ee_fade'
+#EXP_LABEL = 'thal_unconn'
+#EXP_LABEL = 'thal_ee_1'
+#EXP_LABEL = 'thal_pe_0'
+#EXP_LABEL = 'thal_pti_0'
+#EXP_LABEL = 'thal_ti_tc_fade'
+#EXP_LABEL = 'thal_tc_ti_fade'
+#EXP_LABEL = 'thal_all_fade'
+#EXP_LABEL = 'a1_ee_0_irem_core_0'
+#EXP_LABEL = 'a1_ee_fade_irem_ire_0'
+EXP_LABEL = 'a1_irem_ire_0'
+#EXP_LABEL = 'core_full'
+#EXP_LABEL = 'matx_full'
+#EXP_LABEL = 'irem_ire_0'
 
-POPS_USED = PYR_POPS + PV_POPS + SOM_POPS + VIP_POPS + NGF_POPS
+#POPS_USED = PYR_POPS + PV_POPS + SOM_POPS + VIP_POPS + NGF_POPS
+POPS_USED = (PYR_POPS + PV_POPS + SOM_POPS + VIP_POPS + 
+             NGF_POPS + THAL_E_POPS + THAL_I_POPS)
 #POPS_USED = L2_POPS
+#POPS_USED = CORE_POPS
+#POPS_USED = MATX_POPS
+#POPS_USED = CORE_POPS + MATX_POPS
 
-CONNS_FROZEN = 'all'
+#CONNS_FROZEN = 'all'
 #CONNS_FROZEN = CONNS_EE
+#CONNS_FROZEN = CONNS_THAL_ETHAL
+#CONNS_FROZEN = [(p1, p2) for p1 in ['TI', 'TIM'] for p2 in THAL_E_POPS]
+#CONNS_FROZEN = [(p1, p2) for p1 in THAL_E_POPS for p2 in ['TI', 'TIM']]
+#CONNS_FROZEN = [(p1, p2) for p1 in THAL_POPS for p2 in ['TI', 'TIM']]
+#CONNS_FROZEN = [(p1, p2) for p1 in ['IREM'] for p2 in ['IRE']] + CONNS_EE
+#CONNS_FROZEN = [(p1, p2) for p1 in ['IREM'] for p2 in CORE_POPS] + CONNS_EE
+CONNS_FROZEN = [(p1, p2) for p1 in ['IREM'] for p2 in ['IRE']]
+#CONNS_FROZEN = [(p1, p2) for p1 in MATX_POPS for p2 in ['TI']]
 #CONNS_FROZEN = []
 
 EE_FADER_ON = 0
@@ -58,17 +102,22 @@ EE_FADER_ON = 0
 #CONNS_SPLIT = []
 CONNS_SPLIT = [(p1, p2) for p1, p2 in CONNS_EE
                if (p1 in POPS_USED) and (p2 in POPS_USED)]
+#CONNS_SPLIT = CONNS_THAL
+#CONNS_SPLIT = [(p1, p2) for p1 in ['TI', 'TIM'] for p2 in THAL_E_POPS]
+#CONNS_SPLIT = [(p1, p2) for p1 in THAL_E_POPS for p2 in ['TI', 'TIM']]
 
 # Surr->recurrent fader timecourse (time, rec:surr ratio)
-FADER_PTS = [(0, 0), (3000, 0), (5000, 1), (SIM_DURATION, 1)]
+#FADER_PTS = [(0, 0), (3000, 0), (5000, 1), (SIM_DURATION, 1)]
+FADER_PTS = [(0, 0), (6000, 0), (8000, 1), (SIM_DURATION, 1)]
 #FADER_PTS = [(0, 1), (SIM_DURATION, 1)]
 
 # Background spiking input
-XBKG_NAME = 'rx_bkg_mid_sm_21'
+XBKG_NAME = 'rx_bkg_mid_sm_ctx21_thal41'
 
 # Constant input to set Vrest
 USE_IBKG = 1
-V_REST = -70
+IBKG_JSON_NAME = 'ibkg_mech1_verest_-70_thal_spkthr'
+#V_REST = -70
 
 # Surrogate inputs
 SURR_INP_ON = 1
@@ -80,6 +129,8 @@ DIAG = 0
 
 # Actual net creation and simulation
 NEED_RUN = 1
+
+PLOT_RATE_DYNAMICS = 0
 
 
 def gen_exp_name_sub(cfg):
@@ -178,7 +229,7 @@ def apply_exp_cfg(cfg):
     # Static IClamp that sets the resting voltage
     if USE_IBKG:
         cfg.addIClamp = 1
-        fname_ibkg = f'ibkg_mech1_vrest_{V_REST}.json'
+        fname_ibkg = f'{IBKG_JSON_NAME}.json'
         with open(dirpath_self / fname_ibkg, 'r') as fid:
             ibkg = json.load(fid)
         cfg.IClamp = {pop: {'amp': ibkg[pop]}
@@ -371,36 +422,38 @@ def post_run(sim):
         plt.savefig(fpath_wmod, dpi=300)
 
     # Plot and save rate dynamics
-    os.makedirs(dirpath_res_sub / 'rvec_figs', exist_ok=True)
-    pop_groups = {'PYR': PYR_POPS, 'PV': PV_POPS, 'SOM': SOM_POPS,
-                  'VIP': VIP_POPS, 'NGF': NGF_POPS}
-    colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
-    for pop_group_name, pops in pop_groups.items():
+    if PLOT_RATE_DYNAMICS:
+        os.makedirs(dirpath_res_sub / 'rvec_figs', exist_ok=True)
+        pop_groups = {'PYR': PYR_POPS, 'PV': PV_POPS, 'SOM': SOM_POPS,
+                      'VIP': VIP_POPS, 'NGF': NGF_POPS, 'THAL': THAL_POPS}
+        #pop_groups = {'THAL': THAL_POPS}
+        colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
+        for pop_group_name, pops in pop_groups.items():
 
-        pops = [p for p in pops if p in POPS_USED]
+            pops = [p for p in pops if p in POPS_USED]
 
-        # Compute rate dynamics
-        r_data = proc.calc_rate_dynamics(
-            sim, t_limits=(1, None), tau_smooth=1, pops_used=pops)
+            # Compute rate dynamics
+            r_data = proc.calc_rate_dynamics(
+                sim, t_limits=(1, None), tau_smooth=0.05, pops_used=pops)
 
-        plt.figure(111); plt.clf()
+            plt.figure(111); plt.clf()
 
-        for n, pop in enumerate(pops):
-            tt, rr = r_data[pop]
-            r0 = cfg.target_rates[pop]
-            col = colors[n % len(colors)]
-            plt.plot(tt, rr, label=pop, color=col)
-            plt.plot([tt[0], tt[-1]], [r0, r0], '--', color=col)
+            for n, pop in enumerate(pops):
+                tt, rr = r_data[pop]
+                r0 = cfg.target_rates[pop]
+                col = colors[n % len(colors)]
+                plt.plot(tt, rr, label=pop, color=col)
+                plt.plot([tt[0], tt[-1]], [r0, r0], '--', color=col)
 
-        plt.xlabel('Time')
-        plt.ylabel('Firing rate')
-        plt.legend(bbox_to_anchor=(1, 1))
-        #plt.yscale('log')
-        #plt.ylim(0.05, None)
+            plt.xlabel('Time')
+            plt.ylabel('Firing rate')
+            plt.legend(bbox_to_anchor=(1, 1))
+            #plt.yscale('log')
+            #plt.ylim(0.05, None)
 
-        fname_out = f'{pop_group_name}_{postfix}.png'
-        plt.savefig(dirpath_res_sub / 'rvec_figs' / fname_out,
-                    bbox_inches='tight', dpi=300)
+            fname_out = f'{pop_group_name}_{postfix}.png'
+            plt.savefig(dirpath_res_sub / 'rvec_figs' / fname_out,
+                        bbox_inches='tight', dpi=300)
 
 
 def final(sim):

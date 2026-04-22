@@ -17,7 +17,7 @@ from analysis.ou_tuning import sim_res_proc_utils as proc
 from neuron import h
 
 
-EXP_NAME = 'all'
+""" EXP_NAME = 'all'
 POPS_USED = [
     'IT2', 'IT3', 'ITP4', 'ITS4', 'IT5A', 'CT5A',
     'IT5B', 'CT5B', 'PT5B', 'IT6', 'CT6',
@@ -26,7 +26,10 @@ POPS_USED = [
     'VIP2', 'VIP3', 'VIP4', 'VIP5A', 'VIP5B', 'VIP6',
     'NGF1', 'NGF2', 'NGF3', 'NGF4', 'NGF5A', 'NGF5B', 'NGF6',
     'TC', 'HTC', 'TCM', 'TI', 'TIM', 'IRE', 'IREM'
-]
+] """
+
+EXP_NAME = 'tc_tcm_htc'
+POPS_USED = ['TC', 'HTC', 'TCM']
 
 # Duration
 TSIM = 20000

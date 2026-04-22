@@ -14,15 +14,20 @@ from analysis.ou_tuning import data_proc_utils as proc
 
 
 def calc_rates_and_cvs(
-        sim,   # NetPyNE sim object obtained after a simulation
+        sim,   # NetPyNE sim object obtained after a simulation / loaded dict
         t_limits: tuple[float, float] | None = None,   # time window used for calculation
-        nspikes_min: int = 3   # min. number of spikes to use a cell in CV calculation
+        nspikes_min: int = 3,   # min. number of spikes to use a cell in CV calculation
+        per_cell_rates=False
         ) -> dict:
     
+    if isinstance(sim, dict):
+        sim_result = sim
+    else:
+        # Convert NetPyNE object to a dict (same as stored in pkl files)
+        sim_result = utils.prepare_sim_result(sim)
+    # Time limits
     if t_limits is None:
-        t_limits = (0, sim.cfg.duration / 1000)
-    # Convert NetPyNE object to a dict (same as stored in pkl files)
-    sim_result = utils.prepare_sim_result(sim)
+        t_limits = (0, utils.get_sim_duration(sim_result))
     # Extract spikes
     all_spikes = utils.get_net_spikes(sim_result)   # cells combined
     cell_spikes = utils.get_net_spikes(sim_result,
@@ -30,8 +35,10 @@ def calc_rates_and_cvs(
     # Get the size of each pop.
     ncells = utils.get_net_size(sim_result)   # {pop: ncells}
     # Calculate rates and CVs
-    rates = proc.calc_net_rates(all_spikes, time_limits=t_limits,
-                                ncells=ncells)
+    if per_cell_rates:
+        rates = proc.calc_net_rates(cell_spikes, time_limits=t_limits)
+    else:
+        rates = proc.calc_net_rates(all_spikes, time_limits=t_limits, ncells=ncells)
     cvs = proc.calc_net_cvs(cell_spikes, time_limits=t_limits,
                             nspikes_min=nspikes_min, avg_result=True)
     # Combine the result

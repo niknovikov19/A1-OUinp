@@ -26,30 +26,36 @@ PV_POPS = ['PV2', 'PV3', 'PV4', 'PV5A', 'PV5B', 'PV6']
 SOM_POPS = ['SOM2', 'SOM3', 'SOM4', 'SOM5A', 'SOM5B', 'SOM6']
 VIP_POPS = ['VIP2', 'VIP3', 'VIP4', 'VIP5A', 'VIP5B', 'VIP6']
 NGF_POPS = ['NGF1', 'NGF2', 'NGF3', 'NGF4', 'NGF5A', 'NGF5B', 'NGF6']
+THAL_E_POPS = ['TC', 'HTC', 'TCM']
+THAL_I_POPS = ['TI', 'TIM', 'IRE', 'IREM']
 
 L2_POPS = ['IT2', 'PV2', 'SOM2', 'VIP2', 'NGF2']
 L4_POPS = ['ITP4', 'ITS4', 'PV4', 'SOM4', 'VIP4', 'NGF4']
 
-CONNS_EE = [(p1, p2) for p1 in PYR_POPS for p2 in PYR_POPS]
+E_POPS = PYR_POPS + THAL_E_POPS
+CONNS_EE = [(p1, p2) for p1 in E_POPS for p2 in E_POPS]
 
 
 # Duration and rate calculation window
-SIM_DURATION = 3 * 1e3
-T0_CALC = 2 * 1e3
+SIM_DURATION = 15 * 1e3
+T0_CALC = 10 * 1e3
 
 #EXP_LABEL = 'ctx_ee_fade'
-EXP_LABEL = 'ctx_ee_fade_0'
+#EXP_LABEL = 'ctx_ee_fade_0'
 #EXP_LABEL = 'L2_ee_0_ceff_nomod'
 #EXP_LABEL = 'L2_unconn'
+EXP_LABEL = 'thal_unconn'
+#EXP_LABEL = 'thal_ee_0'
 
-POPS_USED = PYR_POPS + PV_POPS + SOM_POPS + VIP_POPS + NGF_POPS
+#POPS_USED = PYR_POPS + PV_POPS + SOM_POPS + VIP_POPS + NGF_POPS
 #POPS_USED = L2_POPS
+POPS_USED = THAL_E_POPS + THAL_I_POPS
 
-#CONNS_FROZEN = 'all'
+CONNS_FROZEN = 'all'
 #CONNS_FROZEN = CONNS_EE
-CONNS_FROZEN = []
+#CONNS_FROZEN = []
 
-EE_FADER_ON = 1
+EE_FADER_ON = 0
 
 #CONNS_SPLIT = []
 CONNS_SPLIT = [(p1, p2) for p1, p2 in CONNS_EE
@@ -60,17 +66,18 @@ FADER_PTS = [(0, 0), (3000, 0), (5000, 1), (SIM_DURATION, 1)]
 #FADER_PTS = [(0, 1), (SIM_DURATION, 1)]
 
 # Background spiking input
-XBKG_NAME = 'rx_bkg_mid_sm_21'
+XBKG_NAME = 'rx_bkg_mid_sm_ctx21_thal41'
 
 # Constant input to set Vrest
 USE_IBKG = 1
-V_REST = -70
+IBKG_JSON_NAME = 'ibkg_mech1_verest_-70_thal_spkthr'
+#V_REST = -70
 
 # Surrogate inputs
 SURR_INP_ON = 1
 
-REC_TRACES = 0
-PLOT_TRACES = 0
+REC_TRACES = 1
+PLOT_TRACES = 1
 
 DIAG = 0
 
@@ -158,7 +165,7 @@ def apply_exp_cfg(cfg):
     # Static IClamp that sets the resting voltage
     if USE_IBKG:
         cfg.addIClamp = 1
-        fname_ibkg = f'ibkg_mech1_vrest_{V_REST}.json'
+        fname_ibkg = f'{IBKG_JSON_NAME}.json'
         with open(dirpath_self / fname_ibkg, 'r') as fid:
             ibkg = json.load(fid)
         cfg.IClamp = {pop: {'amp': ibkg[pop]}
@@ -338,9 +345,12 @@ def post_run(sim):
     # Plot and save rate dynamics
     os.makedirs(dirpath_res_sub / 'rvec_figs', exist_ok=True)
     pop_groups = {'PYR': PYR_POPS, 'PV': PV_POPS, 'SOM': SOM_POPS,
-                  'VIP': VIP_POPS, 'NGF': NGF_POPS}
+                  'VIP': VIP_POPS, 'NGF': NGF_POPS,
+                  'THAL_E': THAL_E_POPS, 'THAL_I': THAL_I_POPS}
     for pop_group_name, pops in pop_groups.items():
         pops = [p for p in pops if p in POPS_USED]
+        if len(pops) == 0:
+            continue
 
         # Compute rate dynamics
         r_data = proc.calc_rate_dynamics(

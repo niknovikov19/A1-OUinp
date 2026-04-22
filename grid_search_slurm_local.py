@@ -46,7 +46,9 @@ wait
 
 
 # Experiment name
-exp_name = 'batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_rpop'
+exp_name = 'batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed'
+#exp_name = 'batch_rxbkg_unconn_state1_mech1/pops_inpsur_newsec_var_drxe_rxi'
+#exp_name = 'batch_unconn/fi_tuning'
 
 # HPC partition
 #PARTITION = 'bigmem.q'

@@ -18,14 +18,15 @@ import analysis.ou_tuning.netpyne_res_parse_utils as parse_utils
 import fi_utils
 
 
-EXP_NAME = 'it5a'
-POPS_USED = ['IT5A']
+EXP_NAME = 'ti'
+POPS_USED = ['TI']
 
 CELL_TYPES = {'IRE': 'RE', 'PV3': 'PV', 'SOM3': 'SOM',
               'VIP3': 'VIP', 'NGF3': 'NGF'}
 
 # Mean input increasing across the cells ("I" of the f-I curve)
-I_RANGE = [-0.02, 0]
+#I_RANGE = [-0.002, 0.01]
+I_RANGE = [-0.02, 0.03]
 I_SEC = 'soma'
 
 # Input std.
@@ -36,8 +37,8 @@ I_STD = 0
 STIM_AMP = 0.75
 
 # Weak NetStim to randomly jitter the cells between steady-states
-RX = 1
-WX = 0.1
+RX = 0
+WX = 1
 BKG_SEC = 'soma'
 
 # Mechanism changes
@@ -113,7 +114,7 @@ def apply_exp_cfg(cfg):
     cfg.ou_ramp_type = 'up'
 
     # NetStim input
-    cfg.add_bkg_spike_input = 1
+    cfg.add_bkg_spike_input = 1 if (RX != 0) else 0
     cfg.bkg_r = RX
     cfg.bkg_w = WX
     cfg.bkg_spike_inputs = {

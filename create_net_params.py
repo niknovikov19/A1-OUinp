@@ -922,7 +922,7 @@ def create_net_params(cfg):
             netParams.stimSourceParams[src] = {
                 'type': 'IClamp',
                 'delay': d[pop].get('delay', 0.0),
-                'dur': d[pop].get('dur', 1e5),
+                'dur': d[pop].get('dur', 1e6),
                 'amp': d[pop]['amp']
             }
             # Connect stim source to target

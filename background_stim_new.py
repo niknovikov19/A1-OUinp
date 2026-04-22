@@ -8,6 +8,8 @@ import matplotlib.pyplot as plt
 from neuron import h
 import numpy as np
 
+from rate_ctrl import make_rate_controller
+
 
 def generate_ou_signal(tau, sigma, mean, duration, dt=0.025,
                        seed=100000, plotFig=False,
@@ -280,141 +282,6 @@ def add_noise_iclamp(sim):
                 )
     
     return sim, vecs_dict
-
-
-# Helper: local cells by pop
-def _get_local_cells(sim, pop_name):
-    return [c for c in sim.net.cells if c.tags['pop'] == pop_name]
-
-# Helper: all gids by pop (global)
-def _get_all_gids(sim, pop_name):
-    """Global list of GIDs for a population, on every rank."""
-    local = sim.net.pops[pop_name].cellGids
-    all_lists = sim.pc.py_allgather(local)          # list-of-lists on every rank
-    return [g for sub in all_lists for g in sub]    # flatten
-
-
-def make_rate_controller(sim, pop_name):
-    """
-    Create a feedback controller mech that responds 
-    to pop. rate deviation from the target value.
-    """
-    local_cells = _get_local_cells(sim, pop_name)
-    gids = _get_all_gids(sim, pop_name)
-    if len(local_cells) == 0:
-        return {'ctrl_mech': None, 'netcon_list': [],
-                'tvec': None, 'zvec': None, 'rvec': None,
-                'r0': None, 'svec': None}
-
-    if sim.rank == 0:
-        print(f'>>> {pop_name}: ngids={len(gids)}, ncells={len(local_cells)}', flush=True)
-
-    # Attach RateController to the soma of the 1st cell on this rank
-    soma = local_cells[0].secs['soma']['hObj']
-    ctrl_par = sim.cfg.ou_ctrl_params
-    ctrl = None
-    ctrl = h.RateController(soma(0.5))
-    par_names = [
-        ('tau', 'tau_ctrl'), ('taus', 'taus_ctrl'), ('r0', 'target_rates'),
-        ('k', 'k_ctrl'), ('kp', 'kp_ctrl'), ('z0', 'z0'),
-        ('t0', 't0'), ('tlock', 'tlock')
-    ]
-    for mech_par, cfg_par in par_names:
-        if cfg_par not in ctrl_par:
-            continue
-        val = ctrl_par[cfg_par]
-        if mech_par == 'r0':
-            val = val[pop_name]
-        setattr(ctrl, mech_par, val)
-
-    if sim.rank == 0:
-        print(f'>>> {pop_name}: CTRL created', flush=True)
-
-    # Subscribe this controller to spikes from all gids of this population.
-    # This creates incoming NetCons on THIS rank that deliver events from each gid.
-    netcon_list = []
-    for gid in gids:
-        nc_in = sim.pc.gid_connect(gid, ctrl)  # auto-routed across ranks
-        nc_in.weight[0] = 1.0 / len(gids)
-        nc_in.delay = 1
-        netcon_list.append(nc_in)
-    
-    # Record the controller
-    #tvec, zvec, rvec = None, None, None
-    tvec, zvec, rvec = h.Vector(), h.Vector(), h.Vector()
-    svec = h.Vector()
-    tvec.record(h._ref_t)
-    zvec.record(ctrl._ref_z)
-    rvec.record(ctrl._ref_rate)
-    svec.record(ctrl._ref_s)
-    
-    return {
-        'ctrl_mech': ctrl, 'netcon_list': netcon_list,
-        'tvec': tvec, 'zvec': zvec, 'rvec': rvec,
-        'svec': svec,
-        'r0': ctrl.r0,
-    }
-
-
-def _decimate(vec, n):
-    if vec is None:
-        return None
-    return [vec.x[i] for i in range(0, int(vec.size()), n)]
-
-def _get_ctrl_for_gather(ctrl_dict):
-    res = {}
-    n = 500
-    for pop, d in ctrl_dict.items():
-        res[pop] = {
-            'r0': d['r0'],
-            'tvec': _decimate(d['tvec'], n),
-            'zvec': _decimate(d['zvec'], n),
-            'rvec': _decimate(d['rvec'], n),
-            'svec': _decimate(d['svec'], n)
-        }
-    return res
-
-
-def gather_ctrl_data(sim, ctrl_dict):
-    if ctrl_dict is None:
-        return None
-    
-    rank_ctrl_dicts = sim.pc.py_allgather(
-        _get_ctrl_for_gather(ctrl_dict))
-    
-    ctrl_dict_all = {}
-    for rank_ctrl_dict in rank_ctrl_dicts:
-        for pop, ctrl_data in rank_ctrl_dict.items():
-            #print('Gather ctrl data: ', pop, flush=True)
-            if ((pop not in ctrl_dict_all) or 
-                    (ctrl_dict_all[pop]['tvec'] is None)):
-                ctrl_dict_all[pop] = ctrl_data
-        #print('----------', flush=True)
-    return ctrl_dict_all
-
-
-def plot_save_ctrl_traces(sim, ctrl_dict):
-    """Plot and save controller signals. """
-
-    for pop_vis in ctrl_dict.keys():
-        tvec_ctrl = ctrl_dict[pop_vis]['tvec']
-        rvec_ctrl = ctrl_dict[pop_vis]['rvec']
-        zvec_ctrl = ctrl_dict[pop_vis]['zvec']
-        svec_ctrl = ctrl_dict[pop_vis]['svec']
-        r0 = ctrl_dict[pop_vis]['r0']
-
-        plt.figure(111); plt.clf()
-        plt.subplot(2, 1, 1)
-        plt.plot(np.array(tvec_ctrl), np.array(rvec_ctrl))
-        plt.plot([0, sim.cfg.duration], [r0, r0], '--')
-        plt.title(f'Controller rate, {pop_vis}')
-        plt.subplot(2, 1, 2)
-        plt.plot(np.array(tvec_ctrl), np.array(zvec_ctrl))
-        plt.plot(np.array(tvec_ctrl), np.array(svec_ctrl), 'k')
-        plt.title(f'Controller z, {pop_vis}')
-        plt.xlabel('Time')
-        plt.savefig(f'{sim.cfg.saveFolder}/'
-                    f'{sim.cfg.simLabel}_ctrl_traces_{pop_vis}.png')
 
 
 def make_controlled_iclamps(sim, cells, ctrl):

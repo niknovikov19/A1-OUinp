@@ -1,0 +1,57 @@
+{
+    "regions": {
+        "TI": {
+            "rxe0": 6730,
+            "rxi0": 0,
+            "drxe": 8340,
+            "drxi": 1090,
+            "rxi_rxe_slope": 0.09
+        },
+        "TIM": {
+            "rxe0": 6910,
+            "rxi0": 0,
+            "drxe": 6990,
+            "drxi": 1020,
+            "rxi_rxe_slope": 0.09
+        },
+        "IRE": {
+            "rxe0": 6580,
+            "rxi0": 0,
+            "drxe": 7550,
+            "drxi": 880,
+            "rxi_rxe_slope": 0.074
+        },
+        "IREM": {
+            "rxe0": 7800,
+            "rxi0": 0,
+            "drxe": 6740,
+            "drxi": 760,
+            "rxi_rxe_slope": 0.074
+        }
+    },
+    "params": {
+        "exp_name": "batch_rxbkg_unconn_state1_mech1/pops_inpsur_newsec_var_rxe_rxi",
+        "exp_name_sub": "2d_20x20_psp_0.5_xsec_soma_soma/exp_ti_tim_ire_irem_wx_psp_0.5_sz_20_20_rxmax_15.0_1.5_rxmin_1_1_t_3.0_5.0_wmult_0.25_ee_0.5_lensec_0_xsec_soma_soma",
+        "exp_label": "ti_tim_ire_irem",
+        "pops": [
+            "TI",
+            "TIM",
+            "IRE",
+            "IREM"
+        ],
+        "r_levels": [
+            0.5,
+            [
+                15.0,
+                10.0,
+                15.0,
+                10.0
+            ]
+        ],
+        "r_margins": [
+            0.5,
+            0.7
+        ],
+        "smooth_sigma": 1.0
+    }
+}

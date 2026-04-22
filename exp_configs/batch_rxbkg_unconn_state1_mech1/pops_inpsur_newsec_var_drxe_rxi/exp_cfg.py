@@ -45,8 +45,12 @@ from batch_params import N_DRXE, N_RXI
 #POPS_USED = ['IT5A', 'IT5B']
 #EXP_LABEL = 'pt5b'
 #POPS_USED = ['PT5B']
-EXP_LABEL = 'it3'
-POPS_USED = ['IT3']
+#EXP_LABEL = 'it3'
+#POPS_USED = ['IT3']
+EXP_LABEL = 'tc_htc_tcm'
+POPS_USED = ['TC', 'HTC', 'TCM']
+#EXP_LABEL = 'ti_tim_ire_irem'
+#POPS_USED = ['TI', 'TIM', 'IRE', 'IREM']
 
 # File with the info about (drxe, rxi) regions
 RGN_JSON_NAME = f'regions_{EXP_LABEL}'
@@ -61,7 +65,8 @@ XI_SEC = 'soma'
 
 # Constant input to set Vrest
 USE_IBKG = 1
-V_REST = -70
+IBKG_JSON_NAME = 'ibkg_mech1_verest_-70_thal_spkthr'
+#V_REST = -70
 
 # Surrogate inputs
 SURR_INP_ON = 1
@@ -154,6 +159,7 @@ def apply_exp_cfg(cfg):
     cfg.add_bkg_spike_input = 1
     cfg.replace_bkg_spikes_by_ou = 0   # 1 = use NetStim's
     cfg.bkg_spike_inputs = {}
+    cfg.drxe_num, cfg.rxi_num = None, None   # batch params
     for n, pop in enumerate(POPS_USED):
         wxe = wx_json['wx_target'][pop]['xe']
         wxi = wx_json['wx_target'][pop]['xi']
@@ -168,7 +174,7 @@ def apply_exp_cfg(cfg):
     # Static IClamp that sets the resting voltage
     if USE_IBKG:
         cfg.addIClamp = 1
-        fname_ibkg = f'ibkg_mech1_vrest_{V_REST}.json'
+        fname_ibkg = f'{IBKG_JSON_NAME}.json'
         with open(dirpath_self / fname_ibkg, 'r') as fid:
             ibkg = json.load(fid)
         cfg.IClamp = {pop: {'amp': ibkg[pop]}

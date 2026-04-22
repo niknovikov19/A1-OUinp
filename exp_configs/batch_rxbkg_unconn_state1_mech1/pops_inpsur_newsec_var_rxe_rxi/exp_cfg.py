@@ -31,8 +31,10 @@ from batch_params import (
 #POPS_USED = ['SOM2', 'SOM3', 'SOM4', 'SOM5A', 'SOM5B', 'SOM6']
 #EXP_LABEL = 'vip'
 #POPS_USED = ['VIP2', 'VIP3', 'VIP4', 'VIP5A', 'VIP5B', 'VIP6']
-#EXP_LABEL = 'tc'
-#POPS_USED = ['TC']
+#EXP_LABEL = 'tc_htc_tcm_ibkg_spkthr'
+#POPS_USED = ['TC', 'HTC', 'TCM']
+EXP_LABEL = 'ti_tim_ire_irem'
+POPS_USED = ['TI', 'TIM', 'IRE', 'IREM']
 #EXP_LABEL = 'ngf'
 #POPS_USED = ['NGF1', 'NGF2', 'NGF3', 'NGF4', 'NGF5A', 'NGF5B', 'NGF6']
 #EXP_LABEL = 'ct'
@@ -45,8 +47,8 @@ from batch_params import (
 #POPS_USED = ['IT5A', 'IT5B']
 #EXP_LABEL = 'pt5b'
 #POPS_USED = ['PT5B']
-EXP_LABEL = 'it3'
-POPS_USED = ['IT3']
+#EXP_LABEL = 'it3'
+#POPS_USED = ['IT3']
 
 # Weights of background exc/inh inputs (custom)
 #WXE, WXI = 0.65, 2.5
@@ -69,13 +71,14 @@ XI_SEC = 'soma'
 
 # Constant input to set Vrest
 USE_IBKG = 1
-V_REST = -70
+IBKG_JSON_NAME = 'ibkg_mech1_verest_-70_thal_spkthr'
+#V_REST = -70
 
 # Surrogate inputs
 SURR_INP_ON = 1
 
 REC_TRACES = 1
-PLOT_TRACES = 0
+PLOT_TRACES = 1
 
 # Length-weighted random selection from sec lists
 SEC_DISTR_BY_LEN = 0
@@ -203,6 +206,7 @@ def apply_exp_cfg(cfg):
     cfg.add_bkg_spike_input = 1
     cfg.replace_bkg_spikes_by_ou = 0   # 1 = use NetStim's
     cfg.bkg_spike_inputs = {}
+    cfg.rxe, cfg.rxi = None, None
     for n, pop in enumerate(POPS_USED):
         if WX_FROM_JSON:
             wxe = wx_json['wx_target'][pop]['xe']
@@ -220,7 +224,7 @@ def apply_exp_cfg(cfg):
     # Static IClamp that sets the resting voltage
     if USE_IBKG:
         cfg.addIClamp = 1
-        fname_ibkg = f'ibkg_mech1_vrest_{V_REST}.json'
+        fname_ibkg = f'{IBKG_JSON_NAME}.json'
         with open(dirpath_self / fname_ibkg, 'r') as fid:
             ibkg = json.load(fid)
         cfg.IClamp = {pop: {'amp': ibkg[pop]}
@@ -236,7 +240,7 @@ def apply_exp_cfg(cfg):
     if 'plotTraces' in cfg.analysis:
         cfg.analysis['plotTraces']['include'] = POPS_USED
     
-    cfg.analysis['plotRaster'] = False
+    cfg.analysis['plotRaster'] = 0
     cfg.analysis['plotSpikeStats'] = False
 
     # Record voltage traces
