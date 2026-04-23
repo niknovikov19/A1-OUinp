@@ -72,7 +72,7 @@ FADER_PTS = [(0, 0), (3000, 0), (5000, 1), (SIM_DURATION, 1)]
 #FADER_PTS = [(0, 1), (SIM_DURATION, 1)]
 
 # Rate-controlling feedback via tonic current
-CTRL_ON = 1
+CTRL_ON = 0
 CTRL_PARAMS = {
     # Controller type
     'controller_mod': 'RateController2',
@@ -109,10 +109,10 @@ SURR_INP_ON = 1
 REC_TRACES = 0
 PLOT_TRACES = 0
 
+PLOT_RATE_DYNAMICS = 0
+PLOT_CTRL_TRACES = 0
+
 NEED_RUN = 1
-
-PLOT_RATE_DYNAMICS = 1
-
 DIAG = 0
 
 
@@ -258,6 +258,8 @@ def apply_exp_cfg(cfg):
     
     #cfg.analysis['plotRaster'] = False
     cfg.analysis['plotSpikeStats'] = False
+
+    cfg.plot_ctrl_traces = PLOT_CTRL_TRACES
 
     # Record voltage traces
     if REC_TRACES:

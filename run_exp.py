@@ -353,7 +353,9 @@ if comm.is_host():
 
         # Plot controller signals and save the figures
         if ctrl_dict is not None:
-            ctrl.plot_save_ctrl_traces(sim, ctrl_dict)
+            need_plot = cfg.get('plot_ctrl_traces', False)
+            if need_plot:
+                ctrl.plot_save_ctrl_traces(sim, ctrl_dict)
         
         # Experiment-specific result processing
         if hasattr(cfg_mod, 'post_run'):
