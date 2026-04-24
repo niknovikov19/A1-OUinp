@@ -101,7 +101,10 @@ XBKG_NAME = 'rx_bkg_mid_sm_ctx21_thal41'
 # Constant input to set Vrest
 USE_IBKG = 1
 IBKG_JSON_NAME = 'ibkg_mech1_verest_-70_thal_spkthr'
-#V_REST = -70
+
+# Constant input correction from rate-control experiment
+USE_IBKG_CTRL = 1
+IBKG_CTRL_JSON_NAME = 'ibkg_ctrl_1'
 
 # Surrogate inputs
 SURR_INP_ON = 1
@@ -131,6 +134,8 @@ def gen_exp_name_sub(cfg):
             f'_tc0_{par["t0"]}_tlock_{par["tlock"]}'
             f'_ks_{par["ks_ctrl"]}_ku_{par["ku_ctrl"]}_epsm_{par["epsm_ctrl"]}'
         )
+    if USE_IBKG_CTRL:
+        exp_name_sub += '_ictrl'
     exp_name_sub += f'_wmult_{cfg.wmult}_ee_{cfg.EEGain}'
     return exp_name_sub
 
@@ -224,6 +229,28 @@ def apply_exp_cfg(cfg):
             ibkg = json.load(fid)
         cfg.IClamp = {pop: {'amp': ibkg[pop], 'dur': SIM_DURATION}
                       for pop in POPS_USED if pop in ibkg}
+
+    # Ctrl-derived DC offset IClamp (from ibkg_ctrl_1.json I_median)
+    if USE_IBKG_CTRL:
+        cfg.addIClamp = 1   # ensure enabled even when USE_IBKG=0
+        with open(dirpath_self / f'{IBKG_CTRL_JSON_NAME}.json', 'r') as fid:
+            ibkg_ctrl = json.load(fid)
+        I_median = ibkg_ctrl['I_median']
+        if not hasattr(cfg, 'IClamp') or cfg.IClamp is None:
+            cfg.IClamp = {}
+        for pop in POPS_USED:
+            if pop not in I_median:
+                continue
+            ctrl_entry = {'amp': I_median[pop], 'dur': SIM_DURATION}
+            if pop in cfg.IClamp:
+                existing = cfg.IClamp[pop]
+                cfg.IClamp[pop] = (
+                    [existing, ctrl_entry]
+                    if isinstance(existing, dict)
+                    else existing + [ctrl_entry]
+                )
+            else:
+                cfg.IClamp[pop] = ctrl_entry
 
     # Read target rates
     df = pd.read_csv(dirpath_self / 'target_state_1.csv')

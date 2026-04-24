@@ -912,27 +912,26 @@ def create_net_params(cfg):
     
     def setupIClamp(d):
         # print('setupIClamp : ', d)
+        # d[pop] can be a single dict or a list of dicts (multiple IClamps per pop)
         idx = 0
         for pop in d.keys():
-            # add stim source
-            #dur, amp = d[pop]['dur'], 
-            # print('adding IClamp',pop,dur,amp)
-            #if dur <= 0.0 or amp == 0.0: continue
-            src = 'IClamp' + str(idx)
-            netParams.stimSourceParams[src] = {
-                'type': 'IClamp',
-                'delay': d[pop].get('delay', 0.0),
-                'dur': d[pop].get('dur', 1e6),
-                'amp': d[pop]['amp']
-            }
-            # Connect stim source to target
-            netParams.stimTargetParams[src+'_'+pop] =  {
-                'source': src, 
-                'conds': {'pop': pop},
-                'sec': d[pop].get('sec', 'soma'), 
-                'loc': d[pop].get('loc', 0.5)
-            }
-            idx+=1
+            entries = d[pop] if isinstance(d[pop], list) else [d[pop]]
+            for entry in entries:
+                src = 'IClamp' + str(idx)
+                netParams.stimSourceParams[src] = {
+                    'type': 'IClamp',
+                    'delay': entry.get('delay', 0.0),
+                    'dur': entry.get('dur', 1e6),
+                    'amp': entry['amp']
+                }
+                # Connect stim source to target
+                netParams.stimTargetParams[src+'_'+pop] =  {
+                    'source': src, 
+                    'conds': {'pop': pop},
+                    'sec': entry.get('sec', 'soma'), 
+                    'loc': entry.get('loc', 0.5)
+                }
+                idx+=1
 
     if cfg.addIClamp:
         setupIClamp(cfg.IClamp)
