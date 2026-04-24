@@ -27,39 +27,39 @@ PV_POPS = ['PV2', 'PV3', 'PV4', 'PV5A', 'PV5B', 'PV6']
 SOM_POPS = ['SOM2', 'SOM3', 'SOM4', 'SOM5A', 'SOM5B', 'SOM6']
 VIP_POPS = ['VIP2', 'VIP3', 'VIP4', 'VIP5A', 'VIP5B', 'VIP6']
 NGF_POPS = ['NGF1', 'NGF2', 'NGF3', 'NGF4', 'NGF5A', 'NGF5B', 'NGF6']
-THAL_E_POPS = ['TC', 'HTC', 'TCM']
-THAL_I_POPS = ['TI', 'TIM', 'IRE', 'IREM']
 
 L2_POPS = ['IT2', 'PV2', 'SOM2', 'VIP2', 'NGF2']
 L4_POPS = ['ITP4', 'ITS4', 'PV4', 'SOM4', 'VIP4', 'NGF4']
+CTX_POPS = PYR_POPS + PV_POPS + SOM_POPS + VIP_POPS + NGF_POPS
 
+THAL_E_POPS = ['TC', 'HTC', 'TCM']
+THAL_I_POPS = ['TI', 'TIM', 'IRE', 'IREM']
 CORE_POPS = ['TC', 'HTC', 'TI', 'IRE']
 MATX_POPS = ['TCM', 'TIM', 'IREM']
+THAL_POPS = CORE_POPS + MATX_POPS
 
 E_POPS = PYR_POPS + THAL_E_POPS
 CONNS_EE = [(p1, p2) for p1 in E_POPS for p2 in E_POPS]
 
 
 # Duration and rate calculation window
-SIM_DURATION = 220 * 1e3
-T0_CALC = 200 * 1e3
+SIM_DURATION = 15 * 1e3
+T0_CALC = 10 * 1e3
 
 #EXP_LABEL = 'ctx_ee_fade'
-#EXP_LABEL = 'ctx_ee_fade_0'
 #EXP_LABEL = 'L2_ee_0_ceff_nomod'
 #EXP_LABEL = 'L2_unconn'
-EXP_LABEL = 'thal'
-#EXP_LABEL = 'thal_ee_0'
+#EXP_LABEL = 'thal'
+#EXP_LABEL = 'a1_ee_fade'
+EXP_LABEL = 'a1_ee_0_ictrl_0'
 
-#POPS_USED = PYR_POPS + PV_POPS + SOM_POPS + VIP_POPS + NGF_POPS
-#POPS_USED = L2_POPS
-#POPS_USED = THAL_E_POPS + THAL_I_POPS
 #POPS_USED = ['IRE']
-POPS_USED = CORE_POPS + MATX_POPS
+#POPS_USED = THAL_POPS
+POPS_USED = CTX_POPS + THAL_POPS
 
 #CONNS_FROZEN = 'all'
-#CONNS_FROZEN = CONNS_EE
-CONNS_FROZEN = []
+CONNS_FROZEN = CONNS_EE
+#CONNS_FROZEN = []
 
 EE_FADER_ON = 0
 
@@ -103,7 +103,7 @@ USE_IBKG = 1
 IBKG_JSON_NAME = 'ibkg_mech1_verest_-70_thal_spkthr'
 
 # Constant input correction from rate-control experiment
-USE_IBKG_CTRL = 1
+USE_IBKG_CTRL = 0
 IBKG_CTRL_JSON_NAME = 'ibkg_ctrl_1'
 
 # Surrogate inputs
