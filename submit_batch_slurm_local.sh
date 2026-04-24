@@ -15,4 +15,4 @@ export LD_LIBRARY_PATH=$CONDA_PREFIX/lib:$LD_LIBRARY_PATH
 export MKL_THREADING_LAYER=GNU
 
 cd /ddn/niknovikov19/repo/A1_OUinp
-python -u grid_search_slurm_local.py
+python -u "${A1_BATCH_ENTRYPOINT:-grid_search_slurm_local.py}"

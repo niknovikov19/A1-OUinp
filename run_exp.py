@@ -1,5 +1,6 @@
 import argparse
 import json
+import numbers
 import os
 from pathlib import Path
 import pickle as pkl
@@ -73,6 +74,54 @@ def setCochCellLocationsX(cfg, netParams, pop, sz, scale):
                 # make sure these values consistent
                 c.tags['xnorm'] = cellx / netParams.sizeX
             c.updateShape()
+
+
+def _normalize_batch_metrics(metrics):
+    if metrics is None:
+        return {}
+    if not isinstance(metrics, dict):
+        raise TypeError(
+            "get_batch_metrics(sim) must return a dict[str, float | int]"
+        )
+
+    metrics_norm = {}
+    for key, value in metrics.items():
+        if not isinstance(key, str):
+            raise TypeError("Metric names returned by get_batch_metrics(sim) must be strings")
+        if isinstance(value, np.generic):
+            value = value.item()
+        if isinstance(value, bool):
+            value = int(value)
+
+        if isinstance(value, numbers.Integral):
+            metrics_norm[key] = int(value)
+            continue
+        if isinstance(value, numbers.Real):
+            value = float(value)
+            if not np.isfinite(value):
+                raise ValueError(f"Metric {key!r} must be finite, got {value!r}")
+            metrics_norm[key] = value
+            continue
+
+        raise TypeError(
+            f"Metric {key!r} must be numeric, got value {value!r}"
+        )
+
+    return metrics_norm
+
+
+def _collect_batch_metrics(cfg_mod, sim):
+    if not hasattr(cfg_mod, 'get_batch_metrics'):
+        return {}
+
+    metrics = _normalize_batch_metrics(cfg_mod.get_batch_metrics(sim))
+    expected_metric = getattr(sim.cfg, 'optuna_metric_name', None)
+    if expected_metric is not None and expected_metric not in metrics:
+        raise ValueError(
+            f"Configured Optuna metric {expected_metric!r} was not returned by "
+            "get_batch_metrics(sim)"
+        )
+    return metrics
 
 
 # Folder names for experiment configs and results (relative to this script)
@@ -361,9 +410,12 @@ if comm.is_host():
         if hasattr(cfg_mod, 'post_run'):
             cfg_mod.post_run(sim)
 
+        batch_metrics = _collect_batch_metrics(cfg_mod, sim)
+
     else:
         print(f'>>>>>>>>>>> {cfg.simLabel} SKIPPED', flush=True)
         avgRates = {}
+        batch_metrics = {}
 
     # Finish and report to batchtools
     """ avgRates['loss'] = 700
@@ -372,7 +424,7 @@ if comm.is_host():
         comm.send(out_json)
     except:
         print('COMM SEND FAILED') """
-    comm.send({'done': 1})
+    comm.send({'done': 1, **batch_metrics})
     comm.close()
 
 
