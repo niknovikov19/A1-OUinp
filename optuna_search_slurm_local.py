@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 from batchtk.runtk import Template
@@ -92,7 +93,10 @@ def _load_optuna_config(batch_params_mod):
 
 
 def main():
-    exp_name = 'batch_rxbkg_state1_mech1/net_newsec_ctrl_optuna_test'
+    exp_name = os.environ.get(
+        'A1_OPTUNA_EXP_NAME',
+        'batch_rxbkg_state1_mech1/net_newsec_ibkg_corr_optuna',
+    )
 
     partition = 'cpu.q'
     n_cores = 60

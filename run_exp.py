@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 import pickle as pkl
 from pprint import pprint
+from types import SimpleNamespace
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -415,7 +416,8 @@ if comm.is_host():
     else:
         print(f'>>>>>>>>>>> {cfg.simLabel} SKIPPED', flush=True)
         avgRates = {}
-        batch_metrics = {}
+        sim = SimpleNamespace(cfg=cfg)
+        batch_metrics = _collect_batch_metrics(cfg_mod, sim)
 
     # Finish and report to batchtools
     """ avgRates['loss'] = 700
