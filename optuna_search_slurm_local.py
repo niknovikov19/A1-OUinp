@@ -123,7 +123,7 @@ def main():
 
     params = dict(optuna_cfg['params'])
     metric = optuna_cfg['metric']
-    params.setdefault('optuna_metric_name', metric)
+    #params.setdefault('optuna_metric_name', metric)
 
     slurm_config = {
         'partition': partition,
@@ -139,7 +139,7 @@ def main():
         ]),
         'command': (
             f'srun --mpi=pmi2 -n {n_cores} nrniv -python -mpi '
-            f'run_exp.py --batch {subdir_str}'
+            f'run_exp.py --batch --job_id_len 9 {subdir_str}'
         ),
     }
 

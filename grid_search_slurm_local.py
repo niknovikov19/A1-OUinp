@@ -46,7 +46,7 @@ wait
 
 
 # Experiment name
-exp_name = 'batch_rxbkg_state1_mech1/net_newsec_ctrl_var_seed'
+exp_name = 'batch_rxbkg_state1_mech1/net_newsec_var_seed'
 #exp_name = 'batch_rxbkg_unconn_state1_mech1/pops_inpsur_newsec_var_drxe_rxi'
 #exp_name = 'batch_unconn/fi_tuning'
 
@@ -55,6 +55,8 @@ exp_name = 'batch_rxbkg_state1_mech1/net_newsec_ctrl_var_seed'
 PARTITION = 'cpu.q'
 
 # Resources to allocate
+#N_CORES = 28
+#MEM_SZ = 128
 N_CORES = 60
 MEM_SZ = 256
 
@@ -81,7 +83,7 @@ params = batch_params_mod.get_batch_params()
 
 slurm_config = {
     'partition': PARTITION,
-    'realtime': '5:00:00',
+    'realtime': '7:00:00',
     'nodes': 1,
     'coresPerNode': N_CORES,
     'mem': f'{MEM_SZ}G',

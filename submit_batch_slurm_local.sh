@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=OUGrid
-#SBATCH --partition=cpu.q
+#SBATCH --partition=bigmem.q
 #SBATCH --nodes=1
 #SBATCH --ntasks=2
 #SBATCH --mem=16G
@@ -16,3 +16,4 @@ export MKL_THREADING_LAYER=GNU
 
 cd /ddn/niknovikov19/repo/A1_OUinp
 python -u "${A1_BATCH_ENTRYPOINT:-grid_search_slurm_local.py}"
+#python -u optuna_search_slurm_local.py

@@ -51,15 +51,15 @@ T0_CALC = 10 * 1e3
 #EXP_LABEL = 'L2_unconn'
 #EXP_LABEL = 'thal'
 #EXP_LABEL = 'a1_ee_fade'
-EXP_LABEL = 'a1_ee_0_ictrl_0'
+EXP_LABEL = 'a1_ee_full_ictrl_0'
 
 #POPS_USED = ['IRE']
 #POPS_USED = THAL_POPS
 POPS_USED = CTX_POPS + THAL_POPS
 
 #CONNS_FROZEN = 'all'
-CONNS_FROZEN = CONNS_EE
-#CONNS_FROZEN = []
+#CONNS_FROZEN = CONNS_EE
+CONNS_FROZEN = []
 
 EE_FADER_ON = 0
 

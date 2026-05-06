@@ -139,6 +139,8 @@ parser.add_argument('--subdir', type=str,
                     help="Subfolder where the exp is located")
 parser.add_argument('--par', type=str,
                     help="Arbitrary param")
+parser.add_argument('--job_id_len', type=int, default=6,
+                    help="Number of characters to strip from the end of simLabel to get exp_name")
 args, _ = parser.parse_known_args()
 is_batch = args.batch
 
@@ -155,7 +157,7 @@ if is_batch:
     # Get simLabel from batchtools to identify exp_name,
     # which is then used to generate the path to exp_cfg.py
     sim_label = comm.runner.mappings['simLabel']
-    exp_name = sim_label[:-6]  # cut away job id
+    exp_name = sim_label[:-args.job_id_len]  # cut away job id
     print(f'>>>> EXP_NAME: {exp_name}', flush=True)
 
 # Import experiment-specific config and batch py-files
