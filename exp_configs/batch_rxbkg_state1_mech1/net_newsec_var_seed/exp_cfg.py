@@ -43,10 +43,10 @@ CONNS_EE = [(p1, p2) for p1 in E_POPS for p2 in E_POPS]
 
 
 # Duration and rate calculation window
-SIM_DURATION = 75 * 1e3
-T0_CALC = 50 * 1e3
+SIM_DURATION = 10 * 1e3
+T0_CALC = 7 * 1e3
 
-EXP_LABEL = 'a1_ee_fade_lfp'
+EXP_LABEL = 'a1_ee_fade_pulses'
 
 POPS_USED = CTX_POPS + THAL_POPS
 
@@ -96,10 +96,28 @@ LFP_Y_STEP = 100
 LAYER_BOUNDS = {'L1': 100, 'L2': 160, 'L3': 950, 'L4': 1250,
                 'L5A': 1334, 'L5B': 1550, 'L6': 2000}
 
-PLOT_RATE_DYNAMICS = 0
+PLOT_RATE_DYNAMICS = 1
 
 NEED_RUN = 1
 DIAG = 0
+
+ADD_PULSES = 1
+N_PULSES = 10
+PULSE_PARAMS = {
+    'name': 'PulseSeq',
+    'pop': ['TC'],
+    't0': 5000,
+    'width': 150,
+    'period': 500,
+    'n_pulses': N_PULSES,
+    #'rates': [1250] * N_PULSES,
+    'rates': np.linspace(100, 1000, N_PULSES).round().tolist(),
+    'weight': 0.01,
+    'n_cells': 100,
+    'convergence': 25,
+    'jitter': 0,
+    'rand_type': 'norm'
+}
 
 
 def gen_exp_name_sub(cfg):
@@ -114,6 +132,21 @@ def gen_exp_name_sub(cfg):
     if USE_IBKG_CTRL:
         exp_name_sub += '_ictrl'
     exp_name_sub += f'_wmult_{cfg.wmult}_ee_{cfg.EEGain}'
+    if ADD_PULSES:
+        pulse_par = cfg.pulse_seq_params
+        ppop, pt0, pT, pdur, pjit, pr, pw, pc = (
+            pulse_par['pop'], pulse_par['t0'],
+            pulse_par['period'], pulse_par['width'], pulse_par['jitter'],
+            pulse_par['rates'], pulse_par['weight'],
+            pulse_par['convergence'])
+        ppop = '_'.join(ppop)
+        if np.isscalar(pr):
+            pr0, dpr = pr, 0
+        else:
+            pr0, dpr = pr[0], np.round(pr[1] - pr[0])
+        exp_name_sub += (
+            f'_pulse_{ppop}_d_{pdur}_T_{pT}_c_{pc}_'
+            f'w_{pw}_r_{pr0}_{dpr}_t0_{pt0}_jit_{pjit}')
     return exp_name_sub
 
 
@@ -275,6 +308,11 @@ def apply_exp_cfg(cfg):
         'layer_bounds': LAYER_BOUNDS, 'saveFig': 1, 'showFig': 0,
         'timeRange': (2000, cfg.duration)
     } """
+
+    # Pulse train stimulus
+    cfg.add_pulses = int(ADD_PULSES)
+    if ADD_PULSES:
+        cfg.pulse_seq_params = PULSE_PARAMS
 
 
 def modify_net_params(cfg, params):

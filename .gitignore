@@ -48,3 +48,6 @@ sim_output/
 BACKUP
 **/*.err
 *.sgl
+exp_results/batch_i_ougrid_unconn_state1_mech1_nosub_wmult_0.25/**/*.png
+exp_results/batch_i_ougrid_unconn_state1_mech1_nosub_wmult_0.25/**/*.nc
+*.zip
