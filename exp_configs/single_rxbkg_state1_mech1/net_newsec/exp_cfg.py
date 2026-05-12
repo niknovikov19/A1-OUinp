@@ -15,7 +15,6 @@ import pandas as pd
 
 from analysis.model_utils.net_utils import get_2pop_conns
 from analysis.ou_tuning import sim_res_proc_utils as proc
-from batch_params import N_SEEDS
 from conn_fader import ConnFader
 import diagnostics as diag
 from syn_mech_relabel import _rule_kind_and_base_pops, _relabel_conn_synmech
@@ -102,6 +101,8 @@ RVEC_TAU_SMOOTH = 0.02
 NEED_RUN = 1
 DIAG = 0
 
+SEED = 1111
+
 ADD_PULSES = 1
 N_PULSES = 10
 PULSE_PARAMS = {
@@ -126,7 +127,7 @@ def gen_exp_name_sub(cfg):
     exp_name_sub = f'exp_{EXP_LABEL}'
     if not SURR_INP_ON:
         exp_name_sub += '_nosurr'
-    exp_name_sub += f'_nseed_{N_SEEDS}'
+    exp_name_sub += f'_seed_{SEED}'
     exp_name_sub += f'_t_{t_limits[0]}_{t_limits[1]}'
     if REC_LFP:
         exp_name_sub += f'_lfp_{LFP_Y_MIN}_{LFP_Y_MAX}_{LFP_Y_STEP}'
@@ -165,9 +166,8 @@ def apply_exp_cfg(cfg):
     pops_active = POPS_USED
 
     # Random seeds
-    cfg.seed_main = None   # batch param
-    cfg.seeds['stim'] = None   # set in batch_params.py
-    cfg.seeds['conn'] = None   # set in batch_params.py
+    cfg.seeds['stim'] = SEED
+    cfg.seeds['conn'] = SEED * 2
 
     # Add labels to conns
     if EE_FADER_ON:
@@ -183,7 +183,7 @@ def apply_exp_cfg(cfg):
         'pops_active': pops_active,   
         'conns_frozen': CONNS_FROZEN,
         'fpath_frozen_rates': str(dirpath_self / 'target_state_1.csv'),   # surrogate input
-        'global_seed': None   # set in batch_params.py
+        'global_seed': SEED * 3
     }
     if EE_FADER_ON:
         cfg.subnet_params['conns_split'] = {
@@ -227,11 +227,11 @@ def apply_exp_cfg(cfg):
         x = xbkg_info[pop]
         cfg.bkg_spike_inputs[pop] = {
             'exc': {'r': x['rxe'], 'w': x['wxe'], 'sec': x['xe_sec'],
-                    'noise': 1, 'seed': None},   # set in batch_params.py
+                    'noise': 1, 'seed': cfg.seeds['stim'] + 10000 + n},
             'inh': {'r': x['rxi'], 'w': x['wxi'], 'sec': x['xi_sec'],
-                    'noise': 1, 'seed': None},   # set in batch_params.py
+                    'noise': 1, 'seed': cfg.seeds['stim'] + 20000 + n}
         }
-    
+
     # Static IClamp that sets the resting voltage
     if USE_IBKG:
         cfg.addIClamp = 1
@@ -417,8 +417,8 @@ def post_run(sim):
     exp_name_sub = gen_exp_name_sub(cfg)
 
     # Generate filename postfix with batch param values
-    exp_id = exp_name.split('_')[-1]
-    postfix = (f'{exp_id}_seed_{cfg.seed_main}')
+    exp_id = '00000'
+    postfix = (f'{exp_id}_seed_{SEED}')
 
     # Create subfolders to put the results
     dirpath_res = Path(cfg.saveFolder)

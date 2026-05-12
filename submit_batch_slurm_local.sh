@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=OUGrid
-#SBATCH --partition=bigmem.q
+#SBATCH --partition=cpu.q
 #SBATCH --nodes=1
 #SBATCH --ntasks=2
 #SBATCH --mem=16G
