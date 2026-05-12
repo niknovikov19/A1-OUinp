@@ -97,6 +97,7 @@ LAYER_BOUNDS = {'L1': 100, 'L2': 160, 'L3': 950, 'L4': 1250,
                 'L5A': 1334, 'L5B': 1550, 'L6': 2000}
 
 PLOT_RATE_DYNAMICS = 1
+RVEC_TAU_SMOOTH = 0.02
 
 NEED_RUN = 1
 DIAG = 0
@@ -111,8 +112,8 @@ PULSE_PARAMS = {
     'period': 500,
     'n_pulses': N_PULSES,
     #'rates': [1250] * N_PULSES,
-    'rates': np.linspace(100, 1000, N_PULSES).round().tolist(),
-    'weight': 0.01,
+    'rates': np.linspace(100, 5000, N_PULSES).round().tolist(),
+    'weight': 0.1,
     'n_cells': 100,
     'convergence': 25,
     'jitter': 0,
@@ -344,7 +345,9 @@ def modify_net_params(cfg, params):
                 conn['sec'] = ts['sec']
                 break
         if conn['sec'] is None:
-            raise ValueError(f'No target sec info found for conn {cname}')  
+            #print(f'{pop_pre} -> {pop_post}')
+            #raise ValueError(f'No target sec info found for conn {cname}')  
+            print(f'WARNING: No target sec info found for conn {cname}')  
 
 
 def modify_net_params_2(cfg, params):
@@ -479,7 +482,7 @@ def post_run(sim):
 
             # Compute rate dynamics
             r_data = proc.calc_rate_dynamics(
-                sim, t_limits=(2, None), tau_smooth=0.2, pops_used=pops)
+                sim, t_limits=(2, None), tau_smooth=RVEC_TAU_SMOOTH, pops_used=pops)
 
             plt.figure(111); plt.clf()
 
