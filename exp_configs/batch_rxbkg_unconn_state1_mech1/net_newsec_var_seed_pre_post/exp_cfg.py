@@ -12,9 +12,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from analysis.model_utils.net_utils import get_2pop_conns
+#from analysis.model_utils.net_utils import get_2pop_conns
 from analysis.ou_tuning import sim_res_proc_utils as proc
-from batch_params import N_SEEDS
+from batch_params import N_SEEDS, POPS_PRE, POP_GROUPS_POST
 import diagnostics as diag
 
 
@@ -46,10 +46,6 @@ T0_CALC = 7 * 1e3
 EXP_LABEL = 'a1_unconn_pulses'
 
 POPS_USED = CTX_POPS + THAL_POPS
-
-#CONNS_FROZEN = 'all'
-#CONNS_FROZEN = CONNS_EE
-CONNS_FROZEN = []
 
 # Background spiking input
 XBKG_NAME = 'rx_bkg_mid_sm_ctx21_thal41'
@@ -95,7 +91,7 @@ ADD_PULSES = 1
 N_PULSES = 10
 PULSE_PARAMS = {
     'name': 'PulseSeq',
-    'pop': ['TC'],
+    'pop': None,   # will be set in batch.py
     't0': 5000,
     'width': 150,
     'period': 500,
@@ -115,27 +111,28 @@ def gen_exp_name_sub(cfg):
     exp_name_sub = f'exp_{EXP_LABEL}'
     if not SURR_INP_ON:
         exp_name_sub += '_nosurr'
-    exp_name_sub += f'_nseed_{N_SEEDS}'
+    npre, npost = len(POPS_PRE), len(POP_GROUPS_POST)
+    exp_name_sub += f'_nseed_{N_SEEDS}_npre_{npre}_npost_{npost}'
     exp_name_sub += f'_t_{t_limits[0]}_{t_limits[1]}'
     if REC_LFP:
         exp_name_sub += f'_lfp_{LFP_Y_MIN}_{LFP_Y_MAX}_{LFP_Y_STEP}'
     if USE_IBKG_CTRL:
         exp_name_sub += '_ictrl'
     exp_name_sub += f'_wmult_{cfg.wmult}_ee_{cfg.EEGain}'
+    #exp_name_sub += f'_pre_{cfg.pop_pre}_post_{cfg.pop_group_post}'
     if ADD_PULSES:
         pulse_par = cfg.pulse_seq_params
-        ppop, pt0, pT, pdur, pjit, pr, pw, pc = (
-            pulse_par['pop'], pulse_par['t0'],
+        pt0, pT, pdur, pjit, pr, pw, pc = (
+            pulse_par['t0'],
             pulse_par['period'], pulse_par['width'], pulse_par['jitter'],
             pulse_par['rates'], pulse_par['weight'],
             pulse_par['convergence'])
-        ppop = '_'.join(ppop)
         if np.isscalar(pr):
             pr0, dpr = pr, 0
         else:
             pr0, dpr = pr[0], np.round(pr[1] - pr[0])
         exp_name_sub += (
-            f'_pulse_{ppop}_d_{pdur}_T_{pT}_c_{pc}_'
+            f'_pulse_d_{pdur}_T_{pT}_c_{pc}_'
             f'w_{pw}_r_{pr0}_{dpr}_t0_{pt0}_jit_{pjit}')
     return exp_name_sub
 
@@ -158,6 +155,10 @@ def apply_exp_cfg(cfg):
     cfg.seeds['stim'] = None   # set in batch_params.py
     cfg.seeds['conn'] = None   # set in batch_params.py
 
+    # Pre/post population selection
+    cfg.pop_pre = None          # batch param
+    cfg.pop_group_post = None   # batch param
+
     # Add labels to conns
     cfg.includeParamsLabel = True
 
@@ -168,7 +169,7 @@ def apply_exp_cfg(cfg):
     cfg.subnet_build_flag = SURR_INP_ON
     cfg.subnet_params = {
         'pops_active': pops_active,
-        'conns_frozen': CONNS_FROZEN,
+        'conns_frozen': None,   # set in batch_params.py
         'fpath_frozen_rates': str(dirpath_self / 'target_state_1.csv'),   # surrogate input
         'global_seed': None   # set in batch_params.py
     }
@@ -350,7 +351,8 @@ def post_run(sim):
 
     # Generate filename postfix with batch param values
     exp_id = exp_name.split('_')[-1]
-    postfix = (f'{exp_id}_seed_{cfg.seed_main}')
+    postfix = (f'{exp_id}_seed_{cfg.seed_main}_'
+               f'pre_{cfg.pop_pre}_post_{cfg.pop_group_post}')
 
     # Create subfolders to put the results
     dirpath_res = Path(cfg.saveFolder)
