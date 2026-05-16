@@ -112,6 +112,10 @@ PULSE_PARAMS = {
     'rand_type': 'norm'
 }
 
+# Params of the surrogate rate dynamics
+RAMP_T0 = 3000
+RAMP_RATE_END = 20
+
 
 def gen_exp_name_sub(cfg):
     t_limits = (cfg.t0_calc / 1000, cfg.duration / 1000)
@@ -372,8 +376,6 @@ def modify_net_params_2(cfg, params):
 
     # Rate ramp: flat at target_rate for t < 300 ms,
     # then linear to RAMP_RATE_END Hz at t = cfg.duration
-    RAMP_T0       = 300.0   # ms
-    RAMP_RATE_END =  20.0   # Hz
     t_vec    = np.arange(0.0, cfg.duration, 1.0)
     frac     = np.clip((t_vec - RAMP_T0) / (cfg.duration - RAMP_T0), 0.0, 1.0)
     rate_vec = target_rate + frac * (RAMP_RATE_END - target_rate)
@@ -406,8 +408,8 @@ def post_run(sim):
 
     # Generate filename postfix with batch param values
     exp_id = exp_name.split('_')[-1]
-    postfix = (f'{exp_id}_seed_{cfg.seed_main}_'
-               f'pre_{cfg.pop_pre}_post_{cfg.pop_group_post}')
+    postfix = (f'{exp_id}_seed_{cfg.seed_main}_pre_{cfg.pop_pre}'
+               f'_rt0_{RAMP_T0}_rend_{RAMP_RATE_END}')
 
     # Create subfolders to put the results
     dirpath_res = Path(cfg.saveFolder)
