@@ -111,6 +111,19 @@ def _normalize_batch_metrics(metrics):
     return metrics_norm
 
 
+def _save_netparams_stripped(netParams, fpath):
+    """Save netParams JSON with spkTimes stripped from VecStim pops.
+
+    The in-memory netParams object is not modified; spkTimes are only omitted
+    from the written file to keep file sizes manageable.
+    """
+    d = netParams.todict()
+    for pop in d.get('popParams', {}).values():
+        if isinstance(pop, dict) and pop.get('cellModel') == 'VecStim':
+            pop.pop('spkTimes', None)
+    sim.saveJSON(fpath, {'net': {'params': d}})
+
+
 def _collect_batch_metrics(cfg_mod, sim):
     if not hasattr(cfg_mod, 'get_batch_metrics'):
         return {}
@@ -273,7 +286,7 @@ if comm.is_host():
     fpath_cfg = "{}/{}_cfg.json".format(cfg.saveFolder, cfg.simLabel)
     print(f'Saving to {fpath_cfg}', flush=True)
     cfg.save(fpath_cfg)
-    netParams.save('{}/{}_netParams.json'.format(cfg.saveFolder, cfg.simLabel))
+    _save_netparams_stripped(netParams, '{}/{}_netParams.json'.format(cfg.saveFolder, cfg.simLabel))
 #print('SAVING DONE', flush=True)
 
 # Run or skip
@@ -383,7 +396,7 @@ if need_run:
 
 # Finalize
 if comm.is_host():
-    netParams.save("{}/{}_params.json".format(cfg.saveFolder, cfg.simLabel))
+    _save_netparams_stripped(netParams, "{}/{}_params.json".format(cfg.saveFolder, cfg.simLabel))
     print('transmitting data...')
     inputs = cfg.get_mappings()
     
