@@ -50,8 +50,11 @@ EXP_LABEL = 'pre_it24_post_L2'
 POPS_USED = L2_POPS
 
 # Params of the surrogate rate dynamics
-RAMP_T0 = 5000
-RAMP_RATE_END = 20
+RPRE_DYN_T0 = 5000        # time (ms) after which dynamics start
+RPRE_DYN_TYPE = 'ramp'    # 'ramp' or 'osc'
+RPRE_RAMP_RLAST = 20       # ramp: final rate (Hz)
+RPRE_OSC_PERIOD = 2000        # sinusoid: period (ms)
+RPRE_OSC_RMAX = 30            # sinusoid: max rate (Hz); oscillates in [0, RPRE_OSC_RMAX]
 
 # Background spiking input
 XBKG_NAME = 'rx_bkg_mid_sm_ctx21_thal41'
@@ -374,11 +377,24 @@ def modify_net_params_2(cfg, params):
     pops_sz = pd.read_csv(dirpath_self / 'pops_sz.csv').set_index('pop')['ncells'].to_dict()
     n_cells = int(pops_sz[cfg.pop_pre])
 
-    # Rate ramp: flat at target_rate for t < 300 ms,
-    # then linear to RAMP_RATE_END Hz at t = cfg.duration
-    t_vec    = np.arange(0.0, cfg.duration, 1.0)
-    frac     = np.clip((t_vec - RAMP_T0) / (cfg.duration - RAMP_T0), 0.0, 1.0)
-    rate_vec = target_rate + frac * (RAMP_RATE_END - target_rate)
+    # Rate dynamics: flat at target_rate for t < RPRE_DYN_T0, then either ramp
+    # or sinusoid starting at target_rate
+    t_vec = np.arange(0.0, cfg.duration, 1.0)
+    if RPRE_DYN_TYPE == 'ramp':
+        frac     = np.clip((t_vec - RPRE_DYN_T0) / (cfg.duration - RPRE_DYN_T0), 0.0, 1.0)
+        rate_vec = target_rate + frac * (RPRE_RAMP_RLAST - target_rate)
+    elif RPRE_DYN_TYPE == 'osc':
+        # Phase offset so that r(RPRE_DYN_T0) = target_rate; range [0, RPRE_OSC_RMAX]
+        if target_rate > RPRE_OSC_RMAX:
+            raise ValueError(
+                f'target_rate ({target_rate:.2f} Hz) exceeds RPRE_OSC_RMAX '
+                f'({RPRE_OSC_RMAX} Hz) for pop {pop_name}'
+            )
+        phase_0  = np.arccos(np.clip(1.0 - 2.0 * target_rate / RPRE_OSC_RMAX, -1.0, 1.0))
+        phase    = 2 * np.pi * np.clip(t_vec - RPRE_DYN_T0, 0.0, None) / RPRE_OSC_PERIOD + phase_0
+        rate_vec = RPRE_OSC_RMAX / 2.0 * (1.0 - np.cos(phase))
+    else:
+        raise ValueError(f'Unknown RPRE_DYN_TYPE: {RPRE_DYN_TYPE!r}')
 
     # Generate one independent spike train per cell.
     # generate_trains seeds cell i with base_seed+i; inh_poisson_generator further
@@ -408,8 +424,11 @@ def post_run(sim):
 
     # Generate filename postfix with batch param values
     exp_id = exp_name.split('_')[-1]
-    postfix = (f'{exp_id}_seed_{cfg.seed_main}_pre_{cfg.pop_pre}'
-               f'_rt0_{RAMP_T0}_rend_{RAMP_RATE_END}')
+    if RPRE_DYN_TYPE == 'ramp':
+        dyn_str = f'ramp_t0_{RPRE_DYN_T0}_rlast_{RPRE_RAMP_RLAST}'
+    else:
+        dyn_str = f'osc_t0_{RPRE_DYN_T0}_T_{RPRE_OSC_PERIOD}_rmax_{RPRE_OSC_RMAX}'
+    postfix = f'{exp_id}_seed_{cfg.seed_main}_rpre_{cfg.pop_pre}_{dyn_str}'
 
     # Create subfolders to put the results
     dirpath_res = Path(cfg.saveFolder)
