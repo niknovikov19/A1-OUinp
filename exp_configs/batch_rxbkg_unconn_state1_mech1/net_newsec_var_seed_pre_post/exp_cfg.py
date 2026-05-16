@@ -43,7 +43,7 @@ CONNS_EE = [(p1, p2) for p1 in E_POPS for p2 in E_POPS]
 SIM_DURATION = 10 * 1e3
 T0_CALC = 7 * 1e3
 
-EXP_LABEL = 'a1_unconn_pulses'
+EXP_LABEL = 'tc_pulses_1'
 
 POPS_USED = CTX_POPS + THAL_POPS
 
@@ -72,14 +72,21 @@ NCELLS_PLOT = 2
 
 REC_LFP = 1
 LFP_Y_MIN = 0
-LFP_Y_MAX = 3000
+LFP_Y_MAX = 2000
 LFP_Y_STEP = 100
 
 PLOT_CSD = 1
 CSD_VIS_T0 = 5000
 
-LAYER_BOUNDS = {'L1': 100, 'L2': 160, 'L3': 950, 'L4': 1250,
-                'L5A': 1334, 'L5B': 1550, 'L6': 2000}
+LAYER_BOUNDS = {
+    'L1': [0, 100],
+    'L2': [100, 160],
+    'L3': [160, 950],
+    'L4': [950, 1250],
+    'L5A': [1250, 1334],
+    'L5B': [1334, 1550],
+    'L6': [1550, 2000],
+}
 
 PLOT_RATE_DYNAMICS = 1
 RVEC_TAU_SMOOTH = 0.02
@@ -292,8 +299,12 @@ def apply_exp_cfg(cfg):
     if PLOT_CSD:
         csd_t0 = CSD_VIS_T0 if CSD_VIS_T0 is not None else 2000
         cfg.analysis['plotCSD'] = {
-            'spacing_um': LFP_Y_STEP, 'LFP_overlay': 1, 'layer_lines': 1,
-            'layer_bounds': LAYER_BOUNDS, 'saveFig': 1, 'showFig': 0,
+            'spacing_um': LFP_Y_STEP,
+            'overlay': 'LFP',
+            'hlines': True,
+            'layerBounds': LAYER_BOUNDS,
+            'saveFig': 1,
+            'showFig': 0,
             'timeRange': (csd_t0, cfg.duration)
         }
 
@@ -368,7 +379,8 @@ def post_run(sim):
         ('raster', 'png', 'rasters'),
         ('data', 'pkl', 'pkl'),
         ('cfg', 'json', 'cfg'),
-        ('netParams', 'json', 'netpar')
+        ('netParams', 'json', 'netpar'),
+        ('CSD', 'png', 'csd_figs')
     ]
     for di in data_info:
         data_name, ext, dirname_sub = di
@@ -385,12 +397,12 @@ def post_run(sim):
         fpath_new = dirpath_res_sub / 'traces' / f'{fpath_old.stem}_{postfix}{fpath_old.suffix}'
         fpath_old.rename(fpath_new)
 
-    # Move NetPyNE-generated CSD figures to a subfolder
+    """ # Move NetPyNE-generated CSD figures to a subfolder
     if PLOT_CSD:
         csd_files = list(dirpath_res.glob(f'{exp_name}_CSD*.png'))
         for fpath_old in csd_files:
             fpath_new = dirpath_res_sub / 'csd_figs' / f'{fpath_old.stem}_{postfix}{fpath_old.suffix}'
-            fpath_old.rename(fpath_new)
+            fpath_old.rename(fpath_new) """
 
     # Save rates, CVs, voltage stats, and timings to a json file
     if NEED_RUN:
@@ -405,12 +417,11 @@ def post_run(sim):
 
     # Plot and save rate dynamics
     if PLOT_RATE_DYNAMICS:
-        pop_groups = {'PYR': PYR_POPS, 'PV': PV_POPS, 'SOM': SOM_POPS,
-                      'VIP': VIP_POPS, 'NGF': NGF_POPS,
-                      'THAL_E': THAL_E_POPS, 'THAL_I': THAL_I_POPS}
+        pop_groups = {'CTX': CTX_POPS,
+                      'THAL': THAL_POPS}
         colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
         for pop_group_name, pops in pop_groups.items():
-            pops = [p for p in pops if p in POPS_USED]
+            pops = [p for p in pops if p in cfg.subnet_params['pops_active']]
             if len(pops) == 0:
                 continue
 

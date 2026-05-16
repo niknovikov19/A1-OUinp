@@ -41,13 +41,17 @@ CONNS_EE = [(p1, p2) for p1 in E_POPS for p2 in E_POPS]
 
 
 # Duration and rate calculation window
-SIM_DURATION = 10 * 1e3
-T0_CALC = 7 * 1e3
+SIM_DURATION = 20 * 1e3
+T0_CALC = 5 * 1e3
 
 EXP_LABEL = 'pre_it24_post_L2'
 
 # Active populations
 POPS_USED = L2_POPS
+
+# Params of the surrogate rate dynamics
+RAMP_T0 = 5000
+RAMP_RATE_END = 20
 
 # Background spiking input
 XBKG_NAME = 'rx_bkg_mid_sm_ctx21_thal41'
@@ -86,9 +90,9 @@ LAYER_BOUNDS = {'L1': 100, 'L2': 160, 'L3': 950, 'L4': 1250,
 PLOT_RATE_DYNAMICS = 1
 RVEC_TAU_SMOOTH = 0.02
 RVIS_POP_GROUPS = {
-    #'PYR': PYR_POPS, 'PV': PV_POPS, 'SOM': SOM_POPS, 'VIP': VIP_POPS,
-    #'NGF': NGF_POPS, 'THAL_E': THAL_E_POPS, 'THAL_I': THAL_I_POPS
-    'ALL': POPS_USED
+    'PYR': PYR_POPS, 'PV': PV_POPS, 'SOM': SOM_POPS, 'VIP': VIP_POPS,
+    'NGF': NGF_POPS, 'THAL_E': THAL_E_POPS, 'THAL_I': THAL_I_POPS
+    #'ALL': POPS_USED
 }
 
 NEED_RUN = 1
@@ -111,10 +115,6 @@ PULSE_PARAMS = {
     'jitter': 0,
     'rand_type': 'norm'
 }
-
-# Params of the surrogate rate dynamics
-RAMP_T0 = 3000
-RAMP_RATE_END = 20
 
 
 def gen_exp_name_sub(cfg):
