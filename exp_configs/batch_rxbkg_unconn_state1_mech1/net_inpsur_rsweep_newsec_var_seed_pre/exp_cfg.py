@@ -54,7 +54,8 @@ RPRE_DYN_T0 = 5000        # time (ms) after which dynamics start
 RPRE_DYN_TYPE = 'tri'    # 'ramp' | 'osc' | 'tri'
 RPRE_RAMP_RLAST = 20       # ramp: final rate (Hz)
 RPRE_OSC_PERIOD = 7500        # sinusoid: period (ms)
-RPRE_OSC_RMAX = 50            # sinusoid: max rate (Hz); oscillates in [0, RPRE_OSC_RMAX]
+RPRE_OSC_RMAX_RBKG_MULT = 10
+RPRE_OSC_RMAX = 500
 
 # Background spiking input
 XBKG_NAME = 'rx_bkg_mid_sm_ctx21_thal41'
@@ -136,10 +137,12 @@ def gen_exp_name_sub(cfg):
 
     if RPRE_DYN_TYPE == 'ramp':
         exp_name_sub += f'_ramp_t0_{RPRE_DYN_T0}_rlast_{RPRE_RAMP_RLAST}'
-    elif RPRE_DYN_TYPE == 'osc':
-        exp_name_sub += f'_osc_t0_{RPRE_DYN_T0}_T_{RPRE_OSC_PERIOD}_rmax_{RPRE_OSC_RMAX}'
-    else:
-        exp_name_sub += f'_tri_t0_{RPRE_DYN_T0}_T_{RPRE_OSC_PERIOD}_rmax_{RPRE_OSC_RMAX}'
+    elif RPRE_DYN_TYPE in ['osc', 'tri']:
+        exp_name_sub += f'_{RPRE_DYN_TYPE}_t0_{RPRE_DYN_T0}_T_{RPRE_OSC_PERIOD}'
+        if RPRE_OSC_RMAX_RBKG_MULT is not None:
+            exp_name_sub += f'_rmax_{RPRE_OSC_RMAX_RBKG_MULT}xbkg_{RPRE_OSC_RMAX}'
+        else:
+            exp_name_sub += f'_rmax_{RPRE_OSC_RMAX}'
 
     if USE_IBKG_CTRL:
         exp_name_sub += '_ictrl'
