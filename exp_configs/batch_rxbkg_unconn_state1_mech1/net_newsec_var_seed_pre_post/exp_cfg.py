@@ -296,15 +296,11 @@ def apply_exp_cfg(cfg):
                          for y in range(LFP_Y_MIN, LFP_Y_MAX, LFP_Y_STEP)]
     
     # Plot CSD
-    if PLOT_CSD:
+    if REC_LFP and PLOT_CSD:
         csd_t0 = CSD_VIS_T0 if CSD_VIS_T0 is not None else 2000
         cfg.analysis['plotCSD'] = {
-            'spacing_um': LFP_Y_STEP,
-            'overlay': 'LFP',
-            'hlines': True,
-            'layerBounds': LAYER_BOUNDS,
-            'saveFig': 1,
-            'showFig': 0,
+            'spacing_um': LFP_Y_STEP, 'LFP_overlay': 1, 'layer_lines': 1,
+            'layer_bounds': LAYER_BOUNDS, 'saveFig': 1, 'showFig': 0,
             'timeRange': (csd_t0, cfg.duration)
         }
 
@@ -397,12 +393,12 @@ def post_run(sim):
         fpath_new = dirpath_res_sub / 'traces' / f'{fpath_old.stem}_{postfix}{fpath_old.suffix}'
         fpath_old.rename(fpath_new)
 
-    """ # Move NetPyNE-generated CSD figures to a subfolder
-    if PLOT_CSD:
+    # Move NetPyNE-generated CSD figures to a subfolder
+    if REC_LFP and PLOT_CSD:
         csd_files = list(dirpath_res.glob(f'{exp_name}_CSD*.png'))
         for fpath_old in csd_files:
             fpath_new = dirpath_res_sub / 'csd_figs' / f'{fpath_old.stem}_{postfix}{fpath_old.suffix}'
-            fpath_old.rename(fpath_new) """
+            fpath_old.rename(fpath_new)
 
     # Save rates, CVs, voltage stats, and timings to a json file
     if NEED_RUN:

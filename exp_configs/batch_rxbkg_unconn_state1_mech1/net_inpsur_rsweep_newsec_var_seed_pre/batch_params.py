@@ -1,9 +1,10 @@
 import numpy as np
 
 
-N_SEEDS = 1
+N_SEEDS = 5
 
-POPS_PRE = ['ITP4', 'IT2']
+#POPS_PRE = ['ITP4', 'IT2']
+POPS_PRE = ['IT2', 'PV2', 'SOM2', 'VIP2', 'NGF2']
 
 
 def get_batch_params():
@@ -31,3 +32,10 @@ def post_update(cfg):
         cfg.bkg_spike_inputs[pop]['inh']['seed'] = (
             cfg.seeds['stim'] + 20000 + n
         )
+    
+    # Store batch params for reference
+    cfg.batch_par_info = {
+        'n_seeds': N_SEEDS,
+        'pops_pre': POPS_PRE,
+        'batch_params': ['seed_main', 'pop_pre']
+    }

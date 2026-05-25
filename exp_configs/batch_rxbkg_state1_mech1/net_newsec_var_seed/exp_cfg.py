@@ -78,7 +78,7 @@ IBKG_CTRL_JSON_NAME = 'ibkg_ctrl_1'
 SURR_INP_ON = 1
 
 # Recording time step for traces and LFP
-DT_REC = 0.5
+DT_REC = 1
 
 REC_TRACES = 0
 PLOT_TRACES = 0
@@ -86,12 +86,13 @@ PLOT_TRACES = 0
 NCELLS_REC = 5
 NCELLS_PLOT = 2
 
-REC_LFP = 0
-PLOT_LFP = 0
-
+REC_LFP = 1
 LFP_Y_MIN = 0
-LFP_Y_MAX = 3000
+LFP_Y_MAX = 2000
 LFP_Y_STEP = 100
+
+PLOT_CSD = 1
+CSD_VIS_T0 = 5000
 
 LAYER_BOUNDS = {'L1': 100, 'L2': 160, 'L3': 950, 'L4': 1250,
                 'L5A': 1334, 'L5B': 1550, 'L6': 2000}
@@ -106,7 +107,7 @@ ADD_PULSES = 1
 N_PULSES = 10
 PULSE_PARAMS = {
     'name': 'PulseSeq',
-    'pop': ['TCM'],
+    'pop': ['TC'],
     't0': 5000,
     'width': 150,
     'period': 500,
@@ -304,11 +305,14 @@ def apply_exp_cfg(cfg):
         cfg.recordLFP = [[100, y, 100] 
                          for y in range(LFP_Y_MIN, LFP_Y_MAX, LFP_Y_STEP)]
 
-    """ cfg.analysis['plotCSD'] = {
-        'spacing_um': LFP_Y_STEP, 'LFP_overlay': 1, 'layer_lines': 1,
-        'layer_bounds': LAYER_BOUNDS, 'saveFig': 1, 'showFig': 0,
-        'timeRange': (2000, cfg.duration)
-    } """
+    # Plot CSD
+    if REC_LFP and PLOT_CSD:
+        csd_t0 = CSD_VIS_T0 if CSD_VIS_T0 is not None else 2000
+        cfg.analysis['plotCSD'] = {
+            'spacing_um': LFP_Y_STEP, 'LFP_overlay': 0, 'layer_lines': 1,
+            'layer_bounds': LAYER_BOUNDS, 'saveFig': 1, 'showFig': 0,
+            'timeRange': (csd_t0, cfg.duration)
+        }
 
     # Pulse train stimulus
     cfg.add_pulses = int(ADD_PULSES)
@@ -425,7 +429,7 @@ def post_run(sim):
     dirpath_res_sub = dirpath_res / exp_name_sub
     os.makedirs(dirpath_res_sub, exist_ok=True)
     dirnames_sub = ['rasters', 'results', 'cfg', 'pkl', 'netpar', 
-                    'traces', 'wmod_figs', 'rvec_figs']
+                    'traces', 'wmod_figs', 'rvec_figs', 'csd_figs']
     for dirname in dirnames_sub:
         os.makedirs(dirpath_res_sub / dirname, exist_ok=True)
 
@@ -434,7 +438,8 @@ def post_run(sim):
         ('raster', 'png', 'rasters'),
         ('data', 'pkl', 'pkl'),
         ('cfg', 'json', 'cfg'),
-        ('netParams', 'json', 'netpar')
+        ('netParams', 'json', 'netpar'),
+        ('CSD', 'png', 'csd_figs')
     ]
     for di in data_info:
         data_name, ext, dirname_sub = di
@@ -450,6 +455,13 @@ def post_run(sim):
     for fpath_old in trace_files:
         fpath_new = dirpath_res_sub / 'traces' / f'{fpath_old.stem}_{postfix}{fpath_old.suffix}'
         fpath_old.rename(fpath_new)
+    
+    # Move NetPyNE-generated CSD figures to a subfolder
+    if REC_LFP and PLOT_CSD:
+        csd_files = list(dirpath_res.glob(f'{exp_name}_CSD*.png'))
+        for fpath_old in csd_files:
+            fpath_new = dirpath_res_sub / 'csd_figs' / f'{fpath_old.stem}_{postfix}{fpath_old.suffix}'
+            fpath_old.rename(fpath_new)
     
     # Save rates, CVs, voltage stats, and timings to a json file
     if NEED_RUN:

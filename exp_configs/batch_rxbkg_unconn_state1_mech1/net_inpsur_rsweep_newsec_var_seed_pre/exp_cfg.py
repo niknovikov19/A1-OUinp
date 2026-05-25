@@ -44,17 +44,17 @@ CONNS_EE = [(p1, p2) for p1 in E_POPS for p2 in E_POPS]
 SIM_DURATION = 20 * 1e3
 T0_CALC = 5 * 1e3
 
-EXP_LABEL = 'pre_it24_post_L2'
+EXP_LABEL = 'pre_L2_post_L2'
 
 # Active populations
 POPS_USED = L2_POPS
 
 # Params of the surrogate rate dynamics
 RPRE_DYN_T0 = 5000        # time (ms) after which dynamics start
-RPRE_DYN_TYPE = 'ramp'    # 'ramp' or 'osc'
+RPRE_DYN_TYPE = 'tri'    # 'ramp' | 'osc' | 'tri'
 RPRE_RAMP_RLAST = 20       # ramp: final rate (Hz)
-RPRE_OSC_PERIOD = 2000        # sinusoid: period (ms)
-RPRE_OSC_RMAX = 30            # sinusoid: max rate (Hz); oscillates in [0, RPRE_OSC_RMAX]
+RPRE_OSC_PERIOD = 7500        # sinusoid: period (ms)
+RPRE_OSC_RMAX = 50            # sinusoid: max rate (Hz); oscillates in [0, RPRE_OSC_RMAX]
 
 # Background spiking input
 XBKG_NAME = 'rx_bkg_mid_sm_ctx21_thal41'
@@ -121,18 +121,31 @@ PULSE_PARAMS = {
 
 
 def gen_exp_name_sub(cfg):
-    t_limits = (cfg.t0_calc / 1000, cfg.duration / 1000)
     exp_name_sub = f'exp_{EXP_LABEL}'
     if not SURR_INP_ON:
         exp_name_sub += '_nosurr'
+
     npre = len(POPS_PRE)
     exp_name_sub += f'_nseed_{N_SEEDS}_npre_{npre}'
+
+    t_limits = (cfg.t0_calc / 1000, cfg.duration / 1000)
     exp_name_sub += f'_t_{t_limits[0]}_{t_limits[1]}'
+
     if REC_LFP:
         exp_name_sub += f'_lfp_{LFP_Y_MIN}_{LFP_Y_MAX}_{LFP_Y_STEP}'
+
+    if RPRE_DYN_TYPE == 'ramp':
+        exp_name_sub += f'_ramp_t0_{RPRE_DYN_T0}_rlast_{RPRE_RAMP_RLAST}'
+    elif RPRE_DYN_TYPE == 'osc':
+        exp_name_sub += f'_osc_t0_{RPRE_DYN_T0}_T_{RPRE_OSC_PERIOD}_rmax_{RPRE_OSC_RMAX}'
+    else:
+        exp_name_sub += f'_tri_t0_{RPRE_DYN_T0}_T_{RPRE_OSC_PERIOD}_rmax_{RPRE_OSC_RMAX}'
+
     if USE_IBKG_CTRL:
         exp_name_sub += '_ictrl'
+
     exp_name_sub += f'_wmult_{cfg.wmult}_ee_{cfg.EEGain}'
+
     #exp_name_sub += f'_pre_{cfg.pop_pre}_post_{cfg.pop_group_post}'
     if ADD_PULSES:
         pulse_par = cfg.pulse_seq_params
@@ -148,6 +161,7 @@ def gen_exp_name_sub(cfg):
         exp_name_sub += (
             f'_pulse_d_{pdur}_T_{pT}_c_{pc}_'
             f'w_{pw}_r_{pr0}_{dpr}_t0_{pt0}_jit_{pjit}')
+        
     return exp_name_sub
 
 
@@ -383,7 +397,7 @@ def modify_net_params_2(cfg, params):
     if RPRE_DYN_TYPE == 'ramp':
         frac     = np.clip((t_vec - RPRE_DYN_T0) / (cfg.duration - RPRE_DYN_T0), 0.0, 1.0)
         rate_vec = target_rate + frac * (RPRE_RAMP_RLAST - target_rate)
-    elif RPRE_DYN_TYPE == 'osc':
+    elif RPRE_DYN_TYPE in ['osc', 'tri']:
         # Phase offset so that r(RPRE_DYN_T0) = target_rate; range [0, RPRE_OSC_RMAX]
         if target_rate > RPRE_OSC_RMAX:
             raise ValueError(
@@ -392,7 +406,11 @@ def modify_net_params_2(cfg, params):
             )
         phase_0  = np.arccos(np.clip(1.0 - 2.0 * target_rate / RPRE_OSC_RMAX, -1.0, 1.0))
         phase    = 2 * np.pi * np.clip(t_vec - RPRE_DYN_T0, 0.0, None) / RPRE_OSC_PERIOD + phase_0
-        rate_vec = RPRE_OSC_RMAX / 2.0 * (1.0 - np.cos(phase))
+        if RPRE_DYN_TYPE == 'osc':
+            rate_vec = RPRE_OSC_RMAX / 2.0 * (1.0 - np.cos(phase))
+        elif RPRE_DYN_TYPE == 'tri':
+            u = (phase / np.pi) % 2.0
+            rate_vec = RPRE_OSC_RMAX * (1.0 - np.abs(u - 1.0))
     else:
         raise ValueError(f'Unknown RPRE_DYN_TYPE: {RPRE_DYN_TYPE!r}')
 
@@ -424,11 +442,7 @@ def post_run(sim):
 
     # Generate filename postfix with batch param values
     exp_id = exp_name.split('_')[-1]
-    if RPRE_DYN_TYPE == 'ramp':
-        dyn_str = f'ramp_t0_{RPRE_DYN_T0}_rlast_{RPRE_RAMP_RLAST}'
-    else:
-        dyn_str = f'osc_t0_{RPRE_DYN_T0}_T_{RPRE_OSC_PERIOD}_rmax_{RPRE_OSC_RMAX}'
-    postfix = f'{exp_id}_seed_{cfg.seed_main}_rpre_{cfg.pop_pre}_{dyn_str}'
+    postfix = f'{exp_id}_seed_{cfg.seed_main}_rpre_{cfg.pop_pre}'
 
     # Create subfolders to put the results
     dirpath_res = Path(cfg.saveFolder)
