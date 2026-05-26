@@ -382,7 +382,7 @@ def modify_net_params_2(cfg, params):
     pop = params.popParams[pop_name]
 
     # Target rate and seed come directly from the NetStim pop entry
-    target_rate = float(pop['rate'])   # Hz — ramp start value
+    target_rate = float(pop['rate'])   # ramp start value
     ynorm_range = pop['ynormRange']
     # Scramble the pop seed into a random base_seed spread across [0, 2^31).
     # Adjacent pop seeds (e.g. IT2frz=1207, IT3frz=1208) would otherwise
@@ -394,6 +394,13 @@ def modify_net_params_2(cfg, params):
     pops_sz = pd.read_csv(dirpath_self / 'pops_sz.csv').set_index('pop')['ncells'].to_dict()
     n_cells = int(pops_sz[cfg.pop_pre])
 
+    # Compute effective maximum rate: per-population if RPRE_OSC_RMAX_RBKG_MULT is set
+    if RPRE_OSC_RMAX_RBKG_MULT is not None:
+        rbkg = cfg.target_rates[cfg.pop_pre]
+        rmax_effective = min(RPRE_OSC_RMAX, RPRE_OSC_RMAX_RBKG_MULT * rbkg)
+    else:
+        rmax_effective = RPRE_OSC_RMAX
+
     # Rate dynamics: flat at target_rate for t < RPRE_DYN_T0, then either ramp
     # or sinusoid starting at target_rate
     t_vec = np.arange(0.0, cfg.duration, 1.0)
@@ -401,19 +408,23 @@ def modify_net_params_2(cfg, params):
         frac     = np.clip((t_vec - RPRE_DYN_T0) / (cfg.duration - RPRE_DYN_T0), 0.0, 1.0)
         rate_vec = target_rate + frac * (RPRE_RAMP_RLAST - target_rate)
     elif RPRE_DYN_TYPE in ['osc', 'tri']:
-        # Phase offset so that r(RPRE_DYN_T0) = target_rate; range [0, RPRE_OSC_RMAX]
-        if target_rate > RPRE_OSC_RMAX:
+        # Phase offset so that r(RPRE_DYN_T0) = target_rate; range [0, rmax_effective]
+        if target_rate > rmax_effective:
             raise ValueError(
-                f'target_rate ({target_rate:.2f} Hz) exceeds RPRE_OSC_RMAX '
-                f'({RPRE_OSC_RMAX} Hz) for pop {pop_name}'
+                f'target_rate ({target_rate:.2f} Hz) exceeds rmax_effective '
+                f'({rmax_effective:.2f} Hz) for pop {pop_name}'
             )
-        phase_0  = np.arccos(np.clip(1.0 - 2.0 * target_rate / RPRE_OSC_RMAX, -1.0, 1.0))
-        phase    = 2 * np.pi * np.clip(t_vec - RPRE_DYN_T0, 0.0, None) / RPRE_OSC_PERIOD + phase_0
         if RPRE_DYN_TYPE == 'osc':
-            rate_vec = RPRE_OSC_RMAX / 2.0 * (1.0 - np.cos(phase))
+            # For cosine: rate = rmax_effective/2 * (1 - cos(phase))
+            phase_0  = np.arccos(np.clip(1.0 - 2.0 * target_rate / rmax_effective, -1.0, 1.0))
+            phase    = 2 * np.pi * np.clip(t_vec - RPRE_DYN_T0, 0.0, None) / RPRE_OSC_PERIOD + phase_0
+            rate_vec = rmax_effective / 2.0 * (1.0 - np.cos(phase))
         elif RPRE_DYN_TYPE == 'tri':
+            # For triangle: rate = rmax_effective * (1 - |u - 1|) where u = phase/π
+            phase_0  = np.pi * target_rate / rmax_effective
+            phase    = 2 * np.pi * np.clip(t_vec - RPRE_DYN_T0, 0.0, None) / RPRE_OSC_PERIOD + phase_0
             u = (phase / np.pi) % 2.0
-            rate_vec = RPRE_OSC_RMAX * (1.0 - np.abs(u - 1.0))
+            rate_vec = rmax_effective * (1.0 - np.abs(u - 1.0))
     else:
         raise ValueError(f'Unknown RPRE_DYN_TYPE: {RPRE_DYN_TYPE!r}')
 
