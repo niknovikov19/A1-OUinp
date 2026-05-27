@@ -1,9 +1,14 @@
-"""Extract firing rates from batch simulation pkl files using sim_data_analyzer.
-Two modes: direct (pkl->rates) or via intermediate spike files (pkl->spikes->rates).
-"""
 import os
+import socket
 import sys
 from pathlib import Path
+
+print(
+    "START",
+    "rank=", os.environ.get("SLURM_PROCID"),
+    "host=", socket.gethostname(),
+    flush=True,
+)
 
 import xarray as xr
 
@@ -15,12 +20,12 @@ DIR_SIM_ANALYZER = DIR_REPO.parent / 'sim_data_analyzer'
 if str(DIR_SIM_ANALYZER) not in sys.path:
     sys.path.insert(0, str(DIR_SIM_ANALYZER))
 
-from sim_data_analyzer.batch_xr import (
+from external.sim_data_analyzer.batch_xr import (
     collect_batch_rates_from_pkl,
     collect_batch_rates_from_spike_data,
     extract_batch_params_to_xr,
     extract_batch_spike_data_from_pkl,
-    load_job_json,
+    load_job_json
 )
 
 
@@ -140,12 +145,14 @@ def extract_rates_via_spikes(exp_label, cfg_param_fields, spike_t_limits=(1, Non
 
 
 if __name__ == '__main__':
-    # ===== Configure parameters here =====
-    MODE = 'direct'  # 'direct' or 'spikes'
+
+    #MODE = 'direct'
+    MODE = 'spikes'
     
     EXP_LABEL = (
         'batch_rxbkg_unconn_state1_mech1/net_inpsur_rsweep_newsec_var_seed_pre/'
-        'exp_pre_L2_post_L2_nseed_5_npre_5_t_5.0_20.0_tri_t0_5000_T_7500_rmax_50_ictrl_wmult_0.25_ee_0.5'
+        #'exp_pre_L4_post_L4_nseed_5_npre_6_t_5.0_20.0_tri_t0_5000_T_7500_rmax_10xbkg_500_ictrl_wmult_0.25_ee_0.5'
+        'exp_pre_ctx_post_ctx_nseed_5_npre_36_t_5.0_20.0_tri_t0_5000_T_7500_rmax_10xbkg_500_ictrl_wmult_0.25_ee_0.5'
     )
     CFG_PARAM_FIELDS = {'pop_pre': 'pop_pre', 'seed': 'seed_main'}
     

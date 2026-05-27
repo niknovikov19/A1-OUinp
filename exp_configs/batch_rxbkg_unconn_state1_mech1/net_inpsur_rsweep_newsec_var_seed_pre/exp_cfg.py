@@ -14,40 +14,24 @@ import pandas as pd
 
 #from analysis.model_utils.net_utils import get_2pop_conns
 from analysis.ou_tuning import sim_res_proc_utils as proc
-from batch_params import N_SEEDS, POPS_PRE
+from batch_params import (
+    N_SEEDS, POPS_PRE,
+    PYR_POPS, PV_POPS, SOM_POPS, VIP_POPS, NGF_POPS,
+    THAL_E_POPS, THAL_I_POPS,
+    CTX_POPS, THAL_POPS
+)
 import diagnostics as diag
 from utils.inh_poisson import inh_poisson_generator, generate_trains
-
-
-PYR_POPS = ['IT2', 'IT3', 'ITP4', 'ITS4', 'IT5A', 'IT5B', 'IT6',
-            'CT5A', 'CT5B', 'CT6', 'PT5B']
-PV_POPS = ['PV2', 'PV3', 'PV4', 'PV5A', 'PV5B', 'PV6']
-SOM_POPS = ['SOM2', 'SOM3', 'SOM4', 'SOM5A', 'SOM5B', 'SOM6']
-VIP_POPS = ['VIP2', 'VIP3', 'VIP4', 'VIP5A', 'VIP5B', 'VIP6']
-NGF_POPS = ['NGF1', 'NGF2', 'NGF3', 'NGF4', 'NGF5A', 'NGF5B', 'NGF6']
-
-L2_POPS = ['IT2', 'PV2', 'SOM2', 'VIP2', 'NGF2']
-L4_POPS = ['ITP4', 'ITS4', 'PV4', 'SOM4', 'VIP4', 'NGF4']
-CTX_POPS = PYR_POPS + PV_POPS + SOM_POPS + VIP_POPS + NGF_POPS
-
-THAL_E_POPS = ['TC', 'HTC', 'TCM']
-THAL_I_POPS = ['TI', 'TIM', 'IRE', 'IREM']
-CORE_POPS = ['TC', 'HTC', 'TI', 'IRE']
-MATX_POPS = ['TCM', 'TIM', 'IREM']
-THAL_POPS = CORE_POPS + MATX_POPS
-
-E_POPS = PYR_POPS + THAL_E_POPS
-CONNS_EE = [(p1, p2) for p1 in E_POPS for p2 in E_POPS]
 
 
 # Duration and rate calculation window
 SIM_DURATION = 20 * 1e3
 T0_CALC = 5 * 1e3
 
-EXP_LABEL = 'pre_L2_post_L2'
+EXP_LABEL = 'pre_ctx_post_ctx'
 
 # Active populations
-POPS_USED = L2_POPS
+POPS_USED = CTX_POPS
 
 # Params of the surrogate rate dynamics
 RPRE_DYN_T0 = 5000        # time (ms) after which dynamics start
