@@ -18,7 +18,7 @@ from batch_params import (
     N_SEEDS, POPS_PRE,
     PYR_POPS, PV_POPS, SOM_POPS, VIP_POPS, NGF_POPS,
     THAL_E_POPS, THAL_I_POPS,
-    CTX_POPS, THAL_POPS
+    CTX_POPS, THAL_POPS, L2_POPS
 )
 import diagnostics as diag
 from utils.inh_poisson import inh_poisson_generator, generate_trains
@@ -28,18 +28,15 @@ from utils.inh_poisson import inh_poisson_generator, generate_trains
 SIM_DURATION = 20 * 1e3
 T0_CALC = 5 * 1e3
 
-EXP_LABEL = 'pre_ctx_post_ctx'
+EXP_LABEL = 'pre_L2_post_L2'
 
 # Active populations
-POPS_USED = CTX_POPS
+POPS_USED = L2_POPS
 
 # Params of the surrogate rate dynamics
-RPRE_DYN_T0 = 5000        # time (ms) after which dynamics start
-RPRE_DYN_TYPE = 'tri'    # 'ramp' | 'osc' | 'tri'
-RPRE_RAMP_RLAST = 20       # ramp: final rate (Hz)
-RPRE_OSC_PERIOD = 7500        # sinusoid: period (ms)
-RPRE_OSC_RMAX_RBKG_MULT = 10
-RPRE_OSC_RMAX = 500
+RPRE_OSC_T0 = 5000        # time (ms) after which dynamics start
+RPRE_OSC_F = 5
+RPRE_OSC_AMP = 3
 
 # Background spiking input
 XBKG_NAME = 'rx_bkg_mid_sm_ctx21_thal41'
@@ -69,7 +66,7 @@ LFP_Y_MIN = 0
 LFP_Y_MAX = 3000
 LFP_Y_STEP = 100
 
-PLOT_CSD = 1
+PLOT_CSD = 0
 CSD_VIS_T0 = 5000
 
 LAYER_BOUNDS = {'L1': 100, 'L2': 160, 'L3': 950, 'L4': 1250,
@@ -119,14 +116,7 @@ def gen_exp_name_sub(cfg):
     if REC_LFP:
         exp_name_sub += f'_lfp_{LFP_Y_MIN}_{LFP_Y_MAX}_{LFP_Y_STEP}'
 
-    if RPRE_DYN_TYPE == 'ramp':
-        exp_name_sub += f'_ramp_t0_{RPRE_DYN_T0}_rlast_{RPRE_RAMP_RLAST}'
-    elif RPRE_DYN_TYPE in ['osc', 'tri']:
-        exp_name_sub += f'_{RPRE_DYN_TYPE}_t0_{RPRE_DYN_T0}_T_{RPRE_OSC_PERIOD}'
-        if RPRE_OSC_RMAX_RBKG_MULT is not None:
-            exp_name_sub += f'_rmax_{RPRE_OSC_RMAX_RBKG_MULT}xbkg_{RPRE_OSC_RMAX}'
-        else:
-            exp_name_sub += f'_rmax_{RPRE_OSC_RMAX}'
+    exp_name_sub += f'_t0_{RPRE_OSC_T0}_f_{RPRE_OSC_F}_amp_{RPRE_OSC_AMP}'
 
     if USE_IBKG_CTRL:
         exp_name_sub += '_ictrl'
@@ -354,7 +344,7 @@ def modify_net_params(cfg, params):
 def modify_net_params_2(cfg, params):
     """Applied after subnet netParams creation.
     Replaces the surrogate NetStim pop for cfg.pop_pre with a VecStim pop
-    whose units fire inhomogeneous-Poisson spike trains with a ramping rate.
+    whose units fire inhomogeneous-Poisson spike trains with oscillating rate.
     """
     if cfg.pop_pre is None:
         raise ValueError('cfg.pop_pre is not set in modify_net_params_2')

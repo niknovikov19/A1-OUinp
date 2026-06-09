@@ -16,12 +16,12 @@ if str(DIR_REPO) not in sys.path:
 
 # Configuration
 EXP_LABEL = (
-    'exp_pre_L2_post_L2_nseed_5_npre_5_t_5.0_20.0_tri_t0_5000_T_7500_rmax_10xbkg_500_ictrl_wmult_0.25_ee_0.5'
+    'exp_pre_ctx_post_ctx_nseed_5_npre_36_t_5.0_20.0_tri_t0_5000_T_7500_rmax_10xbkg_500_ictrl_wmult_0.25_ee_0.5'
 )
 CFG_PARAM_FIELDS = {'pop_pre': 'pop_pre', 'seed': 'seed_main'}
 
 # Time interval of spike extraction
-spike_t_limits = (1, None)
+spike_t_limits = (1, 20.0)
 
 # Params of rate dynamics
 dt_bin = 2e-3
@@ -31,14 +31,18 @@ tau_smooth = 10e-3
 t_limits_used = (5, None)
 
 # Additional rate smoothing
-smooth_win_s = 0.3
+smooth_win_s = 0.2
 
 # Per-dimension chunk sizes for the rate dynamics nc-file
 rate_chunks = {'pop_pre': 1, 'seed': 1}
 
+NEED_PLOT = 0
+
 
 # Paths
-dirpath_exp = Path('X:') / EXP_LABEL
+#dirpath_exp = Path('X:') / EXP_LABEL
+dirpath_exp = (DIR_REPO / 'exp_results' / 'batch_rxbkg_unconn_state1_mech1' /
+               'net_inpsur_rsweep_newsec_var_seed_pre' / EXP_LABEL)
 dirpath_cfg = dirpath_exp / 'cfg'
 dirpath_work = dirpath_exp / 'combined'
 dirpath_cache = dirpath_work / 'data_proc'
@@ -83,7 +87,8 @@ def fit_richards_function(X_fit, Y_fit):
 
 
 def main():
-    rates_cache_path = dirpath_cache / f'rates_dt_{dt_bin}_tau_{tau_smooth}.nc'
+    t1, t2 = spike_t_limits
+    rates_cache_path = dirpath_cache / f'rates_dt_{dt_bin}_tau_{tau_smooth}_t_{t1}_{t2}.nc'
     rates_xr = xr.open_dataarray(rates_cache_path, chunks={})
     rates_xr = rates_xr.sel(time=slice(*t_limits_used))
     
@@ -130,8 +135,9 @@ def main():
         num_figs = (num_pops_post + 5) // 6  # Ceiling division
         
         for fig_idx in range(num_figs):
-            fig, axes = plt.subplots(2, 3, figsize=(15, 10))
-            axes = axes.flatten()
+            if NEED_PLOT:
+                fig, axes = plt.subplots(2, 3, figsize=(15, 10))
+                axes = axes.flatten()
             
             start_idx = fig_idx * 6
             end_idx = min(start_idx + 6, num_pops_post)
@@ -140,8 +146,8 @@ def main():
                 pop_post = pops_post[pop_post_idx]
                 j_post = pop_post_idx
                 step += 1
-                ax = axes[subplot_idx]
-                print(f"\r{step}/{total_steps} {pop_pre}->{pop_post}", end='', flush=True)
+                #print(f"\r{step}/{total_steps} {pop_pre}->{pop_post}", end='', flush=True)
+                print(f"{step}/{total_steps} {pop_pre}->{pop_post}", flush=True)
                 
                 # Collapse all seeds together
                 X_all = R_pre_sm.values.flatten()
@@ -152,30 +158,33 @@ def main():
                 X_fit = X_all[mask_valid]
                 Y_fit = Y_all[mask_valid]
                 
-                # Plot all seed data points
-                for seed in R_pre_sm.seed.values:
-                    ax.plot(R_pre_sm.sel(seed=seed),
-                           R_post_sm.sel(seed=seed).sel(pop=pop_post),
-                           '.', alpha=0.1)
-                
-                # Add reference lines
-                r0_post = r_target.get(pop_post, None)
-                if r0_post is not None:
-                    ax.axhline(r0_post, color='k', linestyle='--', alpha=0.8, linewidth=1)
-                if r0_pre is not None:
-                    ax.axvline(r0_pre, color='k', linestyle='--', alpha=0.8, linewidth=1)
-                
-                ax.set_xlabel(f'{pop_pre} rate (Hz)', fontsize=10)
-                ax.set_ylabel(f'{pop_post} rate (Hz)', fontsize=10)
-                ax.set_title(f'{pop_pre} -> {pop_post}', fontsize=11)
-                ax.grid(True, alpha=0.3)
+                if NEED_PLOT:
+                    # Plot all seed data points
+                    ax = axes[subplot_idx]
+                    for seed in R_pre_sm.seed.values:
+                        ax.plot(R_pre_sm.sel(seed=seed),
+                            R_post_sm.sel(seed=seed).sel(pop=pop_post),
+                            '.', alpha=0.1)
+                    
+                    # Add reference lines
+                    r0_post = r_target.get(pop_post, None)
+                    if r0_post is not None:
+                        ax.axhline(r0_post, color='k', linestyle='--', alpha=0.8, linewidth=1)
+                    if r0_pre is not None:
+                        ax.axvline(r0_pre, color='k', linestyle='--', alpha=0.8, linewidth=1)
+                    
+                    ax.set_xlabel(f'{pop_pre} rate (Hz)', fontsize=10)
+                    ax.set_ylabel(f'{pop_post} rate (Hz)', fontsize=10)
+                    ax.set_title(f'{pop_pre} -> {pop_post}', fontsize=11)
+                    ax.grid(True, alpha=0.3)
                 
                 # Fit Richards function
                 popt, pcov, success = fit_richards_function(X_fit, Y_fit)
                 
                 if not success:
-                    ax.text(0.5, 0.5, 'Fit failed', ha='center', va='center', 
-                           transform=ax.transAxes)
+                    if NEED_PLOT:
+                        ax.text(0.5, 0.5, 'Fit failed', ha='center', va='center', 
+                            transform=ax.transAxes)
                     continue
                 
                 A_fit, K_fit, B_fit, M_fit, nu_fit = popt
@@ -195,28 +204,30 @@ def main():
                     dR_dr = richards_derivative(r0_pre, A_fit, K_fit, B_fit, M_fit, nu_fit)
                     W[i_pre, j_post] = dR_dr
                 
-                # Plot the fitted Richards curve
-                X_range = np.linspace(X_fit.min(), X_fit.max(), 300)
-                Y_richards = richards(X_range, *popt)
-                ax.plot(X_range, Y_richards, 'k-', linewidth=2, label='Richards fit')
+                if NEED_PLOT:
+                    # Plot the fitted Richards curve
+                    X_range = np.linspace(X_fit.min(), X_fit.max(), 300)
+                    Y_richards = richards(X_range, *popt)
+                    ax.plot(X_range, Y_richards, 'k-', linewidth=2, label='Richards fit')
                 
-                # Plot tangent line at target rate
-                if r0_pre is not None:
-                    r_post_at_target = richards(r0_pre, A_fit, K_fit, B_fit, M_fit, nu_fit)
-                    X_tangent = np.linspace(X_fit.min(), X_fit.max(), 100)
-                    Y_tangent = dR_dr * (X_tangent - r0_pre) + r_post_at_target
-                    ax.plot(X_tangent, Y_tangent, 'k--', linewidth=2)
+                    # Plot tangent line at target rate
+                    if r0_pre is not None:
+                        r_post_at_target = richards(r0_pre, A_fit, K_fit, B_fit, M_fit, nu_fit)
+                        X_tangent = np.linspace(X_fit.min(), X_fit.max(), 100)
+                        Y_tangent = dR_dr * (X_tangent - r0_pre) + r_post_at_target
+                        ax.plot(X_tangent, Y_tangent, 'k--', linewidth=2)
             
-            # Hide unused subplots
-            for subplot_idx in range(end_idx - start_idx, 6):
-                axes[subplot_idx].axis('off')
-            
-            # Save figure
-            fig_filename = f'{pop_pre}_{fig_idx + 1}.png'
-            fig_path = dirpath_plots / fig_filename
-            plt.tight_layout()
-            plt.savefig(fig_path, dpi=150, bbox_inches='tight')
-            plt.close(fig)
+            if NEED_PLOT:
+                # Hide unused subplots
+                for subplot_idx in range(end_idx - start_idx, 6):
+                    axes[subplot_idx].axis('off')
+                
+                # Save figure
+                fig_filename = f'{pop_pre}_{fig_idx + 1}.png'
+                fig_path = dirpath_plots / fig_filename
+                plt.tight_layout()
+                plt.savefig(fig_path, dpi=150, bbox_inches='tight')
+                plt.close(fig)
         
         # Save intermediate coefficients after each pop_pre
         coeffs_path = dirpath_res / f'richards_coeffs_tau_{smooth_win_s}.json'
