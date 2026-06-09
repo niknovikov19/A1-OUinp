@@ -20,29 +20,27 @@ THAL_POPS = CORE_POPS + MATX_POPS
 
 
 N_SEEDS = 5
-
-#POPS_PRE = ['ITP4', 'IT2']
-POPS_PRE = L2_POPS
+OSC_F_VALUES = [5.0]
+OSC_AMP_VALUES = [0.05]
 
 
 def get_batch_params():
-    """Generate params for batchtools to probe. """
+    """Generate params for batchtools to probe."""
     params = {
         'seed_main': (1000 + np.arange(N_SEEDS)).tolist(),
-        'pop_pre': POPS_PRE
+        'osc_f': OSC_F_VALUES,
+        'osc_amp': OSC_AMP_VALUES,
     }
     return params
 
 
 def post_update(cfg):
-    """Called after cfg.update() """
+    """Called after cfg.update()."""
 
-    # Seeds
     cfg.seeds['stim'] = cfg.seed_main
     cfg.seeds['conn'] = cfg.seed_main * 2
     cfg.subnet_params['global_seed'] = cfg.seed_main * 3
 
-    # Seeds for bkg netstims
     for n, pop in enumerate(cfg.bkg_spike_inputs):
         cfg.bkg_spike_inputs[pop]['exc']['seed'] = (
             cfg.seeds['stim'] + 10000 + n
@@ -50,10 +48,10 @@ def post_update(cfg):
         cfg.bkg_spike_inputs[pop]['inh']['seed'] = (
             cfg.seeds['stim'] + 20000 + n
         )
-    
-    # Store batch params for reference
+
     cfg.batch_par_info = {
         'n_seeds': N_SEEDS,
-        'pops_pre': POPS_PRE,
-        'batch_params': ['seed_main', 'pop_pre']
+        'osc_f_values': OSC_F_VALUES,
+        'osc_amp_values': OSC_AMP_VALUES,
+        'batch_params': ['seed_main', 'osc_f', 'osc_amp'],
     }
