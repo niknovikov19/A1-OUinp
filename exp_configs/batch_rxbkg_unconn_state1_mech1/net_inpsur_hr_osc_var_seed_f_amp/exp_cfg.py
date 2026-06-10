@@ -28,6 +28,7 @@ T0_CALC = 5 * 1e3
 
 EXP_LABEL = 'hr_osc_L2'
 POPS_USED = L2_POPS
+
 OSC_T0 = 5000
 
 XBKG_NAME = 'rx_bkg_mid_sm_ctx21_thal41'
@@ -59,13 +60,14 @@ LAYER_BOUNDS = {'L1': 100, 'L2': 160, 'L3': 950, 'L4': 1250,
                 'L5A': 1334, 'L5B': 1550, 'L6': 2000}
 
 PLOT_RATE_DYNAMICS = 1
-RVEC_TAU_SMOOTH = 0.02
+RVEC_TAU_SMOOTH = 0.01
 RVIS_POP_GROUPS = {
-    'PYR': PYR_POPS, 'PV': PV_POPS, 'SOM': SOM_POPS, 'VIP': VIP_POPS,
-    'NGF': NGF_POPS, 'THAL_E': THAL_E_POPS, 'THAL_I': THAL_I_POPS
+    #'PYR': PYR_POPS, 'PV': PV_POPS, 'SOM': SOM_POPS, 'VIP': VIP_POPS,
+    #'NGF': NGF_POPS, 'THAL_E': THAL_E_POPS, 'THAL_I': THAL_I_POPS
+    'L2': L2_POPS
 }
 
-NEED_RUN = 0
+NEED_RUN = 1
 
 
 def gen_exp_name_sub(cfg):
@@ -351,8 +353,8 @@ def post_run(sim):
         fpath_res = dirpath_res_sub / 'results' / f'result_{postfix}.json'
         with open(fpath_res, 'w') as fid:
             json.dump(res, fid, indent=4)
-
-    if PLOT_RATE_DYNAMICS:
+        
+        # Compute firing rate dynamics
         sim_result = prepare_sim_result(sim)
         pop_names = [
             pop_name for pop_name in sim_result['net']['pops']
@@ -374,6 +376,7 @@ def post_run(sim):
         fpath_rvec_xr = dirpath_res_sub / 'rvec_xr' / f'rvec_{postfix}.nc'
         rvec_xr.to_netcdf(fpath_rvec_xr)
 
+    if PLOT_RATE_DYNAMICS:
         colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
         for pop_group_name, pops in RVIS_POP_GROUPS.items():
             pops = [p for p in pops if p in POPS_USED]
