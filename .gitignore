@@ -56,3 +56,5 @@ external/
 *.npz
 exp_results/batch_rxbkg_unconn_state1_mech1/**/data_proc/**
 exp_results/batch_rxbkg_unconn_state1_mech1/**/combined/
+.mplcache
+.mplconfig

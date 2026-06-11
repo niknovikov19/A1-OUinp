@@ -1,0 +1,266 @@
+{
+  "counts_generated": {
+    "popParams": 57,
+    "connParams": 7580,
+    "stimSourceParams": 111,
+    "stimTargetParams": 111,
+    "synMechParams": 12,
+    "subConnParams": 0
+  },
+  "counts_reference": {
+    "popParams": 57,
+    "connParams": 7580,
+    "stimSourceParams": 111,
+    "stimTargetParams": 111,
+    "synMechParams": 12,
+    "subConnParams": 0
+  },
+  "section_results": {
+    "popParams": {
+      "count_generated": 57,
+      "count_reference": 57,
+      "common": 57,
+      "equal": 57,
+      "diff": 0,
+      "only_generated": [],
+      "only_reference": [],
+      "diff_keys": []
+    },
+    "connParams": {
+      "count_generated": 7580,
+      "count_reference": 7580,
+      "common": 7580,
+      "equal": 7580,
+      "diff": 0,
+      "only_generated": [],
+      "only_reference": [],
+      "diff_keys": []
+    },
+    "stimSourceParams": {
+      "count_generated": 111,
+      "count_reference": 111,
+      "common": 111,
+      "equal": 89,
+      "diff": 22,
+      "only_generated": [],
+      "only_reference": [],
+      "diff_keys": [
+        "IClamp0",
+        "IClamp1",
+        "IClamp10",
+        "IClamp11",
+        "IClamp12",
+        "IClamp13",
+        "IClamp14",
+        "IClamp15",
+        "IClamp16",
+        "IClamp17",
+        "IClamp18",
+        "IClamp2",
+        "IClamp22",
+        "IClamp23",
+        "IClamp24",
+        "IClamp3",
+        "IClamp4",
+        "IClamp5",
+        "IClamp6",
+        "IClamp7",
+        "IClamp8",
+        "IClamp9"
+      ]
+    },
+    "stimTargetParams": {
+      "count_generated": 111,
+      "count_reference": 111,
+      "common": 88,
+      "equal": 88,
+      "diff": 0,
+      "only_generated": [
+        "IClamp0_CT5A",
+        "IClamp10_IT3",
+        "IClamp11_IT5A",
+        "IClamp12_IT5B",
+        "IClamp13_IT6",
+        "IClamp14_ITP4",
+        "IClamp15_ITS4",
+        "IClamp16_PT5B",
+        "IClamp17_TC",
+        "IClamp18_TC",
+        "IClamp1_CT5B",
+        "IClamp21_TI",
+        "IClamp22_TI",
+        "IClamp23_TIM",
+        "IClamp24_TIM",
+        "IClamp2_CT6",
+        "IClamp3_HTC",
+        "IClamp4_HTC",
+        "IClamp5_IRE",
+        "IClamp6_IRE",
+        "IClamp7_IREM",
+        "IClamp8_IREM",
+        "IClamp9_IT2"
+      ],
+      "only_reference": [
+        "IClamp0_IT2",
+        "IClamp10_PT5B",
+        "IClamp11_TC",
+        "IClamp12_TC",
+        "IClamp13_HTC",
+        "IClamp14_HTC",
+        "IClamp15_TI",
+        "IClamp16_TI",
+        "IClamp17_IRE",
+        "IClamp18_IRE",
+        "IClamp1_IT3",
+        "IClamp21_TIM",
+        "IClamp22_TIM",
+        "IClamp23_IREM",
+        "IClamp24_IREM",
+        "IClamp2_ITP4",
+        "IClamp3_ITS4",
+        "IClamp4_IT5A",
+        "IClamp5_IT5B",
+        "IClamp6_IT6",
+        "IClamp7_CT5A",
+        "IClamp8_CT5B",
+        "IClamp9_CT6"
+      ],
+      "diff_keys": []
+    },
+    "synMechParams": {
+      "count_generated": 12,
+      "count_reference": 12,
+      "common": 12,
+      "equal": 12,
+      "diff": 0,
+      "only_generated": [],
+      "only_reference": [],
+      "diff_keys": []
+    },
+    "subConnParams": {
+      "count_generated": 0,
+      "count_reference": 0,
+      "common": 0,
+      "equal": 0,
+      "diff": 0,
+      "only_generated": [],
+      "only_reference": [],
+      "diff_keys": []
+    }
+  },
+  "samples": {
+    "popParams": [],
+    "connParams": [],
+    "stimSourceParams": [
+      {
+        "key": "IClamp0",
+        "fields": {
+          "amp": {
+            "generated": 0.2811061829853486,
+            "reference": 0.1826028861538529
+          }
+        }
+      },
+      {
+        "key": "IClamp1",
+        "fields": {
+          "amp": {
+            "generated": 0.2811521746117064,
+            "reference": 0.20736533596853907
+          }
+        }
+      },
+      {
+        "key": "IClamp10",
+        "fields": {
+          "amp": {
+            "generated": 0.20736533596853907,
+            "reference": 0.14307249038537465
+          }
+        }
+      },
+      {
+        "key": "IClamp11",
+        "fields": {
+          "amp": {
+            "generated": 0.09949009140570944,
+            "reference": 4
+          }
+        }
+      },
+      {
+        "key": "IClamp12",
+        "fields": {
+          "amp": {
+            "generated": 0.10708485376197718,
+            "reference": -0.23506264738553814
+          }
+        }
+      },
+      {
+        "key": "IClamp13",
+        "fields": {
+          "amp": {
+            "generated": 0.09601067195088177,
+            "reference": 4
+          }
+        }
+      },
+      {
+        "key": "IClamp14",
+        "fields": {
+          "amp": {
+            "generated": 0.214754445093032,
+            "reference": -0.15799162850300966
+          }
+        }
+      },
+      {
+        "key": "IClamp15",
+        "fields": {
+          "amp": {
+            "generated": 0.2146776587814983,
+            "reference": 0.03
+          }
+        }
+      },
+      {
+        "key": "IClamp16",
+        "fields": {
+          "amp": {
+            "generated": 0.14307249038537465,
+            "reference": -0.0004659604456170393
+          }
+        }
+      },
+      {
+        "key": "IClamp17",
+        "fields": {
+          "amp": {
+            "generated": 4,
+            "reference": 0.2
+          }
+        }
+      }
+    ],
+    "stimTargetParams": [],
+    "synMechParams": []
+  },
+  "conn_analysis": {
+    "common": 7580,
+    "matched_after_norm": 7580,
+    "matched_after_norm_and_x4": 0,
+    "remaining_after_norm_and_x4": 0,
+    "pattern_counts": [],
+    "weight_ratios": [],
+    "pattern_examples": {}
+  },
+  "iclamp_analysis": {
+    "source_multiset_equal": true,
+    "target_multiset_equal": true,
+    "generated_iclamp_sources": 25,
+    "reference_iclamp_sources": 25,
+    "generated_iclamp_targets": 25,
+    "reference_iclamp_targets": 25
+  }
+}
