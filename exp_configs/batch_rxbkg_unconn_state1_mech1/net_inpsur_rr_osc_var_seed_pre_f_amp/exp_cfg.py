@@ -18,7 +18,7 @@ from batch_params import (
     N_SEEDS, POPS_PRE, OSC_F_VALUES, OSC_AMP_VALUES,
     PYR_POPS, PV_POPS, SOM_POPS, VIP_POPS, NGF_POPS,
     THAL_E_POPS, THAL_I_POPS,
-    CTX_POPS,
+    CTX_POPS, L2_POPS
 )
 import diagnostics as diag
 from external.sim_data_analyzer.xr_adapters import get_net_rate_dynamics_xr
@@ -55,17 +55,19 @@ LFP_Y_MIN = 0
 LFP_Y_MAX = 3000
 LFP_Y_STEP = 100
 
-PLOT_CSD = 1
+PLOT_CSD = 0
 CSD_VIS_T0 = 5000
 
 LAYER_BOUNDS = {'L1': 100, 'L2': 160, 'L3': 950, 'L4': 1250,
                 'L5A': 1334, 'L5B': 1550, 'L6': 2000}
 
 PLOT_RATE_DYNAMICS = 1
-RVEC_TAU_SMOOTH = 0.02
+RVEC_TAU_SMOOTH = 0.01
 RVIS_POP_GROUPS = {
-    'PYR': PYR_POPS, 'PV': PV_POPS, 'SOM': SOM_POPS, 'VIP': VIP_POPS,
-    'NGF': NGF_POPS, 'THAL_E': THAL_E_POPS, 'THAL_I': THAL_I_POPS
+    #'PYR': PYR_POPS, 'PV': PV_POPS, 'SOM': SOM_POPS, 'VIP': VIP_POPS,
+    #'NGF': NGF_POPS, 'THAL_E': THAL_E_POPS, 'THAL_I': THAL_I_POPS
+    'L2': L2_POPS,
+    'L2frz': [pop + 'frz' for pop in L2_POPS]
 }
 
 NEED_RUN = 1
@@ -320,9 +322,11 @@ def modify_net_params_2(cfg, params):
     ynorm_range = pop['ynormRange']
     base_seed = int(np.random.RandomState(int(pop['seed'])).randint(0, 2**31))
 
+    # Number of cells from the pre-computed population-size table
     pops_sz = pd.read_csv(dirpath_self / 'pops_sz.csv').set_index('pop')['ncells'].to_dict()
     n_cells = int(pops_sz[cfg.pop_pre])
 
+    # Generate oscillatory rate dynamics
     t_vec = np.arange(0.0, cfg.duration, 1.0)
     rate_vec = np.full_like(t_vec, target_rate, dtype=float)
     osc_mask = t_vec >= OSC_T0
@@ -335,6 +339,7 @@ def modify_net_params_2(cfg, params):
         target_rate + float(cfg.osc_amp) * np.sin(phase)
     )
 
+    # Generate modulated spike trains
     spk_times = generate_trains(rate_vec, t_vec, cfg.duration, n_cells, base_seed)
 
     params.popParams[pop_name] = {
@@ -407,8 +412,9 @@ def post_run(sim):
         with open(fpath_res, 'w') as fid:
             json.dump(res, fid, indent=4)
 
+        # Compute firing rate dynamics
         sim_result = prepare_sim_result(sim)
-        pop_names = list(sim_result['net']['pops'].keys())
+        pop_names = POPS_USED + [pop + 'frz' for pop in POPS_PRE]
         rvec_xr = get_net_rate_dynamics_xr(
             sim_result,
             t_limits=(2, None),
@@ -429,7 +435,7 @@ def post_run(sim):
     if PLOT_RATE_DYNAMICS and NEED_RUN:
         colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
         for pop_group_name, pops in RVIS_POP_GROUPS.items():
-            pops = [p for p in pops if p in POPS_USED]
+            pops = [p for p in pops if p in rvec_xr.coords['pop'].values]
             if len(pops) == 0:
                 continue
 
@@ -437,12 +443,11 @@ def post_run(sim):
             plt.clf()
 
             for n, pop in enumerate(pops):
-                if pop not in rvec_xr.coords['pop'].values:
-                    continue
+                pop_base = pop.replace('frz', '')
                 pop_r = rvec_xr.sel(pop=pop)
                 tt = pop_r['time'].values
                 rr = pop_r.values
-                r0 = cfg.target_rates[pop]
+                r0 = cfg.target_rates[pop_base]
                 col = colors[n % len(colors)]
                 plt.plot(tt, rr, label=pop, color=col)
                 plt.plot([tt[0], tt[-1]], [r0, r0], '--', color=col)

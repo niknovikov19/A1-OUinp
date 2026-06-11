@@ -383,7 +383,7 @@ def modify_network(sim):
 
     # Fader object
     fader = ConnFader(
-        sim, T=sim.cfg.duration, dt=sim.cfg.dt    
+        sim, T=sim.cfg.duration, dt=sim.cfg.dt
     )
 
     # Find recurrent/surrogate conns for positive/inverse modulation

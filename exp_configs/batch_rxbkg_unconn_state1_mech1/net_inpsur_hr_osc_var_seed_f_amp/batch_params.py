@@ -19,10 +19,10 @@ MATX_POPS = ['TCM', 'TIM', 'IREM']
 THAL_POPS = CORE_POPS + MATX_POPS
 
 
-N_SEEDS = 1
+N_SEEDS = 5
 OSC_F_VALUES = [5]
 #OSC_AMP_VALUES = [0.01, 0.1, 1, 10]
-OSC_AMP_VALUES = np.geomspace(0.01, 0.2, 10).round(3).tolist()
+OSC_AMP_VALUES = np.geomspace(0.01, 0.3, 20).round(3).tolist()
 
 
 def get_batch_params():
