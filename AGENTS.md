@@ -1,0 +1,10 @@
+- Be concise. 
+- Keep balance between nice 1-line-1-entry style (func args, dict entries etc..) and unstructured mess.
+- Functions should have 1-line docstrings. No need for full documentation - it's not industry-grade code, simplicity is priority.
+- Before important code blocks, add 1-line comments (style: "# Comment", 1 space, capital letter, no dot).
+- Ideally, a 1-line comment should refer to the following block thet ends at the first empty line. After empty line - it's another block.
+- If it's a short function fully explained by docstring, 1-line comment is not needed.
+- Try keeping same naming conventions as I do.
+- Minimize nesting calls - should be easy to read; only when it reduces code duplication.
+- When initializing number constants by integer numbers, don't add .0 (i.e. 10 instead of 10.0).
+- Use double quotes in docstrings and long f-strings with dict items referenced by keys. In most other cases (strings, prints, ...) use single quotes.

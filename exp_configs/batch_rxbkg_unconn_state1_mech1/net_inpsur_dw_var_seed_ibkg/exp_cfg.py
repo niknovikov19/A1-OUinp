@@ -1,0 +1,385 @@
+import json
+import os
+from pathlib import Path
+import sys
+
+# Set import paths
+dirpath_repo_root = Path(__file__).resolve().parents[3]
+dirpath_self = Path(__file__).resolve().parent
+sys.path.append(str(dirpath_repo_root))
+sys.path.append(str(dirpath_self))
+
+# Import dependencies
+import numpy as np
+import pandas as pd
+
+from analysis.ou_tuning import sim_res_proc_utils as proc
+from batch_params import N_SEEDS, IBKG_DW_ADJ_VALUES, L2_POPS
+
+
+# Timing constants
+SIM_DURATION = 20 * 1e3
+T0_CALC = 5 * 1e3
+
+# Experiment constants
+EXP_LABEL = 'dw_adj_L2'
+POPS_USED = L2_POPS
+
+# Weight adjustment
+WMAT_MULTIPLIERS = {('IT2', 'PV2'): 2, ('IT2', 'IT2'): 1.5}
+
+# Input files
+XBKG_NAME = 'rx_bkg_mid_sm_ctx21_thal41'
+
+USE_IBKG = 1
+IBKG_JSON_NAME = 'ibkg_mech1_verest_-70_thal_spkthr'
+
+USE_IBKG_CTRL = 1
+IBKG_CTRL_JSON_NAME = 'ibkg_ctrl_1'
+
+SURR_INP_ON = 1
+
+# Recording flags
+DT_REC = 1
+REC_TRACES = 0
+PLOT_TRACES = 0
+
+NCELLS_REC = 5
+NCELLS_PLOT = 0
+
+REC_LFP = 0
+LFP_Y_MIN = 0
+LFP_Y_MAX = 3000
+LFP_Y_STEP = 100
+
+# CSD plotting flags
+PLOT_CSD = 0
+CSD_VIS_T0 = 5000
+
+LAYER_BOUNDS = {'L1': 100, 'L2': 160, 'L3': 950, 'L4': 1250,
+                'L5A': 1334, 'L5B': 1550, 'L6': 2000}
+
+# Run flag
+NEED_RUN = 1
+
+
+def _append_iclamp_entry(iclamp_dict, pop_name, entry):
+    """Append an IClamp entry without replacing existing entries."""
+    if pop_name not in iclamp_dict:
+        iclamp_dict[pop_name] = entry
+        return
+
+    existing = iclamp_dict[pop_name]
+    if isinstance(existing, dict):
+        iclamp_dict[pop_name] = [existing, entry]
+    elif isinstance(existing, list):
+        iclamp_dict[pop_name] = existing + [entry]
+    else:
+        raise TypeError(f'Unsupported IClamp data type: {type(existing)!r}')
+
+
+def gen_exp_name_sub(cfg):
+    """Generate the result subfolder name."""
+    # Base label
+    exp_name_sub = f'exp_{EXP_LABEL}'
+    if not SURR_INP_ON:
+        exp_name_sub += '_nosurr'
+
+    # Batch size tag
+    exp_name_sub += (
+        f'_nseed_{N_SEEDS}_nibkg_{len(IBKG_DW_ADJ_VALUES)}'
+    )
+
+    # Time window tag
+    t_limits = (cfg.t0_calc / 1000, cfg.duration / 1000)
+    exp_name_sub += f'_t_{t_limits[0]}_{t_limits[1]}'
+
+    # LFP tag
+    if REC_LFP:
+        exp_name_sub += f'_lfp_{LFP_Y_MIN}_{LFP_Y_MAX}_{LFP_Y_STEP}'
+
+    # IClamp control tag
+    if USE_IBKG_CTRL:
+        exp_name_sub += '_ictrl'
+
+    # Weight tag
+    exp_name_sub += f'_wmult_{cfg.wmult}_ee_{cfg.EEGain}'
+    return exp_name_sub
+
+
+def apply_exp_cfg(cfg):
+    """Apply experiment config to the base cfg."""
+    # Timing and run flags
+    cfg.duration = SIM_DURATION
+    cfg.t0_calc = T0_CALC
+    cfg.need_run = NEED_RUN
+
+    # Active populations
+    pops_active = POPS_USED
+
+    # Batch-controlled params
+    cfg.seed_main = None
+    cfg.ibkg_dw_adj = None
+
+    # Random seeds
+    cfg.seeds['stim'] = None
+    cfg.seeds['conn'] = None
+
+    # Save and cache flags
+    cfg.includeParamsLabel = True
+    cfg.cache_efficient = 0
+
+    # Subnet setup
+    cfg.subnet_build_flag = SURR_INP_ON
+    cfg.subnet_params = {
+        'pops_active': pops_active,
+        'conns_frozen': 'all',
+        'fpath_frozen_rates': str(dirpath_self / 'target_state_1.csv'),
+        'global_seed': None,
+    }
+
+    if not SURR_INP_ON:
+        cfg.pops_active = POPS_USED
+        cfg.addConn = 0
+
+    # Weight metadata
+    cfg.wmult = 0.25
+    cfg.EEGain = 0.5
+    cfg.wmat_multipliers = [
+        {'pre': pre, 'post': post, 'mult': mult}
+        for (pre, post), mult in WMAT_MULTIPLIERS.items()
+    ]
+
+    # Connectivity flags
+    cfg.addSubConn = 0
+    cfg.connRandomSecFromList = 1
+    cfg.connWeightSecByLength = 0
+
+    # Background input table
+    fpath_xbkg = dirpath_self / f'{XBKG_NAME}.csv'
+    df = pd.read_csv(fpath_xbkg).set_index('pop')
+    df.drop(columns=['Unnamed: 0'], errors='ignore')
+    df['rxe'] = np.maximum(df['rxe'], 1e-3)
+    df['rxi'] = np.maximum(df['rxi'], 1e-3)
+    xbkg_info = df.T.to_dict()
+
+    # Background spiking inputs
+    cfg.add_bkg_spike_input = 1
+    cfg.replace_bkg_spikes_by_ou = 0
+    cfg.bkg_spike_inputs = {}
+    for pop in POPS_USED:
+        x = xbkg_info[pop]
+        cfg.bkg_spike_inputs[pop] = {
+            'exc': {'r': x['rxe'], 'w': x['wxe'], 'sec': x['xe_sec'],
+                    'noise': 1, 'seed': None},
+            'inh': {'r': x['rxi'], 'w': x['wxi'], 'sec': x['xi_sec'],
+                    'noise': 1, 'seed': None},
+        }
+
+    # Baseline IClamps
+    if USE_IBKG:
+        cfg.addIClamp = 1
+        fname_ibkg = f'{IBKG_JSON_NAME}.json'
+        with open(dirpath_self / fname_ibkg, 'r') as fid:
+            ibkg = json.load(fid)
+        cfg.IClamp = {pop: {'amp': ibkg[pop], 'dur': SIM_DURATION}
+                      for pop in POPS_USED if pop in ibkg}
+
+    # Control-derived IClamps
+    if USE_IBKG_CTRL:
+        cfg.addIClamp = 1
+        with open(dirpath_self / f'{IBKG_CTRL_JSON_NAME}.json', 'r') as fid:
+            ibkg_ctrl = json.load(fid)
+        I_median = ibkg_ctrl['I_median']
+        if not hasattr(cfg, 'IClamp') or cfg.IClamp is None:
+            cfg.IClamp = {}
+        for pop in POPS_USED:
+            if pop not in I_median:
+                continue
+            ctrl_entry = {'amp': I_median[pop], 'dur': SIM_DURATION}
+            if pop in cfg.IClamp:
+                existing = cfg.IClamp[pop]
+                cfg.IClamp[pop] = (
+                    [existing, ctrl_entry]
+                    if isinstance(existing, dict)
+                    else existing + [ctrl_entry]
+                )
+            else:
+                cfg.IClamp[pop] = ctrl_entry
+
+    # Adjustable IClamp (to compensate WMAT_MULTIPLIERS)
+    cfg.addIClamp = 1
+    if not hasattr(cfg, 'IClamp') or cfg.IClamp is None:
+        cfg.IClamp = {}
+    cfg.IClamp_ibkg_dw_adj = {}
+    for pop in POPS_USED:
+        adj_entry = {'amp': 0, 'dur': SIM_DURATION}
+        cfg.IClamp_ibkg_dw_adj[pop] = adj_entry
+        _append_iclamp_entry(cfg.IClamp, pop, adj_entry)
+
+    # Target rates
+    df = pd.read_csv(dirpath_self / 'target_state_1.csv')
+    cfg.target_rates = df.set_index('pop_name')['target_rate'].to_dict()
+
+    # Mechanism changes
+    with open(dirpath_self / 'mech_changes_1.json', 'r') as fid:
+        cfg.mech_changes = json.load(fid)
+
+    # Analysis pop filters
+    if 'plotRaster' in cfg.analysis:
+        cfg.analysis['plotRaster']['include'] = POPS_USED
+    if 'plotSpikeStats' in cfg.analysis:
+        cfg.analysis['plotSpikeStats']['include'] = POPS_USED
+    if 'plotTraces' in cfg.analysis:
+        cfg.analysis['plotTraces']['include'] = POPS_USED
+
+    cfg.analysis['plotSpikeStats'] = False
+
+    # Voltage recording
+    if REC_TRACES:
+        cfg.recordCells = [(pop, list(range(NCELLS_REC))) for pop in POPS_USED]
+        cfg.recordTraces = {'V_soma': {'sec': 'soma', 'loc': 0.5, 'var': 'v'}}
+        cfg.recordStep = DT_REC
+
+    # Voltage plotting
+    if REC_TRACES and PLOT_TRACES:
+        cfg.analysis['plotTraces'] = {
+            'include': [(pop, list(range(NCELLS_PLOT))) for pop in POPS_USED],
+            'timeRange': [1000, cfg.duration],
+            'oneFigPer': 'cell', 'overlay': True,
+            'saveFig': True, 'showFig': False, 'figSize': (18, 12)
+        }
+
+    # LFP recording
+    if REC_LFP:
+        cfg.recordTime = True
+        cfg.recordStep = DT_REC
+        cfg.recordLFP = [[100, y, 100]
+                         for y in range(LFP_Y_MIN, LFP_Y_MAX, LFP_Y_STEP)]
+
+    # CSD plotting
+    if REC_LFP and PLOT_CSD:
+        csd_t0 = CSD_VIS_T0 if CSD_VIS_T0 is not None else 2000
+        cfg.analysis['plotCSD'] = {
+            'spacing_um': LFP_Y_STEP, 'LFP_overlay': 1, 'layer_lines': 1,
+            'layer_bounds': LAYER_BOUNDS, 'saveFig': 1, 'showFig': 0,
+            'timeRange': (csd_t0, cfg.duration)
+        }
+
+
+def modify_net_params(cfg, params):
+    """Applied after netParams creation."""
+
+    # Membrane mechanisms
+    for v in cfg.mech_changes.values():
+        secs_all = params.cellParams[v['pop']]['secs']
+        if v['sec'] == 'all':
+            secs = list(secs_all.values())
+        else:
+            secs = [secs_all[v['sec']]]
+        for sec in secs:
+            sec['mechs'][v['mech']][v['par']] *= v['mult']
+            sec['mechs'][v['mech']][v['par']] += v['add']
+
+    # Target sections
+    with open(dirpath_self / 'target_sec_1.json', 'r') as fid:
+        target_sec = json.load(fid)
+    for cname, conn in params.connParams.items():
+        src_pop = conn['preConds'].get('pop', None)
+        dst_pop = conn['postConds'].get('pop', None)
+        if (src_pop is None) or (dst_pop is None):
+            raise ValueError(f'Pre or post pop is not specified for conn {cname}')
+        conn['sec'] = None
+        for ts in target_sec.values():
+            if (src_pop in ts['pops_pre']) and (dst_pop in ts['pops_post']):
+                conn['sec'] = ts['sec']
+                break
+        if conn['sec'] is None:
+            print(f'WARNING: No target sec info found for conn {cname}')
+
+    # Weight multipliers
+    matched_pairs = set()
+    for conn in params.connParams.values():
+        pop_pre = conn['preConds'].get('pop', None)
+        pop_post = conn['postConds'].get('pop', None)
+        pair = (pop_pre, pop_post)
+        if pair not in WMAT_MULTIPLIERS:
+            continue
+        conn['weight'] *= WMAT_MULTIPLIERS[pair]
+        matched_pairs.add(pair)
+
+    missing_pairs = set(WMAT_MULTIPLIERS) - matched_pairs
+    if missing_pairs:
+        raise ValueError(f'No connParams found for WMAT_MULTIPLIERS: {missing_pairs}')
+
+
+def post_run(sim):
+    """Called in the end of a job (after running and saving)."""
+
+    # Result naming
+    cfg = sim.cfg
+    exp_name = cfg.simLabel
+
+    t_limits = (cfg.t0_calc / 1000, cfg.duration / 1000)
+    exp_name_sub = gen_exp_name_sub(cfg)
+
+    exp_id = exp_name.split('_')[-1]
+    postfix = (
+        f'{exp_id}_seed_{cfg.seed_main}_ibkg_dw_adj_{cfg.ibkg_dw_adj:g}'
+    )
+
+    # Result folders
+    dirpath_res = Path(cfg.saveFolder)
+    dirpath_res_sub = dirpath_res / exp_name_sub
+    os.makedirs(dirpath_res_sub, exist_ok=True)
+    dirnames_sub = ['rasters', 'results', 'cfg', 'pkl', 'netpar',
+                    'traces', 'rvec_figs', 'csd_figs']
+    for dirname in dirnames_sub:
+        os.makedirs(dirpath_res_sub / dirname, exist_ok=True)
+
+    # Standard output relocation
+    data_info = [
+        ('raster', 'png', 'rasters'),
+        ('data', 'pkl', 'pkl'),
+        ('cfg', 'json', 'cfg'),
+        ('netParams', 'json', 'netpar')
+    ]
+    for data_name, ext, dirname_sub in data_info:
+        fpath_old = dirpath_res / f'{exp_name}_{data_name}.{ext}'
+        fpath_new = dirpath_res_sub / dirname_sub / f'{data_name}_{postfix}.{ext}'
+        if fpath_old.exists():
+            fpath_old.rename(fpath_new)
+        else:
+            print('RESULT NOT FOUND: ', fpath_old)
+
+    # Trace relocation
+    trace_files = list(dirpath_res.glob(f'{exp_name}_traces*.png'))
+    for fpath_old in trace_files:
+        fpath_new = dirpath_res_sub / 'traces' / (
+            f'{fpath_old.stem}_{postfix}{fpath_old.suffix}'
+        )
+        fpath_old.rename(fpath_new)
+
+    # CSD relocation
+    if REC_LFP and PLOT_CSD:
+        csd_files = list(dirpath_res.glob(f'{exp_name}_CSD*.png'))
+        for fpath_old in csd_files:
+            fpath_new = dirpath_res_sub / 'csd_figs' / (
+                f'{fpath_old.stem}_{postfix}{fpath_old.suffix}'
+            )
+            fpath_old.rename(fpath_new)
+
+    # Result JSON
+    if NEED_RUN:
+        res = {}
+        res['timing'] = sim.timingData
+        res |= proc.calc_rates_and_cvs(sim, t_limits, nspikes_min=3)
+        res['avg_rates'] = sim.analysis.popAvgRates(
+            tranges=[cfg.t0_calc, cfg.duration],
+            show=False,
+        )
+        if REC_TRACES:
+            res |= proc.calc_v_stats(sim, t_limits, med_win=0.05)
+        fpath_res = dirpath_res_sub / 'results' / f'result_{postfix}.json'
+        with open(fpath_res, 'w') as fid:
+            json.dump(res, fid, indent=4)
