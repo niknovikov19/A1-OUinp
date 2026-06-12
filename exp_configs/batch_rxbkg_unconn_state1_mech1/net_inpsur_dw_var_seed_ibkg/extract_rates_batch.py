@@ -30,7 +30,7 @@ def collect_avg_rates_batch(dirpath_exp, cfg_param_fields, chunks=None,
     dirpath_exp = Path(dirpath_exp)
     dirpath_cfg = dirpath_exp / 'cfg'
     dirpath_results = dirpath_exp / 'results'
-    fpath_cache = dirpath_exp / 'analysis' / 'avg_rates.nc'
+    fpath_cache = dirpath_exp / 'avg_rates.nc'
     open_kwargs = {} if fpath_cache.exists() else {'engine': 'scipy'}
 
     # Build the job grid from saved cfg files
@@ -68,7 +68,7 @@ if __name__ == '__main__':
         DIR_REPO / 'exp_results' /
         'batch_rxbkg_unconn_state1_mech1' /
         'net_inpsur_dw_var_seed_ibkg' /
-        'exp_dw_adj_L2_nseed_5_nibkg_25_t_5.0_20.0_ictrl_wmult_0.25_ee_0.5'
+        'exp_dw_adj_L2_ee_2_nseed_1_ibkg_-0.1_0.1_5_t_5.0_15.0_ictrl_wmult_0.25_ee_0.5'
     )
     CFG_PARAM_FIELDS = {
         'seed_main': 'seed_main',

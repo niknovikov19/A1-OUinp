@@ -20,9 +20,15 @@ MATX_POPS = ['TCM', 'TIM', 'IREM']
 THAL_POPS = CORE_POPS + MATX_POPS
 
 
-# Batch sweep
 N_SEEDS = 5
-IBKG_DW_ADJ_VALUES = np.linspace(-0.3, 0.3, 25).round(4).tolist()
+
+IBKG_MIN = -0.1
+IBKG_MAX = 0.1
+IBKG_NUM = 10
+
+IBKG_DW_ADJ_VALUES = np.linspace(
+    IBKG_MIN, IBKG_MAX, IBKG_NUM
+).round(4).tolist()
 
 
 def get_batch_params():

@@ -9,31 +9,43 @@ dirpath_self = Path(__file__).resolve().parent
 sys.path.append(str(dirpath_repo_root))
 sys.path.append(str(dirpath_self))
 
-# Import dependencies
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
 from analysis.ou_tuning import sim_res_proc_utils as proc
-from batch_params import N_SEEDS, IBKG_DW_ADJ_VALUES, L2_POPS
+from batch_params import (
+    N_SEEDS,
+    IBKG_MIN, IBKG_MAX, IBKG_NUM,
+    IBKG_DW_ADJ_VALUES,
+    PYR_POPS, PV_POPS, SOM_POPS, VIP_POPS, NGF_POPS, 
+    L2_POPS, 
+)
 
 
 # Timing constants
-SIM_DURATION = 20 * 1e3
+SIM_DURATION = 15 * 1e3
 T0_CALC = 5 * 1e3
 
-# Experiment constants
-EXP_LABEL = 'dw_adj_L2'
+# Experiment name
+EXP_LABEL = 'dw_adj_L2_ee_2'
+
+# Active populations
 POPS_USED = L2_POPS
 
 # Weight adjustment
-WMAT_MULTIPLIERS = {('IT2', 'PV2'): 2, ('IT2', 'IT2'): 1.5}
+WMAT_MULTIPLIERS = {
+    ('IT2', 'IT2'): 2
+}
 
-# Input files
+# Background e/i Poisson inputs
 XBKG_NAME = 'rx_bkg_mid_sm_ctx21_thal41'
 
+# Bkg current: correction 1
 USE_IBKG = 1
 IBKG_JSON_NAME = 'ibkg_mech1_verest_-70_thal_spkthr'
 
+# Bkg current: correction 2
 USE_IBKG_CTRL = 1
 IBKG_CTRL_JSON_NAME = 'ibkg_ctrl_1'
 
@@ -59,6 +71,15 @@ CSD_VIS_T0 = 5000
 LAYER_BOUNDS = {'L1': 100, 'L2': 160, 'L3': 950, 'L4': 1250,
                 'L5A': 1334, 'L5B': 1550, 'L6': 2000}
 
+PLOT_RATE_DYNAMICS = 1
+RVEC_TAU_SMOOTH = 0.1
+RVIS_POP_GROUPS = {
+    #'PYR': PYR_POPS, 'PV': PV_POPS, 'SOM': SOM_POPS, 
+    #'VIP': VIP_POPS, 'NGF': NGF_POPS,
+    'L2': L2_POPS
+    #'ALL': POPS_USED
+}
+
 # Run flag
 NEED_RUN = 1
 
@@ -68,7 +89,7 @@ def _append_iclamp_entry(iclamp_dict, pop_name, entry):
     if pop_name not in iclamp_dict:
         iclamp_dict[pop_name] = entry
         return
-
+    
     existing = iclamp_dict[pop_name]
     if isinstance(existing, dict):
         iclamp_dict[pop_name] = [existing, entry]
@@ -80,28 +101,23 @@ def _append_iclamp_entry(iclamp_dict, pop_name, entry):
 
 def gen_exp_name_sub(cfg):
     """Generate the result subfolder name."""
-    # Base label
     exp_name_sub = f'exp_{EXP_LABEL}'
+    # Surrogate input flag
     if not SURR_INP_ON:
         exp_name_sub += '_nosurr'
-
-    # Batch size tag
+    # Batch params
     exp_name_sub += (
-        f'_nseed_{N_SEEDS}_nibkg_{len(IBKG_DW_ADJ_VALUES)}'
+        f'_nseed_{N_SEEDS}_ibkg_{IBKG_MIN}_{IBKG_MAX}_{IBKG_NUM}'
     )
-
     # Time window tag
     t_limits = (cfg.t0_calc / 1000, cfg.duration / 1000)
     exp_name_sub += f'_t_{t_limits[0]}_{t_limits[1]}'
-
     # LFP tag
     if REC_LFP:
         exp_name_sub += f'_lfp_{LFP_Y_MIN}_{LFP_Y_MAX}_{LFP_Y_STEP}'
-
-    # IClamp control tag
+    # Control-derived static correction
     if USE_IBKG_CTRL:
         exp_name_sub += '_ictrl'
-
     # Weight tag
     exp_name_sub += f'_wmult_{cfg.wmult}_ee_{cfg.EEGain}'
     return exp_name_sub
@@ -121,7 +137,7 @@ def apply_exp_cfg(cfg):
     cfg.seed_main = None
     cfg.ibkg_dw_adj = None
 
-    # Random seeds
+    # Random seeds (set in batch)
     cfg.seeds['stim'] = None
     cfg.seeds['conn'] = None
 
@@ -135,7 +151,7 @@ def apply_exp_cfg(cfg):
         'pops_active': pops_active,
         'conns_frozen': 'all',
         'fpath_frozen_rates': str(dirpath_self / 'target_state_1.csv'),
-        'global_seed': None,
+        'global_seed': None,   # set in batch
     }
 
     if not SURR_INP_ON:
@@ -315,14 +331,13 @@ def modify_net_params(cfg, params):
 
 def post_run(sim):
     """Called in the end of a job (after running and saving)."""
-
-    # Result naming
     cfg = sim.cfg
     exp_name = cfg.simLabel
 
     t_limits = (cfg.t0_calc / 1000, cfg.duration / 1000)
     exp_name_sub = gen_exp_name_sub(cfg)
 
+    # Result naming postfix
     exp_id = exp_name.split('_')[-1]
     postfix = (
         f'{exp_id}_seed_{cfg.seed_main}_ibkg_dw_adj_{cfg.ibkg_dw_adj:g}'
@@ -369,7 +384,7 @@ def post_run(sim):
             )
             fpath_old.rename(fpath_new)
 
-    # Result JSON
+    # Results json
     if NEED_RUN:
         res = {}
         res['timing'] = sim.timingData
@@ -383,3 +398,34 @@ def post_run(sim):
         fpath_res = dirpath_res_sub / 'results' / f'result_{postfix}.json'
         with open(fpath_res, 'w') as fid:
             json.dump(res, fid, indent=4)
+    
+    # Plot and save rate dynamics
+    if PLOT_RATE_DYNAMICS:
+        colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
+        for pop_group_name, pops in RVIS_POP_GROUPS.items():
+            pops = [p for p in pops if p in POPS_USED]
+            if len(pops) == 0:
+                continue
+
+            # Compute rate dynamics
+            r_data = proc.calc_rate_dynamics(
+                sim, t_limits=(2, None), tau_smooth=RVEC_TAU_SMOOTH, pops_used=pops)
+
+            plt.figure(111); plt.clf()
+
+            for n, pop in enumerate(pops):
+                tt, rr = r_data[pop]
+                r0 = cfg.target_rates[pop]
+                col = colors[n % len(colors)]
+                plt.plot(tt, rr, label=pop, color=col)
+                plt.plot([tt[0], tt[-1]], [r0, r0], '--', color=col)
+
+            plt.xlabel('Time')
+            plt.ylabel('Firing rate')
+            plt.legend(bbox_to_anchor=(1, 1))
+            #plt.yscale('log')
+            #plt.ylim(0.05, None)
+
+            fname_out = f'{pop_group_name}_{postfix}.png'
+            plt.savefig(dirpath_res_sub / 'rvec_figs' / fname_out,
+                        bbox_inches='tight', dpi=300)
