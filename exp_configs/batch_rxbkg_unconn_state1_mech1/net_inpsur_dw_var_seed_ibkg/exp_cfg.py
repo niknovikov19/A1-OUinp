@@ -1,5 +1,4 @@
 import json
-import os
 from pathlib import Path
 import sys
 
@@ -20,6 +19,11 @@ from batch_params import (
     IBKG_DW_ADJ_VALUES,
     PYR_POPS, PV_POPS, SOM_POPS, VIP_POPS, NGF_POPS, 
     L2_POPS, 
+)
+from workflow_result_utils import (
+    move_if_present,
+    organize_standard_outputs,
+    relative_output,
 )
 
 
@@ -99,8 +103,24 @@ def _append_iclamp_entry(iclamp_dict, pop_name, entry):
         raise TypeError(f'Unsupported IClamp data type: {type(existing)!r}')
 
 
+def apply_runtime_overrides(cfg, overrides):
+    """Apply workflow-only single-job experiment overrides."""
+    overrides = dict(overrides)
+    if 'wmat_multipliers' in overrides:
+        cfg.wmat_multipliers = list(overrides.pop('wmat_multipliers'))
+
+    # Other settings must already be defined by apply_exp_cfg()
+    for name, value in overrides.items():
+        if not hasattr(cfg, name):
+            raise KeyError(f'Unknown experiment override: {name}')
+        setattr(cfg, name, value)
+
+
 def gen_exp_name_sub(cfg):
     """Generate the result subfolder name."""
+    if hasattr(cfg, 'workflow_result_subdir'):
+        return cfg.workflow_result_subdir
+
     exp_name_sub = f'exp_{EXP_LABEL}'
     # Surrogate input flag
     if not SURR_INP_ON:
@@ -314,19 +334,28 @@ def modify_net_params(cfg, params):
             print(f'WARNING: No target sec info found for conn {cname}')
 
     # Weight multipliers
+    wmat_multipliers = {
+        (item['pre'], item['post']): item['mult']
+        for item in cfg.wmat_multipliers
+    }
+    if len(wmat_multipliers) != len(cfg.wmat_multipliers):
+        raise ValueError('Duplicate entries in cfg.wmat_multipliers')
+
     matched_pairs = set()
     for conn in params.connParams.values():
         pop_pre = conn['preConds'].get('pop', None)
         pop_post = conn['postConds'].get('pop', None)
         pair = (pop_pre, pop_post)
-        if pair not in WMAT_MULTIPLIERS:
+        if pair not in wmat_multipliers:
             continue
-        conn['weight'] *= WMAT_MULTIPLIERS[pair]
+        conn['weight'] *= wmat_multipliers[pair]
         matched_pairs.add(pair)
 
-    missing_pairs = set(WMAT_MULTIPLIERS) - matched_pairs
+    missing_pairs = set(wmat_multipliers) - matched_pairs
     if missing_pairs:
-        raise ValueError(f'No connParams found for WMAT_MULTIPLIERS: {missing_pairs}')
+        raise ValueError(
+            f'No connParams found for wmat multipliers: {missing_pairs}'
+        )
 
 
 def post_run(sim):
@@ -343,29 +372,13 @@ def post_run(sim):
         f'{exp_id}_seed_{cfg.seed_main}_ibkg_dw_adj_{cfg.ibkg_dw_adj:g}'
     )
 
-    # Result folders
+    # Standard output relocation and retention
     dirpath_res = Path(cfg.saveFolder)
-    dirpath_res_sub = dirpath_res / exp_name_sub
-    os.makedirs(dirpath_res_sub, exist_ok=True)
-    dirnames_sub = ['rasters', 'results', 'cfg', 'pkl', 'netpar',
-                    'traces', 'rvec_figs', 'csd_figs']
-    for dirname in dirnames_sub:
-        os.makedirs(dirpath_res_sub / dirname, exist_ok=True)
-
-    # Standard output relocation
-    data_info = [
-        ('raster', 'png', 'rasters'),
-        ('data', 'pkl', 'pkl'),
-        ('cfg', 'json', 'cfg'),
-        ('netParams', 'json', 'netpar')
-    ]
-    for data_name, ext, dirname_sub in data_info:
-        fpath_old = dirpath_res / f'{exp_name}_{data_name}.{ext}'
-        fpath_new = dirpath_res_sub / dirname_sub / f'{data_name}_{postfix}.{ext}'
-        if fpath_old.exists():
-            fpath_old.rename(fpath_new)
-        else:
-            print('RESULT NOT FOUND: ', fpath_old)
+    dirpath_res_sub = organize_standard_outputs(
+        cfg,
+        exp_name_sub,
+        postfix,
+    )
 
     # Trace relocation
     trace_files = list(dirpath_res.glob(f'{exp_name}_traces*.png'))
@@ -373,7 +386,7 @@ def post_run(sim):
         fpath_new = dirpath_res_sub / 'traces' / (
             f'{fpath_old.stem}_{postfix}{fpath_old.suffix}'
         )
-        fpath_old.rename(fpath_new)
+        move_if_present(fpath_old, fpath_new)
 
     # CSD relocation
     if REC_LFP and PLOT_CSD:
@@ -382,9 +395,10 @@ def post_run(sim):
             fpath_new = dirpath_res_sub / 'csd_figs' / (
                 f'{fpath_old.stem}_{postfix}{fpath_old.suffix}'
             )
-            fpath_old.rename(fpath_new)
+            move_if_present(fpath_old, fpath_new)
 
     # Results json
+    outputs = []
     if NEED_RUN:
         res = {}
         res['timing'] = sim.timingData
@@ -398,6 +412,7 @@ def post_run(sim):
         fpath_res = dirpath_res_sub / 'results' / f'result_{postfix}.json'
         with open(fpath_res, 'w') as fid:
             json.dump(res, fid, indent=4)
+        outputs.append(relative_output(cfg, fpath_res))
     
     # Plot and save rate dynamics
     if PLOT_RATE_DYNAMICS:
@@ -429,3 +444,5 @@ def post_run(sim):
             fname_out = f'{pop_group_name}_{postfix}.png'
             plt.savefig(dirpath_res_sub / 'rvec_figs' / fname_out,
                         bbox_inches='tight', dpi=300)
+
+    return outputs

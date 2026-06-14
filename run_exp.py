@@ -25,6 +25,7 @@ import rate_ctrl as ctrl
 from subnet_tuner import SubnetDesc, SubnetParamBuilder2
 
 from collect_cell_gids import _collect_cell_gids
+from workflow_utils import make_job_record
 
 #import analysis.ou_tuning.data_proc_utils as proc_utils
 #import analysis.ou_tuning.netpyne_res_parse_utils as parse_utils
@@ -138,6 +139,69 @@ def _collect_batch_metrics(cfg_mod, sim):
     return metrics
 
 
+def _read_runtime_overrides(fpath):
+    """Load optional workflow runtime overrides."""
+    if fpath is None:
+        return None
+    with open(fpath, 'r') as fid:
+        runtime_overrides = json.load(fid)
+    if 'batch_param_names' not in runtime_overrides:
+        runtime_overrides['batch_param_names'] = list(
+            runtime_overrides['batch_params']
+        )
+    return runtime_overrides
+
+
+def _write_json_atomic(fpath, value):
+    """Write JSON by atomically replacing the destination file."""
+    fpath = Path(fpath)
+    fpath.parent.mkdir(parents=True, exist_ok=True)
+    fpath_tmp = fpath.with_suffix(f'{fpath.suffix}.tmp')
+    with open(fpath_tmp, 'w') as fid:
+        json.dump(value, fid, indent=2, sort_keys=True)
+    os.replace(fpath_tmp, fpath)
+
+
+def _get_workflow_job_id(sim_label):
+    """Extract the BatchTools integer job ID from simLabel."""
+    try:
+        return int(sim_label.rsplit('_', 1)[1])
+    except (IndexError, ValueError) as exc:
+        raise ValueError(
+            f'Workflow simLabel has no integer job ID: {sim_label!r}'
+        ) from exc
+
+
+def _write_workflow_job_meta(cfg, runtime_overrides, outputs):
+    """Write the compact workflow completion record."""
+    dirpath_stage = Path(cfg.saveFolder)
+    output_paths = []
+    for output in outputs:
+        fpath_output = Path(output)
+        if not fpath_output.is_absolute():
+            fpath_output = dirpath_stage / fpath_output
+        if not fpath_output.is_file():
+            raise FileNotFoundError(
+                f'Declared workflow output does not exist: {fpath_output}'
+            )
+        output_paths.append(fpath_output.relative_to(dirpath_stage).as_posix())
+
+    # Store only batch coordinates and stage references per job
+    batch_params = {
+        name: getattr(cfg, name)
+        for name in runtime_overrides['batch_param_names']
+    }
+    record = make_job_record(
+        runtime_overrides,
+        cfg.simLabel,
+        _get_workflow_job_id(cfg.simLabel),
+        batch_params,
+        output_paths,
+    )
+    fpath_meta = dirpath_stage / 'job_meta' / f'{cfg.simLabel}.json'
+    _write_json_atomic(fpath_meta, record)
+
+
 # Folder names for experiment configs and results (relative to this script)
 DIRNAME_EXP_CONFIGS = 'exp_configs'
 DIRNAME_EXP_RESULTS = 'exp_results'    # without batchtools
@@ -154,8 +218,15 @@ parser.add_argument('--par', type=str,
                     help="Arbitrary param")
 parser.add_argument('--job_id_len', type=int, default=6,
                     help="Number of characters to strip from the end of simLabel to get exp_name")
+parser.add_argument(
+    '--runtime-overrides',
+    '--runtime_overrides',
+    dest='runtime_overrides',
+    help='Workflow runtime override JSON',
+)
 args, _ = parser.parse_known_args()
 is_batch = args.batch
+runtime_overrides = _read_runtime_overrides(args.runtime_overrides)
 
 if not args.batch and args.name is None:
     raise ValueError("Either --name or --batch is requred")
@@ -193,6 +264,29 @@ if args.par is None:
     cfg_mod.apply_exp_cfg(cfg)
 else:
     cfg_mod.apply_exp_cfg(cfg, args.par)
+
+# Apply compact workflow overrides before BatchTools updates the grid axes
+if runtime_overrides is not None:
+    cfg.workflow_context = {
+        name: runtime_overrides[name]
+        for name in (
+            'workflow_name',
+            'run_id',
+            'iteration',
+            'stage',
+            'stage_spec_hash',
+        )
+    }
+    cfg.workflow_result_subdir = runtime_overrides['result_subdir']
+    cfg.workflow_retention = runtime_overrides['retention']
+    cfg.savePickle = runtime_overrides['retention']['keep_pkl']
+    exp_overrides = runtime_overrides.get('experiment_overrides', {})
+    if exp_overrides and not hasattr(cfg_mod, 'apply_runtime_overrides'):
+        raise AttributeError(
+            f'{fpath_exp_cfg} does not implement apply_runtime_overrides()'
+        )
+    if exp_overrides:
+        cfg_mod.apply_runtime_overrides(cfg, exp_overrides)
 
 if not is_batch:
     # Automatically set the experiment name in config
@@ -283,10 +377,23 @@ comm.initialize()
 # Save cfg and netParams into the output folder
 #print('SAVE CFG AND NETPARAMS', flush=True)
 if comm.is_host():
-    fpath_cfg = "{}/{}_cfg.json".format(cfg.saveFolder, cfg.simLabel)
-    print(f'Saving to {fpath_cfg}', flush=True)
-    cfg.save(fpath_cfg)
-    _save_netparams_stripped(netParams, '{}/{}_netParams.json'.format(cfg.saveFolder, cfg.simLabel))
+    keep_cfg = (
+        runtime_overrides is None or
+        runtime_overrides['retention']['keep_cfg']
+    )
+    keep_netparams = (
+        runtime_overrides is None or
+        runtime_overrides['retention']['keep_netparams']
+    )
+    if keep_cfg:
+        fpath_cfg = "{}/{}_cfg.json".format(cfg.saveFolder, cfg.simLabel)
+        print(f'Saving to {fpath_cfg}', flush=True)
+        cfg.save(fpath_cfg)
+    if keep_netparams:
+        _save_netparams_stripped(
+            netParams,
+            '{}/{}_netParams.json'.format(cfg.saveFolder, cfg.simLabel),
+        )
 #print('SAVING DONE', flush=True)
 
 # Run or skip
@@ -396,9 +503,14 @@ if need_run:
 
 # Finalize
 if comm.is_host():
-    _save_netparams_stripped(netParams, "{}/{}_params.json".format(cfg.saveFolder, cfg.simLabel))
+    if runtime_overrides is None:
+        _save_netparams_stripped(
+            netParams,
+            "{}/{}_params.json".format(cfg.saveFolder, cfg.simLabel),
+        )
     print('transmitting data...')
     inputs = cfg.get_mappings()
+    workflow_outputs = []
     
     if need_run:    
         # Save average firing rates to a separate json file
@@ -424,7 +536,9 @@ if comm.is_host():
         
         # Experiment-specific result processing
         if hasattr(cfg_mod, 'post_run'):
-            cfg_mod.post_run(sim)
+            post_outputs = cfg_mod.post_run(sim)
+            if post_outputs is not None:
+                workflow_outputs = post_outputs
 
         batch_metrics = _collect_batch_metrics(cfg_mod, sim)
 
@@ -433,6 +547,14 @@ if comm.is_host():
         avgRates = {}
         sim = SimpleNamespace(cfg=cfg)
         batch_metrics = _collect_batch_metrics(cfg_mod, sim)
+
+    # Publish workflow completion only after post_run has sorted all outputs
+    if runtime_overrides is not None:
+        _write_workflow_job_meta(
+            cfg,
+            runtime_overrides,
+            workflow_outputs,
+        )
 
     # Finish and report to batchtools
     """ avgRates['loss'] = 700

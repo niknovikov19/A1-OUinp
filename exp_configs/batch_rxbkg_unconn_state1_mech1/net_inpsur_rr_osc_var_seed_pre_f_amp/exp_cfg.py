@@ -1,5 +1,4 @@
 import json
-import os
 from pathlib import Path
 import sys
 
@@ -23,6 +22,11 @@ from batch_params import (
 import diagnostics as diag
 from external.sim_data_analyzer.xr_adapters import get_net_rate_dynamics_xr
 from utils.inh_poisson import generate_trains
+from workflow_result_utils import (
+    move_if_present,
+    organize_standard_outputs,
+    relative_output,
+)
 
 
 SIM_DURATION = 20 * 1e3
@@ -91,7 +95,54 @@ PULSE_PARAMS = {
 }
 
 
+def _append_iclamp_entry(iclamp_dict, pop_name, entry):
+    """Append an IClamp entry without replacing existing entries."""
+    if pop_name not in iclamp_dict:
+        iclamp_dict[pop_name] = entry
+        return
+
+    existing = iclamp_dict[pop_name]
+    if isinstance(existing, dict):
+        iclamp_dict[pop_name] = [existing, entry]
+    elif isinstance(existing, list):
+        iclamp_dict[pop_name] = existing + [entry]
+    else:
+        raise TypeError(f'Unsupported IClamp data type: {type(existing)!r}')
+
+
+def apply_runtime_overrides(cfg, overrides):
+    """Apply workflow-only single-job experiment overrides."""
+    overrides = dict(overrides)
+    if 'wmat_multipliers' in overrides:
+        cfg.wmat_multipliers = list(overrides.pop('wmat_multipliers'))
+    if 'ibkg_corrections' in overrides:
+        corrections = dict(overrides.pop('ibkg_corrections'))
+        missing = sorted(set(POPS_USED) - set(corrections))
+        if missing:
+            raise ValueError(f'Missing ibkg corrections: {missing}')
+        unknown = sorted(set(corrections) - set(POPS_USED))
+        if unknown:
+            raise ValueError(f'Unknown ibkg correction populations: {unknown}')
+        cfg.ibkg_corrections = corrections
+        cfg.addIClamp = 1
+        if not hasattr(cfg, 'IClamp') or cfg.IClamp is None:
+            cfg.IClamp = {}
+        for pop, amp in corrections.items():
+            entry = {'amp': amp, 'dur': SIM_DURATION}
+            _append_iclamp_entry(cfg.IClamp, pop, entry)
+
+    # Other settings must already be defined by apply_exp_cfg()
+    for name, value in overrides.items():
+        if not hasattr(cfg, name):
+            raise KeyError(f'Unknown experiment override: {name}')
+        setattr(cfg, name, value)
+
+
 def gen_exp_name_sub(cfg):
+    """Generate the result subfolder name."""
+    if hasattr(cfg, 'workflow_result_subdir'):
+        return cfg.workflow_result_subdir
+
     exp_name_sub = f'exp_{EXP_LABEL}'
     if not SURR_INP_ON:
         exp_name_sub += '_nosurr'
@@ -134,6 +185,7 @@ def gen_exp_name_sub(cfg):
 
 
 def apply_exp_cfg(cfg):
+    """Apply experiment config to the base cfg."""
 
     cfg.duration = SIM_DURATION
     cfg.t0_calc = T0_CALC
@@ -166,6 +218,8 @@ def apply_exp_cfg(cfg):
 
     cfg.wmult = 0.25
     cfg.EEGain = 0.5
+    cfg.wmat_multipliers = []
+    cfg.ibkg_corrections = {}
 
     cfg.addSubConn = 0
     cfg.connRandomSecFromList = 1
@@ -302,6 +356,30 @@ def modify_net_params(cfg, params):
         if conn['sec'] is None:
             print(f'WARNING: No target sec info found for conn {cname}')
 
+    # Weight multipliers
+    wmat_multipliers = {
+        (item['pre'], item['post']): item['mult']
+        for item in cfg.wmat_multipliers
+    }
+    if len(wmat_multipliers) != len(cfg.wmat_multipliers):
+        raise ValueError('Duplicate entries in cfg.wmat_multipliers')
+
+    matched_pairs = set()
+    for conn in params.connParams.values():
+        pop_pre = conn['preConds'].get('pop', None)
+        pop_post = conn['postConds'].get('pop', None)
+        pair = (pop_pre, pop_post)
+        if pair not in wmat_multipliers:
+            continue
+        conn['weight'] *= wmat_multipliers[pair]
+        matched_pairs.add(pair)
+
+    missing_pairs = set(wmat_multipliers) - matched_pairs
+    if missing_pairs:
+        raise ValueError(
+            f'No connParams found for wmat multipliers: {missing_pairs}'
+        )
+
 
 def modify_net_params_2(cfg, params):
     """Replace cfg.pop_pre surrogate with a baseline-centered oscillatory VecStim."""
@@ -351,7 +429,7 @@ def modify_net_params_2(cfg, params):
 
 
 def post_run(sim):
-    """Called in the end of a job (after runnig and saving)."""
+    """Called in the end of a job (after running and saving)."""
 
     cfg = sim.cfg
     exp_name = cfg.simLabel
@@ -365,43 +443,34 @@ def post_run(sim):
         f'_f_{cfg.osc_f:g}_amp_{cfg.osc_amp:g}'
     )
 
+    # Standard output relocation and retention
     dirpath_res = Path(cfg.saveFolder)
-    dirpath_res_sub = dirpath_res / exp_name_sub
-    os.makedirs(dirpath_res_sub, exist_ok=True)
-    dirnames_sub = ['rasters', 'results', 'cfg', 'pkl', 'netpar',
-                    'traces', 'rvec_figs', 'rvec_xr', 'csd_figs']
-    for dirname in dirnames_sub:
-        os.makedirs(dirpath_res_sub / dirname, exist_ok=True)
+    dirpath_res_sub = organize_standard_outputs(
+        cfg,
+        exp_name_sub,
+        postfix,
+    )
+    (dirpath_res_sub / 'rvec_xr').mkdir(parents=True, exist_ok=True)
 
-    data_info = [
-        ('raster', 'png', 'rasters'),
-        ('data', 'pkl', 'pkl'),
-        ('cfg', 'json', 'cfg'),
-        ('netParams', 'json', 'netpar')
-    ]
-    for data_name, ext, dirname_sub in data_info:
-        fpath_old = dirpath_res / f'{exp_name}_{data_name}.{ext}'
-        fpath_new = dirpath_res_sub / dirname_sub / f'{data_name}_{postfix}.{ext}'
-        if fpath_old.exists():
-            fpath_old.rename(fpath_new)
-        else:
-            print('RESULT NOT FOUND: ', fpath_old)
-
+    # Trace relocation
     trace_files = list(dirpath_res.glob(f'{exp_name}_traces*.png'))
     for fpath_old in trace_files:
         fpath_new = dirpath_res_sub / 'traces' / (
             f'{fpath_old.stem}_{postfix}{fpath_old.suffix}'
         )
-        fpath_old.rename(fpath_new)
+        move_if_present(fpath_old, fpath_new)
 
+    # CSD relocation
     if REC_LFP and PLOT_CSD:
         csd_files = list(dirpath_res.glob(f'{exp_name}_CSD*.png'))
         for fpath_old in csd_files:
             fpath_new = dirpath_res_sub / 'csd_figs' / (
                 f'{fpath_old.stem}_{postfix}{fpath_old.suffix}'
             )
-            fpath_old.rename(fpath_new)
+            move_if_present(fpath_old, fpath_new)
 
+    # Derived result and rate-dynamics data
+    outputs = []
     if NEED_RUN:
         res = {}
         res['timing'] = sim.timingData
@@ -411,6 +480,7 @@ def post_run(sim):
         fpath_res = dirpath_res_sub / 'results' / f'result_{postfix}.json'
         with open(fpath_res, 'w') as fid:
             json.dump(res, fid, indent=4)
+        outputs.append(relative_output(cfg, fpath_res))
 
         # Compute firing rate dynamics
         sim_result = prepare_sim_result(sim)
@@ -431,6 +501,7 @@ def post_run(sim):
         rvec_xr.attrs['pop_pre'] = str(cfg.pop_pre)
         fpath_rvec_xr = dirpath_res_sub / 'rvec_xr' / f'rvec_{postfix}.nc'
         rvec_xr.to_netcdf(fpath_rvec_xr)
+        outputs.append(relative_output(cfg, fpath_rvec_xr))
 
     if PLOT_RATE_DYNAMICS and NEED_RUN:
         colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
@@ -460,8 +531,11 @@ def post_run(sim):
             plt.savefig(dirpath_res_sub / 'rvec_figs' / fname_out,
                         bbox_inches='tight', dpi=300)
 
+    return outputs
+
 
 def final(sim):
+    """Run optional diagnostics after the simulation."""
     if not DIAG or not NEED_RUN:
         return
 

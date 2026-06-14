@@ -1,3 +1,4 @@
+import argparse
 import json
 import sys
 import warnings
@@ -23,30 +24,14 @@ for path in (DIR_REPO, DIR_EXTERNAL):
 
 from sim_data_analyzer.batch_xr import (
     collect_batch_json,
-    extract_batch_params_to_xr,
 )
+from workflow_utils import build_job_index, load_job_records, read_json
 
 
 # Experiment paths
 EXP_GROUP = 'batch_rxbkg_unconn_state1_mech1'
 EXP_NAME = 'net_inpsur_dw_var_seed_ibkg'
-EXP_NAME_SUB = (
-    'exp_dw_adj_L2_ee_2_nseed_5_ibkg_-0.1_0.1_10'
-    '_t_5.0_15.0_ictrl_wmult_0.25_ee_0.5'
-)
-
 DIRPATH_CFG = DIR_REPO / 'exp_configs' / EXP_GROUP / EXP_NAME
-DIRPATH_EXP = DIR_REPO / 'exp_results' / EXP_GROUP / EXP_NAME / EXP_NAME_SUB
-DIRPATH_OUT = DIR_REPO / 'dev_scratch' / 'artifacts' / EXP_NAME
-
-FPATH_PNG = DIRPATH_OUT / 'explore_results.png'
-FPATH_CSV = DIRPATH_OUT / 'ibkg_intersections.csv'
-FPATH_CACHE = DIRPATH_OUT / 'avg_rates.nc'
-
-CFG_PARAM_FIELDS = {
-    'seed_main': 'seed_main',
-    'ibkg_dw_adj': 'ibkg_dw_adj',
-}
 
 
 def _get_pop_names(dirpath_results):
@@ -57,22 +42,12 @@ def _get_pop_names(dirpath_results):
     return list(payload['avg_rates'])
 
 
-def collect_avg_rates_batch(dirpath_exp, cfg_param_fields, cache_path,
+def collect_avg_rates_batch(job_idx_xr, dirpath_results, cache_path,
                             chunks=None, lazy=True, load=False):
     """Collect avg_rates JSON fields into a batch xarray Dataset."""
-    dirpath_exp = Path(dirpath_exp)
-    dirpath_cfg = dirpath_exp / 'cfg'
-    dirpath_results = dirpath_exp / 'results'
+    dirpath_results = Path(dirpath_results)
     fpath_cache = Path(cache_path)
     open_kwargs = {} if fpath_cache.exists() else {'engine': 'scipy'}
-
-    # Build the job grid from saved cfg files
-    job_idx_xr = extract_batch_params_to_xr(
-        dirpath_cfg,
-        cfg_param_fields=cfg_param_fields,
-        fname_cfg_templ='cfg_*.json',
-        job_pos_in_fname=1,
-    )
 
     # Collect average rates from result JSON files
     pop_names = _get_pop_names(dirpath_results)
@@ -87,7 +62,7 @@ def collect_avg_rates_batch(dirpath_exp, cfg_param_fields, cache_path,
         load=load,
         chunks=chunks,
         open_kwargs=open_kwargs,
-        skip_missing=True,
+        skip_missing=False,
         overwrite=True,
         allow_cache_mismatch=1,
     )
@@ -165,9 +140,9 @@ def find_target_intersection(params, target_rate, x_min, x_max):
     return float(brentq(target_diff, x_min, x_max))
 
 
-def load_target_rates():
+def load_target_rates(dirpath_cfg=DIRPATH_CFG):
     """Load target population rates from the experiment CSV."""
-    df = pd.read_csv(DIRPATH_CFG / 'target_state_1.csv')
+    df = pd.read_csv(Path(dirpath_cfg) / 'target_state_1.csv')
     return df.set_index('pop_name')['target_rate'].to_dict()
 
 
@@ -244,15 +219,20 @@ def plot_fits(rates_xr, target_rates):
     return fig, table
 
 
-def main():
-    """Collect rates, fit curves, and save plot and intersection table."""
-    DIRPATH_OUT.mkdir(parents=True, exist_ok=True)
+def process_stage(dirpath_stage):
+    """Collect one workflow stage and save compensation-current fits."""
+    dirpath_stage = Path(dirpath_stage)
+    dirpath_processed = dirpath_stage / 'processed'
+    dirpath_processed.mkdir(parents=True, exist_ok=True)
+    stage_spec = read_json(dirpath_stage / 'meta' / 'stage_spec.json')
+    records = load_job_records(dirpath_stage)
+    job_idx_xr = build_job_index(records, stage_spec['batch_params'])
 
-    # Reproduce notebook data collection
+    # Collect detailed average rates using compact job records
     rates_xr = collect_avg_rates_batch(
-        dirpath_exp=DIRPATH_EXP,
-        cfg_param_fields=CFG_PARAM_FIELDS,
-        cache_path=FPATH_CACHE,
+        job_idx_xr=job_idx_xr,
+        dirpath_results=dirpath_stage / 'sim_results' / 'results',
+        cache_path=dirpath_processed / 'avg_rates.nc',
         lazy=False,
         load=True,
     )
@@ -260,13 +240,28 @@ def main():
 
     # Save fitted curves and r0 intersection summary
     fig, table = plot_fits(rates_xr, target_rates)
-    fig.savefig(FPATH_PNG, dpi=200, bbox_inches='tight')
+    fpath_png = dirpath_processed / 'fits.png'
+    fpath_csv = dirpath_processed / 'ibkg_intersections.csv'
+    fig.savefig(fpath_png, dpi=200, bbox_inches='tight')
     plt.close(fig)
-    table.to_csv(FPATH_CSV, index_label='pop')
+    table.to_csv(fpath_csv, index_label='pop')
 
-    print(f'Saved: {FPATH_PNG}')
-    print(f'Saved: {FPATH_CSV}')
+    print(f'Saved: {fpath_png}')
+    print(f'Saved: {fpath_csv}')
     print(table.to_string())
+    return [
+        'processed/avg_rates.nc',
+        'processed/ibkg_intersections.csv',
+        'processed/fits.png',
+    ]
+
+
+def main():
+    """Process a workflow DW stage from the command line."""
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--stage-dir', required=True)
+    args = parser.parse_args()
+    process_stage(args.stage_dir)
 
 
 if __name__ == '__main__':
