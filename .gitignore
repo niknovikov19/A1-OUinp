@@ -35,6 +35,7 @@ batchtools_csv/
 *.tar.gz
 OLD/
 exp_results/**/*.nc
+exp_results/workflows/
 !exp_results/single*/**/cfg/*
 exp_results/single*/**/rates/*
 !exp_results/single*/**/ir_avg/*

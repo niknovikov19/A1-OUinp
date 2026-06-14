@@ -5,18 +5,16 @@ from pathlib import Path
 import shlex
 import shutil
 
-import pandas as pd
-import xarray as xr
-
 from load_module import load_module
 from workflow_utils import (
+    collect_batchtools_artifacts,
     compare_resolved_params,
     expand_param_grid,
+    file_fingerprint,
     hash_data,
     merge_batch_params,
     poll_job_records,
     read_json,
-    sort_batchtools_files,
     validate_job_records,
     write_json_atomic,
 )
@@ -74,25 +72,53 @@ wait
     return search, LocalDispatcher, LocalSlurmSubmit
 
 
-def _source_hash(fpath):
-    """Hash a workflow configuration source file."""
-    return hashlib.sha256(Path(fpath).read_bytes()).hexdigest()
+def _get_workflow_source_hashes(dirpath_workflow):
+    """Hash all workflow Python sources in the configuration folder."""
+    return {
+        fpath.name: hashlib.sha256(fpath.read_bytes()).hexdigest()
+        for fpath in sorted(Path(dirpath_workflow).glob('*.py'))
+    }
 
 
-def _prepare_run(cfg_mod, fpath_cfg, run_id):
-    """Create or validate the immutable workflow run metadata."""
-    params = cfg_mod.get_workflow_params()
-    params['workflow_source_hash'] = _source_hash(fpath_cfg)
+def _validate_run_id(run_id):
+    """Validate one workflow result-directory name."""
+    if not isinstance(run_id, str) or not run_id.strip():
+        raise ValueError('Workflow run ID should be a non-empty string')
+    if run_id in {'.', '..'} or '/' in run_id or '\\' in run_id:
+        raise ValueError(
+            f'Workflow run ID should be one directory name: {run_id!r}'
+        )
+    return run_id
+
+
+def _resolve_run_id(cfg_mod, workflow_params, run_id=None):
+    """Resolve CLI, environment, or workflow-configured run ID."""
+    resolved = run_id
+    if resolved is None:
+        resolved = os.environ.get('A1_WORKFLOW_RUN_ID')
+    if resolved is None:
+        resolved = cfg_mod.get_run_id(workflow_params)
+    return _validate_run_id(resolved)
+
+
+def _prepare_run(cfg_mod, dirpath_workflow, run_id,
+                 workflow_params=None):
+    """Create or validate immutable workflow run metadata."""
+    params = workflow_params
+    if params is None:
+        params = cfg_mod.get_workflow_params()
+    params['workflow_source_hashes'] = _get_workflow_source_hashes(
+        dirpath_workflow
+    )
     workflow_name = params['workflow_name']
     dirpath_run = DIR_WORKFLOW_RESULTS / workflow_name / run_id
     dirpath_meta = dirpath_run / 'meta'
     fpath_resolved = dirpath_meta / 'resolved_params.json'
 
-    # Load existing metadata
+    # Prohibit changes in parameters or any workflow-local Python source
     if fpath_resolved.exists():
         saved = read_json(fpath_resolved)
         differences = compare_resolved_params(saved, params)
-        # Prohibit changes in either parameters or workflow code
         if differences:
             details = '\n'.join(
                 f"  {item['key']}: saved={item['saved']!r}, "
@@ -105,10 +131,12 @@ def _prepare_run(cfg_mod, fpath_cfg, run_id):
             )
         return dirpath_run, params
 
-    # Create metadata
-    dirpath_meta.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(fpath_cfg, dirpath_meta / 'workflow_cfg.py')
-    write_json_atomic(fpath_resolved, params)   # defined in workflow_cfg.py
+    # Snapshot the exact workflow implementation used by the run
+    dirpath_source = dirpath_meta / 'workflow_source'
+    dirpath_source.mkdir(parents=True, exist_ok=True)
+    for fpath in sorted(Path(dirpath_workflow).glob('*.py')):
+        shutil.copy2(fpath, dirpath_source / fpath.name)
+    write_json_atomic(fpath_resolved, params)
     write_json_atomic(dirpath_meta / 'state.json', {
         'status': 'initialized',
         'completed_iterations': [],
@@ -116,7 +144,7 @@ def _prepare_run(cfg_mod, fpath_cfg, run_id):
     return dirpath_run, params
 
 
-def _get_experiment_paths(experiment):
+def _resolve_experiment_cfg_paths(experiment):
     """Resolve experiment config paths and BatchTools label fields."""
     dirpath_exp = DIR_EXP_CONFIGS / experiment
     if '/' in experiment:
@@ -132,41 +160,48 @@ def _get_experiment_paths(experiment):
     }
 
 
-def _resolve_stage_spec(workflow_params, stage_name, iteration,
-                        run_id, wmat_multipliers, ibkg_corrections=None):
-    """Resolve one subordinate stage into a compact immutable specification."""
-    # workflow_params come from workflow_cfg.py
-    stage_cfg = workflow_params[f'{stage_name}_stage']
-    exp_paths = _get_experiment_paths(stage_cfg['experiment'])
+def _get_stage_configs(workflow_params):
+    """Validate and return ordered workflow stage configurations."""
+    stages = workflow_params['stages']
+    names = [stage['name'] for stage in stages]
+    if len(names) != len(set(names)):
+        raise ValueError(f'Workflow stage names should be unique: {names}')
+    return stages
+
+
+def _resolve_stage_spec(workflow_params, stage_cfg, iteration, run_id,
+                        dynamic_overrides):
+    """Resolve one stage into a compact immutable specification."""
+    exp_paths = _resolve_experiment_cfg_paths(stage_cfg['experiment'])
     batch_mod = load_module(exp_paths['batch_params'])
-    default_params = batch_mod.get_batch_params()   # from batch.py
-    params = merge_batch_params(
-        default_params,
-        stage_cfg.get('batch_param_overrides', {}),
+    default_params = batch_mod.get_batch_params()
+
+    # Apply static workflow settings followed by dynamic stage dependencies
+    batch_overrides = dict(stage_cfg.get('batch_param_overrides', {}))
+    batch_overrides.update(
+        dynamic_overrides.get('batch_param_overrides', {})
     )
-
-    # Merge workflow values with optional experiment-specific additions
-    # Overrides are defined by workflow_cfg.py -> get_workflow_params()
-    # Overrides are applied by exp_cfg.py -> apply_runtime_overrides()
+    params = merge_batch_params(default_params, batch_overrides)
     exp_overrides = dict(stage_cfg.get('experiment_overrides', {}))
-    exp_overrides['wmat_multipliers'] = wmat_multipliers
-    if ibkg_corrections is not None:
-        exp_overrides['ibkg_corrections'] = ibkg_corrections
-
+    exp_overrides.update(
+        dynamic_overrides.get('experiment_overrides', {})
+    )
     batch_run = dict(workflow_params['batch_run_defaults'])
     batch_run.update(stage_cfg.get('batch_run', {}))
+
     spec = {
         'workflow_name': workflow_params['workflow_name'],
         'run_id': run_id,
         'iteration': iteration,
-        'stage': stage_name,
+        'stage': stage_cfg['name'],
         'experiment': stage_cfg['experiment'],
-        'batch_params': params,   # from batch.py + stage overrides (workflow_cfg.py)
-        'batch_param_overrides': stage_cfg.get(
-            'batch_param_overrides',
-            {},
-        ),
-        'experiment_overrides': exp_overrides,   # from workflow_cfg.py, used in exp_cfg.py
+        'executor': stage_cfg.get('executor'),
+        'executor_params': stage_cfg.get('executor_params', {}),
+        'processor': stage_cfg['processor'],
+        'processor_params': stage_cfg.get('processor_params', {}),
+        'batch_params': params,
+        'batch_param_overrides': batch_overrides,
+        'experiment_overrides': exp_overrides,
         'retention': workflow_params['retention'],
         'batch_run': batch_run,
         'result_subdir': 'sim_results',
@@ -182,6 +217,7 @@ def _prepare_stage_dirs(dirpath_stage):
         'batchtools/scripts',
         'batchtools/logs',
         'batchtools/comm',
+        'batchtools/summaries',
         'job_meta',
         'sim_results',
         'processed',
@@ -226,7 +262,16 @@ def _write_stage_metadata(dirpath_stage, stage_spec):
     return fpath_spec
 
 
-def _stage_is_complete(dirpath_stage, stage_spec):
+def _load_stage_executor(stage_spec, dirpath_workflow):
+    """Load an optional workflow-local stage executor."""
+    executor_name = stage_spec.get('executor')
+    if executor_name is None:
+        return None
+    return load_module(Path(dirpath_workflow) / executor_name)
+
+
+def _stage_is_complete(dirpath_stage, stage_spec,
+                       dirpath_workflow=None):
     """Check the completion manifest and all compact job records."""
     fpath_complete = dirpath_stage / 'meta' / 'stage_complete.json'
     if not fpath_complete.exists():
@@ -242,17 +287,28 @@ def _stage_is_complete(dirpath_stage, stage_spec):
         list(stage_spec['batch_params']),
         stage_spec['stage_spec_hash'],
     )
-    return not missing
+    if missing:
+        return False
+
+    # Let workflow-local executors validate their external inputs
+    if stage_spec.get('executor') is not None:
+        if dirpath_workflow is None:
+            return False
+        executor = _load_stage_executor(
+            stage_spec,
+            dirpath_workflow,
+        )
+        return bool(executor.validate_stage(
+            dirpath_stage,
+            stage_spec,
+            **stage_spec.get('executor_params', {}),
+        ))
+    return True
 
 
-def _run_stage(dirpath_stage, stage_spec, exp_paths, workflow_params):
-    """Run, wait for, and organize one subordinate BatchTools batch."""
-    _prepare_stage_dirs(dirpath_stage)
-    fpath_runtime = _write_stage_metadata(dirpath_stage, stage_spec)
-    if _stage_is_complete(dirpath_stage, stage_spec):
-        print(f'Skipping complete stage: {dirpath_stage}', flush=True)
-        return
-
+def _run_batchtools_stage(dirpath_stage, stage_spec, exp_paths,
+                          workflow_params, fpath_runtime):
+    """Launch and complete one subordinate BatchTools batch."""
     expected = expand_param_grid(stage_spec['batch_params'])
     slurm_config = _build_slurm_config(
         stage_spec,
@@ -277,12 +333,13 @@ def _run_stage(dirpath_stage, stage_spec, exp_paths, workflow_params):
         DIR_REPO / workflow_params['ray_checkpoint_path']
     ).resolve()
     checkpoint_path.mkdir(parents=True, exist_ok=True)
+    fpath_root_summary = DIR_REPO / f'{exp_paths["name"]}.csv'
+    summary_before = file_fingerprint(fpath_root_summary)
 
     # Let output markers win over BatchTools communication failures
     search, dispatcher, submitter = _load_batchtools()
     search_error = None
     try:
-        # Run the batch
         search(
             dispatcher_constructor=dispatcher,
             submit_constructor=submitter,
@@ -301,38 +358,102 @@ def _run_stage(dirpath_stage, stage_spec, exp_paths, workflow_params):
             algorithm='variant_generator',
             remote_dir=DIR_REPO.as_posix(),
             advanced_logging=False,
-            attempt_restore=False
+            attempt_restore=False,
         )
     except Exception as exc:
         search_error = exc
         print(f'BatchTools returned an error: {exc!r}', flush=True)
 
-    # Wait for results
+    # Wait for durable job outputs before touching BatchTools artifacts
     records = poll_job_records(
         dirpath_stage,
         expected,
         list(stage_spec['batch_params']),
         stage_spec['stage_spec_hash'],
         workflow_params['wait_refresh_sec'],
-        workflow_params['wait_timeout_sec']
+        workflow_params['wait_timeout_sec'],
     )
-    summary_file = DIR_REPO / f'{exp_paths["name"]}.csv'
-    sort_batchtools_files(dirpath_stage, summary_file)
+    artifacts = collect_batchtools_artifacts(
+        dirpath_stage,
+        root_summary=fpath_root_summary,
+        root_summary_before=summary_before,
+    )
     write_json_atomic(dirpath_stage / 'meta' / 'stage_complete.json', {
         'status': 'complete',
         'stage_spec_hash': stage_spec['stage_spec_hash'],
         'job_count': len(records),
-        'batchtools_error': repr(search_error) if search_error else None
+        'batchtools_error': repr(search_error) if search_error else None,
+        'batchtools_attempt': artifacts['attempt'],
+        'batchtools_summaries': artifacts['summaries'],
     })
 
 
-def _load_ibkg_corrections(fpath_csv):
-    """Load required median background-current corrections."""
-    table = pd.read_csv(fpath_csv).set_index('pop')
-    if table['median_ibkg'].isna().any():
-        missing = table.index[table['median_ibkg'].isna()].tolist()
-        raise ValueError(f'Missing ibkg corrections for populations: {missing}')
-    return table['median_ibkg'].astype(float).to_dict()
+def _run_executor_stage(dirpath_stage, stage_spec, dirpath_workflow,
+                        workflow_params):
+    """Run and validate one workflow-local stage executor."""
+    executor = _load_stage_executor(stage_spec, dirpath_workflow)
+    executor_params = stage_spec.get('executor_params', {})
+    executor.run_stage(
+        dirpath_stage,
+        stage_spec,
+        **executor_params,
+    )
+
+    # Wait through the same durable job-record path as real batches
+    expected = expand_param_grid(stage_spec['batch_params'])
+    records = poll_job_records(
+        dirpath_stage,
+        expected,
+        list(stage_spec['batch_params']),
+        stage_spec['stage_spec_hash'],
+        workflow_params['wait_refresh_sec'],
+        workflow_params['wait_timeout_sec'],
+    )
+    if not executor.validate_stage(
+        dirpath_stage,
+        stage_spec,
+        **executor_params,
+    ):
+        raise RuntimeError(
+            f'Executor validation failed for stage {stage_spec["stage"]!r}'
+        )
+    write_json_atomic(dirpath_stage / 'meta' / 'stage_complete.json', {
+        'status': 'complete',
+        'stage_spec_hash': stage_spec['stage_spec_hash'],
+        'job_count': len(records),
+        'executor': stage_spec['executor'],
+    })
+
+
+def _run_stage(dirpath_stage, stage_spec, exp_paths, workflow_params,
+               dirpath_workflow):
+    """Run or resume one subordinate workflow stage."""
+    _prepare_stage_dirs(dirpath_stage)
+    fpath_runtime = _write_stage_metadata(dirpath_stage, stage_spec)
+    if _stage_is_complete(
+        dirpath_stage,
+        stage_spec,
+        dirpath_workflow,
+    ):
+        print(f'Skipping complete stage: {dirpath_stage}', flush=True)
+        return
+
+    # Dispatch local fixture executors without loading BatchTools
+    if stage_spec.get('executor') is not None:
+        _run_executor_stage(
+            dirpath_stage,
+            stage_spec,
+            dirpath_workflow,
+            workflow_params,
+        )
+        return
+    _run_batchtools_stage(
+        dirpath_stage,
+        stage_spec,
+        exp_paths,
+        workflow_params,
+        fpath_runtime,
+    )
 
 
 def _processing_is_complete(dirpath_stage, stage_hash):
@@ -350,55 +471,50 @@ def _processing_is_complete(dirpath_stage, stage_hash):
     )
 
 
-def _process_dw(dirpath_stage, exp_paths):
-    """Run or resume the DW result processor."""
-    stage_spec = read_json(dirpath_stage / 'meta' / 'stage_spec.json')
-    fpath_complete = dirpath_stage / 'meta' / 'processing_complete.json'
-    fpath_csv = dirpath_stage / 'processed' / 'ibkg_intersections.csv'
+def _process_stage(dirpath_stage, stage_spec, dirpath_workflow):
+    """Run or resume one workflow-local stage processor."""
+    fpath_processor = dirpath_workflow / stage_spec['processor']
+    processor = load_module(fpath_processor)
+    processor_params = stage_spec.get('processor_params', {})
     processing_complete = _processing_is_complete(
         dirpath_stage,
         stage_spec['stage_spec_hash'],
     )
     if processing_complete:
-        return _load_ibkg_corrections(fpath_csv)
+        return processor.load_stage_result(
+            dirpath_stage,
+            stage_spec,
+            **processor_params,
+        )
 
-    processor = load_module(exp_paths['dirpath'] / 'explore_results.py')
-    outputs = processor.process_stage(dirpath_stage)
-    write_json_atomic(fpath_complete, {
-        'status': 'complete',
-        'stage_spec_hash': stage_spec['stage_spec_hash'],
-        'outputs': outputs,
-    })
-    return _load_ibkg_corrections(fpath_csv)
-
-
-def _process_rr(dirpath_stage, exp_paths, harmonics):
-    """Run or resume the RR transfer processor."""
-    stage_spec = read_json(dirpath_stage / 'meta' / 'stage_spec.json')
-    fpath_complete = dirpath_stage / 'meta' / 'processing_complete.json'
-    fpath_transfer = dirpath_stage / 'processed' / 'transfer_matrix.nc'
-    processing_complete = _processing_is_complete(
+    result, outputs = processor.process_stage(
         dirpath_stage,
-        stage_spec['stage_spec_hash'],
+        stage_spec,
+        **processor_params,
     )
-    if processing_complete:
-        return xr.open_dataset(fpath_transfer).load()
-
-    processor = load_module(exp_paths['dirpath'] / 'process_results.py')
-    transfer_ds, outputs = processor.process_stage(
-        dirpath_stage,
-        harmonics=harmonics,
+    missing = [
+        relpath
+        for relpath in outputs
+        if not (dirpath_stage / relpath).is_file()
+    ]
+    if missing:
+        raise FileNotFoundError(
+            f'Processor declared missing outputs: {missing}'
+        )
+    write_json_atomic(
+        dirpath_stage / 'meta' / 'processing_complete.json',
+        {
+            'status': 'complete',
+            'stage_spec_hash': stage_spec['stage_spec_hash'],
+            'outputs': outputs,
+        },
     )
-    write_json_atomic(fpath_complete, {
-        'status': 'complete',
-        'stage_spec_hash': stage_spec['stage_spec_hash'],
-        'outputs': outputs,
-    })
-    return transfer_ds
+    return result
 
 
-def _load_history(dirpath_run):
-    """Load completed iteration summaries in numerical order."""
+def _load_history(dirpath_run, stage_configs,
+                  dirpath_workflow=None):
+    """Load consecutive completed iterations with valid stage outputs."""
     history = []
     dirpath_iterations = dirpath_run / 'iterations'
     for fpath in sorted(dirpath_iterations.glob('iter_*/meta/iteration.json')):
@@ -406,18 +522,25 @@ def _load_history(dirpath_run):
         if item.get('status') != 'complete':
             break
 
-        # Completed iterations remain resumable only while both stages validate
+        # Validate stages in the workflow-declared order
         dirpath_iter = fpath.parents[1]
         stages_valid = True
-        for stage_name in ('dw', 'rr'):
+        for stage_cfg in stage_configs:
+            stage_name = stage_cfg['name']
             dirpath_stage = dirpath_iter / stage_name
             fpath_spec = dirpath_stage / 'meta' / 'stage_spec.json'
             if not fpath_spec.exists():
                 stages_valid = False
                 break
             stage_spec = read_json(fpath_spec)
+            expected_hash = item['stage_spec_hashes'].get(stage_name)
             stages_valid = (
-                _stage_is_complete(dirpath_stage, stage_spec) and
+                stage_spec['stage_spec_hash'] == expected_hash and
+                _stage_is_complete(
+                    dirpath_stage,
+                    stage_spec,
+                    dirpath_workflow,
+                ) and
                 _processing_is_complete(
                     dirpath_stage,
                     stage_spec['stage_spec_hash'],
@@ -431,13 +554,37 @@ def _load_history(dirpath_run):
     return history
 
 
-def run_workflow(workflow_name, run_id):
+def run_workflow(workflow_name, run_id=None):
     """Run or resume one configured iterative workflow."""
-    # Prepare
-    fpath_cfg = DIR_WORKFLOW_CONFIGS / workflow_name / 'workflow_cfg.py'
-    cfg_mod = load_module(fpath_cfg)
-    dirpath_run, params = _prepare_run(cfg_mod, fpath_cfg, run_id)
-    history = _load_history(dirpath_run)
+    dirpath_workflow = DIR_WORKFLOW_CONFIGS / workflow_name
+    cfg_mod = load_module(dirpath_workflow / 'workflow_cfg.py')
+    workflow_params = cfg_mod.get_workflow_params()
+    run_id = _resolve_run_id(
+        cfg_mod,
+        workflow_params,
+        run_id=run_id,
+    )
+    dirpath_run = (
+        DIR_WORKFLOW_RESULTS /
+        workflow_params['workflow_name'] /
+        run_id
+    )
+    print(f'Workflow run ID: {run_id}', flush=True)
+    print(f'Workflow result path: {dirpath_run}', flush=True)
+
+    # Prepare immutable metadata after resolving the result directory
+    dirpath_run, params = _prepare_run(
+        cfg_mod,
+        dirpath_workflow,
+        run_id,
+        workflow_params=workflow_params,
+    )
+    stage_configs = _get_stage_configs(params)
+    history = _load_history(
+        dirpath_run,
+        stage_configs,
+        dirpath_workflow,
+    )
     if history and history[-1].get('stop_reason'):
         print(
             f"Workflow already stopped: {history[-1]['stop_reason']}",
@@ -445,12 +592,9 @@ def run_workflow(workflow_name, run_id):
         )
         return
 
-    wmat_multipliers = params['initial_wmat_multipliers']
+    iteration_context = params['initial_context']
     if history:
-        wmat_multipliers = history[-1].get(
-            'next_wmat_multipliers',
-            history[-1]['wmat_multipliers'],
-        )
+        iteration_context = history[-1]['next_context']
 
     # Continue at the first iteration without a completed summary
     for iteration in range(len(history), params['max_iterations']):
@@ -459,59 +603,61 @@ def run_workflow(workflow_name, run_id):
         )
         (dirpath_iter / 'meta').mkdir(parents=True, exist_ok=True)
         print(
-            f'Iteration {iteration}: weights={wmat_multipliers}',
+            f'Iteration {iteration}: context={iteration_context}',
             flush=True,
         )
+        stage_results = {}
+        stage_spec_hashes = {}
 
-        dw_spec, dw_paths = _resolve_stage_spec(
-            params,
-            'dw',
-            iteration,
-            run_id,
-            wmat_multipliers,
-        )
-        dirpath_dw = dirpath_iter / 'dw'
-        _run_stage(dirpath_dw, dw_spec, dw_paths, params)
-        ibkg_corrections = _process_dw(dirpath_dw, dw_paths)
+        # Resolve each stage after all prior stage results are available
+        for stage_cfg in stage_configs:
+            stage_name = stage_cfg['name']
+            dynamic_overrides = cfg_mod.get_stage_overrides(
+                stage_name,
+                iteration,
+                iteration_context,
+                stage_results,
+                history,
+            )
+            stage_spec, exp_paths = _resolve_stage_spec(
+                params,
+                stage_cfg,
+                iteration,
+                run_id,
+                dynamic_overrides,
+            )
+            dirpath_stage = dirpath_iter / stage_name
+            _run_stage(
+                dirpath_stage,
+                stage_spec,
+                exp_paths,
+                params,
+                dirpath_workflow,
+            )
+            stage_results[stage_name] = _process_stage(
+                dirpath_stage,
+                stage_spec,
+                dirpath_workflow,
+            )
+            stage_spec_hashes[stage_name] = stage_spec['stage_spec_hash']
 
-        rr_spec, rr_paths = _resolve_stage_spec(
-            params,
-            'rr',
+        # Delegate iteration science and continuation to the workflow config
+        outcome = cfg_mod.finish_iteration(
             iteration,
-            run_id,
-            wmat_multipliers,
-            ibkg_corrections=ibkg_corrections,
+            iteration_context,
+            stage_results,
+            history,
         )
-        dirpath_rr = dirpath_iter / 'rr'
-        _run_stage(dirpath_rr, rr_spec, rr_paths, params)
-        transfer_ds = _process_rr(
-            dirpath_rr,
-            rr_paths,
-            params['transfer_harmonics'],
-        )
-
-        # Delegate scientific weight selection to the workflow config
-        callback_history = history + [{
-            'iteration': iteration,
-            'wmat_multipliers': wmat_multipliers,
-            'ibkg_corrections': ibkg_corrections,
-        }]
-        update = cfg_mod.get_next_wmat(
-            iteration,
-            transfer_ds,
-            callback_history,
-        )
-        next_wmat = update.get('wmat_multipliers')
-        stop_reason = update.get('stop_reason')
+        next_context = outcome.get('next_context')
+        stop_reason = outcome.get('stop_reason')
         iteration_info = {
             'status': 'complete',
             'iteration': iteration,
-            'wmat_multipliers': wmat_multipliers,
-            'ibkg_corrections': ibkg_corrections,
-            'next_wmat_multipliers': next_wmat,
+            'context': iteration_context,
+            'stage_spec_hashes': stage_spec_hashes,
+            'result': outcome.get('result', {}),
+            'next_context': next_context,
             'stop_reason': stop_reason,
-            'dw_stage_spec_hash': dw_spec['stage_spec_hash'],
-            'rr_stage_spec_hash': rr_spec['stage_spec_hash'],
         }
         write_json_atomic(
             dirpath_iter / 'meta' / 'iteration.json',
@@ -529,9 +675,11 @@ def run_workflow(workflow_name, run_id):
         if stop_reason:
             print(f'Workflow stopped: {stop_reason}', flush=True)
             return
-        if next_wmat is None:
-            raise ValueError('get_next_wmat() returned no next weights')
-        wmat_multipliers = next_wmat
+        if next_context is None:
+            raise ValueError(
+                'finish_iteration() returned no next context or stop reason'
+            )
+        iteration_context = next_context
 
     write_json_atomic(dirpath_run / 'meta' / 'state.json', {
         'status': 'complete',
@@ -552,8 +700,7 @@ def main():
     )
     parser.add_argument(
         '--run-id',
-        default=os.environ.get('A1_WORKFLOW_RUN_ID'),
-        required=os.environ.get('A1_WORKFLOW_RUN_ID') is None,
+        default=None,
     )
     args = parser.parse_args()
     run_workflow(args.workflow, args.run_id)

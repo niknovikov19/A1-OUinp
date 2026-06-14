@@ -218,18 +218,51 @@ def build_job_index(records, param_grid):
     )
 
 
-def move_replace(fpath_old, fpath_new):
-    """Move a file while replacing an older destination."""
-    fpath_old = Path(fpath_old)
-    fpath_new = Path(fpath_new)
-    fpath_new.parent.mkdir(parents=True, exist_ok=True)
-    if fpath_new.exists():
-        fpath_new.unlink()
-    shutil.move(fpath_old, fpath_new)
+def file_fingerprint(fpath):
+    """Return a content fingerprint or None when a file is absent."""
+    fpath = Path(fpath)
+    if not fpath.is_file():
+        return None
+    return {
+        'size': fpath.stat().st_size,
+        'sha256': hashlib.sha256(fpath.read_bytes()).hexdigest(),
+    }
 
 
-def sort_batchtools_files(stage_dir, summary_file=None):
-    """Move loose BatchTools files into stage-owned directories."""
+def _get_next_attempt(stage_dir):
+    """Return the next BatchTools artifact attempt number."""
+    attempts = []
+    dirpath_batchtools = Path(stage_dir) / 'batchtools'
+    for fpath in dirpath_batchtools.glob('**/attempt_*'):
+        prefix = fpath.name.split('_', 2)[:2]
+        if len(prefix) != 2 or prefix[0] != 'attempt':
+            continue
+        try:
+            attempts.append(int(prefix[1]))
+        except ValueError:
+            continue
+    return max(attempts, default=-1) + 1
+
+
+def _archive_artifact(fpath, dirpath_out, attempt):
+    """Move one artifact to an attempt-specific destination."""
+    fpath = Path(fpath)
+    dirpath_out = Path(dirpath_out)
+    dirpath_out.mkdir(parents=True, exist_ok=True)
+    fpath_out = dirpath_out / f'attempt_{attempt:03d}_{fpath.name}'
+    collision = 1
+    while fpath_out.exists():
+        fpath_out = dirpath_out / (
+            f'attempt_{attempt:03d}_{collision:02d}_{fpath.name}'
+        )
+        collision += 1
+    shutil.move(fpath, fpath_out)
+    return fpath_out
+
+
+def collect_batchtools_artifacts(stage_dir, root_summary=None,
+                                 root_summary_before=None, print_fn=print):
+    """Archive one attempt's BatchTools files without overwriting."""
     stage_dir = Path(stage_dir)
     dirpath_batchtools = stage_dir / 'batchtools'
     categories = {
@@ -239,21 +272,58 @@ def sort_batchtools_files(stage_dir, summary_file=None):
         '.out': 'logs',
         '.sgl': 'comm',
     }
-    for dirname in set(categories.values()) | {'comm'}:
+    for dirname in set(categories.values()) | {'comm', 'summaries'}:
         (dirpath_batchtools / dirname).mkdir(parents=True, exist_ok=True)
+    attempt = _get_next_attempt(stage_dir)
+    collected = []
+    summaries = []
 
-    # Sort every loose stage file so the stage root contains directories only
+    # Preserve names and group every loose stage file by artifact type
     for fpath in list(stage_dir.iterdir()):
         if not fpath.is_file():
             continue
         if fpath.suffix == '.csv':
-            move_replace(fpath, dirpath_batchtools / 'summary.csv')
+            fpath_out = _archive_artifact(
+                fpath,
+                dirpath_batchtools / 'summaries',
+                attempt,
+            )
+            summaries.append(fpath_out.relative_to(stage_dir).as_posix())
             continue
         dirname = categories.get(fpath.suffix, 'comm')
-        move_replace(fpath, dirpath_batchtools / dirname / fpath.name)
+        fpath_out = _archive_artifact(
+            fpath,
+            dirpath_batchtools / dirname,
+            attempt,
+        )
+        collected.append(fpath_out.relative_to(stage_dir).as_posix())
 
-    if summary_file is not None and Path(summary_file).is_file():
-        move_replace(summary_file, dirpath_batchtools / 'summary.csv')
+    # Claim the repo-root summary only when this search created or changed it
+    if root_summary is not None:
+        root_summary = Path(root_summary)
+        root_summary_after = file_fingerprint(root_summary)
+        changed = (
+            root_summary_after is not None and
+            root_summary_after != root_summary_before
+        )
+        if changed:
+            fpath_out = _archive_artifact(
+                root_summary,
+                dirpath_batchtools / 'summaries',
+                attempt,
+            )
+            summaries.append(fpath_out.relative_to(stage_dir).as_posix())
+        elif root_summary_after is not None:
+            print_fn(
+                f'Leaving unchanged BatchTools summary in repo root: '
+                f'{root_summary}'
+            )
+
+    return {
+        'attempt': attempt,
+        'files': collected,
+        'summaries': summaries,
+    }
 
 
 def compare_resolved_params(saved, current):

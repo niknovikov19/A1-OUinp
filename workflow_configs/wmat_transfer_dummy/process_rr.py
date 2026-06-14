@@ -1,4 +1,3 @@
-import argparse
 from pathlib import Path
 import sys
 
@@ -7,7 +6,7 @@ import xarray as xr
 
 
 # Set import paths
-DIR_REPO = Path(__file__).resolve().parents[3]
+DIR_REPO = Path(__file__).resolve().parents[2]
 DIR_EXTERNAL = DIR_REPO / 'external'
 for path in (DIR_REPO, DIR_EXTERNAL):
     if str(path) not in sys.path:
@@ -15,7 +14,7 @@ for path in (DIR_REPO, DIR_EXTERNAL):
 
 from sim_data_analyzer.batch_xr import collect_batch_xr
 from sim_data_analyzer.xr_io import save_xr
-from workflow_utils import build_job_index, load_job_records, read_json
+from workflow_utils import build_job_index, load_job_records
 
 
 def fit_sinusoid_fixed_freq(rr, osc_f, osc_t0, harmonic=1):
@@ -53,7 +52,7 @@ def _fit_job_transfer(rates, osc_f, osc_amp, osc_t0, harmonics):
     baseline = np.full(len(pop_names), np.nan)
     z_in = -1j * float(osc_amp)
 
-    # Fit each response independently to keep failures local and explicit
+    # Fit each response independently
     for n_pop, pop in enumerate(pop_names):
         rr = rates.sel(pop=pop)
         for n_harmonic, harmonic in enumerate(harmonics):
@@ -96,7 +95,7 @@ def fit_transfer_dataset(rates_xr, harmonics):
     transfer = np.full(fit_shape, np.nan + 1j * np.nan)
     baseline = np.full(batch_shape + (len(pop_names),), np.nan)
 
-    # Iterate the small batch grid while retaining labeled output dimensions
+    # Iterate the batch grid while retaining labeled output dimensions
     for index in np.ndindex(batch_shape):
         selection = {
             dim: rates_xr.coords[dim].values[index[n]]
@@ -137,20 +136,26 @@ def fit_transfer_dataset(rates_xr, harmonics):
     )
 
 
-def process_stage(dirpath_stage, harmonics=(1, 2)):
+def load_stage_result(stage_dir, stage_spec, harmonics):
+    """Load the persisted transfer matrix for stage resume."""
+    fpath = Path(stage_dir) / 'processed' / 'transfer_matrix.nc'
+    with xr.open_dataset(fpath) as transfer_ds:
+        return transfer_ds.load()
+
+
+def process_stage(stage_dir, stage_spec, harmonics):
     """Collect rate dynamics and save canonical transfer artifacts."""
-    dirpath_stage = Path(dirpath_stage)
-    dirpath_processed = dirpath_stage / 'processed'
+    stage_dir = Path(stage_dir)
+    dirpath_processed = stage_dir / 'processed'
     dirpath_processed.mkdir(parents=True, exist_ok=True)
-    stage_spec = read_json(dirpath_stage / 'meta' / 'stage_spec.json')
-    records = load_job_records(dirpath_stage)
+    records = load_job_records(stage_dir)
     job_idx_xr = build_job_index(records, stage_spec['batch_params'])
 
     # Collect per-job rate vectors into one labeled batch array
     fpath_rates = dirpath_processed / 'combined_rates.nc'
     rates_xr = collect_batch_xr(
         job_idx_xr,
-        dirpath_stage / 'sim_results' / 'rvec_xr',
+        stage_dir / 'sim_results' / 'rvec_xr',
         fname_templ='rvec_{job:05d}_*.nc',
         data_type='dataarray',
         cache_path=fpath_rates,
@@ -176,16 +181,3 @@ def process_stage(dirpath_stage, harmonics=(1, 2)):
         'processed/transfer_matrix.csv',
     ]
     return transfer_ds, outputs
-
-
-def main():
-    """Process a workflow RR stage from the command line."""
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--stage-dir', required=True)
-    parser.add_argument('--harmonics', nargs='+', type=int, default=[1, 2])
-    args = parser.parse_args()
-    process_stage(args.stage_dir, harmonics=args.harmonics)
-
-
-if __name__ == '__main__':
-    main()

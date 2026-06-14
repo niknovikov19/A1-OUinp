@@ -3,24 +3,26 @@ from pathlib import Path
 from types import SimpleNamespace
 import tempfile
 import unittest
+from unittest.mock import patch
 
 import numpy as np
+import pandas as pd
 import xarray as xr
 
 import run_workflow
-from workflow_result_utils import (
-    organize_standard_outputs,
-)
+from workflow_result_utils import organize_standard_outputs
 from workflow_utils import (
+    collect_batchtools_artifacts,
+    file_fingerprint,
     make_job_record,
     merge_batch_params,
     poll_job_records,
-    sort_batchtools_files,
     write_json_atomic,
 )
 
 
 DIR_REPO = Path(__file__).resolve().parents[1]
+DIR_WORKFLOW = DIR_REPO / 'workflow_configs' / 'wmat_transfer'
 
 
 def load_module_unique(fpath, name):
@@ -68,7 +70,7 @@ class WorkflowUtilsTests(unittest.TestCase):
                 'workflow_name': 'test',
                 'run_id': 'run',
                 'iteration': 0,
-                'stage': 'dw',
+                'stage': 'alpha',
                 'stage_spec_hash': 'abc',
             }
             expected = [{'seed': 1}]
@@ -123,7 +125,7 @@ class WorkflowUtilsTests(unittest.TestCase):
                 )
 
 
-class WorkflowCleanupTests(unittest.TestCase):
+class WorkflowArtifactTests(unittest.TestCase):
     def test_workflow_outputs_are_sorted_or_removed(self):
         with tempfile.TemporaryDirectory() as tmp:
             dirpath_stage = Path(tmp)
@@ -144,8 +146,6 @@ class WorkflowCleanupTests(unittest.TestCase):
                 'experiment_00000_netParams.json': 'net',
                 'experiment_00000_params.json': 'params',
                 'experiment_00000_result.json': 'result',
-                'experiment_00000_extra.txt': 'extra',
-                'experiment_00000.sh': 'batchtools',
             }
             for name, value in files.items():
                 (dirpath_stage / name).write_text(value)
@@ -155,8 +155,6 @@ class WorkflowCleanupTests(unittest.TestCase):
                 'sim_results',
                 '00000',
             )
-            sort_batchtools_files(dirpath_stage)
-
             self.assertTrue(
                 (dirpath_result / 'cfg' / 'cfg_00000.json').is_file()
             )
@@ -166,19 +164,99 @@ class WorkflowCleanupTests(unittest.TestCase):
                     'result_last_00000.json'
                 ).is_file()
             )
-            self.assertTrue(
-                (
-                    dirpath_stage / 'batchtools' / 'comm' /
-                    'experiment_00000_extra.txt'
-                ).is_file()
-            )
             self.assertFalse((dirpath_stage / 'experiment_00000_data.pkl').exists())
             self.assertFalse((dirpath_stage / 'experiment_00000_netParams.json').exists())
             self.assertFalse((dirpath_stage / 'experiment_00000_params.json').exists())
+
+    def test_artifacts_are_attempt_safe_and_preserve_summary_names(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            dirpath = Path(tmp)
+            dirpath_stage = dirpath / 'stage'
+            dirpath_stage.mkdir()
+            fpath_root = dirpath / 'experiment.csv'
+
+            # Archive the first attempt
+            (dirpath_stage / 'experiment.sh').write_text('first')
+            (dirpath_stage / 'experiment.csv').write_text('local first')
+            fpath_root.write_text('root first')
+            first = collect_batchtools_artifacts(
+                dirpath_stage,
+                root_summary=fpath_root,
+                root_summary_before=None,
+            )
+            self.assertEqual(first['attempt'], 0)
+            self.assertFalse(fpath_root.exists())
             self.assertTrue(
                 (
                     dirpath_stage / 'batchtools' / 'scripts' /
-                    'experiment_00000.sh'
+                    'attempt_000_experiment.sh'
+                ).is_file()
+            )
+            self.assertTrue(
+                (
+                    dirpath_stage / 'batchtools' / 'summaries' /
+                    'attempt_000_experiment.csv'
+                ).is_file()
+            )
+            self.assertEqual(len(first['summaries']), 2)
+
+            # Archive a relaunch without overwriting the first attempt
+            (dirpath_stage / 'experiment.sh').write_text('second')
+            fpath_root.write_text('root second')
+            second = collect_batchtools_artifacts(
+                dirpath_stage,
+                root_summary=fpath_root,
+                root_summary_before=None,
+            )
+            self.assertEqual(second['attempt'], 1)
+            self.assertTrue(
+                (
+                    dirpath_stage / 'batchtools' / 'scripts' /
+                    'attempt_001_experiment.sh'
+                ).is_file()
+            )
+            self.assertEqual(len(second['summaries']), 1)
+
+    def test_unchanged_root_summary_is_not_claimed(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            dirpath = Path(tmp)
+            dirpath_stage = dirpath / 'stage'
+            dirpath_stage.mkdir()
+            fpath_root = dirpath / 'experiment.csv'
+            fpath_root.write_text('preexisting')
+            before = file_fingerprint(fpath_root)
+            messages = []
+
+            artifacts = collect_batchtools_artifacts(
+                dirpath_stage,
+                root_summary=fpath_root,
+                root_summary_before=before,
+                print_fn=messages.append,
+            )
+            self.assertTrue(fpath_root.is_file())
+            self.assertEqual(artifacts['summaries'], [])
+            self.assertIn('unchanged', messages[0].lower())
+
+    def test_changed_root_summary_is_claimed(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            dirpath = Path(tmp)
+            dirpath_stage = dirpath / 'stage'
+            dirpath_stage.mkdir()
+            fpath_root = dirpath / 'experiment.csv'
+            fpath_root.write_text('old')
+            before = file_fingerprint(fpath_root)
+            fpath_root.write_text('new')
+
+            artifacts = collect_batchtools_artifacts(
+                dirpath_stage,
+                root_summary=fpath_root,
+                root_summary_before=before,
+            )
+            self.assertFalse(fpath_root.exists())
+            self.assertEqual(len(artifacts['summaries']), 1)
+            self.assertTrue(
+                (
+                    dirpath_stage / artifacts['summaries'][0]
                 ).is_file()
             )
 
@@ -186,22 +264,12 @@ class WorkflowCleanupTests(unittest.TestCase):
 class WorkflowProcessingTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        dirpath_dw = (
-            DIR_REPO / 'exp_configs' /
-            'batch_rxbkg_unconn_state1_mech1' /
-            'net_inpsur_dw_var_seed_ibkg'
-        )
-        dirpath_rr = (
-            DIR_REPO / 'exp_configs' /
-            'batch_rxbkg_unconn_state1_mech1' /
-            'net_inpsur_rr_osc_var_seed_pre_f_amp'
-        )
         cls.dw = load_module_unique(
-            dirpath_dw / 'explore_results.py',
+            DIR_WORKFLOW / 'process_dw.py',
             'workflow_dw_processor_test',
         )
         cls.rr = load_module_unique(
-            dirpath_rr / 'process_results.py',
+            DIR_WORKFLOW / 'process_rr.py',
             'workflow_rr_processor_test',
         )
 
@@ -217,6 +285,21 @@ class WorkflowProcessingTests(unittest.TestCase):
             x_max=x.max(),
         )
         self.assertAlmostEqual(crossing, 0, places=4)
+
+    def test_missing_required_ibkg_population_fails(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            fpath = Path(tmp) / 'processed' / 'ibkg_intersections.csv'
+            fpath.parent.mkdir()
+            pd.DataFrame([
+                {'pop': 'IT2', 'median_ibkg': 0},
+            ]).to_csv(fpath, index=False)
+            with self.assertRaises(ValueError):
+                self.dw.load_stage_result(
+                    tmp,
+                    {},
+                    'unused.csv',
+                    required_pops=['IT2', 'PV2'],
+                )
 
     def test_synthetic_transfer_recovery(self):
         time = np.arange(0, 20, 0.005)
@@ -261,50 +344,432 @@ class WorkflowProcessingTests(unittest.TestCase):
         self.assertAlmostEqual(recovered.imag, transfer.imag, places=5)
         self.assertAlmostEqual(fitted['baseline_rate'].item(), 5, places=5)
 
+    def _make_rr_plot_rates(self):
+        """Create a compact labeled RR array for plotting tests."""
+        time = np.arange(0, 4, 0.01)
+        osc_f = 5
+        osc_amp = 15
+        osc_t0 = 2
+        pop_pre_values = ['IT2', 'PV2']
+        pop_values = ['IT2', 'PV2', 'IT2frz', 'PV2frz']
+        values = np.full(
+            (
+                1,
+                len(pop_pre_values),
+                1,
+                1,
+                len(pop_values),
+                len(time),
+            ),
+            5,
+            dtype=float,
+        )
+        mask = time >= osc_t0
+        phase = 2 * np.pi * osc_f * (time - osc_t0)
+
+        # Give every active output and driven input a recoverable sinusoid
+        for n_pre, pop_pre in enumerate(pop_pre_values):
+            for n_pop in range(2):
+                values[0, n_pre, 0, 0, n_pop, mask] += (
+                    (2 + n_pop) * np.sin(phase[mask]) +
+                    (1 + n_pre) * np.cos(phase[mask])
+                )
+            n_input = pop_values.index(f'{pop_pre}frz')
+            values[0, n_pre, 0, 0, n_input, mask] += (
+                osc_amp * np.sin(phase[mask])
+            )
+
+        return xr.DataArray(
+            values,
+            dims=[
+                'seed_main',
+                'pop_pre',
+                'osc_f',
+                'osc_amp',
+                'pop',
+                'time',
+            ],
+            coords={
+                'seed_main': [1000],
+                'pop_pre': pop_pre_values,
+                'osc_f': [osc_f],
+                'osc_amp': [osc_amp],
+                'pop': pop_values,
+                'time': time,
+            },
+            attrs={'OSC_T0': 2000},
+        )
+
+    def test_sinusoid_evaluation_reconstructs_fit(self):
+        time = np.arange(0, 3, 0.005)
+        z_out = 2 + 3j
+        offset = 7
+        values = self.rr.evaluate_fitted_sinusoid(
+            time,
+            z_out,
+            offset,
+            osc_f=5,
+            osc_t0=1,
+        )
+        rr = xr.DataArray(values, coords={'time': time}, dims=['time'])
+        fitted, fitted_offset = self.rr.fit_sinusoid_fixed_freq(
+            rr,
+            osc_f=5,
+            osc_t0=1,
+        )
+        self.assertAlmostEqual(fitted.real, z_out.real, places=5)
+        self.assertAlmostEqual(fitted.imag, z_out.imag, places=5)
+        self.assertAlmostEqual(fitted_offset, offset, places=5)
+
+    def test_psd_uses_only_post_oscillation_interval(self):
+        time = np.arange(0, 4, 0.002)
+        values = np.sin(2 * np.pi * 20 * time)
+        mask = time >= 2
+        values[mask] = np.sin(2 * np.pi * 5 * time[mask])
+        rr = xr.DataArray(values, coords={'time': time}, dims=['time'])
+        freq, power = self.rr.calc_welch_psd(
+            rr,
+            osc_t0=2,
+            window_sec=1,
+            fmax=30,
+        )
+        self.assertAlmostEqual(freq[np.argmax(power)], 5, places=5)
+
+    def test_optional_rr_plots_are_disabled_by_default(self):
+        rates = self._make_rr_plot_rates()
+        transfer_ds = self.rr.fit_transfer_dataset(rates, [1, 2])
+        with tempfile.TemporaryDirectory() as tmp:
+            outputs = self.rr._create_diagnostic_plots(
+                rates,
+                transfer_ds,
+                Path(tmp),
+                {
+                    'iteration': 0,
+                    'experiment_overrides': {},
+                },
+                False,
+                False,
+                False,
+                1,
+                50,
+                1,
+                50,
+            )
+            self.assertEqual(outputs, [])
+            self.assertFalse((Path(tmp) / 'processed').exists())
+
+    def test_rr_diagnostic_plot_grouping_and_outputs(self):
+        rates = self._make_rr_plot_rates()
+        transfer_ds = self.rr.fit_transfer_dataset(rates, [1, 2])
+        stage_spec = {
+            'iteration': 1,
+            'experiment_overrides': {
+                'wmat_multipliers': [
+                    {'pre': 'IT2', 'post': 'IT2', 'mult': 3},
+                ],
+            },
+        }
+        setup_counts = []
+        setup_axes = self.rr._setup_axes
+
+        # Capture subplot counts while preserving real plot generation
+        def capture_setup(nplots, *args, **kwargs):
+            setup_counts.append(nplots)
+            return setup_axes(nplots, *args, **kwargs)
+
+        with tempfile.TemporaryDirectory() as tmp:
+            with patch.object(
+                self.rr,
+                '_setup_axes',
+                side_effect=capture_setup,
+            ):
+                outputs = self.rr._create_diagnostic_plots(
+                    rates,
+                    transfer_ds,
+                    Path(tmp),
+                    stage_spec,
+                    True,
+                    True,
+                    True,
+                    1,
+                    30,
+                    1,
+                    50,
+                )
+
+            # Two jobs, one matrix group, and one PSD group are expected
+            self.assertEqual(len(outputs), 4)
+            self.assertEqual(setup_counts, [3, 3, 2])
+            for relpath in outputs:
+                self.assertTrue((Path(tmp) / relpath).is_file())
+            self.assertIn(
+                'Iteration 1; IT2->IT2 x3',
+                self.rr._get_weight_title(stage_spec),
+            )
+
+    def test_transfer_plot_matrix_orientation(self):
+        rates = self._make_rr_plot_rates()
+        transfer_ds = self.rr.fit_transfer_dataset(rates, [1, 2])
+        magnitude, phase = self.rr._select_transfer_matrix(
+            transfer_ds,
+            {
+                'seed_main': 1000,
+                'osc_f': 5,
+                'osc_amp': 15,
+            },
+            harmonic=1,
+        )
+        self.assertEqual(magnitude.dims, ('pop_post', 'pop_pre'))
+        self.assertEqual(phase.dims, ('pop_post', 'pop_pre'))
+        self.assertEqual(
+            list(magnitude.coords['pop_pre'].values),
+            ['IT2', 'PV2'],
+        )
+        self.assertEqual(
+            list(magnitude.coords['pop_post'].values),
+            ['IT2', 'PV2'],
+        )
+
+    def test_processor_uses_load_result_on_resume(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            dirpath = Path(tmp)
+            dirpath_workflow = dirpath / 'workflow'
+            dirpath_stage = dirpath / 'stage'
+            dirpath_workflow.mkdir()
+            (dirpath_stage / 'processed').mkdir(parents=True)
+            processor_source = """
+from pathlib import Path
+
+
+def process_stage(stage_dir, stage_spec):
+    count_path = Path(stage_dir) / 'processed' / 'count.txt'
+    count = int(count_path.read_text()) + 1 if count_path.exists() else 1
+    count_path.write_text(str(count))
+    output = Path(stage_dir) / 'processed' / 'value.txt'
+    output.write_text(f'processed-{count}')
+    return output.read_text(), ['processed/value.txt']
+
+
+def load_stage_result(stage_dir, stage_spec):
+    output = Path(stage_dir) / 'processed' / 'value.txt'
+    return f'loaded-{output.read_text()}'
+"""
+            (dirpath_workflow / 'processor.py').write_text(processor_source)
+            stage_spec = {
+                'processor': 'processor.py',
+                'processor_params': {},
+                'stage_spec_hash': 'abc',
+            }
+
+            first = run_workflow._process_stage(
+                dirpath_stage,
+                stage_spec,
+                dirpath_workflow,
+            )
+            second = run_workflow._process_stage(
+                dirpath_stage,
+                stage_spec,
+                dirpath_workflow,
+            )
+            self.assertEqual(first, 'processed-1')
+            self.assertEqual(second, 'loaded-processed-1')
+
+            # Missing declared output invalidates the processing manifest
+            (dirpath_stage / 'processed' / 'value.txt').unlink()
+            third = run_workflow._process_stage(
+                dirpath_stage,
+                stage_spec,
+                dirpath_workflow,
+            )
+            self.assertEqual(third, 'processed-2')
+
+
+class WorkflowConfigTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.cfg = load_module_unique(
+            DIR_WORKFLOW / 'workflow_cfg.py',
+            'workflow_cfg_test',
+        )
+
+    def test_stage_order_accepts_arbitrary_names(self):
+        stages = [
+            {'name': 'alpha'},
+            {'name': 'beta'},
+            {'name': 'gamma'},
+        ]
+        resolved = run_workflow._get_stage_configs({'stages': stages})
+        self.assertEqual(
+            [stage['name'] for stage in resolved],
+            ['alpha', 'beta', 'gamma'],
+        )
+
+    def test_default_run_id_uses_iterations_and_initial_weights(self):
+        params = self.cfg.get_workflow_params()
+        self.assertEqual(
+            self.cfg.get_run_id(params),
+            'exp_wmat_transfer_niter_1_w_IT2_IT2_2',
+        )
+
+        # Scientific naming parameters should select another result directory
+        params['max_iterations'] = 3
+        params['initial_context']['wmat_multipliers'][0]['mult'] = 4
+        self.assertEqual(
+            self.cfg.get_run_id(params),
+            'exp_wmat_transfer_niter_3_w_IT2_IT2_4',
+        )
+
+    def test_dynamic_rr_overrides_use_dw_result(self):
+        context = {
+            'wmat_multipliers': [
+                {'pre': 'IT2', 'post': 'IT2', 'mult': 2},
+            ],
+        }
+        corrections = {'IT2': -0.01}
+        overrides = self.cfg.get_stage_overrides(
+            'rr',
+            0,
+            context,
+            {'dw': corrections},
+            [],
+        )
+        self.assertEqual(
+            overrides['experiment_overrides']['ibkg_corrections'],
+            corrections,
+        )
+        self.assertEqual(
+            overrides['experiment_overrides']['wmat_multipliers'],
+            context['wmat_multipliers'],
+        )
+
+    def test_dynamic_batch_and_experiment_overrides_are_merged(self):
+        params = self.cfg.get_workflow_params()
+        stage_cfg = params['stages'][0]
+        dynamic = {
+            'batch_param_overrides': {
+                'seed_main': [42],
+            },
+            'experiment_overrides': {
+                'wmat_multipliers': [
+                    {'pre': 'IT2', 'post': 'IT2', 'mult': 3},
+                ],
+            },
+        }
+        spec, _ = run_workflow._resolve_stage_spec(
+            params,
+            stage_cfg,
+            0,
+            'test',
+            dynamic,
+        )
+        self.assertEqual(spec['batch_params']['seed_main'], [42])
+        self.assertEqual(
+            spec['experiment_overrides']['wmat_multipliers'][0]['mult'],
+            3,
+        )
+
 
 class WorkflowResumeTests(unittest.TestCase):
+    def _write_complete_stage(self, dirpath_stage, stage_name, stage_hash):
+        """Write one minimal valid batch and processing stage."""
+        output = dirpath_stage / 'sim_results' / 'result.json'
+        output.parent.mkdir(parents=True)
+        output.write_text('{}')
+        processed = dirpath_stage / 'processed' / 'result.json'
+        processed.parent.mkdir(parents=True)
+        processed.write_text('{}')
+        record = make_job_record(
+            {
+                'workflow_name': 'test',
+                'run_id': 'run',
+                'iteration': 0,
+                'stage': stage_name,
+                'stage_spec_hash': stage_hash,
+            },
+            'experiment_00000',
+            0,
+            {'seed': 1},
+            ['sim_results/result.json'],
+        )
+        write_json_atomic(
+            dirpath_stage / 'job_meta' / 'experiment_00000.json',
+            record,
+        )
+        stage_spec = {
+            'stage': stage_name,
+            'batch_params': {'seed': [1]},
+            'stage_spec_hash': stage_hash,
+        }
+        write_json_atomic(
+            dirpath_stage / 'meta' / 'stage_spec.json',
+            stage_spec,
+        )
+        write_json_atomic(
+            dirpath_stage / 'meta' / 'stage_complete.json',
+            {'stage_spec_hash': stage_hash},
+        )
+        write_json_atomic(
+            dirpath_stage / 'meta' / 'processing_complete.json',
+            {
+                'stage_spec_hash': stage_hash,
+                'outputs': ['processed/result.json'],
+            },
+        )
+        return stage_spec
+
     def test_stage_resume_requires_outputs(self):
         with tempfile.TemporaryDirectory() as tmp:
             dirpath_stage = Path(tmp)
-            spec = {
-                'batch_params': {'seed': [1]},
-                'stage_spec_hash': 'abc',
-            }
-            output = dirpath_stage / 'sim_results' / 'result.json'
-            output.parent.mkdir(parents=True)
-            output.write_text('{}')
-            record = make_job_record(
-                {
-                    'workflow_name': 'test',
-                    'run_id': 'run',
-                    'iteration': 0,
-                    'stage': 'dw',
-                    'stage_spec_hash': 'abc',
-                },
-                'experiment_00000',
-                0,
-                {'seed': 1},
-                ['sim_results/result.json'],
+            spec = self._write_complete_stage(
+                dirpath_stage,
+                'alpha',
+                'abc',
             )
-            write_json_atomic(
-                dirpath_stage / 'job_meta' / 'experiment_00000.json',
-                record,
+            self.assertTrue(
+                run_workflow._stage_is_complete(dirpath_stage, spec)
             )
-            write_json_atomic(
-                dirpath_stage / 'meta' / 'stage_complete.json',
-                {'stage_spec_hash': 'abc'},
+            (dirpath_stage / 'sim_results' / 'result.json').unlink()
+            self.assertFalse(
+                run_workflow._stage_is_complete(dirpath_stage, spec)
             )
-            self.assertTrue(run_workflow._stage_is_complete(dirpath_stage, spec))
-            output.unlink()
-            self.assertFalse(run_workflow._stage_is_complete(dirpath_stage, spec))
 
-    def test_run_id_mismatch_is_refused(self):
+    def test_history_uses_declared_stage_names(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            dirpath_run = Path(tmp)
+            dirpath_iter = dirpath_run / 'iterations' / 'iter_000'
+            hashes = {'alpha': 'aaa', 'beta': 'bbb'}
+            for name, stage_hash in hashes.items():
+                self._write_complete_stage(
+                    dirpath_iter / name,
+                    name,
+                    stage_hash,
+                )
+            write_json_atomic(
+                dirpath_iter / 'meta' / 'iteration.json',
+                {
+                    'status': 'complete',
+                    'iteration': 0,
+                    'stage_spec_hashes': hashes,
+                    'context': {},
+                    'result': {},
+                    'next_context': {},
+                    'stop_reason': None,
+                },
+            )
+            history = run_workflow._load_history(
+                dirpath_run,
+                [{'name': 'alpha'}, {'name': 'beta'}],
+            )
+            self.assertEqual(len(history), 1)
+
+    def test_run_id_parameter_mismatch_is_refused(self):
         with tempfile.TemporaryDirectory() as tmp:
             old_results = run_workflow.DIR_WORKFLOW_RESULTS
-            run_workflow.DIR_WORKFLOW_RESULTS = Path(tmp)
+            run_workflow.DIR_WORKFLOW_RESULTS = Path(tmp) / 'results'
             try:
-                fpath_cfg = Path(tmp) / 'workflow_cfg.py'
-                fpath_cfg.write_text('VALUE = 1\n')
+                dirpath_cfg = Path(tmp) / 'workflow'
+                dirpath_cfg.mkdir()
+                (dirpath_cfg / 'workflow_cfg.py').write_text('VALUE = 1\n')
                 cfg_first = SimpleNamespace(
                     get_workflow_params=lambda: {
                         'workflow_name': 'test',
@@ -313,7 +778,7 @@ class WorkflowResumeTests(unittest.TestCase):
                 )
                 run_workflow._prepare_run(
                     cfg_first,
-                    fpath_cfg,
+                    dirpath_cfg,
                     'same-id',
                 )
                 cfg_changed = SimpleNamespace(
@@ -325,31 +790,140 @@ class WorkflowResumeTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     run_workflow._prepare_run(
                         cfg_changed,
-                        fpath_cfg,
+                        dirpath_cfg,
                         'same-id',
                     )
             finally:
                 run_workflow.DIR_WORKFLOW_RESULTS = old_results
 
-    def test_run_id_source_change_is_refused(self):
+    def test_generated_run_id_collision_is_refused(self):
         with tempfile.TemporaryDirectory() as tmp:
             old_results = run_workflow.DIR_WORKFLOW_RESULTS
-            run_workflow.DIR_WORKFLOW_RESULTS = Path(tmp)
+            run_workflow.DIR_WORKFLOW_RESULTS = Path(tmp) / 'results'
             try:
-                fpath_cfg = Path(tmp) / 'workflow_cfg.py'
-                fpath_cfg.write_text('VALUE = 1\n')
+                dirpath_cfg = Path(tmp) / 'workflow'
+                dirpath_cfg.mkdir()
+                (dirpath_cfg / 'workflow_cfg.py').write_text('VALUE = 1\n')
+                cfg_first = SimpleNamespace(
+                    get_run_id=lambda params: 'generated',
+                    get_workflow_params=lambda: {
+                        'workflow_name': 'test',
+                        'value': 1,
+                    },
+                )
+                params_first = cfg_first.get_workflow_params()
+                run_id = run_workflow._resolve_run_id(
+                    cfg_first,
+                    params_first,
+                )
+                run_workflow._prepare_run(
+                    cfg_first,
+                    dirpath_cfg,
+                    run_id,
+                    workflow_params=params_first,
+                )
+
+                # The generated name does not bypass immutable run metadata
+                cfg_changed = SimpleNamespace(
+                    get_run_id=lambda params: 'generated',
+                    get_workflow_params=lambda: {
+                        'workflow_name': 'test',
+                        'value': 2,
+                    },
+                )
+                params_changed = cfg_changed.get_workflow_params()
+                with self.assertRaises(ValueError):
+                    run_workflow._prepare_run(
+                        cfg_changed,
+                        dirpath_cfg,
+                        cfg_changed.get_run_id(params_changed),
+                        workflow_params=params_changed,
+                    )
+            finally:
+                run_workflow.DIR_WORKFLOW_RESULTS = old_results
+
+    def test_any_workflow_source_change_is_refused(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            old_results = run_workflow.DIR_WORKFLOW_RESULTS
+            run_workflow.DIR_WORKFLOW_RESULTS = Path(tmp) / 'results'
+            try:
+                dirpath_cfg = Path(tmp) / 'workflow'
+                dirpath_cfg.mkdir()
+                (dirpath_cfg / 'workflow_cfg.py').write_text('VALUE = 1\n')
+                fpath_processor = dirpath_cfg / 'processor.py'
+                fpath_processor.write_text('VALUE = 1\n')
                 cfg = SimpleNamespace(
                     get_workflow_params=lambda: {
                         'workflow_name': 'test',
                         'value': 1,
                     },
                 )
-                run_workflow._prepare_run(cfg, fpath_cfg, 'same-id')
-                fpath_cfg.write_text('VALUE = 2\n')
+                dirpath_run, _ = run_workflow._prepare_run(
+                    cfg,
+                    dirpath_cfg,
+                    'same-id',
+                )
+                self.assertTrue(
+                    (
+                        dirpath_run / 'meta' / 'workflow_source' /
+                        'processor.py'
+                    ).is_file()
+                )
+
+                fpath_processor.write_text('VALUE = 2\n')
                 with self.assertRaises(ValueError):
-                    run_workflow._prepare_run(cfg, fpath_cfg, 'same-id')
+                    run_workflow._prepare_run(
+                        cfg,
+                        dirpath_cfg,
+                        'same-id',
+                    )
             finally:
                 run_workflow.DIR_WORKFLOW_RESULTS = old_results
+
+
+class WorkflowRunIdTests(unittest.TestCase):
+    def setUp(self):
+        self.cfg = SimpleNamespace(
+            get_run_id=lambda params: 'configured-name',
+        )
+        self.params = {'workflow_name': 'test'}
+
+    def test_configured_default_is_used(self):
+        with patch.dict('os.environ', {}, clear=True):
+            run_id = run_workflow._resolve_run_id(
+                self.cfg,
+                self.params,
+            )
+        self.assertEqual(run_id, 'configured-name')
+
+    def test_explicit_and_environment_precedence(self):
+        with patch.dict(
+            'os.environ',
+            {'A1_WORKFLOW_RUN_ID': 'environment-name'},
+            clear=True,
+        ):
+            self.assertEqual(
+                run_workflow._resolve_run_id(
+                    self.cfg,
+                    self.params,
+                ),
+                'environment-name',
+            )
+            self.assertEqual(
+                run_workflow._resolve_run_id(
+                    self.cfg,
+                    self.params,
+                    run_id='explicit-name',
+                ),
+                'explicit-name',
+            )
+
+    def test_invalid_run_ids_are_rejected(self):
+        invalid = ['', '   ', '.', '..', 'parent/child', r'parent\child']
+        for run_id in invalid:
+            with self.subTest(run_id=run_id):
+                with self.assertRaises(ValueError):
+                    run_workflow._validate_run_id(run_id)
 
 
 if __name__ == '__main__':
