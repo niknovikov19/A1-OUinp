@@ -138,6 +138,25 @@ def apply_runtime_overrides(cfg, overrides):
         setattr(cfg, name, value)
 
 
+def _get_single_pop_cond(conds):
+    """Return one pop name from scalar or singleton-list conditions."""
+    pop_name = conds.get('pop', None)
+    if isinstance(pop_name, (list, tuple)):
+        if len(pop_name) != 1:
+            return None
+        return pop_name[0]
+    return pop_name
+
+
+def _get_conn_pop_pair(conn):
+    """Return one exact pre/post pop pair or None for broad rules."""
+    pop_pre = _get_single_pop_cond(conn['preConds'])
+    pop_post = _get_single_pop_cond(conn['postConds'])
+    if (pop_pre is None) or (pop_post is None):
+        return None
+    return (pop_pre, pop_post)
+
+
 def gen_exp_name_sub(cfg):
     """Generate the result subfolder name."""
     if hasattr(cfg, 'workflow_result_subdir'):
@@ -366,9 +385,7 @@ def modify_net_params(cfg, params):
 
     matched_pairs = set()
     for conn in params.connParams.values():
-        pop_pre = conn['preConds'].get('pop', None)
-        pop_post = conn['postConds'].get('pop', None)
-        pair = (pop_pre, pop_post)
+        pair = _get_conn_pop_pair(conn)
         if pair not in wmat_multipliers:
             continue
         conn['weight'] *= wmat_multipliers[pair]

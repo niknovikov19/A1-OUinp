@@ -6,6 +6,9 @@ from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
+import numpy as np
+import xarray as xr
+
 import run_workflow
 from workflow_utils import load_job_records, read_json
 
@@ -14,6 +17,10 @@ DIR_REPO = Path(__file__).resolve().parents[1]
 DIR_DUMMY = DIR_REPO / 'workflow_configs' / 'wmat_transfer_dummy'
 DIR_WSWEEP = (
     DIR_REPO / 'workflow_configs' / 'wmat_transfer_dummy_wsweep'
+)
+DIR_CONNECTED_WSWEEP = (
+    DIR_REPO / 'workflow_configs' /
+    'wmat_transfer_dummy_connected_wsweep'
 )
 
 
@@ -398,6 +405,175 @@ class DummyWeightSweepConfigTests(unittest.TestCase):
         params = self.cfg.get_workflow_params()
         run_id = self.cfg.get_run_id(params)
         self.assertIn('wmat_transfer_dummy_wsweep_niter_3', run_id)
+
+
+class DummyConnectedWeightSweepTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.cfg = load_module_unique(
+            DIR_CONNECTED_WSWEEP / 'workflow_cfg.py',
+            'workflow_dummy_connected_wsweep_cfg_test',
+        )
+        cls.processor = load_module_unique(
+            DIR_CONNECTED_WSWEEP / 'process_connected_psd.py',
+            'workflow_dummy_connected_wsweep_processor_test',
+        )
+
+    def _make_rates(self):
+        """Create two-seed rates with one known spectral peak."""
+        time = np.arange(2, 3, 0.005)
+        values = np.zeros((2, 5, len(time)))
+        for n_seed in range(2):
+            for n_pop in range(5):
+                values[n_seed, n_pop] = (
+                    5 +
+                    (n_pop + 1) *
+                    np.sin(2 * np.pi * 5 * time)
+                )
+        return xr.DataArray(
+            values,
+            dims=['seed_main', 'pop', 'time'],
+            coords={
+                'seed_main': [1000, 1001],
+                'pop': ['IT2', 'PV2', 'SOM2', 'VIP2', 'NGF2'],
+                'time': time,
+            },
+        )
+
+    def test_workflow_files_are_physical_and_stages_are_ordered(self):
+        fnames = [
+            'workflow_cfg.py',
+            'link_existing_results.py',
+            'process_dw.py',
+            'process_connected_psd.py',
+        ]
+        for fname in fnames:
+            with self.subTest(fname=fname):
+                fpath = DIR_CONNECTED_WSWEEP / fname
+                self.assertTrue(fpath.is_file())
+                self.assertFalse(fpath.is_symlink())
+
+        params = self.cfg.get_workflow_params()
+        self.assertEqual(
+            [stage['name'] for stage in params['stages']],
+            ['dw', 'connected'],
+        )
+        self.assertEqual(
+            params['stages'][1]['batch_param_overrides']['seed_main'],
+            [1000, 1001],
+        )
+
+    def test_weight_context_and_connected_overrides(self):
+        params = self.cfg.get_workflow_params()
+        context = params['initial_context']
+        current_values = []
+        next_values = []
+
+        # Advance the scientific context using fake persisted stage results
+        for iteration in range(params['max_iterations']):
+            current_values.append(
+                context['wmat_multipliers'][0]['mult']
+            )
+            overrides = self.cfg.get_stage_overrides(
+                'connected',
+                iteration,
+                context,
+                {'dw': {'IT2': -0.01}},
+                [],
+            )
+            self.assertNotIn(
+                'ibkg_corrections',
+                overrides['experiment_overrides'],
+            )
+            outcome = self.cfg.finish_iteration(
+                iteration,
+                context,
+                {
+                    'dw': {'IT2': -0.01},
+                    'connected': SimpleNamespace(
+                        sizes={'seed_main': 2, 'pop': 5, 'freq': 51},
+                    ),
+                },
+                [],
+            )
+            next_values.append(
+                outcome['next_context'][
+                    'wmat_multipliers'
+                ][0]['mult']
+            )
+            context = outcome['next_context']
+
+        self.assertEqual(current_values, [2, 3, 4.5])
+        self.assertEqual(next_values, [3, 4.5, 6.75])
+
+    def test_run_id_describes_connected_fixture(self):
+        run_id = self.cfg.get_run_id(
+            self.cfg.get_workflow_params()
+        )
+        self.assertIn('connected_wsweep_niter_3', run_id)
+        self.assertIn('L2_ee_fade_nseed_2_t_2_3', run_id)
+
+    def test_analyzer_psd_recovery_and_plot_grouping(self):
+        rates = self._make_rates()
+        psd = self.processor.calc_xr_welch(
+            rates,
+            win_len=1,
+            win_overlap=0.5,
+            fmin=0,
+            fmax=50,
+            average='median',
+            compute=True,
+        )
+        peak_freq = psd.sel(
+            seed_main=1000,
+            pop='IT2',
+        ).idxmax('freq').item()
+        self.assertEqual(psd.dims, ('seed_main', 'pop', 'freq'))
+        self.assertAlmostEqual(peak_freq, 5)
+
+        stage_spec = {
+            'iteration': 2,
+            'experiment_overrides': {
+                'wmat_multipliers': [
+                    {'pre': 'IT2', 'post': 'IT2', 'mult': 4.5},
+                ],
+            },
+        }
+        with tempfile.TemporaryDirectory() as tmp:
+            outputs = self.processor._plot_psd_batch(
+                psd,
+                Path(tmp),
+                stage_spec,
+                dpi=50,
+            )
+            self.assertEqual(len(outputs), 2)
+            self.assertEqual(
+                sorted(Path(path).name for path in outputs),
+                ['psd_seed_1000.png', 'psd_seed_1001.png'],
+            )
+            for relpath in outputs:
+                self.assertTrue((Path(tmp) / relpath).is_file())
+
+    def test_load_stage_result_reads_persisted_psd(self):
+        rates = self._make_rates()
+        psd = self.processor.calc_xr_welch(
+            rates,
+            win_len=1,
+            win_overlap=0.5,
+            fmin=0,
+            fmax=50,
+            average='median',
+            compute=True,
+            store_proc_info=False,
+        )
+        with tempfile.TemporaryDirectory() as tmp:
+            fpath = Path(tmp) / 'processed' / 'psd.nc'
+            self.processor.save_xr(psd, fpath)
+            loaded = self.processor.load_stage_result(
+                tmp,
+                {},
+            )
+            xr.testing.assert_allclose(loaded, psd)
 
 
 if __name__ == '__main__':

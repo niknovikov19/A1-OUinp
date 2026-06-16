@@ -1,5 +1,6 @@
 import json
 import os
+from copy import deepcopy
 from pathlib import Path
 import sys
 
@@ -15,9 +16,11 @@ import pandas as pd
 
 from analysis.model_utils.net_utils import get_2pop_conns
 from analysis.ou_tuning import sim_res_proc_utils as proc
+from analysis.ou_tuning.netpyne_res_parse_utils import prepare_sim_result
 from batch_params import N_SEEDS
 from conn_fader import ConnFader
 import diagnostics as diag
+from external.sim_data_analyzer.xr_adapters import get_net_rate_dynamics_xr
 from syn_mech_relabel import _rule_kind_and_base_pops, _relabel_conn_synmech
 
 
@@ -122,19 +125,373 @@ PULSE_PARAMS = {
 }
 
 
+def _get_default_runtime_params():
+    """Return the default runtime parameter tree."""
+    return {
+        'time': {
+            'duration': SIM_DURATION,
+            't0_calc': T0_CALC,
+        },
+        'pops_used': list(POPS_USED),
+        'conn': {
+            'wmat_multipliers': [],
+            'ee_fader_on': EE_FADER_ON,
+            'fader_pts': list(FADER_PTS),
+        },
+        'inp': {
+            'ibkg_corrections': {},
+            'add_pulses': ADD_PULSES,
+        },
+        'rec': {
+            'traces': REC_TRACES,
+            'lfp': REC_LFP,
+        },
+        'proc': {
+            'rate_t_limits': None,
+            'rate_dt_bin': 0.005,
+            'rate_tau_smooth': RVEC_TAU_SMOOTH,
+        },
+        'out': {
+            'plot_traces': PLOT_TRACES,
+            'plot_csd': PLOT_CSD,
+            'plot_rate_dynamics': PLOT_RATE_DYNAMICS,
+            'save_rate_xr': False,
+        },
+    }
+
+
+def _deep_update_runtime_params(base, patch):
+    """Deep-merge a runtime parameter patch with key validation."""
+    result = deepcopy(base)
+    for key, value in dict(patch).items():
+        if key not in result:
+            raise KeyError(f'Unknown runtime_params root: {key}')
+        if isinstance(result[key], dict):
+            if not result[key]:
+                result[key] = deepcopy(value)
+                continue
+            if not isinstance(value, dict):
+                raise TypeError(f'runtime_params[{key!r}] should be a dict')
+            result[key] = _deep_update_runtime_params(result[key], value)
+        else:
+            result[key] = deepcopy(value)
+    return result
+
+
+def _append_iclamp_entry(iclamp_dict, pop_name, entry):
+    """Append an IClamp entry without replacing existing entries."""
+    if pop_name not in iclamp_dict:
+        iclamp_dict[pop_name] = entry
+        return
+
+    existing = iclamp_dict[pop_name]
+    if isinstance(existing, dict):
+        iclamp_dict[pop_name] = [existing, entry]
+    elif isinstance(existing, list):
+        iclamp_dict[pop_name] = existing + [entry]
+    else:
+        raise TypeError(f'Unsupported IClamp data type: {type(existing)!r}')
+
+
+def _get_conns_split(pops_used):
+    """Select recurrent excitatory pairs present in active populations."""
+    return [
+        (p1, p2)
+        for p1, p2 in CONNS_EE
+        if (p1 in pops_used) and (p2 in pops_used)
+    ]
+
+
+def _validate_runtime_params(runtime_params):
+    """Validate runtime params before deriving cfg fields."""
+    pops_used = list(runtime_params['pops_used'])
+    if len(set(pops_used)) != len(pops_used):
+        raise ValueError('Duplicate entries in pops_used')
+    unknown = sorted(set(pops_used) - set(POPS_USED))
+    if unknown:
+        raise ValueError(f'Unknown populations in pops_used: {unknown}')
+
+    # Validate connection multipliers against the active populations
+    weights = list(runtime_params['conn']['wmat_multipliers'])
+    pairs = [(item['pre'], item['post']) for item in weights]
+    if len(set(pairs)) != len(pairs):
+        raise ValueError('Duplicate entries in wmat_multipliers')
+    unknown = sorted(set(pop for pair in pairs for pop in pair) - set(pops_used))
+    if unknown:
+        raise ValueError(f'Unknown weight-multiplier populations: {unknown}')
+
+    # Require explicit correction values when corrections are supplied
+    corrections = dict(runtime_params['inp']['ibkg_corrections'])
+    if corrections:
+        missing = sorted(set(pops_used) - set(corrections))
+        if missing:
+            raise ValueError(f'Missing ibkg corrections: {missing}')
+        unknown = sorted(set(corrections) - set(pops_used))
+        if unknown:
+            raise ValueError(f'Unknown ibkg correction populations: {unknown}')
+
+
+def _build_bkg_spike_inputs(pops_used):
+    """Build background spike-input settings for active populations."""
+    fpath_xbkg = dirpath_self / f'{XBKG_NAME}.csv'
+    df = pd.read_csv(fpath_xbkg).set_index('pop')
+    df.drop(columns=['Unnamed: 0'], errors='ignore', inplace=True)
+    df['rxe'] = np.maximum(df['rxe'], 1e-3)
+    df['rxi'] = np.maximum(df['rxi'], 1e-3)
+    xbkg_info = df.T.to_dict()
+
+    # Leave seeds empty until batch_params.post_update()
+    return {
+        pop: {
+            'exc': {
+                'r': xbkg_info[pop]['rxe'],
+                'w': xbkg_info[pop]['wxe'],
+                'sec': xbkg_info[pop]['xe_sec'],
+                'noise': 1,
+                'seed': None,
+            },
+            'inh': {
+                'r': xbkg_info[pop]['rxi'],
+                'w': xbkg_info[pop]['wxi'],
+                'sec': xbkg_info[pop]['xi_sec'],
+                'noise': 1,
+                'seed': None,
+            },
+        }
+        for pop in pops_used
+    }
+
+
+def _build_iclamp(runtime_params):
+    """Build baseline, control, and runtime correction IClamps."""
+    pops_used = list(runtime_params['pops_used'])
+    duration = runtime_params['time']['duration']
+    corrections = dict(runtime_params['inp']['ibkg_corrections'])
+    iclamp = {}
+
+    # Add static resting-voltage currents
+    if USE_IBKG:
+        fname_ibkg = f'{IBKG_JSON_NAME}.json'
+        with open(dirpath_self / fname_ibkg, 'r') as fid:
+            ibkg = json.load(fid)
+        iclamp = {
+            pop: {'amp': ibkg[pop], 'dur': duration}
+            for pop in pops_used
+            if pop in ibkg
+        }
+
+    # Add control-derived DC offsets
+    if USE_IBKG_CTRL:
+        with open(dirpath_self / f'{IBKG_CTRL_JSON_NAME}.json', 'r') as fid:
+            ibkg_ctrl = json.load(fid)
+        I_median = ibkg_ctrl['I_median']
+        for pop in pops_used:
+            if pop not in I_median:
+                continue
+            entry = {'amp': I_median[pop], 'dur': duration}
+            _append_iclamp_entry(iclamp, pop, entry)
+
+    # Add runtime correction currents last so they are easy to inspect
+    for pop, amp in corrections.items():
+        entry = {'amp': amp, 'dur': duration}
+        _append_iclamp_entry(iclamp, pop, entry)
+    return iclamp
+
+
+def _set_analysis_includes(cfg, pops_used):
+    """Set analysis population filters while preserving disabled entries."""
+    for analysis_name in ('plotRaster', 'plotSpikeStats', 'plotTraces'):
+        analysis_cfg = cfg.analysis.get(analysis_name)
+        if isinstance(analysis_cfg, dict):
+            analysis_cfg['include'] = pops_used
+    cfg.analysis['plotSpikeStats'] = False
+
+
+def _apply_runtime_params_to_cfg(cfg):
+    """Derive ordinary cfg fields from cfg.runtime_params."""
+    runtime_params = deepcopy(cfg.runtime_params)
+    _validate_runtime_params(runtime_params)
+    cfg.runtime_params = runtime_params
+
+    # Derive timing and active population fields before subnet creation
+    cfg.duration = runtime_params['time']['duration']
+    cfg.t0_calc = runtime_params['time']['t0_calc']
+    cfg.pops_used = list(runtime_params['pops_used'])
+    cfg.ee_fader_on = bool(runtime_params['conn']['ee_fader_on'])
+    cfg.conns_split = _get_conns_split(cfg.pops_used)
+
+    # Derive subnet parameters consumed by common net construction
+    cfg.subnet_build_flag = SURR_INP_ON
+    cfg.subnet_params = {
+        'pops_active': cfg.pops_used,
+        'conns_frozen': CONNS_FROZEN,
+        'fpath_frozen_rates': str(dirpath_self / 'target_state_1.csv'),
+        'global_seed': None,
+    }
+    if cfg.ee_fader_on:
+        cfg.subnet_params['conns_split'] = {
+            f'{c[0]}, {c[1]}': 0.5
+            for c in cfg.conns_split
+        }
+        cfg.includeParamsLabel = True
+        cfg.cache_efficient = 0
+
+    if not SURR_INP_ON:
+        cfg.pops_active = cfg.pops_used
+        cfg.addConn = 0
+
+    # Derive inputs after active populations and duration are known
+    cfg.add_bkg_spike_input = 1
+    cfg.replace_bkg_spikes_by_ou = 0
+    cfg.bkg_spike_inputs = _build_bkg_spike_inputs(cfg.pops_used)
+    cfg.IClamp = _build_iclamp(runtime_params)
+    cfg.addIClamp = int(bool(cfg.IClamp))
+
+    # Derive recording, plotting, and pulse controls
+    cfg.rec_traces = bool(runtime_params['rec']['traces'])
+    cfg.rec_lfp = bool(runtime_params['rec']['lfp'])
+    cfg.plot_traces = bool(runtime_params['out']['plot_traces'])
+    cfg.plot_csd = bool(runtime_params['out']['plot_csd'])
+    cfg.plot_rate_dynamics = bool(runtime_params['out']['plot_rate_dynamics'])
+    cfg.add_pulses = int(bool(runtime_params['inp']['add_pulses']))
+    _set_analysis_includes(cfg, cfg.pops_used)
+
+    # Rebuild trace recording fields from scratch
+    cfg.recordCells = []
+    cfg.recordTraces = {}
+    if cfg.rec_traces:
+        cfg.recordCells = [
+            (pop, list(range(NCELLS_REC)))
+            for pop in cfg.pops_used
+        ]
+        cfg.recordTraces = {
+            'V_soma': {'sec': 'soma', 'loc': 0.5, 'var': 'v'}
+        }
+        cfg.recordStep = DT_REC
+
+    # Rebuild trace plotting fields from scratch
+    cfg.analysis.pop('plotTraces', None)
+    if cfg.rec_traces and cfg.plot_traces:
+        cfg.analysis['plotTraces'] = {
+            'include': [
+                (pop, list(range(NCELLS_PLOT)))
+                for pop in cfg.pops_used
+            ],
+            'timeRange': [1000, cfg.duration],
+            'oneFigPer': 'cell',
+            'overlay': True,
+            'saveFig': True,
+            'showFig': False,
+            'figSize': (18, 12),
+        }
+
+    # Rebuild LFP recording and CSD plotting fields from scratch
+    cfg.recordTime = False
+    cfg.recordLFP = []
+    cfg.analysis.pop('plotCSD', None)
+    if cfg.rec_lfp:
+        cfg.recordTime = True
+        cfg.recordStep = DT_REC
+        cfg.recordLFP = [
+            [100, y, 100]
+            for y in range(LFP_Y_MIN, LFP_Y_MAX, LFP_Y_STEP)
+        ]
+    if cfg.rec_lfp and cfg.plot_csd:
+        csd_t0 = CSD_VIS_T0 if CSD_VIS_T0 is not None else 2000
+        cfg.analysis['plotCSD'] = {
+            'spacing_um': LFP_Y_STEP,
+            'LFP_overlay': 0,
+            'layer_lines': 1,
+            'layer_bounds': LAYER_BOUNDS,
+            'saveFig': 1,
+            'showFig': 0,
+            'timeRange': (csd_t0, cfg.duration),
+        }
+
+    # Rebuild optional pulse stimulus fields
+    cfg.pulse_seq_params = {}
+    if cfg.add_pulses:
+        cfg.pulse_seq_params = deepcopy(PULSE_PARAMS)
+
+
+def apply_runtime_overrides(cfg, overrides):
+    """Apply a generic runtime_params patch."""
+    overrides = dict(overrides)
+    if 'runtime_params' in overrides:
+        cfg.runtime_params = _deep_update_runtime_params(
+            cfg.runtime_params,
+            overrides.pop('runtime_params'),
+        )
+        _apply_runtime_params_to_cfg(cfg)
+    if overrides:
+        raise KeyError(f'Unknown experiment overrides: {sorted(overrides)}')
+
+
+def _get_single_pop_cond(conds):
+    """Return one pop name from scalar or singleton-list conditions."""
+    pop_name = conds.get('pop', None)
+    if isinstance(pop_name, (list, tuple)):
+        if len(pop_name) != 1:
+            return None
+        return pop_name[0]
+    return pop_name
+
+
+def _get_conn_pop_pair(conn):
+    """Return one exact pre/post pop pair or None for broad rules."""
+    pop_pre = _get_single_pop_cond(conn['preConds'])
+    pop_post = _get_single_pop_cond(conn['postConds'])
+    if (pop_pre is None) or (pop_post is None):
+        return None
+    return (pop_pre, pop_post)
+
+
+def _apply_wmat_multipliers(params, wmat_multipliers):
+    """Apply pairwise connection-weight multipliers."""
+    weights_by_pair = {
+        (item['pre'], item['post']): item['mult']
+        for item in wmat_multipliers
+    }
+    if len(weights_by_pair) != len(wmat_multipliers):
+        raise ValueError('Duplicate entries in wmat_multipliers')
+
+    matched_pairs = set()
+    for conn in params.connParams.values():
+        pair = _get_conn_pop_pair(conn)
+        if pair not in weights_by_pair:
+            continue
+        conn['weight'] *= weights_by_pair[pair]
+        matched_pairs.add(pair)
+    
+    missing_pairs = set(weights_by_pair) - matched_pairs
+    if missing_pairs:
+        raise ValueError(
+            f'No connParams found for wmat multipliers: {missing_pairs}'
+        )
+
+
 def gen_exp_name_sub(cfg):
+    """Generate the result subfolder name."""
+    if hasattr(cfg, 'workflow_result_subdir'):
+        return cfg.workflow_result_subdir
+
+    runtime_params = getattr(
+        cfg,
+        'runtime_params',
+        _get_default_runtime_params(),
+    )
     t_limits = (cfg.t0_calc / 1000, cfg.duration / 1000)
     exp_name_sub = f'exp_{EXP_LABEL}'
     if not SURR_INP_ON:
         exp_name_sub += '_nosurr'
     exp_name_sub += f'_nseed_{N_SEEDS}'
     exp_name_sub += f'_t_{t_limits[0]}_{t_limits[1]}'
-    if REC_LFP:
+    if runtime_params['rec']['lfp']:
         exp_name_sub += f'_lfp_{LFP_Y_MIN}_{LFP_Y_MAX}_{LFP_Y_STEP}'
     if USE_IBKG_CTRL:
         exp_name_sub += '_ictrl'
     exp_name_sub += f'_wmult_{cfg.wmult}_ee_{cfg.EEGain}'
-    if ADD_PULSES:
+    if runtime_params['inp']['add_pulses']:
         pulse_par = cfg.pulse_seq_params
         ppop, pt0, pT, pdur, pjit, pr, pw, pc = (
             pulse_par['pop'], pulse_par['t0'],
@@ -153,56 +510,26 @@ def gen_exp_name_sub(cfg):
 
 
 def apply_exp_cfg(cfg):
-
-    # Duration
-    cfg.duration = SIM_DURATION
-
-    # Left point (ms) of the calculation time window (r, cv, ...)
-    cfg.t0_calc = T0_CALC
-
+    """Apply default experiment config values."""
     cfg.need_run = NEED_RUN
 
-    # Populations to use
-    pops_active = POPS_USED
-
-    # Random seeds
+    # Random seeds are filled by the batch layer after cfg.update()
     cfg.seed_main = None   # batch param
     cfg.seeds['stim'] = None   # set in batch_params.py
     cfg.seeds['conn'] = None   # set in batch_params.py
 
-    # Add labels to conns
-    if EE_FADER_ON:
-        cfg.includeParamsLabel = True
-
-    # Required for reference broadcasting
-    if EE_FADER_ON:
-        cfg.cache_efficient = 0
-
-    # Subnet parameters
-    cfg.subnet_build_flag = SURR_INP_ON
-    cfg.subnet_params = {
-        'pops_active': pops_active,   
-        'conns_frozen': CONNS_FROZEN,
-        'fpath_frozen_rates': str(dirpath_self / 'target_state_1.csv'),   # surrogate input
-        'global_seed': None   # set in batch_params.py
-    }
-    if EE_FADER_ON:
-        cfg.subnet_params['conns_split'] = {
-            f'{c[0]}, {c[1]}': 0.5 for c in CONNS_SPLIT
-        }
-
-    if not SURR_INP_ON:
-        cfg.pops_active = POPS_USED
-        cfg.addConn = 0
-
-    # Weight multipliers
+    # Common connection scaling defaults are still ordinary experiment params
     cfg.wmult = 0.25
     cfg.EEGain = 0.5
 
-    # Connectivity params
+    # Connectivity params shared by standalone and runtime-patched runs
     cfg.addSubConn = 0
     cfg.connRandomSecFromList = 1
     cfg.connWeightSecByLength = 0
+
+    # Runtime params are the generic external override surface
+    cfg.runtime_params = _get_default_runtime_params()
+    _apply_runtime_params_to_cfg(cfg)
 
     if DIAG:
         cfg.createNEURONObj = True      # Create NEURON hoc objects
@@ -211,58 +538,6 @@ def apply_exp_cfg(cfg):
         cfg.saveCellConns = True        # Save connection data
         cfg.compactConnFormat = False   # Keep full dict format for conns
         cfg.includeParamsLabel=True
-
-    # Load bkg spiking input info
-    fpath_xbkg = dirpath_self / f'{XBKG_NAME}.csv'
-    df = pd.read_csv(fpath_xbkg).set_index('pop')
-    df.drop(columns=['Unnamed: 0'], errors='ignore')
-    df['rxe'] = np.maximum(df['rxe'], 1e-3)
-    df['rxi'] = np.maximum(df['rxi'], 1e-3)
-    xbkg_info = df.T.to_dict()
-    
-    # Background spiking input
-    cfg.add_bkg_spike_input = 1
-    cfg.replace_bkg_spikes_by_ou = 0   # use NetStim's
-    cfg.bkg_spike_inputs = {}
-    for n, pop in enumerate(POPS_USED):
-        x = xbkg_info[pop]
-        cfg.bkg_spike_inputs[pop] = {
-            'exc': {'r': x['rxe'], 'w': x['wxe'], 'sec': x['xe_sec'],
-                    'noise': 1, 'seed': None},   # set in batch_params.py
-            'inh': {'r': x['rxi'], 'w': x['wxi'], 'sec': x['xi_sec'],
-                    'noise': 1, 'seed': None},   # set in batch_params.py
-        }
-    
-    # Static IClamp that sets the resting voltage
-    if USE_IBKG:
-        cfg.addIClamp = 1
-        fname_ibkg = f'{IBKG_JSON_NAME}.json'
-        with open(dirpath_self / fname_ibkg, 'r') as fid:
-            ibkg = json.load(fid)
-        cfg.IClamp = {pop: {'amp': ibkg[pop], 'dur': SIM_DURATION}
-                      for pop in POPS_USED if pop in ibkg}
-
-    # Ctrl-derived DC offset IClamp (from ibkg_ctrl_1.json I_median)
-    if USE_IBKG_CTRL:
-        cfg.addIClamp = 1   # ensure enabled even when USE_IBKG=0
-        with open(dirpath_self / f'{IBKG_CTRL_JSON_NAME}.json', 'r') as fid:
-            ibkg_ctrl = json.load(fid)
-        I_median = ibkg_ctrl['I_median']
-        if not hasattr(cfg, 'IClamp') or cfg.IClamp is None:
-            cfg.IClamp = {}
-        for pop in POPS_USED:
-            if pop not in I_median:
-                continue
-            ctrl_entry = {'amp': I_median[pop], 'dur': SIM_DURATION}
-            if pop in cfg.IClamp:
-                existing = cfg.IClamp[pop]
-                cfg.IClamp[pop] = (
-                    [existing, ctrl_entry]
-                    if isinstance(existing, dict)
-                    else existing + [ctrl_entry]
-                )
-            else:
-                cfg.IClamp[pop] = ctrl_entry
 
     # Read target rates
     df = pd.read_csv(dirpath_self / 'target_state_1.csv')
@@ -273,55 +548,9 @@ def apply_exp_cfg(cfg):
     with open(dirpath_self / 'mech_changes_1.json', 'r') as fid:
         cfg.mech_changes = json.load(fid)
 
-    if 'plotRaster' in cfg.analysis:
-        cfg.analysis['plotRaster']['include'] = POPS_USED
-    if 'plotSpikeStats' in cfg.analysis:
-        cfg.analysis['plotSpikeStats']['include'] = POPS_USED
-    if 'plotTraces' in cfg.analysis:
-        cfg.analysis['plotTraces']['include'] = POPS_USED
-    
-    #cfg.analysis['plotRaster'] = False
-    cfg.analysis['plotSpikeStats'] = False
-
-    # Record voltage traces
-    if REC_TRACES:
-        cfg.recordCells = [(pop, list(range(NCELLS_REC))) for pop in POPS_USED]
-        cfg.recordTraces = {'V_soma': {'sec': 'soma', 'loc': 0.5, 'var': 'v'}}
-        cfg.recordStep =  DT_REC
-
-    # Plot voltage traces
-    if REC_TRACES and PLOT_TRACES:
-        cfg.analysis['plotTraces'] = {
-            'include': [(pop, list(range(NCELLS_PLOT))) for pop in cfg.allpops],
-            'timeRange': [1000, cfg.duration],
-            'oneFigPer': 'cell', 'overlay': True,
-            'saveFig': True, 'showFig': False, 'figSize': (18, 12)
-        }
-
-    # Record LFP
-    if REC_LFP:
-        cfg.recordTime = True
-        cfg.recordStep = DT_REC
-        cfg.recordLFP = [[100, y, 100] 
-                         for y in range(LFP_Y_MIN, LFP_Y_MAX, LFP_Y_STEP)]
-
-    # Plot CSD
-    if REC_LFP and PLOT_CSD:
-        csd_t0 = CSD_VIS_T0 if CSD_VIS_T0 is not None else 2000
-        cfg.analysis['plotCSD'] = {
-            'spacing_um': LFP_Y_STEP, 'LFP_overlay': 0, 'layer_lines': 1,
-            'layer_bounds': LAYER_BOUNDS, 'saveFig': 1, 'showFig': 0,
-            'timeRange': (csd_t0, cfg.duration)
-        }
-
-    # Pulse train stimulus
-    cfg.add_pulses = int(ADD_PULSES)
-    if ADD_PULSES:
-        cfg.pulse_seq_params = PULSE_PARAMS
-
 
 def modify_net_params(cfg, params):
-    """Applied after netParams creation. """
+    """Apply experiment changes after netParams creation."""
 
     # Modify membrane mechanisms
     for v in cfg.mech_changes.values():
@@ -353,14 +582,18 @@ def modify_net_params(cfg, params):
             #raise ValueError(f'No target sec info found for conn {cname}')  
             print(f'WARNING: No target sec info found for conn {cname}')  
 
+    # Apply optional runtime connection-weight multipliers
+    wmat_multipliers = cfg.runtime_params['conn']['wmat_multipliers']
+    _apply_wmat_multipliers(params, wmat_multipliers)
+
 
 def modify_net_params_2(cfg, params):
-    """Applied after subnet netParams creation. """
-    if not EE_FADER_ON:
+    """Apply experiment changes after subnet netParams creation."""
+    if not cfg.runtime_params['conn']['ee_fader_on']:
         return
 
     # Set distinct synMech labels for surrogate and recurrent inputs
-    split_pairs = set(CONNS_SPLIT)
+    split_pairs = set(cfg.conns_split)
     rank = int(h.ParallelContext().id())
     for cname, conn in params.connParams.items():
         kind, pops_pre_base, pops_post = _rule_kind_and_base_pops(
@@ -378,7 +611,8 @@ def modify_net_params_2(cfg, params):
 
 
 def modify_network(sim):
-    if not EE_FADER_ON:
+    """Add recurrent-connection faders after network creation."""
+    if not sim.cfg.runtime_params['conn']['ee_fader_on']:
         return
 
     # Fader object
@@ -388,7 +622,7 @@ def modify_network(sim):
 
     # Find recurrent/surrogate conns for positive/inverse modulation
     conns_pos, conns_neg = [], []
-    for pop_pre, pop_post in CONNS_SPLIT:
+    for pop_pre, pop_post in sim.cfg.conns_split:
         conns_pos_ = get_2pop_conns(sim, pop_pre, pop_post)   # recurrent conns
         conns_neg_ = get_2pop_conns(sim, pop_pre + 'frz', pop_post)   # surrogate inputs
         conns_pos += conns_pos_
@@ -398,7 +632,7 @@ def modify_network(sim):
         group_name='ee',
         conns_pos=conns_pos,
         conns_neg=conns_neg,
-        pts=FADER_PTS
+        pts=sim.cfg.runtime_params['conn']['fader_pts']
     )
 
     fader.create_modulators()
@@ -408,11 +642,46 @@ def modify_network(sim):
     sim.ee_fader = fader
 
 
-def post_run(sim):
-    """Called in the end of a job (after runnig and saving). """
+def _relative_output(cfg, fpath):
+    """Return a result path relative to cfg.saveFolder."""
+    return Path(fpath).relative_to(Path(cfg.saveFolder)).as_posix()
 
+
+def _get_rate_t_limits(cfg):
+    """Resolve rate-dynamics processing limits in seconds."""
+    t_limits = cfg.runtime_params['proc']['rate_t_limits']
+    if t_limits is not None:
+        return tuple(t_limits)
+    return (cfg.t0_calc / 1000, cfg.duration / 1000)
+
+
+def _save_rate_xr(sim, dirpath_res_sub, postfix):
+    """Save compact population-rate dynamics as NetCDF."""
+    cfg = sim.cfg
+    proc_params = cfg.runtime_params['proc']
+    t_limits = _get_rate_t_limits(cfg)
+    sim_result = prepare_sim_result(sim)
+    rvec_xr = get_net_rate_dynamics_xr(
+        sim_result,
+        t_limits=t_limits,
+        dt_bin=proc_params['rate_dt_bin'],
+        tau_smooth=proc_params['rate_tau_smooth'],
+        pop_names=cfg.pops_used,
+    )
+    rvec_xr.attrs['t_limits'] = list(t_limits)
+    rvec_xr.attrs['dt_bin'] = float(proc_params['rate_dt_bin'])
+    rvec_xr.attrs['tau_smooth'] = float(proc_params['rate_tau_smooth'])
+    rvec_xr.attrs['seed_main'] = int(cfg.seed_main)
+    fpath_rvec = dirpath_res_sub / 'rvec_xr' / f'rvec_{postfix}.nc'
+    rvec_xr.to_netcdf(fpath_rvec)
+    return fpath_rvec
+
+
+def post_run(sim):
+    """Process and organize one completed simulation job."""
     cfg = sim.cfg
     exp_name = cfg.simLabel
+    outputs = []
 
     # Metric calculation time interval in seconds
     t_limits = (cfg.t0_calc / 1000, cfg.duration / 1000)
@@ -429,7 +698,8 @@ def post_run(sim):
     dirpath_res_sub = dirpath_res / exp_name_sub
     os.makedirs(dirpath_res_sub, exist_ok=True)
     dirnames_sub = ['rasters', 'results', 'cfg', 'pkl', 'netpar', 
-                    'traces', 'wmod_figs', 'rvec_figs', 'csd_figs']
+                    'traces', 'wmod_figs', 'rvec_figs', 'csd_figs',
+                    'rvec_xr']
     for dirname in dirnames_sub:
         os.makedirs(dirpath_res_sub / dirname, exist_ok=True)
 
@@ -457,7 +727,7 @@ def post_run(sim):
         fpath_old.rename(fpath_new)
     
     # Move NetPyNE-generated CSD figures to a subfolder
-    if REC_LFP and PLOT_CSD:
+    if cfg.rec_lfp and cfg.plot_csd:
         csd_files = list(dirpath_res.glob(f'{exp_name}_CSD*.png'))
         for fpath_old in csd_files:
             fpath_new = dirpath_res_sub / 'csd_figs' / f'{fpath_old.stem}_{postfix}{fpath_old.suffix}'
@@ -468,33 +738,42 @@ def post_run(sim):
         res = {}
         res['timing'] = sim.timingData
         res |= proc.calc_rates_and_cvs(sim, t_limits, nspikes_min=3)
-        if REC_TRACES:
+        if cfg.rec_traces:
             res |= proc.calc_v_stats(sim, t_limits, med_win=0.05)
         fpath_res = dirpath_res_sub / 'results' / f'result_{postfix}.json'
         with open(fpath_res, 'w') as fid:
             json.dump(res, fid, indent=4)
+        outputs.append(_relative_output(cfg, fpath_res))
     
     # Plot weight modulation signals
-    if EE_FADER_ON and NEED_RUN:
+    if cfg.runtime_params['conn']['ee_fader_on'] and NEED_RUN:
         #gathered = sim.ee_fader.gather_recs()
         sim.ee_fader.plot_recs()
         fpath_wmod = (dirpath_res_sub / 'wmod_figs' / f'wmod_{postfix}.png')
         plt.savefig(fpath_wmod, dpi=300)
 
+    # Save optional compact rate dynamics for downstream processing
+    if NEED_RUN and cfg.runtime_params['out']['save_rate_xr']:
+        fpath_rvec = _save_rate_xr(sim, dirpath_res_sub, postfix)
+        outputs.append(_relative_output(cfg, fpath_rvec))
+
     # Plot and save rate dynamics
-    if PLOT_RATE_DYNAMICS:
+    if cfg.plot_rate_dynamics:
         pop_groups = {'PYR': PYR_POPS, 'PV': PV_POPS, 'SOM': SOM_POPS,
                       'VIP': VIP_POPS, 'NGF': NGF_POPS,
                       'THAL_E': THAL_E_POPS, 'THAL_I': THAL_I_POPS}
         colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
         for pop_group_name, pops in pop_groups.items():
-            pops = [p for p in pops if p in POPS_USED]
+            pops = [p for p in pops if p in cfg.pops_used]
             if len(pops) == 0:
                 continue
 
             # Compute rate dynamics
             r_data = proc.calc_rate_dynamics(
-                sim, t_limits=(2, None), tau_smooth=RVEC_TAU_SMOOTH, pops_used=pops)
+                sim,
+                t_limits=_get_rate_t_limits(cfg),
+                tau_smooth=cfg.runtime_params['proc']['rate_tau_smooth'],
+                pops_used=pops)
 
             plt.figure(111); plt.clf()
 
@@ -514,6 +793,8 @@ def post_run(sim):
             fname_out = f'{pop_group_name}_{postfix}.png'
             plt.savefig(dirpath_res_sub / 'rvec_figs' / fname_out,
                         bbox_inches='tight', dpi=300)
+
+    return outputs
 
 
 def final(sim):
