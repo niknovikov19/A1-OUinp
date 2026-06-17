@@ -37,7 +37,7 @@ FADER_PTS = [
     (0, 0),
     (3000, 0),
     (5000, 1),
-    (FULLSIM_T_LIMITS[-1], 1)
+    (FULLSIM_DURATION, 1)
 ]
 
 FULLSIM_RUNTIME_PARAMS = {
