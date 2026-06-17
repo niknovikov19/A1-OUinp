@@ -7,10 +7,12 @@ WORKFLOW_NAME = 'ibkg_adj__fullsim__var_wmult_1d'
 
 POPS_USED = ['IT2', 'PV2', 'SOM2', 'VIP2', 'NGF2']
 
-WMULT_CONNS = [('IT2', 'IT2')]
-WMULT_SWEEP_VALS = [1, 1.5, 2, 3]
+#WMULT_CONNS = [('IT2', 'IT2')]
+WMULT_CONNS = [('IT2', 'IT2'), ('IT2', 'NGF2')]
+#WMULT_SWEEP_VALS = [1, 1.5, 2, 3]
+WMULT_SWEEP_VALS = [5, 10, 15, 30]
 
-EXP_LABEL = 'L2_wmult_ee'
+EXP_LABEL = 'L2_wmult_ee_engf'
 
 MAX_ITERATIONS = len(WMULT_SWEEP_VALS)
 
@@ -19,15 +21,16 @@ DW_DURATION = 15000
 DW_T0_CALC = 5000
 
 # Stage 2 duration
-FULLSIM_DURATION = 10000
+FULLSIM_DURATION = 15000
 FULLSIM_T0_CALC = 5000
 
 DW_T_LIMITS = [DW_T0_CALC / 1000, DW_DURATION / 1000]
 FULLSIM_T_LIMITS = [DW_T0_CALC / 1000, FULLSIM_DURATION / 1000]
 
 # Batch params
-SEED_VALUES = [1000]
-IBKG_DW_ADJ_VALUES = np.linspace(-0.1, 0.1, 10).tolist()
+#SEED_VALUES = [1000]
+SEED_VALUES = (1000 + np.arange(3)).tolist()
+IBKG_DW_ADJ_VALUES = np.linspace(-0.25, 0.1, 10).tolist()
 
 # Surr-to-real conn fader for fullsim stage
 FADER_PTS = [
@@ -196,11 +199,11 @@ def get_run_id(workflow_params):
     #)
 
     wvals = workflow_params['wmult_sweep_vals']
-    wvals_text = f'{np.min(wvals)}_{np.max(wvals)}_{len(wvals)}'
+    wvals_text = f'{np.min(wvals):g}_{np.max(wvals):g}_{len(wvals):g}'
 
-    ibkg_text = (f'{np.min(IBKG_DW_ADJ_VALUES)}'
-                 f'_{np.max(IBKG_DW_ADJ_VALUES)}'
-                 f'_{len(IBKG_DW_ADJ_VALUES)}')
+    ibkg_text = (f'{np.min(IBKG_DW_ADJ_VALUES):g}'
+                 f'_{np.max(IBKG_DW_ADJ_VALUES):g}'
+                 f'_{len(IBKG_DW_ADJ_VALUES):g}')
     #'_'.join([
     #    np.min(IBKG_DW_ADJ_VALUES), np.max(IBKG_DW_ADJ_VALUES),
     #    len(IBKG_DW_ADJ_VALUES)
@@ -208,7 +211,7 @@ def get_run_id(workflow_params):
 
     return (
         #f'{WORKFLOW_NAME}'
-        f'_{EXP_LABEL}'
+        f'{EXP_LABEL}'
         #f'_L2_wconn_{conn_text}'
         f'_wvals_{wvals_text}'
         f'_nseeds_{len(SEED_VALUES)}'
