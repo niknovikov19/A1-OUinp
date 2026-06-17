@@ -867,6 +867,39 @@ class WorkflowResumeTests(unittest.TestCase):
             finally:
                 run_workflow.DIR_WORKFLOW_RESULTS = old_results
 
+    def test_tuple_params_match_saved_json_lists(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            old_results = run_workflow.DIR_WORKFLOW_RESULTS
+            run_workflow.DIR_WORKFLOW_RESULTS = Path(tmp) / 'results'
+            try:
+                dirpath_cfg = Path(tmp) / 'workflow'
+                dirpath_cfg.mkdir()
+                (dirpath_cfg / 'workflow_cfg.py').write_text('VALUE = 1\n')
+                cfg = SimpleNamespace(
+                    get_workflow_params=lambda: {
+                        'workflow_name': 'test',
+                        'wmult_conns': [('IT2', 'IT2')],
+                    },
+                )
+                dirpath_run, params_first = run_workflow._prepare_run(
+                    cfg,
+                    dirpath_cfg,
+                    'same-id',
+                )
+                dirpath_run_again, params_again = run_workflow._prepare_run(
+                    cfg,
+                    dirpath_cfg,
+                    'same-id',
+                )
+                self.assertEqual(dirpath_run_again, dirpath_run)
+                self.assertEqual(
+                    params_first['wmult_conns'],
+                    [['IT2', 'IT2']],
+                )
+                self.assertEqual(params_again, params_first)
+            finally:
+                run_workflow.DIR_WORKFLOW_RESULTS = old_results
+
     def test_generated_run_id_collision_is_refused(self):
         with tempfile.TemporaryDirectory() as tmp:
             old_results = run_workflow.DIR_WORKFLOW_RESULTS

@@ -13,6 +13,7 @@ from workflow_utils import (
     file_fingerprint,
     hash_data,
     merge_batch_params,
+    normalize_json,
     poll_job_records,
     read_json,
     validate_job_records,
@@ -129,6 +130,7 @@ def _prepare_run(cfg_mod, dirpath_workflow, run_id,
     params['workflow_source_hashes'] = _get_workflow_source_hashes(
         dirpath_workflow
     )
+    params = normalize_json(params)
     workflow_name = params['workflow_name']
     dirpath_run = DIR_WORKFLOW_RESULTS / workflow_name / run_id
     dirpath_meta = dirpath_run / 'meta'
