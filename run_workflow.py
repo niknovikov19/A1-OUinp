@@ -627,6 +627,7 @@ def run_workflow(workflow_name, run_id=None):
                 dynamic_overrides,
             )
             dirpath_stage = dirpath_iter / stage_name
+            # Run the stage
             _run_stage(
                 dirpath_stage,
                 stage_spec,
@@ -634,6 +635,7 @@ def run_workflow(workflow_name, run_id=None):
                 params,
                 dirpath_workflow,
             )
+            # Process stage results
             stage_results[stage_name] = _process_stage(
                 dirpath_stage,
                 stage_spec,
@@ -691,7 +693,7 @@ def run_workflow(workflow_name, run_id=None):
     })
 
 
-def main():
+def main_cli():
     """Parse arguments and run a workflow."""
     parser = argparse.ArgumentParser(description='Run iterative workflow.')
     parser.add_argument(
@@ -704,6 +706,11 @@ def main():
     )
     args = parser.parse_args()
     run_workflow(args.workflow, args.run_id)
+
+
+def main():
+    WORKFLOW_NAME = 'ibkg_adj__fullsim__var_wmult_1d'
+    run_workflow(WORKFLOW_NAME)
 
 
 if __name__ == '__main__':

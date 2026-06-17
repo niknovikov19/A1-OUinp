@@ -37,7 +37,8 @@ EXP_NAME_SUB = (
 
 DIRPATH_CFG = DIR_REPO / 'exp_configs' / EXP_GROUP / EXP_NAME
 DIRPATH_EXP = DIR_REPO / 'exp_results' / EXP_GROUP / EXP_NAME / EXP_NAME_SUB
-DIRPATH_OUT = DIR_REPO / 'dev_scratch' / 'artifacts' / EXP_NAME
+#DIRPATH_OUT = DIR_REPO / 'dev_scratch' / 'artifacts' / EXP_NAME
+DIRPATH_OUT = DIRPATH_EXP
 
 FPATH_PNG = DIRPATH_OUT / 'explore_results.png'
 FPATH_CSV = DIRPATH_OUT / 'ibkg_intersections.csv'
