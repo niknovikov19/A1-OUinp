@@ -8,11 +8,14 @@ WORKFLOW_NAME = 'ibkg_adj__fullsim__var_wmult_1d'
 POPS_USED = ['IT2', 'PV2', 'SOM2', 'VIP2', 'NGF2']
 
 #WMULT_CONNS = [('IT2', 'IT2')]
-WMULT_CONNS = [('IT2', 'IT2'), ('IT2', 'NGF2')]
+#WMULT_CONNS = [('IT2', 'IT2'), ('IT2', 'NGF2')]
+WMULT_CONNS = [('IT2', p) for p in POPS_USED]
 #WMULT_SWEEP_VALS = [1, 1.5, 2, 3]
-WMULT_SWEEP_VALS = [5, 10, 15, 30]
+#WMULT_SWEEP_VALS = [5, 10, 15, 30]
+WMULT_SWEEP_VALS = [2, 5, 10, 20]
 
-EXP_LABEL = 'L2_wmult_ee_engf'
+#EXP_LABEL = 'L2_wmult_ee_engf'
+EXP_LABEL = 'L2_wmult_e_all'
 
 MAX_ITERATIONS = len(WMULT_SWEEP_VALS)
 
