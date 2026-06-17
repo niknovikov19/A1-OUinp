@@ -1,5 +1,6 @@
 import importlib.util
 from pathlib import Path
+import sys
 from types import SimpleNamespace
 import tempfile
 import unittest
@@ -123,6 +124,76 @@ class WorkflowUtilsTests(unittest.TestCase):
                     clock_fn=clock.time,
                     print_fn=lambda message: None,
                 )
+
+
+class WorkflowBatchToolsLaunchTests(unittest.TestCase):
+    def test_shutdown_ray_if_initialized(self):
+        calls = []
+        fake_ray = SimpleNamespace(
+            is_initialized=lambda: True,
+            shutdown=lambda: calls.append('shutdown'),
+        )
+        with patch.dict(sys.modules, {'ray': fake_ray}):
+            run_workflow._shutdown_ray_if_initialized()
+        self.assertEqual(calls, ['shutdown'])
+
+    def test_ray_reinit_error_gets_finite_poll(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            dirpath_stage = Path(tmp) / 'stage'
+            captured = {}
+
+            # Simulate BatchTools failing before submitting any child jobs
+            def fake_search(**kwargs):
+                raise RuntimeError(
+                    'Maybe you called ray.init twice by accident?'
+                )
+
+            def fake_poll(stage_dir, expected, param_names, stage_hash,
+                          refresh_sec, timeout_sec):
+                captured['timeout_sec'] = timeout_sec
+                raise TimeoutError('stop after one report')
+
+            workflow_params = {
+                'ray_checkpoint_path': str(Path(tmp) / 'ray'),
+                'wait_refresh_sec': 30,
+                'wait_timeout_sec': None,
+            }
+            stage_spec = {
+                'batch_params': {'seed_main': [1000]},
+                'batch_run': {
+                    'partition': 'cpu.q',
+                    'realtime': '1:00:00',
+                    'nodes': 1,
+                    'cores_per_node': 1,
+                    'mem_gb': 1,
+                    'max_concurrent': 1,
+                },
+                'stage_spec_hash': 'abc',
+            }
+            exp_paths = {
+                'name': 'dummy_exp',
+                'subdir': None,
+            }
+            with patch.object(
+                run_workflow,
+                '_load_batchtools',
+                return_value=(fake_search, object, object),
+            ), patch.object(
+                run_workflow,
+                'poll_job_records',
+                side_effect=fake_poll,
+            ), patch(
+                'builtins.print',
+            ):
+                with self.assertRaises(TimeoutError):
+                    run_workflow._run_batchtools_stage(
+                        dirpath_stage,
+                        stage_spec,
+                        exp_paths,
+                        workflow_params,
+                        dirpath_stage / 'meta' / 'stage_spec.json',
+                    )
+            self.assertEqual(captured['timeout_sec'], 0)
 
 
 class WorkflowArtifactTests(unittest.TestCase):

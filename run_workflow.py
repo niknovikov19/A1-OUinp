@@ -72,6 +72,25 @@ wait
     return search, LocalDispatcher, LocalSlurmSubmit
 
 
+def _shutdown_ray_if_initialized():
+    """Shutdown an existing Ray session when Ray is available."""
+    try:
+        import ray
+    except ImportError:
+        return
+    if getattr(ray, 'is_initialized', lambda: False)():
+        ray.shutdown()
+
+
+def _is_ray_reinit_error(exc):
+    """Detect the prelaunch Ray double-init error from BatchTools."""
+    message = str(exc)
+    return (
+        'ray.init twice' in message or
+        'ignore_reinit_error=True' in message
+    )
+
+
 def _get_workflow_source_hashes(dirpath_workflow):
     """Hash all workflow Python sources in the configuration folder."""
     return {
@@ -339,6 +358,7 @@ def _run_batchtools_stage(dirpath_stage, stage_spec, exp_paths,
     # Let output markers win over BatchTools communication failures
     search, dispatcher, submitter = _load_batchtools()
     search_error = None
+    _shutdown_ray_if_initialized()
     try:
         search(
             dispatcher_constructor=dispatcher,
@@ -363,15 +383,20 @@ def _run_batchtools_stage(dirpath_stage, stage_spec, exp_paths,
     except Exception as exc:
         search_error = exc
         print(f'BatchTools returned an error: {exc!r}', flush=True)
+    finally:
+        _shutdown_ray_if_initialized()
 
     # Wait for durable job outputs before touching BatchTools artifacts
+    poll_timeout = workflow_params['wait_timeout_sec']
+    if search_error and poll_timeout is None and _is_ray_reinit_error(search_error):
+        poll_timeout = 0
     records = poll_job_records(
         dirpath_stage,
         expected,
         list(stage_spec['batch_params']),
         stage_spec['stage_spec_hash'],
         workflow_params['wait_refresh_sec'],
-        workflow_params['wait_timeout_sec'],
+        poll_timeout,
     )
     artifacts = collect_batchtools_artifacts(
         dirpath_stage,
