@@ -33,7 +33,7 @@ FULLSIM_T_LIMITS = [DW_T0_CALC / 1000, FULLSIM_DURATION / 1000]
 # Batch params
 #SEED_VALUES = [1000]
 SEED_VALUES = (1000 + np.arange(3)).tolist()
-IBKG_DW_ADJ_VALUES = np.linspace(-0.25, 0.1, 10).tolist()
+IBKG_DW_ADJ_VALUES = np.linspace(-0.5, 0.1, 10).tolist()
 
 # Surr-to-real conn fader for fullsim stage
 FADER_PTS = [
