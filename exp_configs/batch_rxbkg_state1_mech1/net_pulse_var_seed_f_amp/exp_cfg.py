@@ -46,12 +46,15 @@ CONNS_EE = [(p1, p2) for p1 in E_POPS for p2 in E_POPS]
 
 
 # Duration and rate calculation window
-SIM_DURATION = 10 * 1e3
-T0_CALC = 7 * 1e3
+SIM_DURATION = 15 * 1e3
+T0_CALC = 5 * 1e3
 
-EXP_LABEL = 'a1_ee_fade_pulse_f_amp'
+EXP_LABEL = 'L2'
 
-POPS_USED = CTX_POPS + THAL_POPS
+POPS_USED = L2_POPS
+
+WMAT_MULTIPLIERS = []
+WMAT_MULT_LABEL = ''
 
 #CONNS_FROZEN = 'all'
 #CONNS_FROZEN = CONNS_EE
@@ -84,7 +87,7 @@ IBKG_WCORR_JSON_NAME = None
 SURR_INP_ON = 1
 
 # Recording time step for traces and LFP
-DT_REC = 1
+DT_REC = 2
 
 REC_TRACES = 0
 PLOT_TRACES = 0
@@ -94,11 +97,11 @@ NCELLS_PLOT = 2
 
 REC_LFP = 1
 LFP_Y_MIN = 0
-LFP_Y_MAX = 2000
-LFP_Y_STEP = 100
+LFP_Y_MAX = 300
+LFP_Y_STEP = 50
 
 PLOT_CSD = 1
-CSD_VIS_T0 = 5000
+CSD_VIS_T0 = 10000
 
 LAYER_BOUNDS = {'L1': 100, 'L2': 160, 'L3': 950, 'L4': 1250,
                 'L5A': 1334, 'L5B': 1550, 'L6': 2000}
@@ -112,22 +115,19 @@ DIAG = 0
 ADD_PULSES = 1
 PULSE_PARAMS = {
     'name': 'PulseSeq',
-    'pop': ['TC'],
+    'pop': ['NGF'],
     't0': 5000,
-    'width': 150,
+    'width': 50,
     'period': None,
     'n_pulses': None,
     #'rates': 1250,
-    'rates': [100, 5000],
+    'rates': [500],
     'weight': None,
     'n_cells': 100,
     'convergence': 25,
     'jitter': 0,
     'rand_type': 'norm'
 }
-
-WMAT_MULTIPLIERS = []
-WMAT_MULT_LABEL = ''
 
 
 def _get_default_runtime_params():
@@ -542,7 +542,9 @@ def gen_exp_name_sub(cfg):
     if not SURR_INP_ON:
         exp_name_sub += '_nosurr'
     exp_name_sub += (
-        f'_nseed_{N_SEEDS}_nf_{len(F_VALUES)}_namp_{len(AMP_VALUES)}'
+        f'_nseed_{N_SEEDS}'
+        f'_f_{"_".join(str(f) for f in F_VALUES)}'
+        f'_amp_{AMP_VALUES[0]}_{AMP_VALUES[-1]}_{len(AMP_VALUES)}'
     )
     exp_name_sub += f'_t_{t_limits[0]}_{t_limits[1]}'
     if runtime_params['rec']['lfp']:
@@ -582,7 +584,7 @@ def apply_exp_cfg(cfg):
     cfg.seeds['stim'] = None   # set in batch_params.py
     cfg.seeds['conn'] = None   # set in batch_params.py
 
-    # Common connection scaling defaults are still ordinary experiment params
+    # Common connection scaling defaults
     cfg.wmult = 0.25
     cfg.EEGain = 0.5
 

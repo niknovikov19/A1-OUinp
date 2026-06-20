@@ -2,8 +2,8 @@ import numpy as np
 
 
 N_SEEDS = 1
-F_VALUES = [2]
-AMP_VALUES = [0.1]
+F_VALUES = [2, 5]
+AMP_VALUES = [0.01, 0.02, 0.03]
 
 
 def get_batch_params():
