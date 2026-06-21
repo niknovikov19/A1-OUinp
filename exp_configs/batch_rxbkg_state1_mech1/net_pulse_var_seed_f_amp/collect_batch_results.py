@@ -23,6 +23,9 @@ CFG_PARAM_FIELDS = {
     'f': 'f',
     'amp': 'amp',
 }
+NC_OPEN_KWARGS = {
+    'engine': 'scipy',
+}
 
 
 def _get_job_idx_xr(dirpath_exp, cfg_param_fields):
@@ -65,12 +68,23 @@ def _get_rate_params(dirpath_exp, t_limits, dt_bin, tau_smooth, pop_names):
     return tuple(t_limits), dt_bin, tau_smooth, pop_names
 
 
-def _get_open_kwargs(cache_path, chunks=None):
-    """Choose xarray open kwargs for cached or newly-built NetCDF data."""
+def _get_open_kwargs(chunks=None):
+    """Choose xarray kwargs for reading per-job NetCDF data."""
+    open_kwargs = dict(NC_OPEN_KWARGS)
+    if chunks:
+        open_kwargs['chunks'] = chunks
+    return open_kwargs
+
+
+def _save_combined_nc(X, cache_path):
+    """Save a combined xarray object when a cache path is requested."""
+    if cache_path is None:
+        return
+
+    # Save after eager collection to keep input/output engines separate
     cache_path = Path(cache_path)
-    if cache_path.exists() and chunks:
-        return {'chunks': chunks}
-    return {}
+    cache_path.parent.mkdir(parents=True, exist_ok=True)
+    X.to_netcdf(cache_path)
 
 
 def collect_rates_from_nc(dirpath_exp, cfg_param_fields=CFG_PARAM_FIELDS,
@@ -80,7 +94,7 @@ def collect_rates_from_nc(dirpath_exp, cfg_param_fields=CFG_PARAM_FIELDS,
     dirpath_exp = Path(dirpath_exp)
     job_idx_xr = _get_job_idx_xr(dirpath_exp, cfg_param_fields)
     cache_path = cache_path or dirpath_exp / 'rvec_xr_combined_from_nc.nc'
-    open_kwargs = _get_open_kwargs(cache_path, chunks=chunks)
+    open_kwargs = _get_open_kwargs(chunks=chunks)
 
     # Delegate batch stacking to sim_data_analyzer
     print('\nNC: rvec_xr/*.nc -> combined rates')
@@ -89,14 +103,15 @@ def collect_rates_from_nc(dirpath_exp, cfg_param_fields=CFG_PARAM_FIELDS,
         job_idx_xr=job_idx_xr,
         dirpath_data=dirpath_exp / 'rvec_xr',
         fname_templ='rvec_{job:05d}_*.nc',
-        cache_path=cache_path,
-        lazy=lazy,
+        cache_path=None,
+        lazy=False,
         load=load,
         chunks=chunks,
         open_kwargs=open_kwargs,
         skip_missing=True,
         overwrite=True,
     )
+    _save_combined_nc(rates_xr, cache_path)
     print(f'Done: {cache_path}')
     print(f'Shape: {dict(rates_xr.sizes)}')
     return rates_xr
@@ -109,7 +124,7 @@ def collect_lfp_from_nc(dirpath_exp, cfg_param_fields=CFG_PARAM_FIELDS,
     dirpath_exp = Path(dirpath_exp)
     job_idx_xr = _get_job_idx_xr(dirpath_exp, cfg_param_fields)
     cache_path = cache_path or dirpath_exp / 'lfp_xr_combined_from_nc.nc'
-    open_kwargs = _get_open_kwargs(cache_path, chunks=chunks)
+    open_kwargs = _get_open_kwargs(chunks=chunks)
 
     # Delegate batch stacking to sim_data_analyzer
     print('\nNC: lfp_xr/*.nc -> combined LFP')
@@ -118,14 +133,15 @@ def collect_lfp_from_nc(dirpath_exp, cfg_param_fields=CFG_PARAM_FIELDS,
         job_idx_xr=job_idx_xr,
         dirpath_data=dirpath_exp / 'lfp_xr',
         fname_templ='lfp_{job:05d}_*.nc',
-        cache_path=cache_path,
-        lazy=lazy,
+        cache_path=None,
+        lazy=False,
         load=load,
         chunks=chunks,
         open_kwargs=open_kwargs,
         skip_missing=True,
         overwrite=True,
     )
+    _save_combined_nc(lfp_xr, cache_path)
     print(f'Done: {cache_path}')
     print(f'Shape: {dict(lfp_xr.sizes)}')
     return lfp_xr
@@ -267,10 +283,10 @@ if __name__ == '__main__':
         DIR_REPO / 'exp_results' /
         'batch_rxbkg_state1_mech1' /
         'net_pulse_var_seed_f_amp' /
-        'exp_L2_nseed_1_f_2_5_amp_0.01_0.03_3_t_5.0_15.0_lfp_0_300_50_ictrl_wmult_0.25_ee_0.5_pulse_IT2_d_50_c_25_r_500_0_t0_5000_jit_0'
+        'exp_L2_nseed_1_f_5_amp_0.005_0.025_5_t_5.0_30.0_lfp_0_300_50_ictrl_wmult_0.25_ee_0.5_pulse_IT2_d_50_c_25_r_500_0_t0_5000_jit_0'
     )
 
-    SOURCE = 'pkl'
+    SOURCE = 'nc'
     TARGETS = ('rates', 'lfp')
     CHUNKS = None
     LAZY = 1

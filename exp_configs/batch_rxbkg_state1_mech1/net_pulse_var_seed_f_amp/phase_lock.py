@@ -16,7 +16,7 @@ DIRPATH_EXP = (
     DIR_REPO / 'exp_results' /
     'batch_rxbkg_state1_mech1' /
     'net_pulse_var_seed_f_amp' /
-    'exp_L2_nseed_1_f_2_5_amp_0.01_0.03_3_t_5.0_15.0_lfp_0_300_50_ictrl_wmult_0.25_ee_0.5_pulse_IT2_d_50_c_25_r_500_0_t0_5000_jit_0'
+    'exp_L2_nseed_1_f_5_amp_0.005_0.025_5_t_5.0_30.0_lfp_0_300_50_ictrl_wmult_0.25_ee_0.5_pulse_IT2_d_50_c_25_r_500_0_t0_5000_jit_0'
 )
 INPUT_PATH = (
     DIR_REPO / 'dev_scratch' / 'artifacts' /
@@ -51,26 +51,26 @@ TIME_DIM = 'time'
 JOB_ID_COORD = 'job_id'
 METHOD = 'fit'
 FALLBACK_F = 5
-N_CYCLES = 5
-ANALYSIS_T0 = 5
-PULSE_PAD = 0.01
-INTERP_OUTLIERS = 0
+N_CYCLES = 3
+ANALYSIS_T0 = 10
+PULSE_PAD = 0.02
+INTERP_OUTLIERS = 1
 OUTLIER_Z_THRESH = 8
 OUTLIER_REL_NEIGHBOR_THRESH = 5
 
 POWER_OVERLAP = 0.9
 POWER_FBAND = 5
-POWER_DF = 0.5
+POWER_DF = 0.2
 POWER_MODE = 'amp2'
 
 FIT_INTERCEPT = 1
 FIT_RCOND = None
 SUBTRACT_LOCAL_MEAN = 1
 EXCLUDE_EDGES = 1
-MIN_VALID_MASS_FRAC = 0
+MIN_VALID_MASS_FRAC = 0.5
 
 EPOCH_T_WIN = (-0.2, 0.2)
-PLOT_T_WIN = (5, 15)
+PLOT_T_WIN = (10, 30)
 PHASE_PROGRESSION_PLOT = 'wrapped_strip'  # 'wrapped_strip' or 'unwrapped'
 PHASE_PROGRESS_YLIM = (-2 * np.pi, 2 * np.pi)
 PHASE_BINS = 32
@@ -159,7 +159,10 @@ def _load_pulse_intervals(job_id):
         netpar = json.load(fobj)
 
     # Read the saved VecStim pulse windows
-    pulse_seq = netpar['net']['params']['popParams']['PulseSeq']
+    pop_params = netpar['net']['params']['popParams']
+    if 'PulseSeq' not in pop_params:
+        raise KeyError(f'PulseSeq not found in {netpar_path}')
+    pulse_seq = pop_params['PulseSeq']
     pulses = pulse_seq['params']['pulses']
     intervals = [
         (float(pulse['start']) / 1000, float(pulse['end']) / 1000)
