@@ -4,6 +4,8 @@ import numpy as np
 N_SEEDS = 1
 F_VALUES = [2, 5]
 AMP_VALUES = [0.01, 0.02, 0.03]
+PULSE_ZERO_WEIGHT = 1e-6
+PULSE_COUNT_EPS = 1e-9
 
 
 def get_batch_params():
@@ -25,6 +27,26 @@ def _expand_pulse_rates(rates, n_pulses):
     if len(rates) == 0:
         raise ValueError('PULSE_PARAMS["rates"] cannot be empty')
     return [rates[n % len(rates)] for n in range(n_pulses)]
+
+
+def _get_pulse_weight(amp):
+    """Return the actual pulse weight for one public amp value."""
+    if amp == 0:
+        return PULSE_ZERO_WEIGHT
+    return amp
+
+
+def _get_t_last(cfg):
+    """Resolve the inclusive last pulse-start time in ms."""
+    t_last = cfg.pulse_seq_params.get('t_last', None)
+    if t_last is None:
+        return cfg.duration
+    return t_last
+
+
+def _get_n_pulses(t0, t_last, period):
+    """Return the number of pulse starts from t0 through t_last."""
+    return int(np.floor((t_last - t0) / period + PULSE_COUNT_EPS)) + 1
 
 
 def post_update(cfg):
@@ -54,12 +76,17 @@ def post_update(cfg):
     t0 = cfg.pulse_seq_params['t0']
     if t0 >= cfg.duration:
         raise ValueError('Pulse t0 should be before cfg.duration')
-    n_pulses = int(np.ceil((cfg.duration - t0) / period))
+    t_last = _get_t_last(cfg)
+    if t_last < t0:
+        raise ValueError('Pulse t_last should be at or after t0')
+    if t_last > cfg.duration:
+        raise ValueError('Pulse t_last should be at or before cfg.duration')
+    n_pulses = _get_n_pulses(t0, t_last, period)
 
     # Update only fields controlled by the f/amp batch axes
     rates = cfg.pulse_seq_params['rates']
     cfg.pulse_seq_params['period'] = period
-    cfg.pulse_seq_params['weight'] = cfg.amp
+    cfg.pulse_seq_params['weight'] = _get_pulse_weight(cfg.amp)
     cfg.pulse_seq_params['n_pulses'] = n_pulses
     cfg.pulse_seq_params['rates'] = _expand_pulse_rates(rates, n_pulses)
 

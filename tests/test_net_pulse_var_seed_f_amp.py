@@ -61,6 +61,7 @@ def load_exp_cfg():
         'external.sim_data_analyzer.xr_adapters': _make_module(
             'external.sim_data_analyzer.xr_adapters',
             get_net_rate_dynamics_xr=lambda *args, **kwargs: None,
+            get_lfp_xr=lambda *args, **kwargs: None,
         ),
         'syn_mech_relabel': _make_module(
             'syn_mech_relabel',
@@ -89,6 +90,7 @@ class PulseBatchParamTests(unittest.TestCase):
             amp=0.3,
             pulse_seq_params={
                 't0': 5000,
+                't_last': None,
                 'rates': rates,
             },
         )
@@ -101,8 +103,21 @@ class PulseBatchParamTests(unittest.TestCase):
 
         self.assertEqual(cfg.pulse_seq_params['period'], 500)
         self.assertEqual(cfg.pulse_seq_params['weight'], 0.3)
-        self.assertEqual(cfg.pulse_seq_params['n_pulses'], 2)
-        self.assertEqual(cfg.pulse_seq_params['rates'], [1250, 1250])
+        self.assertEqual(cfg.pulse_seq_params['n_pulses'], 3)
+        self.assertEqual(cfg.pulse_seq_params['rates'], [1250, 1250, 1250])
+
+    def test_post_update_uses_tiny_weight_for_public_zero_amp(self):
+        cfg = self._make_cfg(1250)
+        cfg.amp = 0
+
+        # Keep public amp zero while avoiding an exactly zero NetPyNE weight
+        self.batch.post_update(cfg)
+
+        self.assertEqual(cfg.amp, 0)
+        self.assertEqual(
+            cfg.pulse_seq_params['weight'],
+            self.batch.PULSE_ZERO_WEIGHT,
+        )
 
     def test_post_update_cycles_list_rates(self):
         cfg = self._make_cfg([100, 5000])
@@ -116,6 +131,17 @@ class PulseBatchParamTests(unittest.TestCase):
             cfg.pulse_seq_params['rates'],
             [100, 5000, 100, 5000, 100],
         )
+
+    def test_post_update_respects_explicit_last_pulse_time(self):
+        cfg = self._make_cfg([100, 5000])
+        cfg.duration = 7200
+        cfg.pulse_seq_params['t_last'] = 6000
+
+        # Include a pulse whose start equals t_last
+        self.batch.post_update(cfg)
+
+        self.assertEqual(cfg.pulse_seq_params['n_pulses'], 3)
+        self.assertEqual(cfg.pulse_seq_params['rates'], [100, 5000, 100])
 
     def test_post_update_rejects_bad_pulse_grid(self):
         cfg = self._make_cfg(1250)
@@ -132,6 +158,16 @@ class PulseBatchParamTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 't0'):
             self.batch.post_update(cfg)
 
+        cfg = self._make_cfg(1250)
+        cfg.pulse_seq_params['t_last'] = 4999
+        with self.assertRaisesRegex(ValueError, 't_last'):
+            self.batch.post_update(cfg)
+
+        cfg = self._make_cfg(1250)
+        cfg.pulse_seq_params['t_last'] = 6001
+        with self.assertRaisesRegex(ValueError, 't_last'):
+            self.batch.post_update(cfg)
+
 
 class PulseExperimentConfigTests(unittest.TestCase):
     def setUp(self):
@@ -146,6 +182,7 @@ class PulseExperimentConfigTests(unittest.TestCase):
             pulse_seq_params={
                 'pop': ['TC'],
                 't0': 5000,
+                't_last': None,
                 'width': 150,
                 'period': 500,
                 'n_pulses': 10,
@@ -161,11 +198,38 @@ class PulseExperimentConfigTests(unittest.TestCase):
         # Batch-specific pulse period and weight stay out of exp_name_sub
         exp_name = self.exp_cfg.gen_exp_name_sub(cfg)
 
-        self.assertIn('_nf_1_namp_1_', exp_name)
+        self.assertIn('_nseed_1_f_2_5_amp_0.01_0.03_3_', exp_name)
         self.assertIn('_IT2_IT2_x2_', exp_name)
         self.assertIn('_pulse_TC_d_150_c_25_r_100_4900_t0_5000_jit_0', exp_name)
+        self.assertNotIn('_tlast_', exp_name)
         self.assertNotIn('_T_500', exp_name)
         self.assertNotIn('_w_0.1', exp_name)
+
+    def test_exp_name_includes_explicit_last_pulse_time(self):
+        cfg = SimpleNamespace(
+            t0_calc=7000,
+            duration=10000,
+            wmult=0.25,
+            EEGain=0.5,
+            pulse_seq_params={
+                'pop': ['TC'],
+                't0': 5000,
+                't_last': 8000,
+                'width': 150,
+                'period': 500,
+                'n_pulses': 10,
+                'rates': [100],
+                'weight': 0.1,
+                'convergence': 25,
+                'jitter': 0,
+            },
+            runtime_params=self.exp_cfg._get_default_runtime_params(),
+        )
+
+        # Explicit t_last participates in the experiment directory name
+        exp_name = self.exp_cfg.gen_exp_name_sub(cfg)
+
+        self.assertIn('_tlast_8000', exp_name)
 
     def test_default_wmat_multipliers_feed_runtime_params(self):
         self.exp_cfg.WMAT_MULTIPLIERS = [
@@ -192,6 +256,14 @@ class PulseExperimentConfigTests(unittest.TestCase):
         postfix = self.exp_cfg._get_job_postfix(cfg, 'net_pulse_000001')
 
         self.assertEqual(postfix, '000001_seed_1000_f_5_amp_0.3')
+
+    def test_job_postfix_keeps_public_zero_amp(self):
+        cfg = SimpleNamespace(seed_main=1000, f=5, amp=0)
+
+        # Output labels stay on the public batch coordinate
+        postfix = self.exp_cfg._get_job_postfix(cfg, 'net_pulse_000001')
+
+        self.assertEqual(postfix, '000001_seed_1000_f_5_amp_0')
 
     def test_ibkg_wcorr_json_appends_before_runtime_corrections(self):
         runtime_params = self.exp_cfg._get_default_runtime_params()

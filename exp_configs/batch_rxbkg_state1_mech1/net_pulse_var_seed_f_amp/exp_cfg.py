@@ -116,10 +116,12 @@ NEED_RUN = 1
 DIAG = 0
 
 ADD_PULSES = 1
+PULSE_T_LAST = None
 PULSE_PARAMS = {
     'name': 'PulseSeq',
     'pop': ['NGF'],
     't0': 5000,
+    't_last': PULSE_T_LAST,
     'width': 50,
     'period': None,
     'n_pulses': None,
@@ -566,9 +568,10 @@ def gen_exp_name_sub(cfg):
     exp_name_sub += f'_wmult_{cfg.wmult}_ee_{cfg.EEGain}'
     if runtime_params['inp']['add_pulses']:
         pulse_par = cfg.pulse_seq_params
-        ppop, pt0, pdur, pjit, pr, pc = (
+        ppop, pt0, pt_last, pdur, pjit, pr, pc = (
             pulse_par['pop'],
             pulse_par['t0'],
+            pulse_par.get('t_last', None),
             pulse_par['width'],
             pulse_par['jitter'],
             pulse_par['rates'],
@@ -580,6 +583,8 @@ def gen_exp_name_sub(cfg):
             f'_pulse_{ppop}_d_{pdur}_c_{pc}_'
             f'r_{pr0}_{dpr}_t0_{pt0}_jit_{pjit}'
         )
+        if pt_last is not None:
+            exp_name_sub += f'_tlast_{pt_last}'
     return exp_name_sub
 
 
