@@ -93,7 +93,7 @@ def collect_rates_from_nc(dirpath_exp, cfg_param_fields=CFG_PARAM_FIELDS,
     """Collect per-job rate NetCDF files into one batch xarray."""
     dirpath_exp = Path(dirpath_exp)
     job_idx_xr = _get_job_idx_xr(dirpath_exp, cfg_param_fields)
-    cache_path = cache_path or dirpath_exp / 'rvec_xr_combined_from_nc.nc'
+    cache_path = cache_path or dirpath_exp / 'rvec_xr_combined.nc'
     open_kwargs = _get_open_kwargs(chunks=chunks)
 
     # Delegate batch stacking to sim_data_analyzer
@@ -123,7 +123,7 @@ def collect_lfp_from_nc(dirpath_exp, cfg_param_fields=CFG_PARAM_FIELDS,
     """Collect per-job LFP NetCDF files into one batch xarray."""
     dirpath_exp = Path(dirpath_exp)
     job_idx_xr = _get_job_idx_xr(dirpath_exp, cfg_param_fields)
-    cache_path = cache_path or dirpath_exp / 'lfp_xr_combined_from_nc.nc'
+    cache_path = cache_path or dirpath_exp / 'lfp_xr_combined.nc'
     open_kwargs = _get_open_kwargs(chunks=chunks)
 
     # Delegate batch stacking to sim_data_analyzer
@@ -161,7 +161,7 @@ def collect_rates_from_pkl(dirpath_exp, cfg_param_fields=CFG_PARAM_FIELDS,
         tau_smooth=tau_smooth,
         pop_names=pop_names,
     )
-    cache_path = cache_path or dirpath_exp / 'rvec_xr_combined_from_pkl.nc'
+    cache_path = cache_path or dirpath_exp / 'rvec_xr_combined.nc'
     open_kwargs = {'chunks': chunks} if chunks else {}
 
     # Delegate pkl reading and batch stacking to sim_data_analyzer
@@ -196,7 +196,7 @@ def collect_lfp_from_pkl(dirpath_exp, cfg_param_fields=CFG_PARAM_FIELDS,
     """Collect LFP dynamics from raw per-job pkl files."""
     dirpath_exp = Path(dirpath_exp)
     job_idx_xr = _get_job_idx_xr(dirpath_exp, cfg_param_fields)
-    cache_path = cache_path or dirpath_exp / 'lfp_xr_combined_from_pkl.nc'
+    cache_path = cache_path or dirpath_exp / 'lfp_xr_combined.nc'
     open_kwargs = {'chunks': chunks} if chunks else {}
 
     # Delegate pkl reading and batch stacking to sim_data_analyzer
@@ -235,7 +235,7 @@ def collect_batch_results(dirpath_exp, source='pkl', targets=('rates', 'lfp'),
         key = (source, target)
         cache_path = None
         if dirpath_out is not None:
-            cache_path = dirpath_out / f'{target}_xr_combined_from_{source}.nc'
+            cache_path = dirpath_out / f'{target}_xr_combined.nc'
         if key == ('nc', 'rates'):
             out[target] = collect_rates_from_nc(
                 dirpath_exp,
@@ -279,11 +279,12 @@ def collect_batch_results(dirpath_exp, source='pkl', targets=('rates', 'lfp'),
 
 
 if __name__ == '__main__':
+
+    EXP_NAME = 'exp_L2_nseed_3_f_5_amp_0.001_0.02_5_t_5.0_50.0_lfp_0_300_50_ictrl_wmult_0.25_ee_0.5_pulse_NGF2_d_50_c_25_r_500_0_t0_5000_jit_0'
+
     DIRPATH_EXP = (
-        DIR_REPO / 'exp_results' /
-        'batch_rxbkg_state1_mech1' /
-        'net_pulse_var_seed_f_amp' /
-        'exp_L2_nseed_1_f_5_amp_0.005_0.025_5_t_5.0_30.0_lfp_0_300_50_ictrl_wmult_0.25_ee_0.5_pulse_IT2_d_50_c_25_r_500_0_t0_5000_jit_0'
+        DIR_REPO / 'exp_results' / 'batch_rxbkg_state1_mech1' /
+        'net_pulse_var_seed_f_amp' / EXP_NAME
     )
 
     SOURCE = 'nc'
@@ -293,7 +294,7 @@ if __name__ == '__main__':
     LOAD = 0
     DIRPATH_OUT = (
         DIR_REPO / 'dev_scratch' / 'artifacts' /
-        'net_pulse_var_seed_f_amp'
+        'net_pulse_var_seed_f_amp' / EXP_NAME
     )
 
     collect_batch_results(

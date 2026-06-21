@@ -12,20 +12,21 @@ for path in (DIR_REPO, DIR_EXTERNAL):
     if str(path) not in sys.path:
         sys.path.insert(0, str(path))
 
+EXP_NAME = 'exp_L2_nseed_3_f_5_amp_0.001_0.02_5_t_5.0_50.0_lfp_0_300_50_ictrl_wmult_0.25_ee_0.5_pulse_NGF2_d_50_c_25_r_500_0_t0_5000_jit_0'
 DIRPATH_EXP = (
-    DIR_REPO / 'exp_results' /
-    'batch_rxbkg_state1_mech1' /
-    'net_pulse_var_seed_f_amp' /
-    'exp_L2_nseed_1_f_5_amp_0.005_0.025_5_t_5.0_30.0_lfp_0_300_50_ictrl_wmult_0.25_ee_0.5_pulse_IT2_d_50_c_25_r_500_0_t0_5000_jit_0'
+    DIR_REPO / 'exp_results' / 'batch_rxbkg_state1_mech1' /
+    'net_pulse_var_seed_f_amp' / EXP_NAME
 )
 INPUT_PATH = (
     DIR_REPO / 'dev_scratch' / 'artifacts' /
-    'net_pulse_var_seed_f_amp' / 'rates_xr_combined.nc'
+    'net_pulse_var_seed_f_amp' / EXP_NAME / 'rates_xr_combined.nc'
 )
 NETPAR_DIR = DIRPATH_EXP / 'netpar'
+AVG_OVER_SEEDS = 1
+OUT_DIR_NAME = 'phase_lock_avgseed' if AVG_OVER_SEEDS else 'phase_lock'
 OUT_DIR = (
     DIR_REPO / 'dev_scratch' / 'artifacts' /
-    'net_pulse_var_seed_f_amp' / 'phase_lock'
+    'net_pulse_var_seed_f_amp' / EXP_NAME / OUT_DIR_NAME
 )
 
 os.environ.setdefault('MPLCONFIGDIR', str(OUT_DIR / 'mpl_cache'))
@@ -49,6 +50,7 @@ from sim_data_analyzer.xr_signal import interp_time_outliers
 
 TIME_DIM = 'time'
 JOB_ID_COORD = 'job_id'
+SEED_DIM = 'seed_main'
 METHOD = 'fit'
 FALLBACK_F = 5
 N_CYCLES = 3
@@ -59,7 +61,7 @@ OUTLIER_Z_THRESH = 8
 OUTLIER_REL_NEIGHBOR_THRESH = 5
 
 POWER_OVERLAP = 0.9
-POWER_FBAND = 5
+POWER_FBAND = 10
 POWER_DF = 0.2
 POWER_MODE = 'amp2'
 
@@ -71,7 +73,8 @@ MIN_VALID_MASS_FRAC = 0.5
 
 EPOCH_T_WIN = (-0.2, 0.2)
 PLOT_T_WIN = (10, 30)
-PHASE_PROGRESSION_PLOT = 'wrapped_strip'  # 'wrapped_strip' or 'unwrapped'
+#PHASE_PROGRESSION_PLOT = 'wrapped_strip'
+PHASE_PROGRESSION_PLOT = 'unwrapped'
 PHASE_PROGRESS_YLIM = (-2 * np.pi, 2 * np.pi)
 PHASE_BINS = 32
 PHASE_SMOOTH_SIGMA = 1
@@ -365,12 +368,20 @@ def _get_epoch_mean(x, tt, tt_pulse):
     return t_epoch, np.nanmean(np.stack(epochs, axis=0), axis=0), len(epochs)
 
 
-def _build_job_out_dir(job_id, job_sel):
-    """Build the output folder for one job."""
-    parts = [f'job_{job_id:05d}']
+def _get_job_dir_stem(job_id, job_sel):
+    """Build the folder stem for one analyzed result."""
+    if job_id is None:
+        parts = ['avgseed']
+    else:
+        parts = [f'job_{int(job_id):05d}']
     for key, value in job_sel.items():
         parts.append(f'{key}_{_format_fname_piece(value)}')
-    job_dir = OUT_DIR / '_'.join(parts)
+    return '_'.join(parts)
+
+
+def _build_job_out_dir(job_id, job_sel):
+    """Build the output folder for one job."""
+    job_dir = OUT_DIR / 'per_job' / _get_job_dir_stem(job_id, job_sel)
     job_dir.mkdir(parents=True, exist_ok=True)
     return job_dir
 
@@ -697,8 +708,9 @@ def _make_metric_row(job_id, job_sel, trace_result, target_f, n_pulses):
         key: _as_scalar(value)
         for key, value in trace_result['trace_sel'].items()
     })
+    job_id_value = 'avgseed' if job_id is None else int(job_id)
     row.update({
-        'job_id': int(job_id),
+        'job_id': job_id_value,
         'target_f': float(target_f),
         'n_pulses': int(n_pulses),
         'n_valid_phase': int(np.isfinite(trace_result['phases']).sum()),
@@ -709,6 +721,8 @@ def _make_metric_row(job_id, job_sel, trace_result, target_f, n_pulses):
         'power_peak': float(trace_result['power_peak']),
         'n_epochs': int(trace_result['n_epochs']),
     })
+    if 'n_seed' in trace_result:
+        row['n_seed'] = int(trace_result['n_seed'])
     return row
 
 
@@ -783,6 +797,175 @@ def _save_job_plots(job_result):
     _plot_power(job_result, paths['power'])
     _plot_phase_distr(job_result, paths['phase_distr'])
     return paths
+
+
+def _nanmean_arrays(arrays):
+    """Average equal-shape arrays while ignoring NaNs."""
+    stack = np.stack([np.asarray(arr, dtype=float) for arr in arrays], axis=0)
+    valid = np.isfinite(stack)
+    count = valid.sum(axis=0)
+    total = np.nansum(stack, axis=0)
+    out = np.full(count.shape, np.nan, dtype=float)
+    np.divide(total, count, out=out, where=count > 0)
+    return out
+
+
+def _nanmean_scalar(values):
+    """Average scalar values while ignoring NaNs."""
+    values = np.asarray(values, dtype=float)
+    valid = np.isfinite(values)
+    if not np.any(valid):
+        return np.nan
+    return float(np.mean(values[valid]))
+
+
+def _circmean_arrays(arrays):
+    """Circular-average equal-shape angle arrays while ignoring NaNs."""
+    stack = np.stack([np.asarray(arr, dtype=float) for arr in arrays], axis=0)
+    valid = np.isfinite(stack)
+    z = np.where(valid, np.exp(1j * stack), 0)
+    count = valid.sum(axis=0)
+    total = z.sum(axis=0)
+    mean_z = np.full(count.shape, np.nan + 1j * np.nan, dtype=complex)
+    np.divide(total, count, out=mean_z, where=count > 0)
+    return np.where(count > 0, np.angle(mean_z), np.nan)
+
+
+def _circmean_scalar(values):
+    """Circular-average scalar angles while ignoring NaNs."""
+    values = np.asarray(values, dtype=float)
+    valid = np.isfinite(values)
+    if not np.any(valid):
+        return np.nan
+    mean_z = np.mean(np.exp(1j * values[valid]))
+    return float(np.angle(mean_z))
+
+
+def _avg_job_key(job_sel):
+    """Build a seedless grouping key for seed averaging."""
+    return tuple(
+        (key, _as_scalar(value))
+        for key, value in job_sel.items()
+        if key != SEED_DIM
+    )
+
+
+def _avg_trace_result(trace_results, n_seed):
+    """Average matching trace results over seeds."""
+    ref = trace_results[0]
+    phases = _circmean_arrays([result['phases'] for result in trace_results])
+    power_curve = _nanmean_arrays([
+        result['power_curve']
+        for result in trace_results
+    ])
+    if np.any(np.isfinite(power_curve)):
+        peak_idx = int(np.nanargmax(power_curve))
+    else:
+        peak_idx = None
+    if peak_idx is None:
+        peak_freq = np.nan
+        peak_power = np.nan
+    else:
+        peak_freq = float(ref['ff'][peak_idx])
+        peak_power = float(power_curve[peak_idx])
+
+    # Keep one averaged trace result with the same plotting interface
+    trace_result = {
+        'trace_sel': ref['trace_sel'],
+        'label': ref['label'],
+        'x_raw': _nanmean_arrays([result['x_raw'] for result in trace_results]),
+        'x_masked': _nanmean_arrays([
+            result['x_masked']
+            for result in trace_results
+        ]),
+        'phases': phases,
+        'itc': _nanmean_scalar([result['itc'] for result in trace_results]),
+        'phi': _circmean_scalar([result['phi'] for result in trace_results]),
+        'ff': ref['ff'],
+        'power_curve': power_curve,
+        'power_mean': _nanmean_scalar([
+            result['power_mean']
+            for result in trace_results
+        ]),
+        'power_peak_freq': peak_freq,
+        'power_peak': peak_power,
+        't_epoch': ref['t_epoch'],
+        'epoch_mean': _nanmean_arrays([
+            result['epoch_mean']
+            for result in trace_results
+        ]),
+        'n_epochs': int(np.round(_nanmean_scalar([
+            result['n_epochs']
+            for result in trace_results
+        ]))),
+        'n_seed': n_seed,
+    }
+    return trace_result
+
+
+def _average_job_group(job_results):
+    """Average one seed group of analyzed jobs."""
+    ref_job = job_results[0]
+    job_sel = dict(_avg_job_key(ref_job['job_sel']))
+    n_seed = len(job_results)
+    target_f = _get_target_f(job_sel)
+    label_base = _format_sel(job_sel)
+    if label_base:
+        job_label = f'{label_base}, n_seed={n_seed}'
+    else:
+        job_label = f'n_seed={n_seed}'
+    trace_groups = {}
+
+    # Group matching traces across seed jobs
+    for job_result in job_results:
+        for trace_result in job_result['traces']:
+            trace_key = tuple(trace_result['trace_sel'].items())
+            trace_groups.setdefault(trace_key, []).append(trace_result)
+
+    traces = [
+        _avg_trace_result(trace_results, n_seed)
+        for trace_results in trace_groups.values()
+    ]
+    metrics = [
+        _make_metric_row(
+            None,
+            job_sel,
+            trace_result,
+            target_f,
+            len(ref_job['tt_pulse']),
+        )
+        for trace_result in traces
+    ]
+    return {
+        'job_id': None,
+        'job_sel': job_sel,
+        'job_label': job_label,
+        'target_f': target_f,
+        'tt': ref_job['tt'],
+        'tt_pulse': ref_job['tt_pulse'],
+        'n_pulses': len(ref_job['tt_pulse']),
+        'pulse_duration': _nanmean_scalar([
+            job_result['pulse_duration']
+            for job_result in job_results
+        ]),
+        'pulse_intervals': ref_job['pulse_intervals'],
+        'netpar_path': None,
+        'traces': traces,
+        'metrics': metrics,
+        'n_seed': n_seed,
+    }
+
+
+def _average_results_over_seeds(job_results):
+    """Average analyzed job results over the seed dimension."""
+    groups = {}
+    for job_result in job_results:
+        key = _avg_job_key(job_result['job_sel'])
+        groups.setdefault(key, []).append(job_result)
+    return [
+        _average_job_group(group_jobs)
+        for group_jobs in groups.values()
+    ]
 
 
 def _get_combined_plot_groups(job_results):
@@ -1033,7 +1216,7 @@ def _plot_combined_phase_distr(group, out_path):
 
 
 def _save_combined_plots(job_results):
-    """Save plots grouped by frequency, trace, seed, and amplitude."""
+    """Save plots grouped by frequency, trace, and condition."""
     groups = _get_combined_plot_groups(job_results)
     all_paths = []
 
@@ -1082,30 +1265,49 @@ def main():
     job_dims = _get_job_dim_names(X)
     job_id_xr = X.coords[JOB_ID_COORD]
     job_results = []
-    all_metrics = []
     saved_paths = []
 
     # Process one batch job at a time
     for job in iter_batch_jobs(job_id_xr):
         job_result = _analyze_job(X, job, job_dims)
         job_results.append(job_result)
-        if SAVE_JOB_PLOTS:
-            paths = _save_job_plots(job_result)
-            saved_paths.append(paths)
-        all_metrics.extend(job_result['metrics'])
         print(
-            f"Saved job {job_result['job_id']:05d}: "
+            f"Analyzed job {job_result['job_id']:05d}: "
             f"{job_result['job_label']}, traces={len(job_result['traces'])}"
         )
+
+    # Optionally collapse matching seed jobs before saving outputs
+    result_jobs = job_results
+    if AVG_OVER_SEEDS:
+        result_jobs = _average_results_over_seeds(job_results)
+
+    if SAVE_JOB_PLOTS:
+        for job_result in result_jobs:
+            paths = _save_job_plots(job_result)
+            saved_paths.append(paths)
+            result_stem = _get_job_dir_stem(
+                job_result['job_id'],
+                job_result['job_sel'],
+            )
+            print(
+                f"Saved result {result_stem}: "
+                f"traces={len(job_result['traces'])}"
+            )
 
     # Save cross-job summaries by frequency and trace
     combined_paths = []
     if SAVE_COMBINED_PLOTS:
-        combined_paths = _save_combined_plots(job_results)
+        combined_paths = _save_combined_plots(result_jobs)
 
+    all_metrics = [
+        metric
+        for job_result in result_jobs
+        for metric in job_result['metrics']
+    ]
     metrics_path = _save_metrics(all_metrics)
     print(f'Saved {metrics_path}')
-    print(f'Jobs: {len(saved_paths)}')
+    print(f'Analyzed jobs: {len(job_results)}')
+    print(f'Saved job-style groups: {len(saved_paths)}')
     print(f'Combined groups: {len(combined_paths)}')
     print(f'Metric rows: {len(all_metrics)}')
 
