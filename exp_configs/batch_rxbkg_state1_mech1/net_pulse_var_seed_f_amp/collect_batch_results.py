@@ -205,15 +205,21 @@ def collect_lfp_from_pkl(dirpath_exp, cfg_param_fields=CFG_PARAM_FIELDS,
 
 def collect_batch_results(dirpath_exp, source='pkl', targets=('rates', 'lfp'),
                           cfg_param_fields=CFG_PARAM_FIELDS, chunks=None,
-                          lazy=False, load=False):
+                          lazy=False, load=False, dirpath_out=None, **kwargs):
     """Collect selected batch outputs from nc or pkl sources."""
     if isinstance(targets, str):
         targets = (targets,)
+    if dirpath_out is not None:
+        dirpath_out = Path(dirpath_out)
+        dirpath_out.mkdir(parents=True, exist_ok=True)
 
     # Dispatch only to thin source-specific wrappers
     out = {}
     for target in targets:
         key = (source, target)
+        cache_path = None
+        if dirpath_out is not None:
+            cache_path = dirpath_out / f'{target}_xr_combined_from_{source}.nc'
         if key == ('nc', 'rates'):
             out[target] = collect_rates_from_nc(
                 dirpath_exp,
@@ -221,6 +227,7 @@ def collect_batch_results(dirpath_exp, source='pkl', targets=('rates', 'lfp'),
                 chunks=chunks,
                 lazy=lazy,
                 load=load,
+                cache_path=cache_path
             )
         elif key == ('nc', 'lfp'):
             out[target] = collect_lfp_from_nc(
@@ -229,6 +236,7 @@ def collect_batch_results(dirpath_exp, source='pkl', targets=('rates', 'lfp'),
                 chunks=chunks,
                 lazy=lazy,
                 load=load,
+                cache_path=cache_path
             )
         elif key == ('pkl', 'rates'):
             out[target] = collect_rates_from_pkl(
@@ -237,6 +245,8 @@ def collect_batch_results(dirpath_exp, source='pkl', targets=('rates', 'lfp'),
                 chunks=chunks,
                 lazy=lazy,
                 load=load,
+                cache_path=cache_path,
+                **kwargs
             )
         elif key == ('pkl', 'lfp'):
             out[target] = collect_lfp_from_pkl(
@@ -245,6 +255,7 @@ def collect_batch_results(dirpath_exp, source='pkl', targets=('rates', 'lfp'),
                 chunks=chunks,
                 lazy=lazy,
                 load=load,
+                cache_path=cache_path
             )
         else:
             raise ValueError(f'Unsupported source/target pair: {key}')
@@ -264,6 +275,10 @@ if __name__ == '__main__':
     CHUNKS = None
     LAZY = 1
     LOAD = 0
+    DIRPATH_OUT = (
+        DIR_REPO / 'dev_scratch' / 'artifacts' /
+        'net_pulse_var_seed_f_amp'
+    )
 
     collect_batch_results(
         dirpath_exp=DIRPATH_EXP,
@@ -272,4 +287,6 @@ if __name__ == '__main__':
         chunks=CHUNKS,
         lazy=LAZY,
         load=LOAD,
+        dirpath_out=DIRPATH_OUT,
+        tau_smooth=0.005
     )
