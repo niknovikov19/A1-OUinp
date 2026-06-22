@@ -23,7 +23,7 @@ from batch_params import (
     DT0_VALUES,
     F_VALUES,
     N_SEEDS,
-    PULSE_T0,
+    PULSE_T0
 )
 from conn_fader import ConnFader
 import diagnostics as diag
@@ -57,7 +57,6 @@ SIM_DURATION = 15 * 1e3
 T0_CALC = 5 * 1e3
 
 EXP_LABEL = 'L2'
-
 POPS_USED = L2_POPS
 
 WMAT_MULTIPLIERS = []
@@ -102,12 +101,12 @@ PLOT_TRACES = 0
 NCELLS_REC = 5
 NCELLS_PLOT = 2
 
-REC_LFP = 1
+REC_LFP = 0
 LFP_Y_MIN = 0
 LFP_Y_MAX = 300
 LFP_Y_STEP = 50
 
-PLOT_CSD = 1
+PLOT_CSD = 0
 CSD_VIS_T0 = 10000
 
 LAYER_BOUNDS = {'L1': 100, 'L2': 160, 'L3': 950, 'L4': 1250,
