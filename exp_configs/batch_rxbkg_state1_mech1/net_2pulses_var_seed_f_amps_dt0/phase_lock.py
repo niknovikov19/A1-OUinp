@@ -12,14 +12,14 @@ for path in (DIR_REPO, DIR_EXTERNAL):
     if str(path) not in sys.path:
         sys.path.insert(0, str(path))
 
-EXP_NAME = 'exp_L2_nseed_3_f_5_amp_0_0.003_4_t_5.0_50.0_lfp_0_300_50_ictrl_wmult_0.25_ee_0.5_pulse_NGF2_d_50_c_25_r_500_0_t0_5000_jit_0'
+EXP_NAME = 'exp_L2_nseed_1_f_2_5_amp1_0.01_0.03_3_amp2_0.01_0.03_3_dt0_0_25_50_t_5.0_15.0_lfp_0_300_50_ictrl_wmult_0.25_ee_0.5_2pulse_NGF_d_50_c_25_r_500_0_t0_5000_jit_0'
 DIRPATH_EXP = (
     DIR_REPO / 'exp_results' / 'batch_rxbkg_state1_mech1' /
-    'net_pulse_var_seed_f_amp' / EXP_NAME
+    'net_2pulses_var_seed_f_amps_dt0' / EXP_NAME
 )
 DIRPATH_ARTIFACT = (
     DIR_REPO / 'dev_scratch' / 'artifacts' /
-    'net_pulse_var_seed_f_amp' / EXP_NAME
+    'net_2pulses_var_seed_f_amps_dt0' / EXP_NAME
 )
 #SIGNAL_KINDS = ('lfp', 'csd')
 SIGNAL_KINDS = ('rates',)
@@ -64,6 +64,8 @@ SEED_DIM = 'seed_main'
 Y_DIM = 'y'
 METHOD = 'fit'
 FALLBACK_F = 5
+LOCK_PULSE_NAME = 'PulseSeq1'
+MASK_PULSE_NAMES = ('PulseSeq1', 'PulseSeq2')
 N_CYCLES = 3
 ANALYSIS_T0 = 10
 PULSE_PAD = 0.02
@@ -184,23 +186,43 @@ def _find_netpar_path(job_id):
     return matches[0]
 
 
-def _load_pulse_intervals(job_id):
-    """Load pulse intervals in seconds for one batch job."""
-    netpar_path = _find_netpar_path(job_id)
-    with open(netpar_path, 'r', encoding='utf-8') as fobj:
-        netpar = json.load(fobj)
-
-    # Read the saved VecStim pulse windows
-    pop_params = netpar['net']['params']['popParams']
-    if 'PulseSeq' not in pop_params:
-        raise KeyError(f'PulseSeq not found in {netpar_path}')
-    pulse_seq = pop_params['PulseSeq']
+def _extract_pulse_intervals(pop_params, pulse_name, netpar_path):
+    """Extract one VecStim pulse interval array in seconds."""
+    if pulse_name not in pop_params:
+        raise KeyError(f'{pulse_name} not found in {netpar_path}')
+    pulse_seq = pop_params[pulse_name]
     pulses = pulse_seq['params']['pulses']
     intervals = [
         (float(pulse['start']) / 1000, float(pulse['end']) / 1000)
         for pulse in pulses
     ]
-    return np.asarray(intervals, dtype=float), netpar_path
+    return np.asarray(intervals, dtype=float)
+
+
+def _load_pulse_intervals(job_id):
+    """Load locking and masking pulse intervals for one batch job."""
+    netpar_path = _find_netpar_path(job_id)
+    with open(netpar_path, 'r', encoding='utf-8') as fobj:
+        netpar = json.load(fobj)
+
+    # Read all saved VecStim pulse windows needed by analysis
+    pop_params = netpar['net']['params']['popParams']
+    intervals_by_name = {
+        pulse_name: _extract_pulse_intervals(
+            pop_params,
+            pulse_name,
+            netpar_path,
+        )
+        for pulse_name in MASK_PULSE_NAMES
+    }
+    lock_intervals = intervals_by_name[LOCK_PULSE_NAME]
+    mask_intervals = np.concatenate(
+        [intervals_by_name[name] for name in MASK_PULSE_NAMES],
+        axis=0,
+    )
+    order = np.argsort(mask_intervals[:, 0])
+    mask_intervals = mask_intervals[order]
+    return lock_intervals, mask_intervals, intervals_by_name, netpar_path
 
 
 def _open_input_xarray():
@@ -533,6 +555,24 @@ def _build_job_out_dir(job_id, job_sel):
     return job_dir
 
 
+def _plot_pulse_starts(axis, intervals_by_name, t0, t1):
+    """Mark pulse starts from each configured stream."""
+    colors = ('0.65', '0.35')
+    for idx, pulse_name in enumerate(MASK_PULSE_NAMES):
+        intervals = intervals_by_name.get(pulse_name, [])
+        color = colors[idx % len(colors)]
+        label = pulse_name
+        for n, (t_start, _t_end) in enumerate(intervals):
+            if t0 <= t_start <= t1:
+                axis.axvline(
+                    t_start,
+                    color=color,
+                    linestyle='--',
+                    linewidth=0.7,
+                    label=label if n == 0 else None,
+                )
+
+
 def _plot_signals(job_result, out_path):
     """Plot raw signals and pulse-triggered averages."""
     tt = job_result['tt']
@@ -562,10 +602,8 @@ def _plot_signals(job_result, out_path):
             label=label,
         )
 
-    # Mark pulses and masked interval on the shared panels
-    for t_stim in tt_pulse:
-        if t0 <= t_stim <= t1:
-            ax[0].axvline(t_stim, color='0.75', linestyle='--', linewidth=0.7)
+    # Mark all pulse streams and the lock-stream epoch interval
+    _plot_pulse_starts(ax[0], job_result['pulse_intervals_by_name'], t0, t1)
     ax[1].axvline(0, color='k', linestyle='--', linewidth=1)
     ax[1].axvspan(
         -PULSE_PAD,
@@ -935,9 +973,11 @@ def _analyze_job(X, job, job_dims, trace_key=None):
     trace_sel = dict(trace_key) if trace_key is not None else None
     X_job = _prepare_job_xarray(X, job, trace_sel=trace_sel)
     tt = np.asarray(X_job.coords[TIME_DIM].values, dtype=float)
-    pulse_intervals, netpar_path = _load_pulse_intervals(job_id)
-    tt_pulse = _filter_analysis_pulses(pulse_intervals, tt)
-    pulse_duration = float(np.nanmedian(pulse_intervals[:, 1] - pulse_intervals[:, 0]))
+    lock_intervals, mask_intervals, intervals_by_name, netpar_path = (
+        _load_pulse_intervals(job_id)
+    )
+    tt_pulse = _filter_analysis_pulses(lock_intervals, tt)
+    pulse_duration = float(np.nanmedian(lock_intervals[:, 1] - lock_intervals[:, 0]))
     target_f = _get_target_f(job_sel)
     job_label = _format_sel(job_sel)
 
@@ -953,7 +993,7 @@ def _analyze_job(X, job, job_dims, trace_key=None):
         trace_result = _analyze_trace(
             signal,
             trace_sel,
-            pulse_intervals,
+            mask_intervals,
             tt_pulse,
             target_f,
         )
@@ -977,7 +1017,9 @@ def _analyze_job(X, job, job_dims, trace_key=None):
         'tt_pulse': tt_pulse,
         'n_pulses': len(tt_pulse),
         'pulse_duration': pulse_duration,
-        'pulse_intervals': pulse_intervals,
+        'pulse_intervals': mask_intervals,
+        'lock_pulse_intervals': lock_intervals,
+        'pulse_intervals_by_name': intervals_by_name,
         'netpar_path': netpar_path,
         'traces': traces,
         'metrics': metrics,
@@ -1179,6 +1221,8 @@ def _average_job_group(job_results):
             for job_result in job_results
         ]),
         'pulse_intervals': ref_job['pulse_intervals'],
+        'lock_pulse_intervals': ref_job['lock_pulse_intervals'],
+        'pulse_intervals_by_name': ref_job['pulse_intervals_by_name'],
         'netpar_path': None,
         'traces': traces,
         'metrics': metrics,
@@ -1310,10 +1354,8 @@ def _plot_combined_signals(group, out_path):
             label=item['label'],
         )
 
-    # Mark the pulse timing from the first condition
-    for t_stim in ref_job['tt_pulse']:
-        if t0 <= t_stim <= t1:
-            ax[0].axvline(t_stim, color='0.75', linestyle='--', linewidth=0.7)
+    # Mark both pulse streams from the first condition
+    _plot_pulse_starts(ax[0], ref_job['pulse_intervals_by_name'], t0, t1)
     ax[1].axvline(0, color='k', linestyle='--', linewidth=1)
     ax[1].axvspan(
         -PULSE_PAD,

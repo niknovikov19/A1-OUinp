@@ -21,7 +21,9 @@ from sim_data_analyzer.batch_xr import (
 CFG_PARAM_FIELDS = {
     'seed_main': 'seed_main',
     'f': 'f',
-    'amp': 'amp',
+    'amp1': 'amp1',
+    'amp2': 'amp2',
+    'dt0': 'dt0',
 }
 NC_OPEN_KWARGS = {
     'engine': 'scipy',
@@ -280,11 +282,11 @@ def collect_batch_results(dirpath_exp, source='pkl', targets=('rates', 'lfp'),
 
 if __name__ == '__main__':
 
-    EXP_NAME = 'exp_L2_nseed_3_f_5_amp_0_0.003_4_t_5.0_50.0_lfp_0_300_50_ictrl_wmult_0.25_ee_0.5_pulse_NGF2_d_50_c_25_r_500_0_t0_5000_jit_0'
+    EXP_NAME = 'exp_L2_nseed_1_f_2_5_amp1_0.01_0.03_3_amp2_0.01_0.03_3_dt0_0_25_50_t_5.0_15.0_lfp_0_300_50_ictrl_wmult_0.25_ee_0.5_2pulse_NGF_d_50_c_25_r_500_0_t0_5000_jit_0'
 
     DIRPATH_EXP = (
         DIR_REPO / 'exp_results' / 'batch_rxbkg_state1_mech1' /
-        'net_pulse_var_seed_f_amp' / EXP_NAME
+        'net_2pulses_var_seed_f_amps_dt0' / EXP_NAME
     )
 
     SOURCE = 'nc'
@@ -294,7 +296,7 @@ if __name__ == '__main__':
     LOAD = 0
     DIRPATH_OUT = (
         DIR_REPO / 'dev_scratch' / 'artifacts' /
-        'net_pulse_var_seed_f_amp' / EXP_NAME
+        'net_2pulses_var_seed_f_amps_dt0' / EXP_NAME
     )
 
     collect_batch_results(

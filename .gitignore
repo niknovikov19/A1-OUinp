@@ -59,3 +59,4 @@ exp_results/batch_rxbkg_unconn_state1_mech1/**/data_proc/**
 exp_results/batch_rxbkg_unconn_state1_mech1/**/combined/
 .mplcache
 .mplconfig
+dev_scratch/phase_lock_debug/**/*.png

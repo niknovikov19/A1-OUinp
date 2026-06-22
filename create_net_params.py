@@ -7,6 +7,84 @@ import numpy as np
 from netpyne.batchtools import specs
 
 
+def _get_pulse_seq_param_list(cfg):
+    """Return configured pulse sequence params as a list."""
+    pulse_seq_params = cfg.pulse_seq_params
+    if isinstance(pulse_seq_params, dict):
+        return [pulse_seq_params]
+    return list(pulse_seq_params)
+
+
+def _get_pulse_starts(par):
+    """Return pulse starts from explicit tpulse or regular timing params."""
+    if 'tpulse' in par:
+        starts = list(par['tpulse'])
+        if len(starts) != par['n_pulses']:
+            raise ValueError(
+                f"Pulse sequence {par['name']} has inconsistent tpulse length"
+            )
+        return starts
+
+    t0, T = par['t0'], par['period']
+    return [
+        t0 + n * T
+        for n in range(par['n_pulses'])
+    ]
+
+
+def _expand_pulse_rates(rates, n_pulses):
+    """Expand scalar pulse rates for NetPyNE VecStim pulse windows."""
+    if np.isscalar(rates):
+        return [rates] * n_pulses
+    return list(rates)
+
+
+def _add_pulse_sequence(netParams, par):
+    """Add one VecStim pulse sequence and its target connection."""
+    name = par['name']
+    pulse_starts = _get_pulse_starts(par)
+    rates = _expand_pulse_rates(par['rates'], len(pulse_starts))
+    pop_out = par['pop']
+
+    # Keep only target populations present in this netParams object
+    if isinstance(pop_out, str):
+        pop_out = [pop_out]
+    pop_out = [pop for pop in pop_out if pop in netParams.popParams]
+    pop_out_str = '_'.join(pop_out)
+
+    # Add the VecStim population carrying the time-windowed pulses
+    netParams.popParams[name] = {
+        'cellModel': 'VecStim',
+        'numCells': par['n_cells'],
+        'params': {
+            'rate': 0.001,   # very small bkg (required)
+            'pulses': [
+                {
+                    'start': t_start,
+                    'end': t_start + par['width'],
+                    'rate': rates[n],
+                    'noise': 1.0,
+                }
+                for n, t_start in enumerate(pulse_starts)
+            ],
+        },
+    }
+
+    # Connect the pulse population to the configured target populations
+    netParams.connParams[f'{name}->{pop_out_str}'] = {
+        'preConds': {'pop': name},
+        'postConds': {'pop': pop_out},
+        #'connList': [[i, i] for i in range(n_post)],
+        'convergence': par['convergence'],
+        'sec': 'soma',
+        'loc': 0.5,
+        'weight': par['weight'],
+        'delay': 1,
+        'synMech': 'AMPA',
+        'synsPerConn': 1,
+    }
+
+
 def create_net_params(cfg):
     """Create netParams based on a config, common for all parameter sets. """
 
@@ -1159,45 +1237,8 @@ def create_net_params(cfg):
 
     # Pulse sequence
     if hasattr(cfg, 'add_pulses') and cfg.add_pulses:
-        par = cfg.pulse_seq_params
-        name = par['name']
-        t0, T = par['t0'], par['period']
-        pop_out = par['pop']
-        #n_post = netParams.popParams[pop_out]['numCells']
-
-        if isinstance(pop_out, str):
-            pop_out = [pop_out]
-        pop_out = [pop for pop in pop_out if pop in netParams.popParams]
-        pop_out_str = '_'.join(pop_out)
-        
-        netParams.popParams[name] = {
-            'cellModel': 'VecStim',
-            'numCells': par['n_cells'],
-            'params': {
-                'rate': 0.001,   # very small bkg (required)
-                'pulses': [
-                    { 
-                    'start': t0 + n * T, 
-                    'end':   t0 + n * T + par['width'],
-                    'rate':  par['rates'][n],
-                    'noise': 1.0,
-                    }
-                    for n in range(par['n_pulses'])
-                ]
-            }
-        }
-        netParams.connParams[f'{name}->{pop_out_str}'] = {
-            'preConds':  {'pop': name},
-            'postConds': {'pop': pop_out},
-            #'connList': [[i, i] for i in range(n_post)],
-            'convergence': par['convergence'],
-            'sec': 'soma',
-            'loc': 0.5,
-            'weight': par['weight'],
-            'delay': 1,
-            'synMech': 'AMPA',
-            'synsPerConn': 1
-        }
+        for par in _get_pulse_seq_param_list(cfg):
+            _add_pulse_sequence(netParams, par)
 
     #------------------------------------------------------------------------------
     # Description
