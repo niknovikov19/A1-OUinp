@@ -2,9 +2,10 @@ import numpy as np
 
 
 N_SEEDS = 1
-F_VALUES = [2, 5]
-AMP_VALUES = [0.01, 0.02, 0.03]
-PULSE_ZERO_WEIGHT = 1e-6
+F_VALUES = [5]
+AMP_VALUES = [0, 0.001, 0.002, 0.005, 0.01]
+
+PULSE_ZERO_WEIGHT = 1e-9
 PULSE_COUNT_EPS = 1e-9
 
 

@@ -46,7 +46,7 @@ CONNS_EE = [(p1, p2) for p1 in E_POPS for p2 in E_POPS]
 
 
 # Duration and rate calculation window
-SIM_DURATION = 15 * 1e3
+SIM_DURATION = 50 * 1e3
 T0_CALC = 5 * 1e3
 
 EXP_LABEL = 'L2'
@@ -100,33 +100,32 @@ LFP_Y_MIN = 0
 LFP_Y_MAX = 300
 LFP_Y_STEP = 50
 
-PLOT_CSD = 1
+PLOT_CSD = 0
 CSD_VIS_T0 = 10000
 
 LAYER_BOUNDS = {'L1': 100, 'L2': 160, 'L3': 950, 'L4': 1250,
                 'L5A': 1334, 'L5B': 1550, 'L6': 2000}
 
 PLOT_RATE_DYNAMICS = 1
-RVEC_TAU_SMOOTH = 0.02
-SAVE_RATE_XR = 0
-SAVE_LFP_XR = 0
+RVEC_TAU_SMOOTH = 0.005
+SAVE_RATE_XR = 1
+SAVE_LFP_XR = 1
 SAVE_PKL = 1
 
 NEED_RUN = 1
 DIAG = 0
 
 ADD_PULSES = 1
-PULSE_T_LAST = None
+PULSE_T_LAST = 45000
 PULSE_PARAMS = {
     'name': 'PulseSeq',
-    'pop': ['NGF'],
+    'pop': ['NGF2'],
     't0': 5000,
     't_last': PULSE_T_LAST,
-    'width': 50,
+    'width': 20,
     'period': None,
     'n_pulses': None,
-    #'rates': 1250,
-    'rates': [500],
+    'rates': [1000],
     'weight': None,
     'n_cells': 100,
     'convergence': 25,
