@@ -736,7 +736,7 @@ def main_cli():
 
 
 def main():
-    WORKFLOW_NAME = 'ibkg_adj__fullsim__var_wmult_1d'
+    WORKFLOW_NAME = 'ibkg_adj__fullsim__var_wmult_list_1d'
     run_workflow(WORKFLOW_NAME)
 
 

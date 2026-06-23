@@ -15,6 +15,7 @@ conn_groups = {'ee': conns_ee, 'ep': conns_ep, 'pe': conns_pe}
 #wmult_vals = [1, 2]
 wmult = 2
 
+# Weight variants define explicit pre, post, multiplier triplets
 WMULT_VARIANTS = {
     'base': [],
     f'ee{wmult}': [(c[0], c[1], wmult) for c in conns_ee],
@@ -25,17 +26,16 @@ WMULT_VARIANTS = {
 #for gr_name, conns in conn_groups.items():
 #    for wmult in wmult_vals:
 #        v = [(conn[0], conn[1], wmult) for conn in conns]
-        
-# Weight variants define explicit pre, post, multiplier triplets
-WMULT_VARIANTS = {
+""" WMULT_VARIANTS = {
     'w2': [('IT2', p, 2) for p in POPS_USED],
     'w5': [('IT2', p, 5) for p in POPS_USED],
     'w10': [('IT2', p, 10) for p in POPS_USED],
     'w20': [('IT2', p, 20) for p in POPS_USED],
-}
+} """
+
 WMULT_VARIANT_KEYS = list(WMULT_VARIANTS)
 
-EXP_LABEL = 'L2_wmult_list_e_all'
+EXP_LABEL = 'L2_wmult_list_ee_efb_2'
 
 MAX_ITERATIONS = len(WMULT_VARIANT_KEYS)
 
@@ -50,8 +50,10 @@ FULLSIM_T0_CALC = 5000
 DW_T_LIMITS = [DW_T0_CALC / 1000, DW_DURATION / 1000]
 FULLSIM_T_LIMITS = [DW_T0_CALC / 1000, FULLSIM_DURATION / 1000]
 
+N_SEEDS = 1
+
 # Batch params shared by both subordinate stages
-SEED_VALUES = (1000 + np.arange(3)).tolist()
+SEED_VALUES = (1000 + np.arange(N_SEEDS)).tolist()
 IBKG_DW_ADJ_VALUES = np.linspace(-0.5, 0.1, 10).tolist()
 
 # Surr-to-real conn fader for fullsim stage

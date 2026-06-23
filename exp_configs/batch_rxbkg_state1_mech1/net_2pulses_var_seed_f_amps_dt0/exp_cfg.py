@@ -53,7 +53,7 @@ CONNS_EE = [(p1, p2) for p1 in E_POPS for p2 in E_POPS]
 
 
 # Duration and rate calculation window
-SIM_DURATION = 15 * 1e3
+SIM_DURATION = 50 * 1e3
 T0_CALC = 5 * 1e3
 
 EXP_LABEL = 'L2'
@@ -101,7 +101,7 @@ PLOT_TRACES = 0
 NCELLS_REC = 5
 NCELLS_PLOT = 2
 
-REC_LFP = 0
+REC_LFP = 1
 LFP_Y_MIN = 0
 LFP_Y_MAX = 300
 LFP_Y_STEP = 50
@@ -112,52 +112,41 @@ CSD_VIS_T0 = 10000
 LAYER_BOUNDS = {'L1': 100, 'L2': 160, 'L3': 950, 'L4': 1250,
                 'L5A': 1334, 'L5B': 1550, 'L6': 2000}
 
-PLOT_RATE_DYNAMICS = 1
-RVEC_TAU_SMOOTH = 0.02
-SAVE_RATE_XR = 0
-SAVE_LFP_XR = 0
+PLOT_RATE_DYNAMICS = 0
+RVEC_TAU_SMOOTH = 0.005
+SAVE_RATE_XR = 1
+SAVE_LFP_XR = 1
 SAVE_PKL = 1
 
 NEED_RUN = 1
 DIAG = 0
 
 ADD_PULSES = 1
-PULSE_T_LAST = None
-PULSE_PARAMS = [
-    {
-        'name': 'PulseSeq1',
-        'pop': ['NGF'],
-        't0': PULSE_T0,
-        't_last': PULSE_T_LAST,
-        'width': 50,
-        'period': None,
-        'n_pulses': None,
-        #'rates': 1250,
-        'rates': [500],
-        'weight': None,
-        'n_cells': 100,
-        'convergence': 25,
-        'jitter': 0,
-        'rand_type': 'norm',
-    },
-    {
-        'name': 'PulseSeq2',
-        'pop': ['NGF'],
-        't0': PULSE_T0,
-        't_last': PULSE_T_LAST,
-        'width': 50,
-        'period': None,
-        'n_pulses': None,
-        #'rates': 1250,
-        'rates': [500],
-        'weight': None,
-        'n_cells': 100,
-        'convergence': 25,
-        'jitter': 0,
-        'rand_type': 'norm',
-    },
-]
-
+PULSE_T_LAST = SIM_DURATION - 5000
+PULSE_PARAMS_BASE = {
+    't0': PULSE_T0,
+    't_last': PULSE_T_LAST,
+    'period': None,
+    'n_pulses': None,
+    'weight': None,
+    'n_cells': 100,
+    'convergence': 25,
+    'jitter': 0,
+    'rand_type': 'norm',
+}
+PULSE_PARAMS = [PULSE_PARAMS_BASE.copy() for _ in range(2)]
+PULSE_PARAMS[0] |= {
+    'name': 'PulseSeq1',
+    'pop': ['IT2'],
+    'width': 20,
+    'rates': [1000],
+}
+PULSE_PARAMS[1] |= {
+    'name': 'PulseSeq2',
+    'pop': ['NGF2'],
+    'width': 20,
+    'rates': [1000],
+}
 
 def _get_default_runtime_params():
     """Return the default runtime parameter tree."""
@@ -602,7 +591,7 @@ def gen_exp_name_sub(cfg):
     if runtime_params['inp']['add_pulses']:
         pulse_params = _get_pulse_param_list(cfg.pulse_seq_params)
         pulse_par = pulse_params[0]
-        ppop, pt0, pt_last, pdur, pjit, pr, pc = (
+        _, pt0, pt_last, pdur, pjit, pr, pc = (
             pulse_par['pop'],
             pulse_par['t0'],
             pulse_par.get('t_last', None),
@@ -611,10 +600,11 @@ def gen_exp_name_sub(cfg):
             pulse_par['rates'],
             pulse_par['convergence'],
         )
-        ppop = _get_pulse_pop_label(ppop)
+        ppops = [_get_pulse_pop_label(par['pop'])
+                 for par in pulse_params]
         pr0, dpr = _get_pulse_rate_label(pr)
         exp_name_sub += (
-            f'_{len(pulse_params)}pulse_{ppop}_d_{pdur}_c_{pc}_'
+            f'_{len(pulse_params)}pulse_{ppops[0]}_{ppops[1]}_d_{pdur}_c_{pc}_'
             f'r_{pr0}_{dpr}_t0_{pt0}_jit_{pjit}'
         )
         if pt_last is not None:
@@ -752,6 +742,7 @@ def modify_network(sim):
         pts=sim.cfg.runtime_params['conn']['fader_pts']
     )
 
+    # Activate fader
     fader.create_modulators()
     fader.connect_modulators()
     fader.setup_recording(rec_dt=1)

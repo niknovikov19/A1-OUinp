@@ -51,7 +51,7 @@ wait
 #exp_name = 'batch_rxbkg_unconn_state1_mech1/net_inpsur_rsweep_newsec_var_seed_pre'
 #exp_name = 'batch_rxbkg_unconn_state1_mech1/net_inpsur_hr_osc_var_seed_f_amp'
 #exp_name = 'batch_rxbkg_unconn_state1_mech1/net_inpsur_rr_osc_var_seed_pre_f_amp'batch_rxbkg_unconn_state1_mech1/net_inpsur_rr_osc_var_seed_pre_f_amp'
-exp_name = 'batch_rxbkg_state1_mech1/net_pulse_var_seed_f_amp'
+exp_name = 'batch_rxbkg_state1_mech1/net_2pulses_var_seed_f_amps_dt0'
 #exp_name = 'batch_rxbkg_unconn_state1_mech1/pops_inpsur_newsec_var_drxe_rxi'
 #exp_name = 'batch_unconn/fi_tuning'
 

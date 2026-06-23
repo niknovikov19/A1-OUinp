@@ -1,11 +1,14 @@
 import numpy as np
 
 
-N_SEEDS = 2
+N_SEEDS = 3
 F_VALUES = [5]
-AMP1_VALUES = [0, 0.01]
-AMP2_VALUES = [0, 0.01]
+AMP1_VALUES = [0, 0.01, 0.02, 0.04]
+#AMP1_VALUES = [0]
+AMP2_VALUES = [0, 0.02, 0.04, 0.08]   # NGF2
+#AMP2_VALUES = [0, 0.05, 0.1, 0.2]   # PV2
 DT0_VALUES = [0, 15]
+#DT0_VALUES = [0]
 
 PULSE_T0 = 5000
 PULSE_ZERO_WEIGHT = 1e-9
