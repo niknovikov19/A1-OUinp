@@ -78,7 +78,7 @@ FULLSIM_RUNTIME_PARAMS = {
     },
     'rec': {
         'traces': False,
-        'lfp': False
+        'lfp': True
     },
     'proc': {
         'rate_t_limits': FULLSIM_T_LIMITS,
@@ -89,7 +89,8 @@ FULLSIM_RUNTIME_PARAMS = {
         'plot_traces': False,
         'plot_csd': False,
         'plot_rate_dynamics': 1,
-        'save_rate_xr': 1
+        'save_rate_xr': 1,
+        'save_lfp_xr': 1
     },
 }
 

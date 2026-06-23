@@ -20,7 +20,7 @@ from analysis.ou_tuning.netpyne_res_parse_utils import prepare_sim_result
 from batch_params import N_SEEDS
 from conn_fader import ConnFader
 import diagnostics as diag
-from external.sim_data_analyzer.xr_adapters import get_net_rate_dynamics_xr
+from external.sim_data_analyzer.xr_adapters import get_lfp_xr, get_net_rate_dynamics_xr
 from syn_mech_relabel import _rule_kind_and_base_pops, _relabel_conn_synmech
 
 
@@ -103,6 +103,10 @@ LAYER_BOUNDS = {'L1': 100, 'L2': 160, 'L3': 950, 'L4': 1250,
 PLOT_RATE_DYNAMICS = 1
 RVEC_TAU_SMOOTH = 0.02
 
+SAVE_RATE_XR = 0
+SAVE_LFP_XR = 0
+SAVE_PKL = 1
+
 NEED_RUN = 1
 DIAG = 0
 
@@ -155,7 +159,9 @@ def _get_default_runtime_params():
             'plot_traces': PLOT_TRACES,
             'plot_csd': PLOT_CSD,
             'plot_rate_dynamics': PLOT_RATE_DYNAMICS,
-            'save_rate_xr': False,
+            'save_rate_xr': bool(SAVE_RATE_XR),
+            'save_lfp_xr': bool(SAVE_LFP_XR),
+            'save_pkl': bool(SAVE_PKL),
         },
     }
 
@@ -229,6 +235,9 @@ def _validate_runtime_params(runtime_params):
         unknown = sorted(set(corrections) - set(pops_used))
         if unknown:
             raise ValueError(f'Unknown ibkg correction populations: {unknown}')
+
+    if runtime_params['out']['save_lfp_xr'] and not runtime_params['rec']['lfp']:
+        raise ValueError('save_lfp_xr requires runtime_params["rec"]["lfp"]')
 
 
 def _build_bkg_spike_inputs(pops_used):
@@ -353,6 +362,7 @@ def _apply_runtime_params_to_cfg(cfg):
     cfg.plot_traces = bool(runtime_params['out']['plot_traces'])
     cfg.plot_csd = bool(runtime_params['out']['plot_csd'])
     cfg.plot_rate_dynamics = bool(runtime_params['out']['plot_rate_dynamics'])
+    cfg.savePickle = bool(runtime_params['out']['save_pkl'])
     cfg.add_pulses = int(bool(runtime_params['inp']['add_pulses']))
     _set_analysis_includes(cfg, cfg.pops_used)
 
@@ -677,6 +687,32 @@ def _save_rate_xr(sim, dirpath_res_sub, postfix):
     return fpath_rvec
 
 
+def _json_ready(value):
+    """Convert lightweight attrs to JSON-friendly Python objects."""
+    if isinstance(value, dict):
+        return {key: _json_ready(val) for key, val in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_json_ready(val) for val in value]
+    if isinstance(value, np.generic):
+        return value.item()
+    if isinstance(value, np.ndarray):
+        return value.tolist()
+    return value
+
+
+def _save_lfp_xr(sim, dirpath_res_sub, postfix):
+    """Save compact total LFP dynamics as NetCDF."""
+    cfg = sim.cfg
+    sim_result = prepare_sim_result(sim)
+    lfp_xr = get_lfp_xr(sim_result)
+    lfp_xr.attrs['seed_main'] = int(cfg.seed_main)
+    lfp_xr.attrs['dt_rec'] = float(DT_REC)
+    lfp_xr.attrs['runtime_params_json'] = json.dumps(_json_ready(cfg.runtime_params))
+    fpath_lfp = dirpath_res_sub / 'lfp_xr' / f'lfp_{postfix}.nc'
+    lfp_xr.to_netcdf(fpath_lfp)
+    return fpath_lfp
+
+
 def post_run(sim):
     """Process and organize one completed simulation job."""
     cfg = sim.cfg
@@ -699,18 +735,19 @@ def post_run(sim):
     os.makedirs(dirpath_res_sub, exist_ok=True)
     dirnames_sub = ['rasters', 'results', 'cfg', 'pkl', 'netpar', 
                     'traces', 'wmod_figs', 'rvec_figs', 'csd_figs',
-                    'rvec_xr']
+                    'rvec_xr', 'lfp_xr']
     for dirname in dirnames_sub:
         os.makedirs(dirpath_res_sub / dirname, exist_ok=True)
 
     # Move results to a subfolder
     data_info = [
         ('raster', 'png', 'rasters'),
-        ('data', 'pkl', 'pkl'),
         ('cfg', 'json', 'cfg'),
         ('netParams', 'json', 'netpar'),
         ('CSD', 'png', 'csd_figs')
     ]
+    if cfg.savePickle:
+        data_info.insert(1, ('data', 'pkl', 'pkl'))
     for di in data_info:
         data_name, ext, dirname_sub = di
         fpath_old = dirpath_res / f'{exp_name}_{data_name}.{ext}'
@@ -756,6 +793,11 @@ def post_run(sim):
     if NEED_RUN and cfg.runtime_params['out']['save_rate_xr']:
         fpath_rvec = _save_rate_xr(sim, dirpath_res_sub, postfix)
         outputs.append(_relative_output(cfg, fpath_rvec))
+
+    # Save optional compact LFP dynamics for downstream processing
+    if NEED_RUN and cfg.runtime_params['out']['save_lfp_xr']:
+        fpath_lfp = _save_lfp_xr(sim, dirpath_res_sub, postfix)
+        outputs.append(_relative_output(cfg, fpath_lfp))
 
     # Plot and save rate dynamics
     if cfg.plot_rate_dynamics:
