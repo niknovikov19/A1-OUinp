@@ -554,6 +554,33 @@ def sinusoid_fit_power_freqs(
     return t_power, ff, power
 
 
+def sinusoid_fit_coeff_freqs(
+    x, t, f0, fband, df, n_cycles, overlap=1.0, *,
+    fit_intercept=True, exclude_edges=True,
+    min_valid_mass_frac=0, rcond=None
+):
+    """Compute sliding fitted complex coefficients over a frequency grid."""
+    x, t, dt_sample = _validate_wavelet_inputs(x, t, f0, n_cycles)
+    ff = _validate_freq_grid(f0, fband, df)
+
+    # Build one shared center grid from the lowest frequency support
+    t_coeff = _build_eval_centers(t, dt_sample, np.min(ff), n_cycles, overlap)
+    coeff = np.full((ff.size, t_coeff.size), np.nan + 1j * np.nan,
+                    dtype=complex)
+    for j, f in enumerate(ff):
+        for i, t0 in enumerate(t_coeff):
+            fit = sinusoid_fit_local(
+                x, t, t0, f, n_cycles,
+                fit_intercept=fit_intercept,
+                exclude_edges=exclude_edges,
+                min_valid_mass_frac=min_valid_mass_frac,
+                rcond=rcond,
+            )
+            if np.isfinite(fit['a']) and np.isfinite(fit['b']):
+                coeff[j, i] = fit['a'] - 1j * fit['b']
+    return t_coeff, ff, coeff
+
+
 def sinusoid_fit_itc(
     x, t, tt_stim, f, n_cycles, drop_win=None, *, fit_intercept=True,
     exclude_edges=True, min_valid_mass_frac=0.0, rcond=None,

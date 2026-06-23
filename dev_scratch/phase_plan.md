@@ -87,6 +87,24 @@ Also compute a paired-by-seed version as a sensitivity analysis when correspondi
 
 Do not pair block $b$ in one condition with block $b$ in another unless the underlying noise trajectory is genuinely shared.
 
+### Test data
+
+**Root folder for simulation results (read-only):**
+
+`exp_results/batch_rxbkg_state1_mech1/net_pulse_var_seed_f_amp`
+
+**Root folder for analysis:**
+
+`dev_scratch/artifacts/net_pulse_var_seed_f_amp`
+
+Each subfodler is an experiment, their names match between source and analysis fodlers.
+
+**Experiment to use for analysis debugging:**
+
+`exp_L2_nseed_3_f_5_amp_0.001_0.02_5_t_5.0_50.0_lfp_0_300_50_ictrl_wmult_0.25_ee_0`
+
+
+
 ---
 
 # Priority 1 — Simple, high-value visual analyses
