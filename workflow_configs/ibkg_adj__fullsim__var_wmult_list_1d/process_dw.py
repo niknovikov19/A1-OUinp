@@ -168,26 +168,43 @@ def plot_fits(rates_xr, target_rates, required_pops=None):
     colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
     table_rows = []
 
-    # Fit each seed and require its target-rate crossing
+    # Fit each seed while preserving diagnostic plots on failures
     for n_pop, pop in enumerate(pops_vis):
         ax = axes[n_pop]
         target_rate = target_rates[pop]
         intersections = {}
+        fit_errors = {}
         for n_seed, seed in enumerate(seeds):
             color = colors[n_seed % len(colors)]
             rate = rates.sel(pop=pop, seed_main=seed)
             y = np.asarray(rate.values, dtype=float)
-            params = fit_richards(ibkg, y)
-            ibkg_r0 = find_target_intersection(
-                params,
-                target_rate,
-                ibkg.min(),
-                ibkg.max(),
-            )
-            intersections[seed] = ibkg_r0
-
             label = f'Seed {seed}' if n_pop == 0 else None
             ax.plot(ibkg, y, '-', color=color, label=label, alpha=0.5)
+
+            try:
+                params = fit_richards(ibkg, y)
+                ibkg_r0 = find_target_intersection(
+                    params,
+                    target_rate,
+                    ibkg.min(),
+                    ibkg.max(),
+                )
+            except (RuntimeError, ValueError, FloatingPointError) as exc:
+                intersections[seed] = np.nan
+                fit_errors[seed] = str(exc)
+                ax.text(
+                    0.02,
+                    0.92 - 0.08 * len(fit_errors),
+                    f'Seed {seed}: {exc}',
+                    transform=ax.transAxes,
+                    fontsize=7,
+                    color=color,
+                    va='top',
+                )
+                continue
+
+            intersections[seed] = ibkg_r0
+            fit_errors[seed] = ''
             ax.plot(ibkg_fit, richards(ibkg_fit, *params), color=color)
             ax.scatter(
                 ibkg_r0,
@@ -200,17 +217,39 @@ def plot_fits(rates_xr, target_rates, required_pops=None):
             )
 
         # Add target rate and median current guides
-        median_ibkg = float(np.median(list(intersections.values())))
+        valid = [
+            value
+            for value in intersections.values()
+            if np.isfinite(value)
+        ]
+        median_ibkg = float(np.median(valid)) if valid else np.nan
         target_label = 'r0' if n_pop == 0 else None
         median_label = 'Median Ibkg' if n_pop == 0 else None
         ax.axhline(target_rate, color='0.25', ls=':', label=target_label)
-        ax.axvline(median_ibkg, color='k', ls='--', label=median_label)
+        if np.isfinite(median_ibkg):
+            ax.axvline(median_ibkg, color='k', ls='--', label=median_label)
         ax.set_title(pop)
         ax.grid(alpha=0.2)
 
-        row = {'pop': pop, 'median_ibkg': median_ibkg}
+        status = 'ok' if len(valid) == len(seeds) else 'failed'
+        row = {
+            'pop': pop,
+            'median_ibkg': median_ibkg,
+            'status': status,
+            'fit_error': '; '.join(
+                f'{seed}: {err}'
+                for seed, err in fit_errors.items()
+                if err
+            ),
+        }
         row.update({
             f'seed_{seed}': intersections[seed]
+            for seed in seeds
+        })
+        row.update({
+            f'seed_{seed}_status': (
+                'ok' if np.isfinite(intersections[seed]) else 'failed'
+            )
             for seed in seeds
         })
         table_rows.append(row)

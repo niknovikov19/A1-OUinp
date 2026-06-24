@@ -546,8 +546,14 @@ def _load_history(dirpath_run, stage_configs,
     dirpath_iterations = dirpath_run / 'iterations'
     for fpath in sorted(dirpath_iterations.glob('iter_*/meta/iteration.json')):
         item = read_json(fpath)
-        if item.get('status') != 'complete':
+        status = item.get('status')
+        if status not in ('complete', 'failed_continue'):
             break
+        if status == 'failed_continue':
+            if item.get('next_context') is None:
+                break
+            history.append(item)
+            continue
 
         # Validate stages in the workflow-declared order
         dirpath_iter = fpath.parents[1]
@@ -579,6 +585,37 @@ def _load_history(dirpath_run, stage_configs,
             break
         history.append(item)
     return history
+
+
+def _record_workflow_state(dirpath_run, history, stop_reason):
+    """Write compact workflow state metadata."""
+    write_json_atomic(dirpath_run / 'meta' / 'state.json', {
+        'status': 'stopped' if stop_reason else 'running',
+        'completed_iterations': [
+            item['iteration']
+            for item in history
+        ],
+        'stop_reason': stop_reason,
+    })
+
+
+def _handle_stage_failure(cfg_mod, stage_name, iteration, iteration_context,
+                          stage_results, history, exc):
+    """Delegate recoverable stage failures to workflow configs."""
+    handler = getattr(cfg_mod, 'handle_stage_failure', None)
+    if handler is None:
+        raise exc
+    outcome = handler(
+        stage_name,
+        iteration,
+        iteration_context,
+        stage_results,
+        history,
+        exc,
+    )
+    if outcome is None:
+        raise exc
+    return outcome
 
 
 def run_workflow(workflow_name, run_id=None):
@@ -654,61 +691,94 @@ def run_workflow(workflow_name, run_id=None):
                 dynamic_overrides,
             )
             dirpath_stage = dirpath_iter / stage_name
-            # Run the stage
-            _run_stage(
-                dirpath_stage,
-                stage_spec,
-                exp_paths,
-                params,
-                dirpath_workflow,
-            )
-            # Process stage results
-            stage_results[stage_name] = _process_stage(
-                dirpath_stage,
-                stage_spec,
-                dirpath_workflow,
-            )
             stage_spec_hashes[stage_name] = stage_spec['stage_spec_hash']
 
-        # Delegate iteration science and continuation to the workflow config
-        outcome = cfg_mod.finish_iteration(
-            iteration,
-            iteration_context,
-            stage_results,
-            history,
-        )
-        next_context = outcome.get('next_context')
-        stop_reason = outcome.get('stop_reason')
-        iteration_info = {
-            'status': 'complete',
-            'iteration': iteration,
-            'context': iteration_context,
-            'stage_spec_hashes': stage_spec_hashes,
-            'result': outcome.get('result', {}),
-            'next_context': next_context,
-            'stop_reason': stop_reason,
-        }
-        write_json_atomic(
-            dirpath_iter / 'meta' / 'iteration.json',
-            iteration_info,
-        )
-        history.append(iteration_info)
-        write_json_atomic(dirpath_run / 'meta' / 'state.json', {
-            'status': 'stopped' if stop_reason else 'running',
-            'completed_iterations': [
-                item['iteration']
-                for item in history
-            ],
-            'stop_reason': stop_reason,
-        })
-        if stop_reason:
-            print(f'Workflow stopped: {stop_reason}', flush=True)
-            return
-        if next_context is None:
-            raise ValueError(
-                'finish_iteration() returned no next context or stop reason'
+            try:
+                # Run the stage
+                _run_stage(
+                    dirpath_stage,
+                    stage_spec,
+                    exp_paths,
+                    params,
+                    dirpath_workflow,
+                )
+                # Process stage results
+                stage_results[stage_name] = _process_stage(
+                    dirpath_stage,
+                    stage_spec,
+                    dirpath_workflow,
+                )
+            except Exception as exc:
+                outcome = _handle_stage_failure(
+                    cfg_mod,
+                    stage_name,
+                    iteration,
+                    iteration_context,
+                    stage_results,
+                    history,
+                    exc,
+                )
+                next_context = outcome.get('next_context')
+                stop_reason = outcome.get('stop_reason')
+                iteration_info = {
+                    'status': 'failed_continue',
+                    'iteration': iteration,
+                    'context': iteration_context,
+                    'stage_spec_hashes': stage_spec_hashes,
+                    'failed_stage': stage_name,
+                    'error': repr(exc),
+                    'result': outcome.get('result', {}),
+                    'next_context': next_context,
+                    'stop_reason': stop_reason,
+                }
+                write_json_atomic(
+                    dirpath_iter / 'meta' / 'iteration.json',
+                    iteration_info,
+                )
+                history.append(iteration_info)
+                _record_workflow_state(dirpath_run, history, stop_reason)
+                if stop_reason:
+                    print(f'Workflow stopped: {stop_reason}', flush=True)
+                    return
+                if next_context is None:
+                    raise ValueError(
+                        'Failure handler returned no next context or stop reason'
+                    )
+                iteration_context = next_context
+                break
+        else:
+            # Delegate iteration science and continuation to the workflow config
+            outcome = cfg_mod.finish_iteration(
+                iteration,
+                iteration_context,
+                stage_results,
+                history,
             )
-        iteration_context = next_context
+            next_context = outcome.get('next_context')
+            stop_reason = outcome.get('stop_reason')
+            iteration_info = {
+                'status': 'complete',
+                'iteration': iteration,
+                'context': iteration_context,
+                'stage_spec_hashes': stage_spec_hashes,
+                'result': outcome.get('result', {}),
+                'next_context': next_context,
+                'stop_reason': stop_reason,
+            }
+            write_json_atomic(
+                dirpath_iter / 'meta' / 'iteration.json',
+                iteration_info,
+            )
+            history.append(iteration_info)
+            _record_workflow_state(dirpath_run, history, stop_reason)
+            if stop_reason:
+                print(f'Workflow stopped: {stop_reason}', flush=True)
+                return
+            if next_context is None:
+                raise ValueError(
+                    'finish_iteration() returned no next context or stop reason'
+                )
+            iteration_context = next_context
 
     write_json_atomic(dirpath_run / 'meta' / 'state.json', {
         'status': 'complete',

@@ -257,18 +257,44 @@ def get_stage_overrides(stage_name, iteration, iteration_context,
     raise KeyError(f'Unknown workflow stage: {stage_name}')
 
 
-def finish_iteration(iteration, iteration_context, stage_results, history):
-    """Record one variant point and advance to the next variant."""
-    if 'dw' not in stage_results or 'fullsim' not in stage_results:
-        raise ValueError('Iteration requires DW and fullsim stage results')
-
-    # Build the next context while allowing the final iteration to complete
+def _get_next_context(iteration_context):
+    """Build the next context while allowing the final iteration to complete."""
     next_id = iteration_context['wmult_id'] + 1
     next_context = {'wmult_id': next_id}
     next_wmult_variant = None
     if next_id < len(WMULT_VARIANT_KEYS):
         next_context = _make_context(next_id)
         next_wmult_variant = next_context['wmult_variant']
+    return next_context, next_wmult_variant
+
+
+def handle_stage_failure(stage_name, iteration, iteration_context,
+                         stage_results, history, error):
+    """Continue past recoverable stage failures."""
+    if stage_name != 'dw':
+        raise error
+
+    next_context, next_wmult_variant = _get_next_context(iteration_context)
+    return {
+        'result': {
+            'wmult_id': iteration_context['wmult_id'],
+            'wmult_variant': iteration_context['wmult_variant'],
+            'wmat_multipliers': iteration_context['wmat_multipliers'],
+            'failed_stage': stage_name,
+            'error': repr(error),
+            'next_wmult_variant': next_wmult_variant,
+        },
+        'next_context': next_context,
+        'stop_reason': None
+    }
+
+
+def finish_iteration(iteration, iteration_context, stage_results, history):
+    """Record one variant point and advance to the next variant."""
+    if 'dw' not in stage_results or 'fullsim' not in stage_results:
+        raise ValueError('Iteration requires DW and fullsim stage results')
+
+    next_context, next_wmult_variant = _get_next_context(iteration_context)
 
     # Store compact PSD dimensions in the iteration summary
     psd_sizes = {

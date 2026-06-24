@@ -24,6 +24,10 @@ from workflow_utils import (
 
 DIR_REPO = Path(__file__).resolve().parents[1]
 DIR_WORKFLOW = DIR_REPO / 'workflow_configs' / 'wmat_transfer'
+DIR_WORKFLOW_LIST = (
+    DIR_REPO / 'workflow_configs' /
+    'ibkg_adj__fullsim__var_wmult_list_1d'
+)
 
 
 def load_module_unique(fpath, name):
@@ -740,6 +744,40 @@ class WorkflowConfigTests(unittest.TestCase):
         )
 
 
+class WorkflowListRecoveryTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.cfg = load_module_unique(
+            DIR_WORKFLOW_LIST / 'workflow_cfg.py',
+            'workflow_list_cfg_test',
+        )
+
+    def test_dw_failure_advances_variant_context(self):
+        context = self.cfg._make_context(1)
+        outcome = self.cfg.handle_stage_failure(
+            'dw',
+            1,
+            context,
+            {},
+            [],
+            ValueError('bad fit'),
+        )
+        self.assertEqual(outcome['next_context']['wmult_id'], 2)
+        self.assertEqual(outcome['result']['failed_stage'], 'dw')
+        self.assertIn('bad fit', outcome['result']['error'])
+
+    def test_fullsim_failure_is_not_recoverable(self):
+        with self.assertRaises(RuntimeError):
+            self.cfg.handle_stage_failure(
+                'fullsim',
+                1,
+                self.cfg._make_context(1),
+                {},
+                [],
+                RuntimeError('fullsim failed'),
+            )
+
+
 class WorkflowResumeTests(unittest.TestCase):
     def _write_complete_stage(self, dirpath_stage, stage_name, stage_hash):
         """Write one minimal valid batch and processing stage."""
@@ -832,6 +870,140 @@ class WorkflowResumeTests(unittest.TestCase):
                 [{'name': 'alpha'}, {'name': 'beta'}],
             )
             self.assertEqual(len(history), 1)
+
+    def test_history_accepts_failed_continue_iterations(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            dirpath_run = Path(tmp)
+            dirpath_iter = dirpath_run / 'iterations' / 'iter_000'
+            write_json_atomic(
+                dirpath_iter / 'meta' / 'iteration.json',
+                {
+                    'status': 'failed_continue',
+                    'iteration': 0,
+                    'stage_spec_hashes': {'dw': 'aaa'},
+                    'context': {'wmult_id': 0},
+                    'failed_stage': 'dw',
+                    'error': "ValueError('bad fit')",
+                    'result': {},
+                    'next_context': {'wmult_id': 1},
+                    'stop_reason': None,
+                },
+            )
+            history = run_workflow._load_history(
+                dirpath_run,
+                [{'name': 'dw'}, {'name': 'fullsim'}],
+            )
+            self.assertEqual(len(history), 1)
+            self.assertEqual(history[0]['status'], 'failed_continue')
+
+    def test_workflow_continues_after_recoverable_stage_failure(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            old_configs = run_workflow.DIR_WORKFLOW_CONFIGS
+            old_results = run_workflow.DIR_WORKFLOW_RESULTS
+            run_workflow.DIR_WORKFLOW_CONFIGS = Path(tmp) / 'configs'
+            run_workflow.DIR_WORKFLOW_RESULTS = Path(tmp) / 'results'
+            dirpath_cfg = (
+                run_workflow.DIR_WORKFLOW_CONFIGS /
+                'fake_recovery'
+            )
+            dirpath_cfg.mkdir(parents=True)
+            (dirpath_cfg / 'workflow_cfg.py').write_text("""
+def get_workflow_params():
+    return {
+        'workflow_name': 'fake_recovery',
+        'max_iterations': 2,
+        'initial_context': {'idx': 0},
+        'retention': {},
+        'batch_run_defaults': {},
+        'stages': [
+            {'name': 'dw', 'experiment': 'dummy', 'processor': 'p.py'},
+            {'name': 'fullsim', 'experiment': 'dummy', 'processor': 'p.py'},
+        ],
+    }
+
+
+def get_run_id(params):
+    return 'run'
+
+
+def get_stage_overrides(stage_name, iteration, context, stage_results, history):
+    return {}
+
+
+def handle_stage_failure(stage_name, iteration, context, stage_results,
+                         history, error):
+    if stage_name != 'dw':
+        raise error
+    return {
+        'result': {'failed_stage': stage_name},
+        'next_context': {'idx': context['idx'] + 1},
+        'stop_reason': None,
+    }
+
+
+def finish_iteration(iteration, context, stage_results, history):
+    return {
+        'result': {'stages': sorted(stage_results)},
+        'next_context': {'idx': context['idx'] + 1},
+        'stop_reason': None,
+    }
+""")
+            calls = []
+
+            def fake_resolve(params, stage_cfg, iteration, run_id, dynamic):
+                stage_name = stage_cfg['name']
+                spec = {
+                    'stage': stage_name,
+                    'iteration': iteration,
+                    'batch_params': {},
+                    'processor': 'p.py',
+                    'processor_params': {},
+                    'stage_spec_hash': f'{iteration}-{stage_name}',
+                }
+                return spec, {'name': 'dummy', 'subdir': None}
+
+            def fake_process(dirpath_stage, stage_spec, dirpath_workflow):
+                key = (stage_spec['iteration'], stage_spec['stage'])
+                calls.append(key)
+                if key == (0, 'dw'):
+                    raise ValueError('bad fit')
+                return stage_spec['stage']
+
+            try:
+                with patch.object(
+                    run_workflow,
+                    '_resolve_stage_spec',
+                    side_effect=fake_resolve,
+                ), patch.object(
+                    run_workflow,
+                    '_run_stage',
+                ), patch.object(
+                    run_workflow,
+                    '_process_stage',
+                    side_effect=fake_process,
+                ):
+                    run_workflow.run_workflow('fake_recovery')
+                dirpath_run = (
+                    run_workflow.DIR_WORKFLOW_RESULTS /
+                    'fake_recovery' /
+                    'run'
+                )
+                iter0 = run_workflow.read_json(
+                    dirpath_run / 'iterations' /
+                    'iter_000' / 'meta' / 'iteration.json'
+                )
+                iter1 = run_workflow.read_json(
+                    dirpath_run / 'iterations' /
+                    'iter_001' / 'meta' / 'iteration.json'
+                )
+                self.assertEqual(iter0['status'], 'failed_continue')
+                self.assertEqual(iter0['failed_stage'], 'dw')
+                self.assertEqual(iter1['status'], 'complete')
+                self.assertNotIn((0, 'fullsim'), calls)
+                self.assertIn((1, 'fullsim'), calls)
+            finally:
+                run_workflow.DIR_WORKFLOW_CONFIGS = old_configs
+                run_workflow.DIR_WORKFLOW_RESULTS = old_results
 
     def test_run_id_parameter_mismatch_is_refused(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -983,6 +1155,43 @@ class WorkflowResumeTests(unittest.TestCase):
                     )
             finally:
                 run_workflow.DIR_WORKFLOW_RESULTS = old_results
+
+
+class DwFitDiagnosticsTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.dw = load_module_unique(
+            DIR_WORKFLOW_LIST / 'process_dw.py',
+            'workflow_list_process_dw_test',
+        )
+
+    def test_plot_fits_keeps_points_when_fit_crossing_fails(self):
+        ibkg = np.linspace(-0.5, 0.1, 10)
+        values = np.zeros((1, ibkg.size, 2), dtype=float)
+        values[0, :, 0] = np.linspace(0, 2, ibkg.size)
+        values[0, :, 1] = 0
+        rates_xr = xr.Dataset({
+            'avg_rate': (
+                ('seed_main', 'ibkg_dw_adj', 'pop'),
+                values,
+            ),
+        }, coords={
+            'seed_main': [1000],
+            'ibkg_dw_adj': ibkg,
+            'pop': ['IT2', 'PV2'],
+        })
+        fig, table = self.dw.plot_fits(
+            rates_xr,
+            {'IT2': 1, 'PV2': 1},
+            required_pops=['IT2', 'PV2'],
+        )
+        try:
+            self.assertTrue(np.isfinite(table.loc['IT2', 'median_ibkg']))
+            self.assertTrue(np.isnan(table.loc['PV2', 'median_ibkg']))
+            self.assertEqual(table.loc['PV2', 'status'], 'failed')
+            self.assertIn('does not cross', table.loc['PV2', 'fit_error'])
+        finally:
+            self.dw.plt.close(fig)
 
 
 class WorkflowRunIdTests(unittest.TestCase):
