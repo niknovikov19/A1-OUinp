@@ -25,6 +25,10 @@ from sim_data_analyzer.batch_xr import collect_batch_json
 from workflow_utils import build_job_index, load_job_records
 
 
+RICHARDS_MAXFEV = 500
+RICHARDS_FIT_TOL = 1e-3
+
+
 def _get_pop_names(dirpath_results):
     """Read population order from the first result JSON."""
     fpath_first = sorted(Path(dirpath_results).glob('result_*.json'))[0]
@@ -66,57 +70,113 @@ def richards(x, a, k, b, m, nu):
     return a + (k - a) * logistic ** (1 / nu)
 
 
-def fit_richards(x, y):
-    """Fit an increasing Richards curve using several initial shapes."""
+def _clean_xy(x, y, min_points):
+    """Return finite sorted x/y arrays."""
     x = np.asarray(x, dtype=float)
     y = np.asarray(y, dtype=float)
     mask = np.isfinite(x) & np.isfinite(y)
     x = x[mask]
     y = y[mask]
-    if len(x) < 6:
-        raise ValueError('At least six finite points are required')
+    order = np.argsort(x)
+    x = x[order]
+    y = y[order]
+    if len(x) < min_points:
+        raise ValueError(f'At least {min_points} finite points are required')
+    return x, y
 
-    # Bound asymptotes and shape while allowing a late upper plateau
-    x_span = x.max() - x.min()
+
+def _estimate_crossing_and_slope(x, y, target_rate):
+    """Estimate target crossing and local slope from sampled points."""
+    diff = y - target_rate
+    gradients = np.gradient(y, x)
+    exact = np.where(diff == 0)[0]
+    if exact.size:
+        idx = int(exact[0])
+        return float(x[idx]), float(abs(gradients[idx]))
+
+    # Prefer the segment that actually brackets the target
+    for idx in range(len(x) - 1):
+        y0 = y[idx]
+        y1 = y[idx + 1]
+        d0 = y0 - target_rate
+        d1 = y1 - target_rate
+        if d0 * d1 > 0 or y0 == y1:
+            continue
+        alpha = (target_rate - y0) / (y1 - y0)
+        slope = (y1 - y0) / (x[idx + 1] - x[idx])
+        crossing = x[idx] + alpha * (x[idx + 1] - x[idx])
+        return float(crossing), float(abs(slope))
+
+    # Fall back to the steepest sampled segment when no crossing exists
+    idx = int(np.nanargmax(np.abs(gradients)))
+    return float(x[idx]), float(abs(gradients[idx]))
+
+
+def _build_richards_fit_setup(x, y, target_rate):
+    """Build data-driven Richards bounds and starting points."""
+    x_span = max(x.max() - x.min(), 1e-9)
     y_min = y.min()
     y_max = y.max()
-    y_scale = max(y_max, 1e-3)
+    y_span = max(y_max - y_min, 1e-3)
+    y_scale = max(y_max, target_rate, 1e-3)
+    m0, slope0 = _estimate_crossing_and_slope(x, y, target_rate)
+    slope0 = max(slope0, y_span / x_span, 1e-6)
+    b0 = np.clip(4 * slope0 / y_span, 0.1 / x_span, 100 / x_span)
+    a0 = min(0, y[0], y_min)
+    k0 = max(y[-1], y_max, target_rate, 1.2 * y_scale)
     bounds = (
-        [-y_scale, y_max, 1e-3, x.min() - 5 * x_span, 0.05],
-        [y_min, 100 * y_scale, 1000, x.max() + 5 * x_span, 100],
+        [-y_scale, max(y_max, target_rate), 1e-4, x.min() - x_span, 0.25],
+        [min(y_min, target_rate), 20 * y_scale, 300 / x_span, x.max() + x_span, 4],
     )
 
-    # Try several inflection points and asymmetry values
-    fits = []
-    m_guesses = [np.median(x), x.max(), x.max() + x_span]
-    for m_guess in m_guesses:
-        for nu_guess in (0.5, 1, 2):
-            p0 = [min(0, y_min), 1.5 * y_scale, 20, m_guess, nu_guess]
-            try:
-                with warnings.catch_warnings():
-                    warnings.simplefilter('ignore', OptimizeWarning)
-                    params, _ = curve_fit(
-                        richards,
-                        x,
-                        y,
-                        p0=p0,
-                        bounds=bounds,
-                        maxfev=100000,
-                    )
-            except (RuntimeError, ValueError, FloatingPointError):
-                continue
+    # A small set of slope/asymmetry variants is enough for these 7-point curves
+    guesses = []
+    for b_mult in (0.5, 1, 2):
+        for nu_guess in (1, 2):
+            p0 = np.asarray([a0, k0, b0 * b_mult, m0, nu_guess])
+            p0 = np.minimum(np.maximum(p0, bounds[0]), bounds[1])
+            guesses.append(p0.tolist())
+    return bounds, guesses
 
-            residual = richards(x, *params) - y
-            fits.append((np.sum(residual ** 2), params))
+
+def fit_richards(x, y, target_rate=None):
+    """Fit an increasing Richards curve using several initial shapes."""
+    x, y = _clean_xy(x, y, min_points=6)
+    if target_rate is None:
+        target_rate = 0.5 * (np.nanmin(y) + np.nanmax(y))
+    bounds, guesses = _build_richards_fit_setup(x, y, target_rate)
+    fits = []
+
+    # Use loose tolerances because these compensation fits are approximate
+    for p0 in guesses:
+        try:
+            with warnings.catch_warnings():
+                warnings.simplefilter('ignore', OptimizeWarning)
+                params, _ = curve_fit(
+                    richards,
+                    x,
+                    y,
+                    p0=p0,
+                    bounds=bounds,
+                    maxfev=RICHARDS_MAXFEV,
+                    ftol=RICHARDS_FIT_TOL,
+                    xtol=RICHARDS_FIT_TOL,
+                    gtol=RICHARDS_FIT_TOL,
+                )
+        except (RuntimeError, ValueError, FloatingPointError):
+            continue
+
+        residual = richards(x, *params) - y
+        fits.append((np.sum(residual ** 2), params))
 
     if not fits:
         raise RuntimeError('Richards fit failed for all initial values')
     return min(fits, key=lambda item: item[0])[1]
 
 
-def find_target_intersection(params, target_rate, x_min, x_max):
+def find_curve_intersection(func, params, target_rate, x_min, x_max):
     """Find the fitted curve intersection with r0 inside sampled bounds."""
-    target_diff = lambda x: float(richards(x, *params) - target_rate)
+    target_diff = lambda x: float(func(x, *params) - target_rate)
     y_min = target_diff(x_min)
     y_max = target_diff(x_max)
     if y_min == 0:
@@ -126,6 +186,57 @@ def find_target_intersection(params, target_rate, x_min, x_max):
     if y_min * y_max > 0:
         raise ValueError('Fitted curve does not cross r0 in sampled bounds')
     return float(brentq(target_diff, x_min, x_max))
+
+
+def find_target_intersection(params, target_rate, x_min, x_max):
+    """Find the Richards curve intersection with r0 inside sampled bounds."""
+    return find_curve_intersection(
+        richards,
+        params,
+        target_rate,
+        x_min,
+        x_max,
+    )
+
+
+def find_sampled_intersection(x, y, target_rate):
+    """Find the target crossing by linear interpolation of sampled points."""
+    x, y = _clean_xy(x, y, min_points=2)
+    diff = y - target_rate
+    exact = np.where(diff == 0)[0]
+    if exact.size:
+        return float(x[exact[0]])
+
+    # Use the sampled segment closest to the first target crossing
+    for idx in range(len(x) - 1):
+        y0 = y[idx]
+        y1 = y[idx + 1]
+        d0 = y0 - target_rate
+        d1 = y1 - target_rate
+        if d0 * d1 > 0 or y0 == y1:
+            continue
+        alpha = (target_rate - y0) / (y1 - y0)
+        return float(x[idx] + alpha * (x[idx + 1] - x[idx]))
+
+    raise ValueError('Sampled rates do not cross r0')
+
+
+def fit_target_crossing(ibkg, y, target_rate):
+    """Fit Richards and return target crossing diagnostics."""
+    try:
+        params = fit_richards(ibkg, y, target_rate=target_rate)
+        ibkg_r0 = find_curve_intersection(
+            richards,
+            params,
+            target_rate,
+            ibkg.min(),
+            ibkg.max(),
+        )
+        return ibkg_r0, richards(ibkg, *params), 'richards', ''
+    except (RuntimeError, ValueError, FloatingPointError) as fit_exc:
+        # Keep the workflow practical when the approximate fit is not usable
+        ibkg_r0 = find_sampled_intersection(ibkg, y, target_rate)
+        return ibkg_r0, None, 'sampled', str(fit_exc)
 
 
 def _load_target_rates(target_rates_path):
@@ -153,7 +264,6 @@ def plot_fits(rates_xr, target_rates, required_pops=None):
         pops_vis = list(required_pops)
     seeds = [int(seed) for seed in rates.seed_main.values]
     ibkg = np.asarray(rates.ibkg_dw_adj.values, dtype=float)
-    ibkg_fit = np.linspace(ibkg.min(), ibkg.max(), 500)
 
     # Set up one panel per active population
     ncols = 3
@@ -174,6 +284,7 @@ def plot_fits(rates_xr, target_rates, required_pops=None):
         target_rate = target_rates[pop]
         intersections = {}
         fit_errors = {}
+        fit_methods = {}
         for n_seed, seed in enumerate(seeds):
             color = colors[n_seed % len(colors)]
             rate = rates.sel(pop=pop, seed_main=seed)
@@ -182,16 +293,15 @@ def plot_fits(rates_xr, target_rates, required_pops=None):
             ax.plot(ibkg, y, '-', color=color, label=label, alpha=0.5)
 
             try:
-                params = fit_richards(ibkg, y)
-                ibkg_r0 = find_target_intersection(
-                    params,
+                ibkg_r0, y_fit, method, fit_note = fit_target_crossing(
+                    ibkg,
+                    y,
                     target_rate,
-                    ibkg.min(),
-                    ibkg.max(),
                 )
             except (RuntimeError, ValueError, FloatingPointError) as exc:
                 intersections[seed] = np.nan
                 fit_errors[seed] = str(exc)
+                fit_methods[seed] = 'failed'
                 ax.text(
                     0.02,
                     0.92 - 0.08 * len(fit_errors),
@@ -204,8 +314,10 @@ def plot_fits(rates_xr, target_rates, required_pops=None):
                 continue
 
             intersections[seed] = ibkg_r0
-            fit_errors[seed] = ''
-            ax.plot(ibkg_fit, richards(ibkg_fit, *params), color=color)
+            fit_errors[seed] = fit_note
+            fit_methods[seed] = method
+            if y_fit is not None:
+                ax.plot(ibkg, y_fit, '--', color=color)
             ax.scatter(
                 ibkg_r0,
                 target_rate,
@@ -240,6 +352,10 @@ def plot_fits(rates_xr, target_rates, required_pops=None):
                 f'{seed}: {err}'
                 for seed, err in fit_errors.items()
                 if err
+            ),
+            'fit_methods': '; '.join(
+                f'{seed}: {method}'
+                for seed, method in fit_methods.items()
             ),
         }
         row.update({

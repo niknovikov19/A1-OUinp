@@ -1189,7 +1189,7 @@ class DwFitDiagnosticsTests(unittest.TestCase):
             self.assertTrue(np.isfinite(table.loc['IT2', 'median_ibkg']))
             self.assertTrue(np.isnan(table.loc['PV2', 'median_ibkg']))
             self.assertEqual(table.loc['PV2', 'status'], 'failed')
-            self.assertIn('does not cross', table.loc['PV2', 'fit_error'])
+            self.assertIn('do not cross', table.loc['PV2', 'fit_error'])
         finally:
             self.dw.plt.close(fig)
 
