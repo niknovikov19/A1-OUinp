@@ -13,7 +13,7 @@ conns_pe = [(p, 'IT2') for p in POPS_USED if p != 'IT2']
 conn_groups = {'ee': conns_ee, 'ep': conns_ep, 'pe': conns_pe}
 
 #wmult_vals = [1, 2]
-wmult = 2
+wmult = 10
 
 # Weight variants define explicit pre, post, multiplier triplets
 WMULT_VARIANTS = {
@@ -35,7 +35,7 @@ WMULT_VARIANTS = {
 
 WMULT_VARIANT_KEYS = list(WMULT_VARIANTS)
 
-EXP_LABEL = 'L2_wmult_list_ee_efb_2'
+EXP_LABEL = f'L2_wmult_list_ee_efb_{wmult}'
 
 MAX_ITERATIONS = len(WMULT_VARIANT_KEYS)
 
