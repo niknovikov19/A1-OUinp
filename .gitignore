@@ -61,3 +61,4 @@ exp_results/batch_rxbkg_unconn_state1_mech1/**/combined/
 .mplconfig
 dev_scratch/phase_lock_debug/**/*.png
 dev_scratch/phase_analysis/artifacts/
+exp_results_local/
