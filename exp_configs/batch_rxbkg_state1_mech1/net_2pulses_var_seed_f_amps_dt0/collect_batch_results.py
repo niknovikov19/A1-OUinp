@@ -282,7 +282,7 @@ def collect_batch_results(dirpath_exp, source='pkl', targets=('rates', 'lfp'),
 
 if __name__ == '__main__':
 
-    EXP_NAME = 'exp_L2_nseed_3_f_5_amp1_0_0.04_4_amp2_0_0.08_4_dt0_0_15_t_5.0_50.0_lfp_0_300_50_ictrl_wmult_0.25_ee_0.5_2pulse_IT2_NGF2_d_20_c_25_r_1000_0_t0_5000_jit_0_tlast_45000.0'
+    EXP_NAME = 'ibkg_adj__fullsim__var_wmult_list_1d_L2_wmult_list_ee_efb_1_5_10_nseeds_3_ibkg_-1_0.2_10_tdw_5.0_15.0_tfull_5.0_15.0'
 
     DIRPATH_EXP = (
         DIR_REPO / 'exp_results' / 'batch_rxbkg_state1_mech1' /

@@ -17,16 +17,14 @@ for path in (DIR_REPO, DIR_EXTERNAL):
 
 WORKFLOW_NAME = 'ibkg_adj__fullsim__var_wmult_list_1d'
 RUN_ID = (
-    'ibkg_adj__fullsim__var_wmult_list_1d_L2_wmult_list_ee_efb_2_'
-    'wvars_base_ee2_efb2_ee2_efb2_nseeds_1_ibkg_-0.5_0.1_10_'
-    'tdw_5.0_15.0_tfull_5.0_15.0'
+    'ibkg_adj__fullsim__var_wmult_list_1d_L2_wmult_list_ee_efb_1_5_10_nseeds_3_ibkg_-1_0.2_10_tdw_5.0_15.0_tfull_5.0_15.0'
 )
 DIR_COMBINED = DIR_REPO / 'exp_results_local' / 'workflows' / WORKFLOW_NAME / RUN_ID / 'combined'
 DIR_OUT = DIR_REPO / 'exp_results_local' / 'workflows' / WORKFLOW_NAME / RUN_ID / 'psd'
 
 NEED_RECALC = 0
 DO_RATES_PSD = 1
-DO_LFP_PSD = 0
+DO_LFP_PSD = 1
 DO_MEAN_RATES = 1
 
 ANALYSIS_T_WIN = (5, None)
@@ -41,7 +39,7 @@ PSD_SCALING = 'density'
 PSD_AVERAGE = 'median'
 
 POP_VALUES = None
-Y_VALUES = None
+Y_VALUES = [100, 200]
 
 LFP_INTERP_OUTLIERS = 1
 OUTLIER_Z_THRESH = 8

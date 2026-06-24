@@ -1,0 +1,57 @@
+{
+  "wmult_label": "ee5_efb5",
+  "wmat_multipliers": [
+    {
+      "pre": "IT2",
+      "post": "IT2",
+      "mult": 5
+    },
+    {
+      "pre": "IT2",
+      "post": "PV2",
+      "mult": 5
+    },
+    {
+      "pre": "IT2",
+      "post": "SOM2",
+      "mult": 5
+    },
+    {
+      "pre": "IT2",
+      "post": "VIP2",
+      "mult": 5
+    },
+    {
+      "pre": "IT2",
+      "post": "NGF2",
+      "mult": 5
+    },
+    {
+      "pre": "PV2",
+      "post": "IT2",
+      "mult": 5
+    },
+    {
+      "pre": "SOM2",
+      "post": "IT2",
+      "mult": 5
+    },
+    {
+      "pre": "VIP2",
+      "post": "IT2",
+      "mult": 5
+    },
+    {
+      "pre": "NGF2",
+      "post": "IT2",
+      "mult": 5
+    }
+  ],
+  "ibkg_corrections": {
+    "IT2": 0.0238960419721288,
+    "NGF2": 0.0179814023381627,
+    "PV2": -0.2724208038627809,
+    "SOM2": -0.1219588534667296,
+    "VIP2": -0.0436371658325125
+  }
+}

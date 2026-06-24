@@ -86,9 +86,6 @@ IBKG_JSON_NAME = 'ibkg_mech1_verest_-70_thal_spkthr'
 USE_IBKG_CTRL = 1
 IBKG_CTRL_JSON_NAME = 'ibkg_ctrl_1'
 
-# W-modification current corrections
-IBKG_WCORR_JSON_NAME = None
-
 # Surrogate inputs
 SURR_INP_ON = 1
 
@@ -148,6 +145,45 @@ PULSE_PARAMS[1] |= {
     'rates': [1000],
 }
 
+
+def _get_wmult_ibkg_fpath():
+    """Return the combined weight/current correction JSON path."""
+    if not WMAT_MULT_LABEL:
+        return None
+
+    fname = str(WMAT_MULT_LABEL)
+    if not fname.endswith('.json'):
+        fname = f'{fname}.json'
+    return dirpath_self / 'wmult_ibkg' / fname
+
+
+def _load_wmult_ibkg_payload():
+    """Load optional combined weight/current correction settings."""
+    fpath = _get_wmult_ibkg_fpath()
+    if fpath is None:
+        return {}
+
+    # Read the workflow-exported correction payload
+    with open(fpath, 'r') as fid:
+        payload = json.load(fid)
+    if not isinstance(payload, dict):
+        raise TypeError('WMAT_MULT_LABEL should point to a dict JSON')
+
+    # Keep labels explicit when they are stored in the payload
+    label = payload.get('wmult_label')
+    if (label is not None) and (label != WMAT_MULT_LABEL):
+        raise ValueError(f'WMAT_MULT_LABEL does not match JSON label: {label}')
+    return payload
+
+
+def _load_wmat_multipliers_default():
+    """Load default weight multipliers from JSON or fallback constant."""
+    payload = _load_wmult_ibkg_payload()
+    if not payload:
+        return deepcopy(WMAT_MULTIPLIERS)
+    return deepcopy(payload.get('wmat_multipliers', []))
+
+
 def _get_default_runtime_params():
     """Return the default runtime parameter tree."""
     return {
@@ -157,7 +193,7 @@ def _get_default_runtime_params():
         },
         'pops_used': list(POPS_USED),
         'conn': {
-            'wmat_multipliers': deepcopy(WMAT_MULTIPLIERS),
+            'wmat_multipliers': _load_wmat_multipliers_default(),
             'ee_fader_on': EE_FADER_ON,
             'fader_pts': list(FADER_PTS),
         },
@@ -292,18 +328,15 @@ def _build_bkg_spike_inputs(pops_used):
 
 
 def _load_ibkg_wcorr(pops_used):
-    """Load optional W-correction currents from a flat JSON file."""
-    if IBKG_WCORR_JSON_NAME is None:
+    """Load optional W-correction currents from the combined JSON file."""
+    payload = _load_wmult_ibkg_payload()
+    if not payload:
         return {}
 
-    # Read the correction file from this experiment folder
-    fname = str(IBKG_WCORR_JSON_NAME)
-    if not fname.endswith('.json'):
-        fname = f'{fname}.json'
-    with open(dirpath_self / fname, 'r') as fid:
-        corrections = json.load(fid)
+    # Read corrections from the same payload as the weight multipliers
+    corrections = payload.get('ibkg_corrections', {})
     if not isinstance(corrections, dict):
-        raise TypeError('IBKG_WCORR_JSON_NAME should point to a flat dict JSON')
+        raise TypeError('ibkg_corrections should be a dict')
 
     # Require one explicit correction per active population
     missing = sorted(set(pops_used) - set(corrections))

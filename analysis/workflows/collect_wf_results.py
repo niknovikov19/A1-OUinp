@@ -20,9 +20,7 @@ from sim_data_analyzer.xr_io import load_xr
 
 WORKFLOW_NAME = 'ibkg_adj__fullsim__var_wmult_list_1d'
 RUN_ID = (
-    'ibkg_adj__fullsim__var_wmult_list_1d_L2_wmult_list_ee_efb_2_'
-    'wvars_base_ee2_efb2_ee2_efb2_nseeds_1_ibkg_-0.5_0.1_10_'
-    'tdw_5.0_15.0_tfull_5.0_15.0'
+    'ibkg_adj__fullsim__var_wmult_list_1d_L2_wmult_list_ee_efb_1_5_10_nseeds_3_ibkg_-1_0.2_10_tdw_5.0_15.0_tfull_5.0_15.0'
 )
 WORKFLOW_DIR = DIR_REPO / 'exp_results' / 'workflows' / WORKFLOW_NAME / RUN_ID
 DIR_OUT_ROOT = DIR_REPO / 'exp_results_local'
