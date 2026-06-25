@@ -1348,10 +1348,19 @@ def add_phase_condition_columns_by(condition_rows, phase_records, trace_dim,
             for record in records
         ]))
         if np.any(valid):
-            z_mean = complex(np.mean(coeffs[valid]))
+            seed_rows = []
+            seed_groups = group_records(records, ['seed_main'])
+            for seed_records in seed_groups.values():
+                seed_coeffs = np.concatenate([
+                    record['coeffs']
+                    for record in seed_records
+                ])
+                seed_rows.append(mean_complex(seed_coeffs))
+            z_mean = mean_complex(seed_rows)
             row['z_mean_re'] = float(z_mean.real)
             row['z_mean_im'] = float(z_mean.imag)
             row['z_mean_abs'] = float(abs(z_mean))
+            row['z_mean_angle'] = float(np.angle(z_mean))
     return condition_rows
 
 
@@ -1739,6 +1748,272 @@ def plot_epoch_signals_by(records, trace_dim, trace_value, f_value, dt0_value,
     plt.close(fig)
 
 
+def epoch_signal_summary_by(records, trace_dim, trace_value, f_value,
+                            dt0_value, cond_dims):
+    """Summarize epoch signals by condition with seed-balanced means."""
+    selected = [
+        record for record in records
+        if record[trace_dim] == trace_value
+        and record['f'] == f_value
+        and record['dt0'] == dt0_value
+    ]
+    seed_keys = ['seed_main'] + list(cond_dims)
+    seed_groups = group_records(selected, seed_keys)
+    seed_rows = []
+    for key, group in seed_groups.items():
+        stack = np.stack([record['epoch_plot'] for record in group], axis=0)
+        with np.errstate(invalid='ignore'):
+            y = np.nanmean(stack, axis=0)
+        row = {
+            dim: value
+            for dim, value in zip(seed_keys, key)
+        }
+        row.update({
+            't_epoch': group[0]['t_epoch'],
+            'epoch_plot': y,
+            'n_epochs': int(np.sum([record['n_epochs'] for record in group])),
+        })
+        seed_rows.append(row)
+
+    # Average each condition equally over seeds
+    out = {}
+    cond_groups = group_records(seed_rows, cond_dims)
+    for key, rows in cond_groups.items():
+        stack = np.stack([row['epoch_plot'] for row in rows], axis=0)
+        with np.errstate(invalid='ignore'):
+            y = np.nanmean(stack, axis=0)
+        out[tuple(key)] = {
+            't_epoch': rows[0]['t_epoch'],
+            'epoch_plot': y,
+            'seed_curves': rows,
+            'n_epochs': int(np.sum([row['n_epochs'] for row in rows])),
+        }
+    return out
+
+
+def coeff_summary_by(phase_records, trace_dim, trace_value, f_value,
+                     dt0_value, cond_dims):
+    """Summarize complex event coefficients with seed-balanced means."""
+    selected = [
+        record for record in phase_records
+        if record[trace_dim] == trace_value
+        and record['f'] == f_value
+        and record['dt0'] == dt0_value
+    ]
+    seed_keys = ['seed_main'] + list(cond_dims)
+    seed_groups = group_records(selected, seed_keys)
+    seed_rows = []
+    for key, group in seed_groups.items():
+        coeffs = np.concatenate([record['coeffs'] for record in group])
+        row = {
+            dim: value
+            for dim, value in zip(seed_keys, key)
+        }
+        row['z_mean'] = mean_complex(coeffs)
+        seed_rows.append(row)
+
+    # Average seed-level complex means within each condition
+    out = {}
+    cond_groups = group_records(seed_rows, cond_dims)
+    for key, rows in cond_groups.items():
+        z_mean = mean_complex([row['z_mean'] for row in rows])
+        out[tuple(key)] = {
+            'z_mean': z_mean,
+            'seed_means': rows,
+        }
+    return out
+
+
+def plot_epoch_signals_fit_by(epoch_records, phase_records, trace_dim,
+                              trace_value, f_value, dt0_value, cond_dims,
+                              out_path, group_dim, pulse_duration, pulse_pad,
+                              subtract_global_mean):
+    """Plot epoch averages with saved local fitted oscillations."""
+    epoch_summary = epoch_signal_summary_by(
+        epoch_records,
+        trace_dim,
+        trace_value,
+        f_value,
+        dt0_value,
+        cond_dims,
+    )
+    coeff_summary = coeff_summary_by(
+        phase_records,
+        trace_dim,
+        trace_value,
+        f_value,
+        dt0_value,
+        cond_dims,
+    )
+    keys = sorted(set(epoch_summary) & set(coeff_summary))
+    if not keys:
+        return
+
+    # Split fitted overlays into one panel per selected amplitude dimension
+    if group_dim not in cond_dims:
+        raise ValueError(f'Unknown grouping dimension: {group_dim}')
+    idx_group = list(cond_dims).index(group_dim)
+    group_values = sorted(set(key[idx_group] for key in keys))
+    colors = get_condition_colors(keys, cond_dims)
+    pad_pre, pad_post = get_pulse_pad_pair(pulse_pad)
+    title_suffix = 'global mean subtracted' if subtract_global_mean else 'raw mean'
+    fig_h = max(3, 2.5 * len(group_values))
+    plot_rows = []
+    for key in keys:
+        item = epoch_summary[key]
+        z_mean = coeff_summary[key]['z_mean']
+        t_epoch = item['t_epoch']
+        fit = np.real(z_mean * np.exp(1j * 2 * np.pi * f_value * t_epoch))
+        plot_rows.append({
+            'key': key,
+            'item': item,
+            't_epoch': t_epoch,
+            'fit': fit,
+        })
+    fig, ax = plt.subplots(
+        len(group_values),
+        1,
+        figsize=(9, fig_h),
+        sharex=True,
+        constrained_layout=True,
+    )
+    ax = np.atleast_1d(ax)
+    for axis, group_value in zip(ax, group_values):
+        panel_rows = [
+            row for row in plot_rows
+            if row['key'][idx_group] == group_value
+        ]
+        max_fit_abs = 0
+        for row in panel_rows:
+            valid = np.abs(row['fit'][np.isfinite(row['fit'])])
+            if valid.size:
+                max_fit_abs = max(max_fit_abs, float(np.max(valid)))
+        ylim = 3 * max_fit_abs if max_fit_abs > 0 else None
+        for row in panel_rows:
+            key = row['key']
+            item = row['item']
+            label = f'{condition_label(key, cond_dims)}; n={item["n_epochs"]}'
+            axis.plot(
+                row['t_epoch'],
+                item['epoch_plot'],
+                color=colors[key],
+                linewidth=0.8,
+                alpha=0.35,
+                label=label,
+            )
+            axis.plot(
+                row['t_epoch'],
+                row['fit'],
+                color=colors[key],
+                linewidth=2.5,
+                alpha=1,
+                label='_nolegend_',
+            )
+        axis.axvline(0, color='k', linestyle='--', linewidth=1)
+        axis.axvspan(-pad_pre, pulse_duration + pad_post,
+                     color='0.8', alpha=0.35)
+        axis.axvspan(0, pulse_duration, color='0.55', alpha=0.22)
+        axis.set_ylabel('Pulse-triggered mean')
+        axis.set_title(f'{group_dim}={format_value(group_value)}')
+        axis.grid(True, alpha=0.25)
+        axis.legend(fontsize=7, ncol=2)
+        if ylim is not None:
+            axis.set_ylim(-ylim, ylim)
+    ax[-1].set_xlabel('Time from PulseSeq1 start (s)')
+    fig.suptitle(f'Epoch average with fitted f0 oscillation ({title_suffix})')
+    fig.savefig(out_path, dpi=150)
+    plt.close(fig)
+
+
+def _signal_metric_edges_seconds(sig_metrics_t):
+    """Convert signal metric edges to seconds."""
+    edges = np.asarray(sig_metrics_t, dtype=float)
+    if np.nanmax(np.abs(edges)) > 1:
+        edges = edges / 1000
+    return edges
+
+
+def plot_epoch_signal_metric_grid(epoch_records, trace_dim, trace_value,
+                                  f_value, dt0_value, cond_dims, out_path,
+                                  sig_metrics_t):
+    """Plot epoch-signal extrema as amp1-by-amp2 heatmaps."""
+    summary = epoch_signal_summary_by(
+        epoch_records,
+        trace_dim,
+        trace_value,
+        f_value,
+        dt0_value,
+        cond_dims,
+    )
+    if not summary:
+        return
+    idx_amp1 = list(cond_dims).index('amp1')
+    idx_amp2 = list(cond_dims).index('amp2')
+    amp1_values = sorted(set(key[idx_amp1] for key in summary))
+    amp2_values = sorted(set(key[idx_amp2] for key in summary))
+    metric_specs = [
+        ('max', 'Max epoch signal'),
+        ('min', 'Min epoch signal'),
+    ]
+    edges = _signal_metric_edges_seconds(sig_metrics_t)
+    for t0, t1 in zip(edges[:-1], edges[1:]):
+        label = f'Median {1000 * t0:g} to {1000 * t1:g} ms'
+        metric_specs.append(('median', label, t0, t1))
+
+    # Draw extrema computed from seed-balanced epoch traces
+    fig, ax = plt.subplots(2, 2, figsize=(9, 7), constrained_layout=True)
+    ax = ax.ravel()
+    for axis, spec in zip(ax, metric_specs):
+        mode, title = spec[:2]
+        grid = np.full((len(amp2_values), len(amp1_values)), np.nan)
+        for key, item in summary.items():
+            i = amp2_values.index(key[idx_amp2])
+            j = amp1_values.index(key[idx_amp1])
+            values = item['epoch_plot']
+            if mode == 'median':
+                t0, t1 = spec[2:]
+                keep = (item['t_epoch'] >= t0) & (item['t_epoch'] < t1)
+                values = values[keep]
+            valid = values[np.isfinite(values)]
+            if valid.size == 0:
+                continue
+            if mode == 'max':
+                grid[i, j] = np.max(valid)
+            elif mode == 'min':
+                grid[i, j] = np.min(valid)
+            else:
+                grid[i, j] = np.median(valid)
+        finite_grid = grid[np.isfinite(grid)]
+        if mode == 'median':
+            vmax = np.max(np.abs(finite_grid)) if finite_grid.size else 1
+            if vmax <= np.finfo(float).eps:
+                vmax = 1
+            im = axis.imshow(
+                grid,
+                origin='lower',
+                aspect='auto',
+                vmin=-vmax,
+                vmax=vmax,
+                cmap='RdBu_r',
+            )
+        else:
+            im = axis.imshow(grid, origin='lower', aspect='auto')
+        axis.set_title(title)
+        axis.set_xticks(np.arange(len(amp1_values)))
+        axis.set_yticks(np.arange(len(amp2_values)))
+        axis.set_xticklabels([format_value(v) for v in amp1_values])
+        axis.set_yticklabels([format_value(v) for v in amp2_values])
+        axis.set_xlabel('amp1')
+        axis.set_ylabel('amp2')
+        fig.colorbar(im, ax=axis)
+    fig.suptitle(
+        f"{trace_dim}={format_value(trace_value)}, f={format_value(f_value)} Hz, "
+        f"dt0={format_value(dt0_value)}"
+    )
+    fig.savefig(out_path, dpi=150)
+    plt.close(fig)
+
+
 def plot_spectra_by(summary, baseline_key, cond_dims, target_f, broad_band,
                     target_half_width, out_path):
     """Plot spectra for generic condition keys."""
@@ -2056,12 +2331,6 @@ def plot_metric_grid(condition_rows, trace_dim, trace_value, f_value,
 def plot_phase_metric_grid(condition_rows, trace_dim, trace_value, f_value,
                            dt0_value, out_path):
     """Plot phase/coefficient summaries as amp1-by-amp2 heatmaps."""
-    metric_specs = [
-        ('z_mean_abs', '|mean z|'),
-        ('z_mean_re', 'mean Re z'),
-        ('z_mean_im', 'mean Im z'),
-        ('n_valid_phase', 'Valid phases'),
-    ]
     rows = [
         row for row in condition_rows
         if row[trace_dim] == trace_value
@@ -2070,17 +2339,68 @@ def plot_phase_metric_grid(condition_rows, trace_dim, trace_value, f_value,
     ]
     amp1_values = sorted(set(row['amp1'] for row in rows))
     amp2_values = sorted(set(row['amp2'] for row in rows))
+    z_grid = np.full(
+        (len(amp2_values), len(amp1_values)),
+        np.nan + 1j * np.nan,
+        dtype=complex,
+    )
+    for row in rows:
+        i = amp2_values.index(row['amp2'])
+        j = amp1_values.index(row['amp1'])
+        z_grid[i, j] = row.get('z_mean_re', np.nan) + 1j * row.get(
+            'z_mean_im',
+            np.nan,
+        )
+    abs_grid = np.abs(z_grid)
+    angle_grid = np.angle(z_grid)
+
+    # Express bottom-row maps relative to the zero-amplitude condition
+    z0 = np.nan + 1j * np.nan
+    if 0 in amp1_values and 0 in amp2_values:
+        z0 = z_grid[amp2_values.index(0), amp1_values.index(0)]
+    if np.isfinite(z0.real) and np.isfinite(z0.imag):
+        rel_abs_grid = abs_grid - abs(z0)
+        rel_angle_grid = np.angle(z_grid * np.conj(z0))
+    else:
+        rel_abs_grid = np.full(abs_grid.shape, np.nan)
+        rel_angle_grid = np.full(abs_grid.shape, np.nan)
+    plot_items = [
+        (abs_grid, 'abs(mean z)', 'abs'),
+        (angle_grid, 'angle(mean z)', 'angle'),
+        (rel_abs_grid, 'abs(mean z) - abs(null)', 'rel_abs'),
+        (rel_angle_grid, 'angle relative to null', 'angle'),
+    ]
 
     # Draw one heatmap per phase/coefficient summary
     fig, ax = plt.subplots(2, 2, figsize=(9, 7), constrained_layout=True)
     ax = ax.ravel()
-    for axis, (name, title) in zip(ax, metric_specs):
-        grid = np.full((len(amp2_values), len(amp1_values)), np.nan)
-        for row in rows:
-            i = amp2_values.index(row['amp2'])
-            j = amp1_values.index(row['amp1'])
-            grid[i, j] = row.get(name, np.nan)
-        im = axis.imshow(grid, origin='lower', aspect='auto')
+    for axis, (grid, title, mode) in zip(ax, plot_items):
+        valid = grid[np.isfinite(grid)]
+        if mode == 'angle':
+            im = axis.imshow(
+                grid,
+                origin='lower',
+                aspect='auto',
+                vmin=-np.pi,
+                vmax=np.pi,
+                cmap='twilight_shifted',
+            )
+        elif mode == 'rel_abs':
+            vmax = np.max(np.abs(valid)) if valid.size else 1
+            if vmax <= np.finfo(float).eps:
+                vmax = 1
+            im = axis.imshow(
+                grid,
+                origin='lower',
+                aspect='auto',
+                vmin=-vmax,
+                vmax=vmax,
+                cmap='RdBu_r',
+            )
+        else:
+            im = axis.imshow(grid, origin='lower', aspect='auto',
+                             vmin=0 if valid.size else None,
+                             cmap='viridis')
         axis.set_title(title)
         axis.set_xticks(np.arange(len(amp1_values)))
         axis.set_yticks(np.arange(len(amp2_values)))

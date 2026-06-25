@@ -17,7 +17,7 @@ for path in (DIR_REPO, DIR_EXTERNAL, DIR_THIS):
 
 # Keep matplotlib cache next to scratch outputs
 EXP_NAME = (
-    'exp_L2_nseed_3_f_5_amp1_0_0.04_4_amp2_0_0.06_4_dt0_0_15_t_5.0_50.0_lfp_0_300_50_ictrl_wmult_0.25_ee_0.5_2pulse_IT2_NGF2_d_20_c_25_r_1000_0_t0_5000_jit_0_tlast_45000.0'
+    'exp_L2_nseed_1_f_5_amp1_0_0.04_4_amp2_0_0.3_3_dt0_0_20_t_5.0_50.0_lfp_0_300_50_ictrl_ee5_efb10_wmult_0.25_ee_0.5_2pulse_IT2_AMPA_PV2_NMDA_d_20_c_25_r_1000_0_t0_5000_jit_0_tlast_45000.0'
 )
 DIRPATH_ARTIFACT = (
     DIR_REPO / 'dev_scratch' / 'artifacts' /
@@ -57,6 +57,8 @@ from phase_analysis_utils import (
     plot_band_metrics_by,
     plot_coeff_clouds_by,
     plot_metric_grid,
+    plot_epoch_signal_metric_grid,
+    plot_epoch_signals_fit_by,
     plot_epoch_signals_by,
     plot_phase_density_by,
     plot_phase_metric_grid,
@@ -75,9 +77,10 @@ from phase_analysis_utils import (
 import numpy as np
 
 
-SIGNAL_KIND = 'lfp'
-POP_VALUES = ['IT2']
-Y_VALUES = [100]
+SIGNAL_KIND = 'rates'
+#POP_VALUES = ['IT2']
+POP_VALUES = 'all'
+Y_VALUES = [100, 200]
 NEED_RECALC = 0
 INPUT_PATHS = {
     'rates': DIRPATH_ARTIFACT / 'rates_xr_combined.nc',
@@ -113,8 +116,10 @@ TARGET_HALF_WIDTH = 0.5
 PHASE_BINS = 32
 PHASE_SMOOTH_SIGMA = 1
 SAVE_EPOCH_SIGNALS = 1
-EPOCH_T_WIN = (-0.2, 0.2)
-EPOCH_SUBTRACT_GLOBAL_MEAN = 1
+EPOCH_T_WIN = (-0.6, 0.6)
+EPOCH_SUBTRACT_GLOBAL_MEAN = 0
+
+SIG_METRICS_T = [-40, -20, 0]
 
 INTERP_OUTLIERS = 0
 OUTLIER_KWARGS = {
@@ -126,9 +131,10 @@ PARAM_HASH_LEN = 8
 DIRNAME_PARAM_KEYS = {
     'trace': 'trace_values',
     'pad': 'pulse_pad',
-    'blk': 'block_duration',
-    'fmarg': 'power_f_margin',
-    'lock': 'lock_pulse_name',
+    #'blk': 'block_duration',
+    #'fmarg': 'power_f_margin',
+    #'lock': 'lock_pulse_name',
+    'zsub': 'epoch_subtract_global_mean'
 }
 
 
@@ -185,6 +191,7 @@ def _get_all_params():
         'save_epoch_signals': SAVE_EPOCH_SIGNALS,
         'epoch_t_win': EPOCH_T_WIN,
         'epoch_subtract_global_mean': EPOCH_SUBTRACT_GLOBAL_MEAN,
+        'sig_metrics_t': SIG_METRICS_T,
         'interp_outliers': INTERP_OUTLIERS,
         'outlier_kwargs': OUTLIER_KWARGS,
     }
@@ -502,7 +509,7 @@ def _parse_csv_value(key, value):
     """Parse one CSV value into a practical Python scalar."""
     if value == '':
         return np.nan
-    if key in ('pop', 'y'):
+    if key == 'pop':
         return value
     try:
         number = float(value)
@@ -651,6 +658,13 @@ def _load_cached_trace(slice_dir, trace_dim, trace_value, f_value, dt0_value):
         COND_DIMS,
         SLICE_DIMS,
     )
+    condition_rows = add_phase_condition_columns_by(
+        condition_rows,
+        phase_records,
+        trace_dim,
+        COND_DIMS,
+        SLICE_DIMS,
+    )
     spectrogram_records = load_complex_spectrogram_nc_by(
         paths['spectrogram'],
         trace_dim,
@@ -761,6 +775,53 @@ def _save_pooled_plots(summary, phase_records, block_seed_rows, pooled_rows,
         baseline_key,
         cond_dims,
         _plot_path(slice_dir, f'{prefix}/coeff_clouds', trace_value),
+    )
+
+
+def _save_epoch_extra_plots(epoch_records, phase_records, slice_dir, trace_dim,
+                            trace_value, f_value, dt0_value):
+    """Save epoch-fit overlays and epoch signal metric grids."""
+    if not SAVE_EPOCH_SIGNALS or not epoch_records:
+        return
+
+    # Reuse saved epoch traces and phase coefficients for fitted overlays
+    plot_epoch_signals_fit_by(
+        epoch_records,
+        phase_records,
+        trace_dim,
+        trace_value,
+        f_value,
+        dt0_value,
+        COND_DIMS,
+        _plot_path(slice_dir, 'epoch_signals_fit_group_amp1', trace_value),
+        'amp1',
+        _get_pulse_duration(),
+        PULSE_PAD,
+        bool(EPOCH_SUBTRACT_GLOBAL_MEAN),
+    )
+    plot_epoch_signals_fit_by(
+        epoch_records,
+        phase_records,
+        trace_dim,
+        trace_value,
+        f_value,
+        dt0_value,
+        COND_DIMS,
+        _plot_path(slice_dir, 'epoch_signals_fit_group_amp2', trace_value),
+        'amp2',
+        _get_pulse_duration(),
+        PULSE_PAD,
+        bool(EPOCH_SUBTRACT_GLOBAL_MEAN),
+    )
+    plot_epoch_signal_metric_grid(
+        epoch_records,
+        trace_dim,
+        trace_value,
+        f_value,
+        dt0_value,
+        COND_DIMS,
+        _plot_path(slice_dir, 'grid_sig_metrics', trace_value),
+        SIG_METRICS_T,
     )
 
 
@@ -951,6 +1012,15 @@ def _save_trace_outputs(block_rows, seed_rows, condition_rows, phase_records,
             PULSE_PAD,
             bool(EPOCH_SUBTRACT_GLOBAL_MEAN),
         )
+        _save_epoch_extra_plots(
+            epoch_records,
+            phase_records,
+            slice_dir,
+            trace_dim,
+            trace_value,
+            f_value,
+            dt0_value,
+        )
 
 
 def _plot_cached_trace_outputs(block_rows, seed_rows, condition_rows,
@@ -1087,6 +1157,15 @@ def _plot_cached_trace_outputs(block_rows, seed_rows, condition_rows,
             _get_pulse_duration(),
             PULSE_PAD,
             bool(EPOCH_SUBTRACT_GLOBAL_MEAN),
+        )
+        _save_epoch_extra_plots(
+            epoch_records,
+            phase_records,
+            slice_dir,
+            trace_dim,
+            trace_value,
+            f_value,
+            dt0_value,
         )
 
 
