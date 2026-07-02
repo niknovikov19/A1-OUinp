@@ -1,3 +1,4 @@
+import argparse
 import csv
 import hashlib
 import json
@@ -1205,6 +1206,50 @@ def _analyze_trace_slice(X, jobs, trace_dim, trace_value, fit_params):
     return block_rows, seed_rows, condition_rows, phase_records, spectrogram_records, spectrum_records, epoch_records
 
 
+def _parse_args():
+    """Parse optional CLI overrides for batch runs."""
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--exp-name', default=None)
+    parser.add_argument('--out-name', default=None)
+    parser.add_argument('--signal-kind', choices=('rates', 'lfp', 'csd'), default=None)
+    parser.add_argument('--epoch-subtract-global-mean', type=int, choices=(0, 1),
+                        default=None)
+    parser.add_argument('--pulse-pad', nargs=2, type=float, default=None)
+    return parser.parse_args()
+
+
+def _apply_cli_overrides(args):
+    """Apply CLI overrides and refresh derived paths."""
+    global EXP_NAME, DIRPATH_ARTIFACT, DIRPATH_EXP, OUT_DIR
+    global INPUT_PATHS, NETPAR_DIR, SIGNAL_KIND, EPOCH_SUBTRACT_GLOBAL_MEAN
+    global PULSE_PAD
+
+    if args.exp_name is not None:
+        EXP_NAME = args.exp_name
+    if args.signal_kind is not None:
+        SIGNAL_KIND = args.signal_kind
+    if args.epoch_subtract_global_mean is not None:
+        EPOCH_SUBTRACT_GLOBAL_MEAN = args.epoch_subtract_global_mean
+    if args.pulse_pad is not None:
+        PULSE_PAD = tuple(args.pulse_pad)
+
+    # Rebuild paths derived from experiment name
+    DIRPATH_ARTIFACT = (
+        DIR_REPO / 'dev_scratch' / 'artifacts' /
+        'net_2pulses_var_seed_f_amps_dt0' / EXP_NAME
+    )
+    DIRPATH_EXP = DIRPATH_ARTIFACT
+    out_name = EXP_NAME if args.out_name is None else args.out_name
+    OUT_DIR = DIR_THIS / 'artifacts' / out_name
+    INPUT_PATHS = {
+        'rates': DIRPATH_ARTIFACT / 'rates_xr_combined.nc',
+        'lfp': DIRPATH_ARTIFACT / 'lfp_xr_combined.nc',
+        'csd': DIRPATH_ARTIFACT / 'csd_xr_combined.nc',
+    }
+    NETPAR_DIR = DIRPATH_EXP / 'netpar'
+    os.environ['MPLCONFIGDIR'] = str(OUT_DIR / 'mpl_cache')
+
+
 def run():
     """Run the standalone two-stream phase analysis."""
     params = _get_all_params()
@@ -1299,4 +1344,5 @@ def run():
 
 
 if __name__ == '__main__':
+    _apply_cli_overrides(_parse_args())
     run()
