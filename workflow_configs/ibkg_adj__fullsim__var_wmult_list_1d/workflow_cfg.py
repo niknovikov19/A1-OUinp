@@ -12,30 +12,30 @@ conns_ep = [('IT2', p) for p in POPS_USED if p != 'IT2']
 conns_pe = [(p, 'IT2') for p in POPS_USED if p != 'IT2']
 conn_groups = {'ee': conns_ee, 'ep': conns_ep, 'pe': conns_pe}
 
-#wmult_vals = [1, 2]
-wmult = 10
+wmult_vals = [1, 5, 10]
+#wmult = 10
 
-# Weight variants define explicit pre, post, multiplier triplets
+""" # Weight variants define explicit pre, post, multiplier triplets
 WMULT_VARIANTS = {
     'base': [],
     f'ee{wmult}': [(c[0], c[1], wmult) for c in conns_ee],
     f'efb{wmult}': [(c[0], c[1], wmult) for c in (conns_ep + conns_pe)],
     f'ee{wmult}_efb{wmult}': [(c[0], c[1], wmult) for c in (conns_ee + conns_ep + conns_pe)]
-}
-
-#for gr_name, conns in conn_groups.items():
-#    for wmult in wmult_vals:
-#        v = [(conn[0], conn[1], wmult) for conn in conns]
-""" WMULT_VARIANTS = {
-    'w2': [('IT2', p, 2) for p in POPS_USED],
-    'w5': [('IT2', p, 5) for p in POPS_USED],
-    'w10': [('IT2', p, 10) for p in POPS_USED],
-    'w20': [('IT2', p, 20) for p in POPS_USED],
 } """
+
+WMULT_VARIANTS = {}
+for wmult_ee in wmult_vals:
+    for wmult_fb in wmult_vals:
+        label = f'ee{wmult_ee}_efb{wmult_fb}'
+        WMULT_VARIANTS[label] = (
+            [(c[0], c[1], wmult_ee) for c in conns_ee] +
+            [(c[0], c[1], wmult_fb) for c in (conns_ep + conns_pe)]
+        )
 
 WMULT_VARIANT_KEYS = list(WMULT_VARIANTS)
 
-EXP_LABEL = f'L2_wmult_list_ee_efb_{wmult}'
+#EXP_LABEL = f'L2_wmult_list_ee_efb_{wmult}'
+EXP_LABEL = f'L2_wmult_list_ee_efb_1_5_10'
 
 MAX_ITERATIONS = len(WMULT_VARIANT_KEYS)
 
@@ -50,11 +50,11 @@ FULLSIM_T0_CALC = 5000
 DW_T_LIMITS = [DW_T0_CALC / 1000, DW_DURATION / 1000]
 FULLSIM_T_LIMITS = [DW_T0_CALC / 1000, FULLSIM_DURATION / 1000]
 
-N_SEEDS = 1
+N_SEEDS = 3
 
 # Batch params shared by both subordinate stages
 SEED_VALUES = (1000 + np.arange(N_SEEDS)).tolist()
-IBKG_DW_ADJ_VALUES = np.linspace(-0.5, 0.1, 10).tolist()
+IBKG_DW_ADJ_VALUES = np.linspace(-1, 0.2, 10).tolist()
 
 # Surr-to-real conn fader for fullsim stage
 FADER_PTS = [
@@ -225,7 +225,7 @@ def get_run_id(workflow_params):
 
     return (
         f'{WORKFLOW_NAME}_{EXP_LABEL}'
-        f'_wvars_{wvars_text}'
+        #f'_wvars_{wvars_text}'
         f'_nseeds_{len(SEED_VALUES)}'
         f'_ibkg_{ibkg_text}'
         f'_tdw_{DW_T_LIMITS[0]}_{DW_T_LIMITS[1]}'

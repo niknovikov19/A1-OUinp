@@ -80,8 +80,8 @@ def _add_pulse_sequence(netParams, par):
         'loc': 0.5,
         'weight': par['weight'],
         'delay': 1,
-        'synMech': 'AMPA',
-        'synsPerConn': 1,
+        'synMech': par.get('mech', 'AMPA'),
+        'synsPerConn': 1
     }
 
 

@@ -60,7 +60,8 @@ EXP_LABEL = 'L2'
 POPS_USED = L2_POPS
 
 WMAT_MULTIPLIERS = []
-WMAT_MULT_LABEL = ''
+
+WMAT_MULT_LABEL = 'ee5_efb10'
 
 #CONNS_FROZEN = 'all'
 #CONNS_FROZEN = CONNS_EE
@@ -140,9 +141,10 @@ PULSE_PARAMS[0] |= {
 }
 PULSE_PARAMS[1] |= {
     'name': 'PulseSeq2',
-    'pop': ['NGF2'],
+    'pop': ['PV2'],
     'width': 20,
     'rates': [1000],
+    'mech': 'NMDA'
 }
 
 
@@ -635,9 +637,10 @@ def gen_exp_name_sub(cfg):
         )
         ppops = [_get_pulse_pop_label(par['pop'])
                  for par in pulse_params]
+        mechs = [par.get('mech', 'AMPA') for par in pulse_params]
         pr0, dpr = _get_pulse_rate_label(pr)
         exp_name_sub += (
-            f'_{len(pulse_params)}pulse_{ppops[0]}_{ppops[1]}_d_{pdur}_c_{pc}_'
+            f'_{len(pulse_params)}pulse_{ppops[0]}_{mechs[0]}_{ppops[1]}_{mechs[1]}_d_{pdur}_c_{pc}_'
             f'r_{pr0}_{dpr}_t0_{pt0}_jit_{pjit}'
         )
         if pt_last is not None:

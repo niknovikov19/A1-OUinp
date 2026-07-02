@@ -1,13 +1,17 @@
 import numpy as np
 
 
-N_SEEDS = 3
-F_VALUES = [5]
-AMP1_VALUES = [0, 0.01, 0.02, 0.04]
+N_SEEDS = 1
+F_VALUES = [2]
+#AMP1_VALUES = [0, 0.01, 0.015, 0.02, 0.025, 0.03, 0.035, 0.04]
+#AMP1_VALUES = [0, 0.02, 0.03, 0.04]
+AMP1_VALUES = [0, 0.02, 0.04, 0.06]
+#AMP1_VALUES = [0, 0.005, 0.01, 0.015, 0.02]
 #AMP1_VALUES = [0]
-AMP2_VALUES = [0, 0.02, 0.04, 0.08]   # NGF2
-#AMP2_VALUES = [0, 0.05, 0.1, 0.2]   # PV2
-DT0_VALUES = [0, 15]
+#AMP2_VALUES = [0, 0.02, 0.04, 0.08]   # NGF2
+#AMP2_VALUES = [0, 0.05, 0.1, 0.15, 0.2]   # PV2, SOM2
+AMP2_VALUES = [0, 0.1, 0.2, 0.3, 0.4, 0.5]   # PV2
+DT0_VALUES = [0, 20]
 #DT0_VALUES = [0]
 
 PULSE_T0 = 5000
