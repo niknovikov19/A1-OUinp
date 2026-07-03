@@ -68,7 +68,6 @@ def analyze_conn_patterns(generated, reference):
     patterns = Counter()
     weight_ratios = Counter()
     matched_after_norm = 0
-    matched_after_norm_and_x4 = 0
     examples = {}
     for k in common:
         gc = normalize_conn(generated['connParams'][k])
@@ -76,25 +75,19 @@ def analyze_conn_patterns(generated, reference):
         if gc == rc:
             matched_after_norm += 1
             continue
-        gcx = json.loads(json.dumps(gc))
-        if isinstance(gcx.get('weight'), (int, float)):
-            gcx['weight'] = gcx['weight'] * 4
-        if gcx == rc:
-            matched_after_norm_and_x4 += 1
-            continue
+
         diffs = []
-        for f in sorted(set(gcx) | set(rc)):
-            if gcx.get(f) != rc.get(f):
+        for f in sorted(set(gc) | set(rc)):
+            if gc.get(f) != rc.get(f):
                 diffs.append(f)
         patterns[tuple(diffs)] += 1
-        examples.setdefault(tuple(diffs), {'key': k, 'generated': gcx, 'reference': rc})
+        examples.setdefault(tuple(diffs), {'key': k, 'generated': gc, 'reference': rc})
         if isinstance(gc.get('weight'), (int, float)) and isinstance(rc.get('weight'), (int, float)) and gc.get('weight'):
             weight_ratios[round(rc['weight'] / gc['weight'], 6)] += 1
     return {
         'common': len(common),
         'matched_after_norm': matched_after_norm,
-        'matched_after_norm_and_x4': matched_after_norm_and_x4,
-        'remaining_after_norm_and_x4': len(common) - matched_after_norm - matched_after_norm_and_x4,
+        'remaining_after_norm': len(common) - matched_after_norm,
         'pattern_counts': patterns.most_common(10),
         'weight_ratios': weight_ratios.most_common(10),
         'pattern_examples': {

@@ -19,28 +19,21 @@ Active workflow path tested:
 - `netParams.py`
 
 
-## Fix Applied
+## Current Weight Pipeline
 
-The one-time normalizer was run once:
+The workflow now follows the original-style weight flow:
 
-- script: `_scripts/normalize_cfg_base_once.py`
-- backup: `cfg_base.json.bak_20260611T050113Z`
-- changed split-pair `wmat` entries: `163`
-- skipped split pairs missing from `wmat`: `33`
+- raw `wmat` is loaded from bundled `conn/conn.pkl`
+- `cfg.wmult = 0.25` is applied inside `create_net_params_local.py`
+- `EEGain` and other class/pop/layer gain multipliers remain active
+- the active/reference `subnet_tuner` duplicates fader-managed split rules without static weight halving
+- runtime `ConnFader` handles the recurrent/frozen fade after network instantiation
 
-Config changes made by the normalizer:
+Config state:
 
-- removed active `wmult`
-- set `add_pulses = 0`
-- added guard metadata under `model_nn_1_cfg_base_normalization`
-- pre-compensated existing fader split-pair `wmat` entries by `2.0`
-
-Code changes:
-
-- `create_net_params_local.py` now uses `cfg_base.wmat` directly
-- `EEGain` and other downstream gain multipliers remain active
-- `cfg.py` now provides `scale_wmat(cfg, factor)` for intentional manual global scaling
-- `netParams.py` preserves an existing connection `sec` if no target-section rule matches
+- `cfg_base.json` no longer stores `wmat`
+- `cfg_base.json` no longer carries the one-time normalization metadata
+- `add_pulses = 0` still matches the provided reference netParams
 
 
 ## Environment
@@ -49,10 +42,9 @@ Python used:
 
 - `/home/nnovikov/conda_env/netpyne/bin/python`
 
-Observed environment warnings:
+Observed environment warning:
 
 - MPI library warning during import
-- Matplotlib created a temporary cache directory because the default config path was not writable
 
 Effect on this test:
 
@@ -63,7 +55,7 @@ Effect on this test:
 
 ## Executive Result
 
-The active old-style workflow now reproduces the structural `netParams_example.json` reference for the core network.
+The active old-style workflow reproduces the structural `netParams_example.json` reference for the core network.
 
 Exact parity:
 
@@ -110,7 +102,7 @@ Remaining known non-exact raw comparison:
 
 ## Findings
 
-### 1. Connection weights now match exactly
+### 1. Connection weights match exactly
 
 Severity:
 
@@ -119,8 +111,9 @@ Severity:
 Observed:
 
 - all 7580 common `connParams` match exactly
-- previous 4x `wmult` mismatch is gone
-- previous 2x fader split mismatch is gone
+- global `wmult` is now applied once from the pipeline
+- fader split weights are no longer compensated in `netParams.py`
+- `conns_split = 0.5` is structural fader metadata for the active subnet builder
 
 Representative spot checks:
 
@@ -132,12 +125,13 @@ Representative spot checks:
 
 Interpretation:
 
-- `cfg_base.wmat` is now the source of truth
-- split-pair `wmat` entries are pre-compensated for `subnet_tuner` static halving
+- `conn.pkl` is again the source of raw weight matrices
+- `cfg_base.json` holds editable scalar weight controls, not matrix payloads
 - class/pop/layer gain multipliers such as `EEGain` remain active
+- the external subnet builder must preserve split rule weights to reproduce this reference
 
 
-### 2. Pulse mismatch is resolved
+### 2. Pulse mismatch remains resolved
 
 Severity:
 
@@ -145,14 +139,14 @@ Severity:
 
 Observed:
 
-- generated `popParams` count now matches reference
-- generated `connParams` count now matches reference
+- generated `popParams` count matches reference
+- generated `connParams` count matches reference
 - no generated-only `PulseSeq`
 - no generated-only `PulseSeq->TCM`
 
 Interpretation:
 
-- `add_pulses = 0` now matches the provided reference netParams
+- `add_pulses = 0` matches the provided reference netParams
 - `pulse_seq_params` can remain in cfg as inactive/editable experiment metadata
 
 
@@ -179,23 +173,55 @@ Interpretation:
 Compile/static check:
 
 ```bash
-python3 -m py_compile model_versions/model_nn_1/cfg.py model_versions/model_nn_1/create_net_params_local.py model_versions/model_nn_1/netParams.py model_versions/model_nn_1/init.py model_versions/model_nn_1/conn_fader.py model_versions/model_nn_1/syn_mech_relabel.py model_versions/model_nn_1/_scripts/normalize_cfg_base_once.py
+python3 -m py_compile model_versions/model_nn_1/cfg.py model_versions/model_nn_1/create_net_params_local.py model_versions/model_nn_1/netParams.py model_versions/model_nn_1/init.py model_versions/model_nn_1/conn_fader.py model_versions/model_nn_1/syn_mech_relabel.py
+```
+
+Non-simulation subnet semantic check:
+
+```bash
+MPLCONFIGDIR=/home/nnovikov/repo/A1-OUinp/model_versions/model_nn_1/.mplcache /home/nnovikov/conda_env/netpyne/bin/python - <<'PY'
+from subnet_tuner import SubnetDesc, SubnetParamBuilder2
+params = {
+    'popParams': {
+        'A': {'cellType': 'A', 'numCells': 1},
+        'B': {'cellType': 'B', 'numCells': 1},
+    },
+    'connParams': {
+        'A_B': {
+            'preConds': {'pop': ['A']},
+            'postConds': {'pop': ['B']},
+            'weight': 1,
+            'synMech': 'AMPA',
+        },
+    },
+    'stimSourceParams': {},
+    'stimTargetParams': {},
+    'cellParams': {},
+    'synMechParams': {},
+    'subConnParams': {},
+}
+desc = SubnetDesc()
+desc.pops_active = ['A', 'B']
+desc.conns_frozen = {'A': ['B']}
+desc.conns_split = {'A, B': 0.5}
+desc.inp_surrogates = {'A': {'type': 'irregular', 'rate': 1, 'noise': 1, 'seed': 1}}
+out = SubnetParamBuilder2().build(params, desc)
+print(out['connParams']['A_B']['weight'], out['connParams']['frz_A_B']['weight'])
+PY
 ```
 
 Non-simulation netParams comparison:
 
 ```bash
-/home/nnovikov/conda_env/netpyne/bin/python model_versions/model_nn_1/_test/_real_compare.py
+MPLCONFIGDIR=/home/nnovikov/repo/A1-OUinp/model_versions/model_nn_1/.mplcache /home/nnovikov/conda_env/netpyne/bin/python model_versions/model_nn_1/_test/_real_compare.py
 ```
-
-Guard check:
-
-- rerunning `_scripts/normalize_cfg_base_once.py` fails with the expected guard error
 
 
 ## Conclusion
 
-The one-time JSON normalization and `wmult` removal fixed the active netParams parity bugs.
+Removing `wmat` from `cfg_base.json` and restoring weight transforms to the build pipeline preserved netParams parity.
+
+The active subnet builder now preserves fader split weights, so the old local pre-compensation step was removed.
 
 The remaining raw differences are limited to `IClamp` naming/order and are functionally equivalent under the current comparison.
 

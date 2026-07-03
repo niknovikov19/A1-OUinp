@@ -1,5 +1,6 @@
 import json
 import pickle
+from copy import deepcopy
 from pathlib import Path
 
 import numpy as np
@@ -256,12 +257,14 @@ def create_net_params(cfg):
         connData = pickle.load(fileObj)
     pmat = connData['pmat']
     lmat = connData['lmat']
-    wmat = connData['wmat']
+    wmat = deepcopy(connData['wmat'])
     bins = connData['bins']
     connDataSource = connData['connDataSource']
 
-    # Use cfg_base weights directly because global scaling is baked into JSON
-    wmat = cfg.wmat
+    # Apply active global weight multiplier to raw conn.pkl weights
+    for pre in wmat.keys():
+        for post in wmat[pre].keys():
+            wmat[pre][post] *= cfg.wmult
     
     SKIP_ZERO_PROB = 1
 

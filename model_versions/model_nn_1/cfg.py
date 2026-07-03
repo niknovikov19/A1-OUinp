@@ -55,12 +55,9 @@ def set_duration_bundle(cfg, duration, t0_calc=None, update_iclamp=True):
                 entry['dur'] = cfg.duration
 
 
-def scale_wmat(cfg, factor):
-    """Apply an intentional manual global weight scale after loading cfg_base."""
-    factor = float(factor)
-    for post_weights in cfg.wmat.values():
-        for post in post_weights:
-            post_weights[post] *= factor
+def scale_global_weights(cfg, factor):
+    """Scale the active global weight multiplier after loading cfg_base."""
+    cfg.wmult *= float(factor)
 
 
 cfg = _load_cfg()
@@ -69,8 +66,9 @@ cfg = _load_cfg()
 # User overrides
 # Edit loaded values here when exploring a variant of the experiment.
 # Examples:
+# cfg.wmult = 0.25
 # cfg.EEGain = 0.5
-# scale_wmat(cfg, 1.1)
+# scale_global_weights(cfg, 1.1)
 # set_main_seed(cfg, 1111)
 # set_duration_bundle(cfg, 5000.0, t0_calc=3000.0)
 # cfg.recordCells = [('IT2', [0, 1])]

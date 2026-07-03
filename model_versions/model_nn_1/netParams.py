@@ -108,6 +108,7 @@ def _build_subnet(cfg, netParams):
 
 
 def _parse_split_pairs(cfg):
+    """Parse split pairs used by recurrent/frozen fader relabeling."""
     split_cfg = getattr(cfg, 'subnet_params', {}).get('conns_split', {})
     if isinstance(split_cfg, dict):
         raw_pairs = split_cfg.keys()

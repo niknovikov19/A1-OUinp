@@ -302,8 +302,7 @@ Contains:
 
 - baseline NetPyNE config
 - retained experiment parameters
-- globally scaled `wmat` values used directly by the local builder
-- split-pair `wmat` values pre-compensated for `subnet_tuner` static halving
+- scalar weight controls such as `wmult` and `EEGain`
 - subnet settings
 - bkg spike input settings
 - `IClamp` settings
@@ -313,9 +312,9 @@ Contains:
 
 Important notes:
 
-- `wmult` is intentionally not active in this standalone workflow because the global scale is baked into `wmat`
-- `EEGain` and other class/pop/layer gain multipliers remain active during netParams construction
-- `_scripts/normalize_cfg_base_once.py` records the one-time normalization metadata and refuses to run twice
+- raw `wmat` is not stored in `cfg_base.json`; it is loaded from bundled `conn/conn.pkl`
+- `wmult`, `EEGain`, and other class/pop/layer gain multipliers remain active during netParams construction
+- `conns_split` marks recurrent/frozen rule pairs for the subnet and fader, but local code does not scale split weights
 
 
 ### `cells/`
@@ -333,7 +332,7 @@ Bundled connectivity matrices used by `create_net_params_local.py`.
 
 Purpose:
 
-- provide local connectivity probabilities, distances, and weights
+- provide local connectivity probabilities, distances, and raw weights
 
 
 ### `target_sec_1.json`
@@ -465,7 +464,7 @@ The most important call relations are:
 
 ## How the subnet and fader pieces fit together
 
-This is the most experiment-specific part of the organization. It now runs through the external `subnet_tuner` dependency, but the overall result still has verified mismatches against the reference netParams.
+This is the most experiment-specific part of the organization. It now runs through the external `subnet_tuner` dependency, with the active/reference builder preserving numeric weights when it duplicates split recurrent/frozen rules.
 
 Step 1:
 
@@ -475,20 +474,25 @@ Step 2:
 
 - `netParams.py` reads `cfg.subnet_params`
 - `_build_subnet(...)` converts selected presynaptic populations into frozen surrogate populations like `IT2frz`
-- the local builder duplicates selected rules into `frz_...` connection rules
+- the external builder duplicates selected rules into `frz_...` connection rules
 
 Step 3:
 
-- `_apply_split_synmech_labels(...)` relabels synaptic mechanisms so recurrent and frozen copies are distinguishable
+- split recurrent/frozen rules keep the numeric weights produced by `create_net_params_local.py`
+- the `0.5` split value is retained as structural fader metadata, not as a local weight-scaling instruction
 
 Step 4:
+
+- `_apply_split_synmech_labels(...)` relabels synaptic mechanisms so recurrent and frozen copies are distinguishable
+
+Step 5:
 
 - `init.py` instantiates the network
 - `_setup_fader(sim)` locates:
   - recurrent rules from `pop_pre -> pop_post`
   - frozen rules from `pop_prefrz -> pop_post`
 
-Step 5:
+Step 6:
 
 - `ConnFader` attaches runtime modulators that fade one group in while fading the other out
 

@@ -87,3 +87,17 @@
 - Removed the active `cfg.wmult` multiplication from `create_net_params_local.py` while keeping `EEGain` and other gain multipliers active.
 - Added `scale_wmat(cfg, factor)` for intentional manual global weight scaling in `cfg.py`.
 - Re-ran non-simulation verification against `netParams_example.json`; `popParams`, `connParams`, `synMechParams`, and `subConnParams` now match exactly.
+
+## 2026-07-02 step 14
+- Removed `wmat` and one-time normalization metadata from `cfg_base.json`.
+- Restored `wmult = 0.25` as an active scalar config value.
+- Rewired `create_net_params_local.py` to load raw `wmat` from bundled `conn/conn.pkl` and apply `cfg.wmult` in the build pipeline.
+- Moved fader split weight compensation into `netParams.py` before subnet conversion, avoiding baked split compensation in JSON.
+- Removed the obsolete one-time normalization script from the active setup.
+- Re-ran non-simulation verification against `netParams_example.json`; core netParams parity remains exact.
+
+## 2026-07-03 step 15
+- Confirmed the reference-producing subnet builder had static split-weight scaling disabled.
+- Removed local fader split pre-compensation from `netParams.py`.
+- Kept `conn.pkl -> wmult -> gains` as the active weight pipeline.
+- Updated documentation and comparison helpers to describe `conns_split` as structural fader metadata.

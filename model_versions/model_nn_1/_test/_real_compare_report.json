@@ -249,8 +249,7 @@
   "conn_analysis": {
     "common": 7580,
     "matched_after_norm": 7580,
-    "matched_after_norm_and_x4": 0,
-    "remaining_after_norm_and_x4": 0,
+    "remaining_after_norm": 0,
     "pattern_counts": [],
     "weight_ratios": [],
     "pattern_examples": {}

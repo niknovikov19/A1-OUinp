@@ -68,7 +68,6 @@ g = final.todict()
 with open(MODEL / 'netParams_example.json') as f: r=json.load(f)['net']['params']
 common = sorted(set(g['connParams']) & set(r['connParams']))
 match_after_norm=0
-match_after_norm_and_x4=0
 remaining=[]
 for k in common:
     gc = normalize_conn(g['connParams'][k])
@@ -76,19 +75,12 @@ for k in common:
     if gc == rc:
         match_after_norm += 1
         continue
-    gcx = json.loads(json.dumps(gc))
-    if isinstance(gcx.get('weight'), (int,float)):
-        gcx['weight'] = gcx['weight'] * 4
-    if gcx == rc:
-        match_after_norm_and_x4 += 1
-    else:
-        if len(remaining) < 20:
-            diff_fields=[]
-            for f in sorted(set(gcx)|set(rc)):
-                if gcx.get(f)!=rc.get(f): diff_fields.append(f)
-            remaining.append((k,diff_fields,gcx,rc))
+    if len(remaining) < 20:
+        diff_fields=[]
+        for f in sorted(set(gc)|set(rc)):
+            if gc.get(f)!=rc.get(f): diff_fields.append(f)
+        remaining.append((k,diff_fields,gc,rc))
 print('common', len(common))
 print('match_after_norm', match_after_norm)
-print('match_after_norm_and_x4', match_after_norm_and_x4)
-print('remaining_after_norm_and_x4', len(common)-match_after_norm-match_after_norm_and_x4)
+print('remaining_after_norm', len(common)-match_after_norm)
 print(json.dumps(remaining[:5], indent=2)[:20000])
