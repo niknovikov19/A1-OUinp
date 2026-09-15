@@ -477,6 +477,10 @@ if need_run:
     #if sim.rank == 0:
     print(f'Rank {sim.rank}: running...', flush=True)
     sim.runSim()               # run parallel Neuron simulation
+
+    # Run optional all-rank processing while local instantiated cells still exist
+    if hasattr(cfg_mod, 'post_run_parallel'):
+        cfg_mod.post_run_parallel(sim)
     #if sim.rank == 0:
     #    print(f'Gathering the results...', flush=True)
     sim.gatherData()

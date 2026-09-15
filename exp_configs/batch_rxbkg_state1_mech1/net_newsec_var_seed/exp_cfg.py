@@ -22,6 +22,7 @@ from conn_fader import ConnFader
 import diagnostics as diag
 from external.sim_data_analyzer.xr_adapters import get_lfp_xr, get_net_rate_dynamics_xr
 from syn_mech_relabel import _rule_kind_and_base_pops, _relabel_conn_synmech
+from utils.cell_inp_stats import calc_cell_inp_stats
 
 
 PYR_POPS = ['IT2', 'IT3', 'ITP4', 'ITS4', 'IT5A', 'IT5B', 'IT6',
@@ -49,7 +50,8 @@ CONNS_EE = [(p1, p2) for p1 in E_POPS for p2 in E_POPS]
 SIM_DURATION = 10 * 1e3
 T0_CALC = 7 * 1e3
 
-EXP_LABEL = 'a1_ee_fade_pulses'
+EXP_LABEL = 'a1_ee_fade'
+#EXP_LABEL = 'a1_ee_fade_pulses'
 
 POPS_USED = CTX_POPS + THAL_POPS
 
@@ -89,12 +91,12 @@ PLOT_TRACES = 0
 NCELLS_REC = 5
 NCELLS_PLOT = 2
 
-REC_LFP = 1
+REC_LFP = 0
 LFP_Y_MIN = 0
 LFP_Y_MAX = 2000
 LFP_Y_STEP = 100
 
-PLOT_CSD = 1
+PLOT_CSD = 0
 CSD_VIS_T0 = 5000
 
 LAYER_BOUNDS = {'L1': 100, 'L2': 160, 'L3': 950, 'L4': 1250,
@@ -103,14 +105,17 @@ LAYER_BOUNDS = {'L1': 100, 'L2': 160, 'L3': 950, 'L4': 1250,
 PLOT_RATE_DYNAMICS = 1
 RVEC_TAU_SMOOTH = 0.02
 
-SAVE_RATE_XR = 0
+SAVE_RATE_XR = 1
 SAVE_LFP_XR = 0
 SAVE_PKL = 1
+
+CELL_INP_STATS_ON = 1
+CELL_INP_STATS_USE_FRZ = 0
 
 NEED_RUN = 1
 DIAG = 0
 
-ADD_PULSES = 1
+ADD_PULSES = 0
 N_PULSES = 10
 PULSE_PARAMS = {
     'name': 'PulseSeq',
@@ -531,6 +536,8 @@ def apply_exp_cfg(cfg):
     # Common connection scaling defaults are still ordinary experiment params
     cfg.wmult = 0.25
     cfg.EEGain = 0.5
+    cfg.cell_inp_stats_on = CELL_INP_STATS_ON
+    cfg.cell_inp_stats_use_frz = CELL_INP_STATS_USE_FRZ
 
     # Connectivity params shared by standalone and runtime-patched runs
     cfg.addSubConn = 0
@@ -652,6 +659,23 @@ def modify_network(sim):
     sim.ee_fader = fader
 
 
+def post_run_parallel(sim):
+    """Calculate all-ranks results before NetPyNE clears local connections."""
+    if not sim.cfg.cell_inp_stats_on:
+        return
+    sim.cell_inp_stats_xr = calc_cell_inp_stats(
+        sim,
+        include_frz=bool(sim.cfg.cell_inp_stats_use_frz),
+        nspikes_min=3,
+    )
+
+    # Add experiment-specific metadata to the root result
+    if sim.rank == 0:
+        sim.cell_inp_stats_xr.attrs['runtime_params_json'] = json.dumps(
+            _json_ready(sim.cfg.runtime_params)
+        )
+
+
 def _relative_output(cfg, fpath):
     """Return a result path relative to cfg.saveFolder."""
     return Path(fpath).relative_to(Path(cfg.saveFolder)).as_posix()
@@ -713,6 +737,19 @@ def _save_lfp_xr(sim, dirpath_res_sub, postfix):
     return fpath_lfp
 
 
+def _save_cell_inp_stats_xr(sim, dirpath_res_sub, postfix):
+    """Save the assembled per-cell input statistics as NetCDF."""
+    dataset = sim.cell_inp_stats_xr
+    if dataset is None:
+        raise RuntimeError('Cell-input statistics were not assembled on rank 0')
+    fpath = (
+        dirpath_res_sub / 'cell_inp_stats' /
+        f'cell_inp_stats_{postfix}.nc'
+    )
+    dataset.to_netcdf(fpath)
+    return fpath
+
+
 def post_run(sim):
     """Process and organize one completed simulation job."""
     cfg = sim.cfg
@@ -735,7 +772,7 @@ def post_run(sim):
     os.makedirs(dirpath_res_sub, exist_ok=True)
     dirnames_sub = ['rasters', 'results', 'cfg', 'pkl', 'netpar', 
                     'traces', 'wmod_figs', 'rvec_figs', 'csd_figs',
-                    'rvec_xr', 'lfp_xr']
+                    'rvec_xr', 'lfp_xr', 'cell_inp_stats']
     for dirname in dirnames_sub:
         os.makedirs(dirpath_res_sub / dirname, exist_ok=True)
 
@@ -798,6 +835,13 @@ def post_run(sim):
     if NEED_RUN and cfg.runtime_params['out']['save_lfp_xr']:
         fpath_lfp = _save_lfp_xr(sim, dirpath_res_sub, postfix)
         outputs.append(_relative_output(cfg, fpath_lfp))
+
+    # Save optional per-cell input statistics assembled before gatherData()
+    if NEED_RUN and cfg.cell_inp_stats_on:
+        fpath_cell_inp = _save_cell_inp_stats_xr(
+            sim, dirpath_res_sub, postfix
+        )
+        outputs.append(_relative_output(cfg, fpath_cell_inp))
 
     # Plot and save rate dynamics
     if cfg.plot_rate_dynamics:
