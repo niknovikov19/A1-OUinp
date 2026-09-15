@@ -1,7 +1,7 @@
 import numpy as np
 
 
-N_SEEDS = 1
+N_SEEDS = 15
 
 
 def get_batch_params():

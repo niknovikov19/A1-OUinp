@@ -47,8 +47,8 @@ CONNS_EE = [(p1, p2) for p1 in E_POPS for p2 in E_POPS]
 
 
 # Duration and rate calculation window
-SIM_DURATION = 10 * 1e3
-T0_CALC = 7 * 1e3
+SIM_DURATION = 20 * 1e3
+T0_CALC = 15 * 1e3
 
 EXP_LABEL = 'a1_ee_fade'
 #EXP_LABEL = 'a1_ee_fade_pulses'
@@ -66,7 +66,8 @@ CONNS_SPLIT = [(p1, p2) for p1, p2 in CONNS_EE
                if (p1 in POPS_USED) and (p2 in POPS_USED)]
 
 # Surr->recurrent fader timecourse (time, rec:surr ratio)
-FADER_PTS = [(0, 0), (3000, 0), (5000, 1), (SIM_DURATION, 1)]
+#FADER_PTS = [(0, 0), (3000, 0), (5000, 1), (SIM_DURATION, 1)]
+FADER_PTS = [(0, 0), (8000, 0), (10000, 1), (SIM_DURATION, 1)]
 
 # Background spiking input
 XBKG_NAME = 'rx_bkg_mid_sm_ctx21_thal41'
@@ -103,7 +104,7 @@ LAYER_BOUNDS = {'L1': 100, 'L2': 160, 'L3': 950, 'L4': 1250,
                 'L5A': 1334, 'L5B': 1550, 'L6': 2000}
 
 PLOT_RATE_DYNAMICS = 1
-RVEC_TAU_SMOOTH = 0.02
+RVEC_TAU_SMOOTH = 0.05
 
 SAVE_RATE_XR = 1
 SAVE_LFP_XR = 0
