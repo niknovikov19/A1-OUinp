@@ -65,4 +65,6 @@ exp_results_local/
 dev_scratch/csd_samn/
 dev_scratch/cell_inp_stats/**/*.png
 dev_scratch/cell_inp_stats/test_data
-dev_scratch/thal_frz/
+dev_scratch/thal_frz/cfg
+dev_scratch/thal_frz/analysis/collected
+dev_scratch/thal_frz/analysis/experiments

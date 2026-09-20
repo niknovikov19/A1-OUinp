@@ -1,0 +1,27 @@
+{
+    "dirpath_root": "../../exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed",
+    "experiments": [
+        "exp_core_full_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5",
+        "exp_irem_core_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5",
+        "exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5",
+        "exp_irem_tc_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5",
+        "exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5",
+        "exp_matx_core_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5",
+        "exp_matx_full_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5",
+        "exp_matx_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5",
+        "exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5",
+        "exp_thal_ee_0_ire_tc_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5",
+        "exp_thal_ee_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5",
+        "exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5",
+        "exp_thal_ire_tc_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5",
+        "exp_thal_pe_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5",
+        "exp_thal_pti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5",
+        "exp_thal_tc_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5",
+        "exp_thal_tc_ti_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5",
+        "exp_thal_ti_tc_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5",
+        "exp_thal_ti_tc_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5",
+        "exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5",
+        "exp_thal_unconn_nseed_5_t_7.0_10.0_wmult_0.25_ee_0.5",
+        "exp_tim_core_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5"
+    ]
+}
