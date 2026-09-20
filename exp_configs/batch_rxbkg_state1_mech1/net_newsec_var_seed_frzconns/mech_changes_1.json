@@ -1,0 +1,74 @@
+{
+    "gkdr_IT2": {
+        "pop": "IT2_reduced",
+        "sec": "all",
+        "mech": "kdr",
+        "par": "gbar",
+        "mult": 1.5,
+        "add": 0
+    },
+    "gkdr_IT3": {
+        "pop": "IT3_reduced",
+        "sec": "all",
+        "mech": "kdr",
+        "par": "gbar",
+        "mult": 1.5,
+        "add": 0
+    },
+    "gkdr_ITP4": {
+        "pop": "ITP4_reduced",
+        "sec": "all",
+        "mech": "kdr",
+        "par": "gbar",
+        "mult": 3,
+        "add": 0
+    },
+    "gkdr_IT5A": {
+        "pop": "IT5A_reduced",
+        "sec": "all",
+        "mech": "kdr",
+        "par": "gbar",
+        "mult": 3,
+        "add": 0
+    },
+    "gkdr_IT5B": {
+        "pop": "IT5B_reduced",
+        "sec": "all",
+        "mech": "kdr",
+        "par": "gbar",
+        "mult": 3,
+        "add": 0
+    },
+    "gkdr_CT5A": {
+        "pop": "CT5A_reduced",
+        "sec": "all",
+        "mech": "kdr",
+        "par": "gbar",
+        "mult": 3,
+        "add": 0
+    },
+    "gkdr_CT5B": {
+        "pop": "CT5B_reduced",
+        "sec": "all",
+        "mech": "kdr",
+        "par": "gbar",
+        "mult": 3,
+        "add": 0
+    },
+    "gkdr_IT6": {
+        "pop": "IT6_reduced",
+        "sec": "all",
+        "mech": "kdr",
+        "par": "gbar",
+        "mult": 3,
+        "add": 0
+    },
+    "gkdr_CT6": {
+        "pop": "CT6_reduced",
+        "sec": "all",
+        "mech": "kdr",
+        "par": "gbar",
+        "mult": 3,
+        "add": 0
+    }
+}
