@@ -179,12 +179,16 @@ def _resolve_pop_names(cfgs, pop_names=None):
         names = cfg.get('pops_used')
         if names is None:
             names = cfg.get('runtime_params', {}).get('pops_used')
+        if names is None:
+            names = cfg.get('pops_active')
+        if names is None:
+            names = cfg.get('subnet_params', {}).get('pops_active')
         if names is not None:
             values.append(tuple(names))
     if len(values) == 0:
         return None
     if len(values) != len(cfgs) or len(set(values)) != 1:
-        raise ValueError('Inconsistent pops_used metadata across jobs')
+        raise ValueError('Inconsistent population metadata across jobs')
     return list(values[0])
 
 
@@ -246,7 +250,8 @@ def collect_cell_rates_from_pkl(
     t_limits = _resolve_t_limits(cfgs, t_limits=t_limits)
     pop_names = _resolve_pop_names(cfgs, pop_names=pop_names)
     print(f'Grid: {dict(job_idx.sizes)}, {int(job_idx.count())} jobs')
-    print(f'Time: {t_limits}, populations: {"auto" if pop_names is None else len(pop_names)}')
+    pop_summary = 'auto (non-frz)' if pop_names is None else len(pop_names)
+    print(f'Time: {t_limits}, populations: {pop_summary}')
 
     # Delegate pickle loading, cell statistics, and batch stacking
     dataset = collect_batch_cell_stats_from_pkl(

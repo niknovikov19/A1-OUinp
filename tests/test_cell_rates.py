@@ -9,12 +9,14 @@ import xarray as xr
 
 from utils.batch.collect_cell_rates_from_pkl import (
     _infer_batch_param_fields,
+    _resolve_pop_names,
     collect_cell_rates_from_pkl,
 )
 from utils.cell_xr import get_batch_dims, get_pop_gids, select_pop
 
 
-def _make_cfg(job_id, seed, amp, t_limits=(1, 5), metadata=True):
+def _make_cfg(job_id, seed, amp, t_limits=(1, 5), metadata=True,
+              pop_metadata='pops_used'):
     """Create one minimal saved simulation config. """
     cfg = {
         'seed_main': seed,
@@ -22,11 +24,16 @@ def _make_cfg(job_id, seed, amp, t_limits=(1, 5), metadata=True):
         'simLabel': f'test_{job_id:05d}',
         'duration': 5000,
         't0_calc': 1000,
-        'pops_used': ['P1', 'P2'],
         'runtime_params': {
             'proc': {'rate_t_limits': list(t_limits)},
         },
     }
+    if pop_metadata == 'pops_used':
+        cfg['pops_used'] = ['P1', 'P2']
+    elif pop_metadata == 'subnet_params':
+        cfg['subnet_params'] = {'pops_active': ['P1', 'P2']}
+    elif pop_metadata is not None:
+        raise ValueError(f'Unknown population metadata: {pop_metadata}')
     if metadata:
         cfg['batch_par_info'] = {
             'batch_params': ['seed_main', 'amp'],
@@ -34,34 +41,38 @@ def _make_cfg(job_id, seed, amp, t_limits=(1, 5), metadata=True):
     return cfg
 
 
-def _make_result(gid_p2=20):
+def _make_result(gid_p2=20, gid_frz=100):
     """Create one minimal NetPyNE pickle result. """
     return {
         'net': {
             'pops': {
                 'P1': {'cellGids': [10, 11]},
                 'P2': {'cellGids': [gid_p2]},
-                'P1frz': {'cellGids': [100]},
+                'P1frz': {'cellGids': [gid_frz]},
             },
         },
         'simData': {
-            'spkid': [10, 10, 10, 10, gid_p2, gid_p2, 100],
+            'spkid': [10, 10, 10, 10, gid_p2, gid_p2, gid_frz],
             'spkt': [1000, 2000, 3000, 5000, 1000, 2000, 3000],
         },
     }
 
 
 def _write_job(root, job_id, seed, amp, t_limits=(1, 5), metadata=True,
-               gid_p2=20, write_pickle=True):
+               gid_p2=20, gid_frz=100, pop_metadata='pops_used',
+               write_pickle=True):
     """Write one synthetic config and simulation pickle. """
-    cfg = _make_cfg(job_id, seed, amp, t_limits=t_limits, metadata=metadata)
+    cfg = _make_cfg(
+        job_id, seed, amp, t_limits=t_limits, metadata=metadata,
+        pop_metadata=pop_metadata,
+    )
     cfg_path = root / 'cfg' / f'cfg_{job_id:05d}_seed_{seed}.json'
     cfg_path.write_text(json.dumps({'simConfig': cfg}))
     if not write_pickle:
         return
     pkl_path = root / 'pkl' / f'data_{job_id:05d}_seed_{seed}.pkl'
     with pkl_path.open('wb') as file:
-        pickle.dump(_make_result(gid_p2=gid_p2), file)
+        pickle.dump(_make_result(gid_p2=gid_p2, gid_frz=gid_frz), file)
 
 
 def _make_batch(root):
@@ -167,6 +178,37 @@ class CellRateCollectorTests(unittest.TestCase):
         )
         with self.assertRaisesRegex(ValueError, 'BATCH_PARAM_FIELDS'):
             _infer_batch_param_fields({0: cfgs[0]})
+
+    def test_population_metadata_and_non_frz_fallback(self):
+        cfgs = {
+            job_id: _make_cfg(
+                job_id, seed=job_id, amp=0.1,
+                pop_metadata='subnet_params',
+            )
+            for job_id in range(2)
+        }
+        self.assertEqual(_resolve_pop_names(cfgs), ['P1', 'P2'])
+
+        with tempfile.TemporaryDirectory() as dirname:
+            root = Path(dirname) / 'batch'
+            root.mkdir()
+            (root / 'cfg').mkdir()
+            (root / 'pkl').mkdir()
+            _write_job(
+                root, 0, seed=1, amp=0.1,
+                gid_frz=100, pop_metadata=None,
+            )
+            _write_job(
+                root, 1, seed=2, amp=0.1,
+                gid_frz=101, pop_metadata=None,
+            )
+
+            dataset = collect_cell_rates_from_pkl(
+                root, dirpath_out=Path(dirname) / 'output'
+            )
+
+            self.assertEqual(dataset.gid.values.tolist(), [10, 11, 20])
+            self.assertNotIn('P1frz', dataset['pop'].values)
 
     def test_rejects_inconsistent_time_and_cell_mapping(self):
         with tempfile.TemporaryDirectory() as dirname:
