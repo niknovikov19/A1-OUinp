@@ -34,7 +34,7 @@ from syn_mech_relabel import _rule_kind_and_base_pops, _relabel_conn_synmech
 from utils.cell_inp_stats import calc_cell_inp_stats
 
 
-# Duration and rate calculation window
+# Match the archived thalamic experiments and their rate calculation window
 SIM_DURATION = 15 * 1e3
 T0_CALC = 10 * 1e3
 

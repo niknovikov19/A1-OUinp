@@ -43,32 +43,60 @@ def _load_cell_inp_collector():
 
 class FrozenConnectionBatchTests(unittest.TestCase):
     def test_batch_axes_and_post_update_select_connection_group(self):
-        """Apply the selected frozen group after batch parameter updates. """
+        """Resolve all top-10 conditions and seeds without launching simulations. """
         batch = _load_frzconn_batch_params()
         params = batch.get_batch_params()
-        self.assertEqual(params['frz_conn_group'], ['irem_ire', 'matx_ti'])
-        self.assertEqual(len(params['seed_main']), batch.N_SEEDS)
+
+        # Pin the requested interventions independently of their implementation
+        expected = {
+            'none': [],
+            'thal_irem': [(p, 'IREM') for p in
+                          ['TC', 'HTC', 'TCM', 'TI', 'TIM', 'IRE', 'IREM']],
+            'irem_ire_ti': [('IREM', 'IRE'), ('IREM', 'TI')],
+            'irem_tim': [('IREM', 'TIM')],
+            'ti_tc': [('TI', 'TC'), ('TI', 'HTC')],
+            'tim_tc': [('TIM', 'TC'), ('TIM', 'HTC')],
+            'irem_ire': [('IREM', 'IRE')],
+            'irem_ti': [('IREM', 'TI')],
+            'irem_core': [('IREM', p) for p in ['TC', 'HTC', 'TI', 'IRE']],
+            'ti_tim_tc': [('TI', 'TC'), ('TI', 'HTC'),
+                          ('TIM', 'TC'), ('TIM', 'HTC')],
+        }
+        self.assertEqual(params['frz_conn_group'], list(expected))
+        self.assertEqual(params['seed_main'], list(range(1000, 1015)))
+        self.assertEqual(batch.N_SEEDS, 15)
 
         cfg = SimpleNamespace(
-            seed_main=1002,
-            frz_conn_group='matx_ti',
+            seed_main=None,
+            frz_conn_group=None,
             seeds={'stim': None, 'conn': None},
-            subnet_params={'global_seed': None, 'conns_frozen': []},
+            subnet_params={'global_seed': None, 'conns_frozen': [('stale', 'pair')]},
             bkg_spike_inputs={
-                'P1': {'exc': {'seed': None}, 'inh': {'seed': None}},
+                pop: {'exc': {'seed': None}, 'inh': {'seed': None}}
+                for pop in batch.THAL_POPS
             },
         )
-        batch.post_update(cfg)
 
-        self.assertEqual(
-            cfg.subnet_params['conns_frozen'], batch.CONNS_MATX_TI
-        )
-        self.assertEqual(cfg.seeds, {'stim': 1002, 'conn': 2004})
-        self.assertEqual(cfg.subnet_params['global_seed'], 3006)
-        self.assertEqual(
-            cfg.batch_par_info['batch_params'],
-            ['seed_main', 'frz_conn_group'],
-        )
+        # Reuse one cfg to catch stale frozen pairs and inconsistent seed mapping
+        for seed in params['seed_main']:
+            for name, conns in expected.items():
+                with self.subTest(seed=seed, group=name):
+                    cfg.seed_main = seed
+                    cfg.frz_conn_group = name
+                    batch.post_update(cfg)
+                    self.assertEqual(cfg.subnet_params['conns_frozen'], conns)
+                    self.assertEqual(cfg.seeds, {'stim': seed, 'conn': seed * 2})
+                    self.assertEqual(cfg.subnet_params['global_seed'], seed * 3)
+                    self.assertEqual(cfg.batch_par_info['n_seeds'], 15)
+                    self.assertEqual(cfg.batch_par_info['frz_conn_groups'], list(expected))
+                    self.assertEqual(
+                        cfg.batch_par_info['batch_params'],
+                        ['seed_main', 'frz_conn_group'],
+                    )
+                    for n, pop in enumerate(batch.THAL_POPS):
+                        inputs = cfg.bkg_spike_inputs[pop]
+                        self.assertEqual(inputs['exc']['seed'], seed + 10000 + n)
+                        self.assertEqual(inputs['inh']['seed'], seed + 20000 + n)
 
 
 class FrozenConnectionCellInputCollectorTests(unittest.TestCase):

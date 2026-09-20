@@ -1,7 +1,7 @@
 import numpy as np
 
 
-N_SEEDS = 15
+N_SEEDS = 5
 
 # Population groups used to define frozen connection groups
 PYR_POPS = ['IT2', 'IT3', 'ITP4', 'ITS4', 'IT5A', 'IT5B', 'IT6',
@@ -53,10 +53,18 @@ CONNS_IREM_CORE_EE = [
 ] + CONNS_EE
 CONNS_MATX_TI = [(p1, 'TI') for p1 in MATX_POPS]
 
-# Batch-selected frozen connection groups
+# Top-10 connection-freezing conditions in priority order
 FRZ_CONN_GROUPS = [
+    {'none': []},
+    {'thal_irem': [(p1, 'IREM') for p1 in THAL_POPS]},
+    {'irem_ire_ti': [('IREM', p2) for p2 in ['IRE', 'TI']]},
+    {'irem_tim': [('IREM', 'TIM')]},
+    {'ti_tc': [('TI', p2) for p2 in CORE_E_POPS]},
+    {'tim_tc': [('TIM', p2) for p2 in CORE_E_POPS]},
     {'irem_ire': CONNS_IREM_IRE},
-    {'matx_ti': CONNS_MATX_TI},
+    {'irem_ti': [('IREM', 'TI')]},
+    {'irem_core': [('IREM', p2) for p2 in CORE_POPS]},
+    {'ti_tim_tc': [(p1, p2) for p1 in ['TI', 'TIM'] for p2 in CORE_E_POPS]},
 ]
 
 
