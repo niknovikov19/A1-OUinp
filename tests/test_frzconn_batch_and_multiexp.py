@@ -6,6 +6,8 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
+import xarray as xr
+
 from utils.batch import collect_cell_rates_from_pkl_multiexp as multiexp
 
 
@@ -14,12 +16,25 @@ FPATH_BATCH_PARAMS = (
     DIR_REPO / 'exp_configs' / 'batch_rxbkg_state1_mech1'
     / 'net_newsec_var_seed_frzconns' / 'batch_params.py'
 )
+FPATH_CELL_INP_COLLECTOR = (
+    FPATH_BATCH_PARAMS.parent / 'collect_batch_results.py'
+)
 
 
 def _load_frzconn_batch_params():
     """Load the new experiment batch module without package side effects. """
     spec = importlib.util.spec_from_file_location(
         'test_frzconn_batch_params', FPATH_BATCH_PARAMS
+    )
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def _load_cell_inp_collector():
+    """Load the frozen-connection cell-input batch collector. """
+    spec = importlib.util.spec_from_file_location(
+        'test_frzconn_cell_inp_collector', FPATH_CELL_INP_COLLECTOR
     )
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
@@ -54,6 +69,57 @@ class FrozenConnectionBatchTests(unittest.TestCase):
             cfg.batch_par_info['batch_params'],
             ['seed_main', 'frz_conn_group'],
         )
+
+
+class FrozenConnectionCellInputCollectorTests(unittest.TestCase):
+    def test_collects_seed_and_frozen_group_axes(self):
+        """Stack per-job input statistics over both batch dimensions. """
+        collector = _load_cell_inp_collector()
+        with tempfile.TemporaryDirectory() as dirname:
+            dirpath_exp = Path(dirname)
+            dirpath_cfg = dirpath_exp / 'cfg'
+            dirpath_data = dirpath_exp / 'cell_inp_stats'
+            dirpath_cfg.mkdir()
+            dirpath_data.mkdir()
+
+            # Create a complete two-seed by two-group synthetic batch
+            job = 0
+            for seed in (1000, 1001):
+                for group in ('irem_ire', 'matx_ti'):
+                    cfg = {
+                        'simConfig': {
+                            'seed_main': seed,
+                            'frz_conn_group': group,
+                        },
+                    }
+                    cfg_path = dirpath_cfg / f'cfg_{job:05d}_test.json'
+                    cfg_path.write_text(json.dumps(cfg))
+                    dataset = xr.Dataset(
+                        {'n_pre': (('gid', 'pop_pre'), [[job]])},
+                        coords={
+                            'gid': [10],
+                            'pop_pre': ['P1'],
+                            'pop_post': ('gid', ['P2']),
+                        },
+                    )
+                    dataset.to_netcdf(
+                        dirpath_data / f'cell_inp_stats_{job:05d}_test.nc'
+                    )
+                    job += 1
+
+            combined = collector.collect_cell_inp_stats_from_nc(dirpath_exp)
+
+            self.assertEqual(combined.sizes['seed_main'], 2)
+            self.assertEqual(combined.sizes['frz_conn_group'], 2)
+            self.assertEqual(
+                combined.n_pre.sel(
+                    seed_main=1001,
+                    frz_conn_group='matx_ti',
+                    gid=10,
+                    pop_pre='P1',
+                ).item(),
+                3,
+            )
 
 
 class MultiExperimentCollectorTests(unittest.TestCase):

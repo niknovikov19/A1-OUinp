@@ -31,6 +31,7 @@ from batch_params import (
     get_frz_conns_by_name,
 )
 from syn_mech_relabel import _rule_kind_and_base_pops, _relabel_conn_synmech
+from utils.cell_inp_stats import calc_cell_inp_stats
 
 
 # Duration and rate calculation window
@@ -71,6 +72,9 @@ NEED_RUN = 1
 
 PLOT_RATE_DYNAMICS = 0
 
+CELL_INP_STATS_ON = 1
+CELL_INP_STATS_USE_FRZ = 0
+
 
 def gen_exp_name_sub(cfg):
     """Generate the result subfolder name. """
@@ -97,6 +101,7 @@ def apply_exp_cfg(cfg):
 
     # Populations to use
     pops_active = POPS_USED
+    cfg.pops_used = list(POPS_USED)
 
     # Actual net creation and simulation
     cfg.need_run = NEED_RUN
@@ -135,6 +140,8 @@ def apply_exp_cfg(cfg):
     # Weight multipliers
     cfg.wmult = 0.25
     cfg.EEGain = 0.5
+    cfg.cell_inp_stats_on = CELL_INP_STATS_ON
+    cfg.cell_inp_stats_use_frz = CELL_INP_STATS_USE_FRZ
 
     # Connectivity params
     cfg.addSubConn = 0
@@ -300,6 +307,36 @@ def modify_network(sim):
     sim.ee_fader = fader
 
 
+def post_run_parallel(sim):
+    """Calculate all-ranks results before NetPyNE clears local connections. """
+    if not sim.cfg.cell_inp_stats_on:
+        return
+    sim.cell_inp_stats_xr = calc_cell_inp_stats(
+        sim,
+        include_frz=bool(sim.cfg.cell_inp_stats_use_frz),
+        nspikes_min=3,
+    )
+
+    # Add the selected connection group to the root result metadata
+    if sim.rank == 0:
+        sim.cell_inp_stats_xr.attrs['frz_conn_group'] = str(
+            sim.cfg.frz_conn_group
+        )
+
+
+def _save_cell_inp_stats_xr(sim, dirpath_res_sub, postfix):
+    """Save the assembled per-cell input statistics as NetCDF. """
+    dataset = sim.cell_inp_stats_xr
+    if dataset is None:
+        raise RuntimeError('Cell-input statistics were not assembled on rank 0')
+    fpath = (
+        dirpath_res_sub / 'cell_inp_stats' /
+        f'cell_inp_stats_{postfix}.nc'
+    )
+    dataset.to_netcdf(fpath)
+    return fpath
+
+
 def post_run(sim):
     """Called in the end of a job (after runnig and saving). """
 
@@ -323,7 +360,7 @@ def post_run(sim):
     dirpath_res_sub = dirpath_res / exp_name_sub
     os.makedirs(dirpath_res_sub, exist_ok=True)
     dirnames_sub = ['rasters', 'results', 'cfg', 'pkl', 'netpar',
-                    'traces', 'wmod_figs', 'rvec_figs']
+                    'traces', 'wmod_figs', 'rvec_figs', 'cell_inp_stats']
     for dirname in dirnames_sub:
         os.makedirs(dirpath_res_sub / dirname, exist_ok=True)
 
@@ -359,6 +396,10 @@ def post_run(sim):
         fpath_res = dirpath_res_sub / 'results' / f'result_{postfix}.json'
         with open(fpath_res, 'w') as fid:
             json.dump(res, fid, indent=4)
+
+    # Save per-cell input statistics assembled before gatherData()
+    if NEED_RUN and cfg.cell_inp_stats_on:
+        _save_cell_inp_stats_xr(sim, dirpath_res_sub, postfix)
 
     # Plot weight modulation signals
     if EE_FADER_ON and NEED_RUN:
