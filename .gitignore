@@ -62,4 +62,7 @@ exp_results/batch_rxbkg_unconn_state1_mech1/**/combined/
 dev_scratch/phase_lock_debug/**/*.png
 dev_scratch/phase_analysis/artifacts/
 exp_results_local/
-dev_scratch/csd_samn
+dev_scratch/csd_samn/
+dev_scratch/cell_inp_stats/**/*.png
+dev_scratch/cell_inp_stats/test_data
+dev_scratch/thal_frz/
