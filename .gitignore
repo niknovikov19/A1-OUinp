@@ -68,3 +68,7 @@ dev_scratch/cell_inp_stats/test_data
 dev_scratch/thal_frz/cfg
 dev_scratch/thal_frz/analysis/collected
 dev_scratch/thal_frz/analysis/experiments
+dev_scratch/thal_frz/**/*.png
+dev_scratch/thal_frz/**/*.nc
+dev_scratch/thal_frz_2/**/*.png
+dev_scratch/thal_frz_2/**/*.nc
