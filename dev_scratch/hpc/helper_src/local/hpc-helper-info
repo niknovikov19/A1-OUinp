@@ -1,0 +1,192 @@
+#!/usr/bin/env python3
+import argparse
+import json
+import sys
+
+sys.dont_write_bytecode = True
+
+from hpc_common import (
+    BUNDLE_VERSION,
+    EXIT_FAILED,
+    EXIT_REJECTED,
+    EXIT_SUCCESS,
+    HelperFailure,
+    RejectedInput,
+    append_audit_event,
+    get_audit_path,
+    get_bundle_identity,
+    get_config_identity,
+    get_config_path,
+    get_install_root,
+    load_config,
+    read_recent_audit_events,
+    redact_config,
+    validate_identifier,
+)
+
+
+def build_parser():
+    """Build the fixed local-information command parser."""
+    parser = argparse.ArgumentParser(
+        description='Inspect the protected A1 HPC helper installation.',
+    )
+    parser.add_argument(
+        '--json',
+        action='store_true',
+        help='Print structured JSON instead of a concise summary.',
+    )
+    commands = parser.add_subparsers(dest='command', required=True)
+    commands.add_parser('version', help='Report installed source hashes.')
+    commands.add_parser('info', help='Validate and report configuration.')
+    commands.add_parser(
+        'audit-tail',
+        help='Report at most 20 previous protected audit events.',
+    )
+    validate = commands.add_parser(
+        'validate',
+        help='Test one public identifier validator.',
+    )
+    validate.add_argument(
+        'kind',
+        choices=('experiment-id', 'git-commit', 'job-label', 'run-id'),
+    )
+    validate.add_argument('value')
+    return parser
+
+
+def run_command(args):
+    """Run one non-remote A0 information operation."""
+    if args.command == 'version':
+        return get_bundle_identity()
+    if args.command == 'audit-tail':
+        return {
+            'events': read_recent_audit_events(),
+            'maximum_events': 20,
+        }
+    if args.command == 'validate':
+        value = validate_identifier(args.kind, args.value)
+        return {
+            'valid': True,
+            'kind': args.kind,
+            'value': value,
+        }
+    if args.command != 'info':
+        raise RejectedInput(f'Unsupported command: {args.command!r}')
+
+    # Validate config before exposing a redacted installation summary
+    config = load_config()
+    result = get_bundle_identity()
+    result.update({
+        'install_root': get_install_root().as_posix(),
+        'config_path': get_config_path().as_posix(),
+        'config_sha256': get_config_identity(config),
+        'audit_path': get_audit_path().as_posix(),
+        'config': redact_config(config),
+    })
+    return result
+
+
+def print_result(command, result, as_json):
+    """Print one structured or concise successful result."""
+    if as_json:
+        print(json.dumps(result, indent=2, sort_keys=True))
+        return
+    if command == 'version':
+        print(f'Helper version: {result["bundle_version"]}')
+        print(f'Bundle SHA256: {result["bundle_sha256"]}')
+        for name, digest in sorted(result['source_sha256'].items()):
+            print(f'{name} SHA256: {digest}')
+        return
+    if command == 'validate':
+        print(f'Valid {result["kind"]}: {result["value"]}')
+        return
+    if command == 'audit-tail':
+        print(json.dumps(result, indent=2, sort_keys=True))
+        return
+    print(f'Helper version: {result["bundle_version"]}')
+    print(f'Bundle SHA256: {result["bundle_sha256"]}')
+    print(f'Install root: {result["install_root"]}')
+    print(f'Config SHA256: {result["config_sha256"]}')
+    print(f'Audit path: {result["audit_path"]}')
+    print(json.dumps(result['config'], indent=2, sort_keys=True))
+
+
+def audit_or_fail(action, status, exit_code, raw_args, details=None):
+    """Write the mandatory audit event and report audit failure."""
+    try:
+        append_audit_event(
+            action,
+            status,
+            exit_code,
+            raw_args,
+            details=details,
+        )
+    except HelperFailure as exc:
+        print(f'Audit failure: {exc}', file=sys.stderr)
+        return False
+    return True
+
+
+def main():
+    """Run the protected A0 helper-information command."""
+    raw_args = sys.argv[1:]
+    parser = build_parser()
+    try:
+        args = parser.parse_args(raw_args)
+    except SystemExit as exc:
+        exit_code = int(exc.code)
+        status = 'success' if exit_code == 0 else 'rejected'
+        if not audit_or_fail('argument-parse', status, exit_code, raw_args):
+            return EXIT_FAILED
+        return exit_code
+
+    try:
+        result = run_command(args)
+    except RejectedInput as exc:
+        if not audit_or_fail(
+            args.command,
+            'rejected',
+            EXIT_REJECTED,
+            raw_args,
+            'input rejected',
+        ):
+            return EXIT_FAILED
+        print(f'Rejected: {exc}', file=sys.stderr)
+        return EXIT_REJECTED
+    except HelperFailure as exc:
+        if not audit_or_fail(
+            args.command,
+            'failed',
+            EXIT_FAILED,
+            raw_args,
+            exc,
+        ):
+            return EXIT_FAILED
+        print(f'Failed: {exc}', file=sys.stderr)
+        return EXIT_FAILED
+    except Exception as exc:
+        details = f'{type(exc).__name__}: {exc}'
+        if not audit_or_fail(
+            args.command,
+            'failed',
+            EXIT_FAILED,
+            raw_args,
+            type(exc).__name__,
+        ):
+            return EXIT_FAILED
+        print(f'Failed: {details}', file=sys.stderr)
+        return EXIT_FAILED
+
+    if not audit_or_fail(
+        args.command,
+        'success',
+        EXIT_SUCCESS,
+        raw_args,
+    ):
+        return EXIT_FAILED
+    print_result(args.command, result, args.json)
+    return EXIT_SUCCESS
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())

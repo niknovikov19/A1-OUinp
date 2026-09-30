@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/a1-hpc/audit-event.schema.json",
+  "title": "A1 HPC helper audit event",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "timestamp_utc",
+    "helper",
+    "helper_version",
+    "action",
+    "status",
+    "exit_code",
+    "args"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "timestamp_utc": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "helper": {
+      "type": "string",
+      "minLength": 1
+    },
+    "helper_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "action": {
+      "type": "string",
+      "minLength": 1
+    },
+    "status": {
+      "enum": [
+        "success",
+        "rejected",
+        "unknown",
+        "failed"
+      ]
+    },
+    "exit_code": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 255
+    },
+    "args": {
+      "type": "array",
+      "maxItems": 20,
+      "items": {
+        "type": "string",
+        "maxLength": 200
+      }
+    },
+    "details": {
+      "type": "string",
+      "maxLength": 500
+    }
+  }
+}
+

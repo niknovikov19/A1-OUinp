@@ -1,0 +1,39 @@
+{
+  "schema_version": 1,
+  "deployment_id": "a1-ouinp-codex-hpc",
+  "ssh": {
+    "lethe_host_alias": "lethe",
+    "grid_host_alias": "grid",
+    "grid_access_mode": "through-lethe-helper",
+    "connect_timeout_sec": 15
+  },
+  "git": {
+    "remote_name": "origin",
+    "branch": "codex-hpc",
+    "automation_checkout": "/ddn/niknovikov19/repo/A1_OUinp_codex",
+    "manual_checkout": "/ddn/niknovikov19/repo/A1_OUinp"
+  },
+  "remote_helpers": {
+    "lethe_dir": "/ddn/niknovikov19/hpc_codex/helpers/lethe",
+    "grid_dir": "/ddn/niknovikov19/hpc_codex/helpers/grid"
+  },
+  "runs": {
+    "root": "/ddn/niknovikov19/repo/hpc_codex/runs/A1_OUinp"
+  },
+  "scheduler": {
+    "user": "niknovikov19",
+    "account": "",
+    "allowed_partitions": [
+      "cpu.q"
+    ],
+    "limits": {
+      "max_child_jobs": 10,
+      "max_concurrent_jobs": 4,
+      "max_nodes_per_job": 1,
+      "max_cores_per_job": 60,
+      "max_memory_gb_per_job": 256,
+      "max_wall_time_min": 1440
+    }
+  }
+}
+

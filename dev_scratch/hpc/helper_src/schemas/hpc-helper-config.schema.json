@@ -1,0 +1,177 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/a1-hpc/hpc-helper-config.schema.json",
+  "title": "A1 HPC protected helper configuration",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "deployment_id",
+    "ssh",
+    "git",
+    "remote_helpers",
+    "runs",
+    "scheduler"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "deployment_id": {
+      "$ref": "#/$defs/safeName"
+    },
+    "ssh": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "lethe_host_alias",
+        "grid_host_alias",
+        "grid_access_mode",
+        "connect_timeout_sec"
+      ],
+      "properties": {
+        "lethe_host_alias": {
+          "$ref": "#/$defs/safeName"
+        },
+        "grid_host_alias": {
+          "$ref": "#/$defs/safeName"
+        },
+        "grid_access_mode": {
+          "const": "through-lethe-helper"
+        },
+        "connect_timeout_sec": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 120
+        }
+      }
+    },
+    "git": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "remote_name",
+        "branch",
+        "automation_checkout",
+        "manual_checkout"
+      ],
+      "properties": {
+        "remote_name": {
+          "$ref": "#/$defs/safeName"
+        },
+        "branch": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._/-]{0,127}$"
+        },
+        "automation_checkout": {
+          "$ref": "#/$defs/absolutePath"
+        },
+        "manual_checkout": {
+          "$ref": "#/$defs/absolutePath"
+        }
+      }
+    },
+    "remote_helpers": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "lethe_dir",
+        "grid_dir"
+      ],
+      "properties": {
+        "lethe_dir": {
+          "$ref": "#/$defs/absolutePath"
+        },
+        "grid_dir": {
+          "$ref": "#/$defs/absolutePath"
+        }
+      }
+    },
+    "runs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "root"
+      ],
+      "properties": {
+        "root": {
+          "$ref": "#/$defs/absolutePath"
+        }
+      }
+    },
+    "scheduler": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "user",
+        "account",
+        "allowed_partitions",
+        "limits"
+      ],
+      "properties": {
+        "user": {
+          "$ref": "#/$defs/safeName"
+        },
+        "account": {
+          "type": "string",
+          "pattern": "^$|^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$"
+        },
+        "allowed_partitions": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/safeName"
+          }
+        },
+        "limits": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "max_child_jobs",
+            "max_concurrent_jobs",
+            "max_nodes_per_job",
+            "max_cores_per_job",
+            "max_memory_gb_per_job",
+            "max_wall_time_min"
+          ],
+          "properties": {
+            "max_child_jobs": {
+              "$ref": "#/$defs/positiveInteger"
+            },
+            "max_concurrent_jobs": {
+              "$ref": "#/$defs/positiveInteger"
+            },
+            "max_nodes_per_job": {
+              "$ref": "#/$defs/positiveInteger"
+            },
+            "max_cores_per_job": {
+              "$ref": "#/$defs/positiveInteger"
+            },
+            "max_memory_gb_per_job": {
+              "$ref": "#/$defs/positiveInteger"
+            },
+            "max_wall_time_min": {
+              "$ref": "#/$defs/positiveInteger"
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "safeName": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$"
+    },
+    "absolutePath": {
+      "type": "string",
+      "pattern": "^/[^\\u0000]*$"
+    },
+    "positiveInteger": {
+      "type": "integer",
+      "minimum": 1
+    }
+  }
+}
+
