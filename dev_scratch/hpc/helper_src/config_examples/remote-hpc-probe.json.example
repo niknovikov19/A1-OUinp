@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "deployment_id": "a1-ouinp-codex-hpc",
+  "git": {
+    "automation_checkout": "/ddn/niknovikov19/repo/A1_OUinp_codex"
+  },
+  "ssh": {
+    "grid_host_alias": "lattice",
+    "connect_timeout_sec": 15
+  },
+  "remote_helpers": {
+    "grid_probe": "/ddn/niknovikov19/hpc_codex/helpers/grid/hpc-grid-probe"
+  },
+  "scheduler": {
+    "user": "niknovikov19",
+    "squeue_path": "/usr/bin/squeue",
+    "sacct_path": "/usr/bin/sacct"
+  }
+}

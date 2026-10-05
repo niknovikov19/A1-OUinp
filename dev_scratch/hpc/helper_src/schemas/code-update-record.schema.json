@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/a1-hpc/code-update-record.schema.json",
+  "title": "A2 last code-update record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "timestamp_utc",
+    "deployment_id",
+    "helper_version",
+    "status",
+    "expected_commit",
+    "before_commit",
+    "after_commit",
+    "result"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "timestamp_utc": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "finished_utc": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "deployment_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "helper_version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "status": {
+      "enum": [
+        "pending",
+        "complete",
+        "rejected",
+        "unknown",
+        "failed"
+      ]
+    },
+    "expected_commit": {
+      "$ref": "#/$defs/commit"
+    },
+    "before_commit": {
+      "$ref": "#/$defs/commit"
+    },
+    "after_commit": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/commit"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "result": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "$defs": {
+    "commit": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    }
+  }
+}

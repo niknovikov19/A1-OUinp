@@ -1,0 +1,47 @@
+{
+  "valid": [
+    {
+      "arguments": [
+        "lethe"
+      ],
+      "expected_exit": 0
+    },
+    {
+      "arguments": [
+        "grid"
+      ],
+      "expected_exit": 0
+    }
+  ],
+  "rejected": [
+    {
+      "arguments": [],
+      "expected_exit": 2
+    },
+    {
+      "arguments": [
+        "lattice"
+      ],
+      "expected_exit": 2
+    },
+    {
+      "arguments": [
+        "../grid"
+      ],
+      "expected_exit": 2
+    },
+    {
+      "arguments": [
+        "grid;id"
+      ],
+      "expected_exit": 2
+    },
+    {
+      "arguments": [
+        "grid",
+        "extra"
+      ],
+      "expected_exit": 2
+    }
+  ]
+}

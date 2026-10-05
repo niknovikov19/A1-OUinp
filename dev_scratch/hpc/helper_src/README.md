@@ -29,9 +29,147 @@ INSTALL.md
 
 `hpc-helper-info` has no SSH, Git mutation, Slurm, or file-transfer capability. It reports the installed source identity, validates the protected configuration, tests identifier validators, reads at most 20 prior audit events, and appends an audit event for every invocation.
 
+## A1 contents
+
+```text
+local/hpc-probe
+remote_lethe/hpc-lethe-probe
+remote_grid/hpc-grid-probe
+config_examples/remote-hpc-probe.json.example
+schemas/remote-hpc-probe-config.schema.json
+test_fixtures/a1_probe_cases.json
+test_fixtures/slurm_probe_formats.json
+INSTALL_A1.md
+```
+
+`hpc-probe` accepts only the logical targets `lethe` and `grid`. The lethe
+probe checks the one configured automation checkout. The grid probe travels
+through the fixed lethe helper and runs only version and bounded user queries
+through the configured absolute `squeue` and `sacct` paths.
+
+A1 does not fetch or modify Git state, submit or cancel Slurm jobs, read job
+logs, or transfer files. Connectivity failures and malformed remote output are
+reported as `unknown` with exit code `3`.
+
+### A1 test scope
+
+The protected A1 tests verify:
+
+- lethe connectivity and visibility of the fixed automation checkout and its
+  `.git` marker;
+- lattice connectivity through the lethe helper;
+- installed helper and remote-configuration identities;
+- `squeue` and `sacct` availability and versions;
+- fixed-format, user-scoped active and recent-accounting queries;
+- local rejection of unsupported targets, traversal, punctuation, and extra
+  arguments before SSH;
+- normalization of timeouts, SSH errors, malformed JSON, and oversized output
+  to `unknown` with exit code `3`;
+- local audit events for successful, rejected, and unknown invocations.
+
+### A1 call chains
+
+Lethe probe:
+
+```text
+Codex
+  -> /opt/a1-hpc/bin/hpc-probe lethe
+  -> /usr/bin/ssh lethe
+  -> hpc-lethe-probe lethe
+  -> inspect the fixed A1_OUinp_codex checkout and .git marker
+  -> return bounded JSON
+  -> append the local audit event
+```
+
+Grid probe:
+
+```text
+Codex
+  -> /opt/a1-hpc/bin/hpc-probe grid
+  -> /usr/bin/ssh lethe
+  -> hpc-lethe-probe grid
+  -> /usr/bin/ssh lattice
+  -> hpc-grid-probe probe
+  -> run fixed read-only squeue and sacct queries
+  -> return bounded JSON through lethe
+  -> append the local audit event
+```
+
+Rejected input:
+
+```text
+Codex
+  -> hpc-probe unsupported-input
+  -> reject locally with exit code 2
+  -> append the local audit event
+  -> do not open an SSH connection
+```
+
+## A2 contents
+
+```text
+local/hpc-code-status
+local/hpc-code-update
+remote_lethe/hpc-lethe-code
+config_examples/remote-hpc-code.json.example
+schemas/remote-hpc-code-config.schema.json
+schemas/code-update-record.schema.json
+test_fixtures/a2_code_cases.json
+INSTALL_A2.md
+```
+
+`hpc-code-status` reads only the fixed automation checkout and reports its
+branch, local and remote-tracking commits, cleanliness, update-lock state, and
+active-run marker. It does not fetch.
+
+`hpc-code-update` accepts exactly one full lowercase commit hash. The remote
+helper requires the configured branch, a clean checkout, no active run, and an
+exclusive pre-created update lock. It fetches only the configured branch,
+requires the requested hash to equal that branch's remote head, and permits
+only a fast-forward or an idempotent no-op.
+
+The helper never merges divergent history, resets a checkout, changes the
+manual checkout, selects another branch/remote/path, or accepts Git arguments
+from the caller. Fetch failures are `unknown`; policy and known checkout
+failures do not trigger retries.
+
+### A2 call chains
+
+Read-only status:
+
+```text
+Codex
+  -> /opt/a1-hpc/bin/hpc-code-status
+  -> /usr/bin/ssh lethe
+  -> hpc-lethe-code status
+  -> fixed read-only Git and state checks
+  -> return bounded JSON
+  -> append the local audit event
+```
+
+Approved update:
+
+```text
+Codex
+  -> /opt/a1-hpc/bin/hpc-code-update EXPECTED_COMMIT
+  -> validate the full hash and append local intent
+  -> /usr/bin/ssh lethe
+  -> hpc-lethe-code update EXPECTED_COMMIT
+  -> acquire fixed exclusive lock and write pending record
+  -> fetch only origin/codex-hpc
+  -> require exact remote head and fast-forward ancestry
+  -> fast-forward or return no-op
+  -> verify exact commit, branch, and cleanliness
+  -> finalize the remote record and local audit event
+```
+
+Rejected commit syntax is audited locally with exit code `2` and opens no SSH
+connection. A validly formatted hash that is not the fetched branch head is
+rejected remotely with exit code `2` and cannot move the checkout.
+
 ## Exit codes
 
 - `0`: success;
 - `2`: rejected input;
-- `3`: unavailable or unknown remote state, reserved for later gates;
+- `3`: unavailable or unknown remote state;
 - `4`: known helper or operation failure.

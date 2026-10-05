@@ -1,0 +1,582 @@
+#!/ddn/niknovikov19/miniconda3/bin/python3
+import argparse
+from datetime import datetime, timezone
+import fcntl
+import hashlib
+import json
+import os
+from pathlib import Path
+import re
+import socket
+import stat
+import subprocess
+
+
+HELPER_VERSION = '0.3.0-a2'
+EXIT_SUCCESS = 0
+EXIT_REJECTED = 2
+EXIT_UNKNOWN = 3
+EXIT_FAILED = 4
+
+GIT_TIMEOUT_SEC = 120
+MAX_COMMAND_BYTES = 65536
+GIT_COMMIT_RE = re.compile(r'[0-9a-f]{40}')
+SAFE_NAME_RE = re.compile(r'[A-Za-z0-9][A-Za-z0-9_.-]{0,63}')
+SAFE_BRANCH_RE = re.compile(r'[A-Za-z0-9][A-Za-z0-9._/-]{0,127}')
+
+
+class CodeFailure(RuntimeError):
+    """Represent a known remote Git-helper failure."""
+
+
+class CodeUnavailable(RuntimeError):
+    """Represent an unavailable remote Git operation."""
+
+
+def get_common_root():
+    """Return the fixed shared helper root derived from this script."""
+    return Path(__file__).resolve().parents[2]
+
+
+def get_config_path():
+    """Return the fixed remote Git configuration path."""
+    return get_common_root() / 'config' / 'A1_OUinp-code.json'
+
+
+def canonical_json(value):
+    """Serialize JSON deterministically for hashing and records."""
+    return json.dumps(value, sort_keys=True, separators=(',', ':'))
+
+
+def hash_bytes(value):
+    """Return a SHA256 digest for bytes."""
+    return hashlib.sha256(value).hexdigest()
+
+
+def helper_identity():
+    """Return the installed code-helper version and source hash."""
+    fpath = Path(__file__).resolve()
+    return {
+        'name': 'hpc-lethe-code',
+        'version': HELPER_VERSION,
+        'source_sha256': hash_bytes(fpath.read_bytes()),
+    }
+
+
+def require_mapping(value, label):
+    """Return a mapping or reject it."""
+    if not isinstance(value, dict):
+        raise CodeFailure(f'{label} must be an object')
+    return value
+
+
+def require_exact_keys(value, required, label):
+    """Reject missing or unknown configuration keys."""
+    missing = sorted(set(required) - set(value))
+    unknown = sorted(set(value) - set(required))
+    if missing:
+        raise CodeFailure(f'{label} is missing keys: {missing}')
+    if unknown:
+        raise CodeFailure(f'{label} has unknown keys: {unknown}')
+
+
+def validate_safe_name(value, label):
+    """Validate one short shell-inert configuration name."""
+    if not isinstance(value, str) or SAFE_NAME_RE.fullmatch(value) is None:
+        raise CodeFailure(f'Invalid {label}')
+    return value
+
+
+def validate_branch(value):
+    """Validate the configured Git branch."""
+    invalid = (
+        not isinstance(value, str) or
+        SAFE_BRANCH_RE.fullmatch(value) is None or
+        value.startswith('/') or
+        value.endswith('/') or
+        '..' in value or
+        '//' in value
+    )
+    if invalid:
+        raise CodeFailure('Invalid Git branch')
+    return value
+
+
+def validate_absolute_path(value, label):
+    """Validate one normalized absolute POSIX path."""
+    if not isinstance(value, str) or not value:
+        raise CodeFailure(f'{label} must be a non-empty string')
+    fpath = Path(value)
+    if not fpath.is_absolute() or '..' in fpath.parts:
+        raise CodeFailure(f'{label} must be an absolute normalized path')
+    if value != fpath.as_posix():
+        raise CodeFailure(f'{label} must use normalized POSIX syntax')
+    return value
+
+
+def validate_config(config):
+    """Validate the fixed remote Git-helper configuration."""
+    config = require_mapping(config, 'configuration')
+    required = {'deployment_id', 'git', 'schema_version', 'state'}
+    require_exact_keys(config, required, 'configuration')
+    if config['schema_version'] != 1:
+        raise CodeFailure('Unsupported remote code configuration schema')
+    validate_safe_name(config['deployment_id'], 'deployment ID')
+
+    git = require_mapping(config['git'], 'git')
+    required = {'automation_checkout', 'branch', 'path', 'remote_name'}
+    require_exact_keys(git, required, 'git')
+    validate_absolute_path(git['path'], 'Git executable')
+    validate_absolute_path(git['automation_checkout'], 'automation checkout')
+    validate_branch(git['branch'])
+    validate_safe_name(git['remote_name'], 'Git remote name')
+
+    state_config = require_mapping(config['state'], 'state')
+    require_exact_keys(state_config, {'root'}, 'state')
+    validate_absolute_path(state_config['root'], 'state root')
+    return config
+
+
+def require_regular_file(fpath, label):
+    """Require a non-symlink regular file."""
+    try:
+        file_stat = fpath.lstat()
+    except OSError as exc:
+        raise CodeFailure(f'Cannot inspect {label}: {exc}') from exc
+    if stat.S_ISLNK(file_stat.st_mode) or not stat.S_ISREG(file_stat.st_mode):
+        raise CodeFailure(f'{label} must be a regular file')
+
+
+def require_real_directory(dirpath, label):
+    """Require a non-symlink directory."""
+    try:
+        file_stat = dirpath.lstat()
+    except OSError as exc:
+        raise CodeFailure(f'Cannot inspect {label}: {exc}') from exc
+    if stat.S_ISLNK(file_stat.st_mode) or not stat.S_ISDIR(file_stat.st_mode):
+        raise CodeFailure(f'{label} must be a real directory')
+
+
+def load_config():
+    """Load and validate the fixed remote Git configuration."""
+    fpath = get_config_path()
+    require_regular_file(fpath, 'Remote Git configuration')
+    try:
+        with open(fpath, 'r') as fid:
+            config = json.load(fid)
+    except (OSError, json.JSONDecodeError) as exc:
+        raise CodeFailure(f'Cannot load remote Git configuration: {exc}') from exc
+    return validate_config(config)
+
+
+def config_identity(config):
+    """Return the validated configuration digest."""
+    return hash_bytes(canonical_json(config).encode())
+
+
+def validate_commit(value):
+    """Validate one lowercase full Git commit hash."""
+    if GIT_COMMIT_RE.fullmatch(value) is None:
+        raise CodeFailure(
+            'Expected commit must contain 40 lowercase hex characters'
+        )
+    return value
+
+
+def decode_bounded(value, label):
+    """Decode one bounded UTF-8 subprocess stream."""
+    if len(value) > MAX_COMMAND_BYTES:
+        raise CodeFailure(f'{label} exceeded {MAX_COMMAND_BYTES} bytes')
+    try:
+        return value.decode('utf-8')
+    except UnicodeDecodeError as exc:
+        raise CodeFailure(f'{label} was not valid UTF-8') from exc
+
+
+def run_git(config, arguments, allowed_codes=(0,), unavailable=False):
+    """Run one fixed Git invocation and return decoded output."""
+    git = config['git']
+    command = [git['path'], '-C', git['automation_checkout'], *arguments]
+    environment = os.environ.copy()
+    environment.update({'LANG': 'C', 'LC_ALL': 'C'})
+    try:
+        completed = subprocess.run(
+            command,
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            timeout=GIT_TIMEOUT_SEC,
+            check=False,
+            env=environment,
+        )
+    except subprocess.TimeoutExpired as exc:
+        error = CodeUnavailable if unavailable else CodeFailure
+        raise error(f'Git command timed out: {arguments[0]}') from exc
+    except OSError as exc:
+        error = CodeUnavailable if unavailable else CodeFailure
+        raise error(f'Cannot run Git: {exc}') from exc
+
+    stdout = decode_bounded(completed.stdout, 'Git stdout')
+    stderr = decode_bounded(completed.stderr, 'Git stderr')
+    if completed.returncode not in allowed_codes:
+        details = stderr.replace('\r', ' ').replace('\n', ' ').strip()[:500]
+        error = CodeUnavailable if unavailable else CodeFailure
+        raise error(
+            f'Git {arguments[0]} exited {completed.returncode}: {details}'
+        )
+    return completed.returncode, stdout.strip()
+
+
+def get_state_paths(config):
+    """Return fixed lock, marker, and update-record paths."""
+    state_root = Path(config['state']['root'])
+    return {
+        'root': state_root,
+        'lock': state_root / 'code-update.lock',
+        'active_run': state_root / 'active-run.json',
+        'record': state_root / 'last-code-update.json',
+    }
+
+
+def inspect_active_run(marker_path):
+    """Report whether the fixed active-run marker exists safely."""
+    try:
+        marker_stat = marker_path.lstat()
+    except FileNotFoundError:
+        return False
+    except OSError as exc:
+        raise CodeFailure(f'Cannot inspect active-run marker: {exc}') from exc
+    if stat.S_ISLNK(marker_stat.st_mode) or not stat.S_ISREG(marker_stat.st_mode):
+        raise CodeFailure('Active-run marker must be a regular file')
+    return True
+
+
+def inspect_update_lock(lock_path):
+    """Report whether another process holds the fixed update lock."""
+    require_regular_file(lock_path, 'Code-update lock')
+    flags = os.O_RDWR | getattr(os, 'O_CLOEXEC', 0)
+    flags |= getattr(os, 'O_NOFOLLOW', 0)
+    try:
+        file_id = os.open(lock_path, flags, 0o600)
+    except OSError as exc:
+        raise CodeFailure(f'Cannot open update lock: {exc}') from exc
+    try:
+        try:
+            fcntl.flock(file_id, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            return True
+        fcntl.flock(file_id, fcntl.LOCK_UN)
+        return False
+    finally:
+        os.close(file_id)
+
+
+def read_checkout_state(config, lock_active=None):
+    """Read the fixed checkout branch, commit, cleanliness, and locks."""
+    git = config['git']
+    checkout = Path(git['automation_checkout'])
+    require_real_directory(checkout, 'Automation checkout')
+    paths = get_state_paths(config)
+    require_real_directory(paths['root'], 'State root')
+
+    _, toplevel = run_git(config, ['rev-parse', '--show-toplevel'])
+    if Path(toplevel).resolve() != checkout.resolve():
+        raise CodeFailure('Git top-level path does not match configuration')
+    _, branch = run_git(config, ['branch', '--show-current'])
+    _, commit = run_git(config, ['rev-parse', '--verify', 'HEAD^{commit}'])
+    _, porcelain = run_git(
+        config,
+        ['status', '--porcelain=v1', '--untracked-files=all'],
+    )
+    remote_ref = f'refs/remotes/{git["remote_name"]}/{git["branch"]}^{{commit}}'
+    _, remote_commit = run_git(config, ['rev-parse', '--verify', remote_ref])
+    if lock_active is None:
+        lock_active = inspect_update_lock(paths['lock'])
+    return {
+        'path': checkout.as_posix(),
+        'branch': branch,
+        'expected_branch': git['branch'],
+        'branch_matches': branch == git['branch'],
+        'commit': commit,
+        'remote_commit': remote_commit,
+        'clean': not bool(porcelain),
+        'change_count': len(porcelain.splitlines()) if porcelain else 0,
+        'update_lock_active': lock_active,
+        'active_run': inspect_active_run(paths['active_run']),
+    }
+
+
+def base_result(config, operation):
+    """Build common remote Git result metadata."""
+    return {
+        'schema_version': 1,
+        'operation': operation,
+        'remote_host': socket.gethostname(),
+        'helper': helper_identity(),
+        'remote_config_sha256': config_identity(config),
+    }
+
+
+def status_result(config):
+    """Build the fixed automation-checkout status response."""
+    result = base_result(config, 'code-status')
+    result.update({
+        'status': 'ok',
+        'checkout': read_checkout_state(config),
+    })
+    return result
+
+
+def acquire_update_lock(config):
+    """Acquire and return the exclusive nonblocking update-lock descriptor."""
+    paths = get_state_paths(config)
+    require_real_directory(paths['root'], 'State root')
+    require_regular_file(paths['lock'], 'Code-update lock')
+    flags = os.O_RDWR | getattr(os, 'O_CLOEXEC', 0)
+    flags |= getattr(os, 'O_NOFOLLOW', 0)
+    file_id = None
+    try:
+        file_id = os.open(paths['lock'], flags, 0o600)
+        fcntl.flock(file_id, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError as exc:
+        os.close(file_id)
+        raise CodeFailure('Code-update lock is already active') from exc
+    except OSError as exc:
+        if file_id is not None:
+            os.close(file_id)
+        raise CodeFailure(f'Cannot acquire code-update lock: {exc}') from exc
+    return file_id
+
+
+def write_update_record(config, record):
+    """Atomically replace the fixed last-update record."""
+    fpath = get_state_paths(config)['record']
+    temp_path = fpath.with_name(f'.{fpath.name}.{os.getpid()}.tmp')
+    data = (canonical_json(record) + '\n').encode()
+    flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
+    flags |= getattr(os, 'O_CLOEXEC', 0)
+    flags |= getattr(os, 'O_NOFOLLOW', 0)
+    try:
+        file_id = os.open(temp_path, flags, 0o600)
+        try:
+            os.write(file_id, data)
+            os.fsync(file_id)
+        finally:
+            os.close(file_id)
+        os.replace(temp_path, fpath)
+    except OSError as exc:
+        raise CodeFailure(f'Cannot write code-update record: {exc}') from exc
+
+
+def update_record(config, expected_commit, before):
+    """Build the initial pending update record."""
+    return {
+        'schema_version': 1,
+        'timestamp_utc': datetime.now(timezone.utc).isoformat(),
+        'deployment_id': config['deployment_id'],
+        'helper_version': HELPER_VERSION,
+        'status': 'pending',
+        'expected_commit': expected_commit,
+        'before_commit': before['commit'],
+        'after_commit': None,
+        'result': None,
+    }
+
+
+def finish_record(config, record, status, result, after_commit=None):
+    """Finalize and persist one update record."""
+    record.update({
+        'status': status,
+        'result': result,
+        'after_commit': after_commit,
+        'finished_utc': datetime.now(timezone.utc).isoformat(),
+    })
+    write_update_record(config, record)
+
+
+def update_checkout(config, expected_commit):
+    """Fetch and fast-forward the fixed clean checkout to one exact commit."""
+    validate_commit(expected_commit)
+    lock_id = acquire_update_lock(config)
+    record = None
+    try:
+        before = read_checkout_state(config, lock_active=True)
+        if not before['branch_matches']:
+            raise CodeFailure('Automation checkout is on the wrong branch')
+        if not before['clean']:
+            raise CodeFailure('Automation checkout is not clean')
+        if before['active_run']:
+            raise CodeFailure('An automation run is active')
+
+        pending_record = update_record(config, expected_commit, before)
+        write_update_record(config, pending_record)
+        record = pending_record
+
+        git = config['git']
+        refspec = (
+            f'+refs/heads/{git["branch"]}:'
+            f'refs/remotes/{git["remote_name"]}/{git["branch"]}'
+        )
+        run_git(
+            config,
+            ['fetch', '--no-tags', git['remote_name'], refspec],
+            unavailable=True,
+        )
+        remote_ref = (
+            f'refs/remotes/{git["remote_name"]}/'
+            f'{git["branch"]}^{{commit}}'
+        )
+        _, remote_commit = run_git(
+            config,
+            ['rev-parse', '--verify', remote_ref],
+        )
+        if remote_commit != expected_commit:
+            finish_record(config, record, 'rejected', 'unexpected-remote-head')
+            result = base_result(config, 'code-update')
+            result.update({
+                'status': 'rejected',
+                'reason': 'expected-commit-is-not-remote-branch-head',
+                'expected_commit': expected_commit,
+                'remote_commit': remote_commit,
+                'before_commit': before['commit'],
+            })
+            return result, EXIT_REJECTED
+
+        if before['commit'] == expected_commit:
+            finish_record(
+                config,
+                record,
+                'complete',
+                'no-op',
+                expected_commit,
+            )
+            result = base_result(config, 'code-update')
+            result.update({
+                'status': 'ok',
+                'result': 'no-op',
+                'expected_commit': expected_commit,
+                'before_commit': before['commit'],
+                'after_commit': expected_commit,
+            })
+            return result, EXIT_SUCCESS
+
+        ancestor_code, _ = run_git(
+            config,
+            ['merge-base', '--is-ancestor', before['commit'], expected_commit],
+            allowed_codes=(0, 1),
+        )
+        if ancestor_code == 1:
+            finish_record(config, record, 'failed', 'non-fast-forward')
+            raise CodeFailure('Expected commit is not a fast-forward')
+
+        run_git(
+            config,
+            ['merge', '--ff-only', '--no-edit', expected_commit],
+        )
+        after = read_checkout_state(config, lock_active=True)
+        valid_after = (
+            after['commit'] == expected_commit and
+            after['branch_matches'] and
+            after['clean']
+        )
+        if not valid_after:
+            finish_record(
+                config,
+                record,
+                'failed',
+                'post-update-verification-failed',
+                after['commit'],
+            )
+            raise CodeFailure('Post-update verification failed')
+
+        finish_record(
+            config,
+            record,
+            'complete',
+            'fast-forwarded',
+            after['commit'],
+        )
+        result = base_result(config, 'code-update')
+        result.update({
+            'status': 'ok',
+            'result': 'fast-forwarded',
+            'expected_commit': expected_commit,
+            'before_commit': before['commit'],
+            'after_commit': after['commit'],
+        })
+        return result, EXIT_SUCCESS
+    except CodeUnavailable:
+        if record is not None:
+            finish_record(config, record, 'unknown', 'fetch-unavailable')
+        raise
+    except CodeFailure:
+        if record is not None and record.get('status') == 'pending':
+            finish_record(config, record, 'failed', 'operation-failed')
+        raise
+    finally:
+        fcntl.flock(lock_id, fcntl.LOCK_UN)
+        os.close(lock_id)
+
+
+def error_result(operation, status, reason, details=None):
+    """Build one structured non-success result."""
+    result = {
+        'schema_version': 1,
+        'operation': operation,
+        'status': status,
+        'reason': reason,
+    }
+    if details:
+        result['details'] = str(details)[:500]
+    return result
+
+
+def build_parser():
+    """Build the fixed remote Git-helper parser."""
+    parser = argparse.ArgumentParser(
+        description='Inspect or fast-forward the fixed automation checkout.',
+    )
+    commands = parser.add_subparsers(dest='operation', required=True)
+    commands.add_parser('version')
+    commands.add_parser('status')
+    update = commands.add_parser('update')
+    update.add_argument('expected_commit')
+    return parser
+
+
+def main():
+    """Run one fixed lethe-side Git operation."""
+    parser = build_parser()
+    try:
+        args = parser.parse_args()
+    except SystemExit as exc:
+        return int(exc.code)
+
+    operation = f'code-{args.operation}'
+    try:
+        if args.operation == 'version':
+            result = {'status': 'ok', 'helper': helper_identity()}
+            exit_code = EXIT_SUCCESS
+        else:
+            config = load_config()
+            if args.operation == 'status':
+                result = status_result(config)
+                exit_code = EXIT_SUCCESS
+            else:
+                result, exit_code = update_checkout(
+                    config,
+                    args.expected_commit,
+                )
+    except CodeUnavailable as exc:
+        result = error_result(operation, 'unknown', 'git-unavailable', exc)
+        exit_code = EXIT_UNKNOWN
+    except CodeFailure as exc:
+        result = error_result(operation, 'failed', 'git-operation-failed', exc)
+        exit_code = EXIT_FAILED
+
+    print(json.dumps(result, sort_keys=True))
+    return exit_code
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())

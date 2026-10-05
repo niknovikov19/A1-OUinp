@@ -1,0 +1,313 @@
+#!/ddn/niknovikov19/miniconda3/bin/python3
+import argparse
+import hashlib
+import json
+import os
+from pathlib import Path
+import re
+import socket
+import stat
+import subprocess
+
+
+HELPER_VERSION = '0.2.0-a1'
+EXIT_SUCCESS = 0
+EXIT_UNKNOWN = 3
+
+MAX_COMMAND_BYTES = 65536
+MAX_SAMPLE_ROWS = 20
+SAFE_NAME_RE = re.compile(r'[A-Za-z0-9][A-Za-z0-9_.-]{0,63}')
+
+
+class ProbeFailure(RuntimeError):
+    """Represent a known grid-helper failure."""
+
+
+def get_common_root():
+    """Return the fixed shared helper root derived from this script."""
+    return Path(__file__).resolve().parents[2]
+
+
+def get_config_path():
+    """Return the fixed shared remote configuration path."""
+    return get_common_root() / 'config' / 'A1_OUinp.json'
+
+
+def canonical_json(value):
+    """Serialize JSON deterministically for hashing."""
+    return json.dumps(value, sort_keys=True, separators=(',', ':'))
+
+
+def hash_bytes(value):
+    """Return a SHA256 digest for bytes."""
+    return hashlib.sha256(value).hexdigest()
+
+
+def helper_identity():
+    """Return the installed grid-helper version and source hash."""
+    fpath = Path(__file__).resolve()
+    return {
+        'name': 'hpc-grid-probe',
+        'version': HELPER_VERSION,
+        'source_sha256': hash_bytes(fpath.read_bytes()),
+    }
+
+
+def require_mapping(value, label):
+    """Return a mapping or reject it."""
+    if not isinstance(value, dict):
+        raise ProbeFailure(f'{label} must be an object')
+    return value
+
+
+def require_exact_keys(value, required, label):
+    """Reject missing or unknown configuration keys."""
+    missing = sorted(set(required) - set(value))
+    unknown = sorted(set(value) - set(required))
+    if missing:
+        raise ProbeFailure(f'{label} is missing keys: {missing}')
+    if unknown:
+        raise ProbeFailure(f'{label} has unknown keys: {unknown}')
+
+
+def validate_safe_name(value, label):
+    """Validate one shell-inert configuration name."""
+    if not isinstance(value, str) or SAFE_NAME_RE.fullmatch(value) is None:
+        raise ProbeFailure(f'Invalid {label}')
+    return value
+
+
+def validate_absolute_path(value, label):
+    """Validate one normalized absolute POSIX path."""
+    if not isinstance(value, str) or not value:
+        raise ProbeFailure(f'{label} must be a non-empty string')
+    fpath = Path(value)
+    if not fpath.is_absolute() or '..' in fpath.parts:
+        raise ProbeFailure(f'{label} must be an absolute normalized path')
+    if value != fpath.as_posix():
+        raise ProbeFailure(f'{label} must use normalized POSIX syntax')
+    return value
+
+
+def validate_config(config):
+    """Validate the fixed configuration needed by the grid probe."""
+    config = require_mapping(config, 'configuration')
+    required = {
+        'deployment_id',
+        'git',
+        'remote_helpers',
+        'scheduler',
+        'schema_version',
+        'ssh',
+    }
+    require_exact_keys(config, required, 'configuration')
+    if config['schema_version'] != 1:
+        raise ProbeFailure('Unsupported remote configuration schema')
+    validate_safe_name(config['deployment_id'], 'deployment ID')
+
+    git = require_mapping(config['git'], 'git')
+    require_exact_keys(git, {'automation_checkout'}, 'git')
+    validate_absolute_path(git['automation_checkout'], 'automation checkout')
+
+    ssh = require_mapping(config['ssh'], 'ssh')
+    require_exact_keys(ssh, {'connect_timeout_sec', 'grid_host_alias'}, 'ssh')
+    validate_safe_name(ssh['grid_host_alias'], 'grid host alias')
+    timeout = ssh['connect_timeout_sec']
+    if isinstance(timeout, bool) or not isinstance(timeout, int):
+        raise ProbeFailure('Connection timeout must be an integer')
+    if timeout < 1 or timeout > 120:
+        raise ProbeFailure('Connection timeout must be between 1 and 120')
+
+    helpers = require_mapping(config['remote_helpers'], 'remote_helpers')
+    require_exact_keys(helpers, {'grid_probe'}, 'remote_helpers')
+    validate_absolute_path(helpers['grid_probe'], 'grid probe')
+
+    scheduler = require_mapping(config['scheduler'], 'scheduler')
+    required = {'sacct_path', 'squeue_path', 'user'}
+    require_exact_keys(scheduler, required, 'scheduler')
+    validate_safe_name(scheduler['user'], 'scheduler user')
+    validate_absolute_path(scheduler['squeue_path'], 'squeue path')
+    validate_absolute_path(scheduler['sacct_path'], 'sacct path')
+    return config
+
+
+def load_config():
+    """Load and validate the fixed shared remote configuration."""
+    fpath = get_config_path()
+    try:
+        file_stat = fpath.lstat()
+    except OSError as exc:
+        raise ProbeFailure(f'Cannot inspect remote configuration: {exc}') from exc
+    if stat.S_ISLNK(file_stat.st_mode) or not stat.S_ISREG(file_stat.st_mode):
+        raise ProbeFailure('Remote configuration must be a regular file')
+    try:
+        with open(fpath, 'r') as fid:
+            config = json.load(fid)
+    except (OSError, json.JSONDecodeError) as exc:
+        raise ProbeFailure(f'Cannot load remote configuration: {exc}') from exc
+    return validate_config(config)
+
+
+def config_identity(config):
+    """Return the validated remote configuration digest."""
+    return hash_bytes(canonical_json(config).encode())
+
+
+def decode_bounded(value, label):
+    """Decode one bounded UTF-8 subprocess stream."""
+    if len(value) > MAX_COMMAND_BYTES:
+        raise ProbeFailure(f'{label} exceeded {MAX_COMMAND_BYTES} bytes')
+    try:
+        return value.decode('utf-8')
+    except UnicodeDecodeError as exc:
+        raise ProbeFailure(f'{label} was not valid UTF-8') from exc
+
+
+def run_fixed(command, timeout):
+    """Run one fixed Slurm command with timeout and output limits."""
+    environment = os.environ.copy()
+    environment.update({'LANG': 'C', 'LC_ALL': 'C'})
+    try:
+        completed = subprocess.run(
+            command,
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            timeout=timeout,
+            check=False,
+            env=environment,
+        )
+    except subprocess.TimeoutExpired as exc:
+        raise ProbeFailure(f'Command timed out: {command[0]}') from exc
+    except OSError as exc:
+        raise ProbeFailure(f'Cannot run fixed command: {exc}') from exc
+    stdout = decode_bounded(completed.stdout, 'Command stdout')
+    stderr = decode_bounded(completed.stderr, 'Command stderr')
+    if completed.returncode != 0:
+        details = stderr.replace('\r', ' ').replace('\n', ' ').strip()[:500]
+        raise ProbeFailure(
+            f'Command exited {completed.returncode}: {details}'
+        )
+    return stdout
+
+
+def sample_rows(output):
+    """Return a bounded sample and total row count."""
+    rows = [line for line in output.splitlines() if line]
+    return {
+        'row_count': len(rows),
+        'sample_rows': rows[:MAX_SAMPLE_ROWS],
+        'sample_truncated': len(rows) > MAX_SAMPLE_ROWS,
+    }
+
+
+def probe_scheduler(config):
+    """Run fixed read-only Slurm availability and format probes."""
+    scheduler = config['scheduler']
+    timeout = config['ssh']['connect_timeout_sec']
+    squeue_path = scheduler['squeue_path']
+    sacct_path = scheduler['sacct_path']
+    user = scheduler['user']
+
+    # Record exact tool versions
+    squeue_version = run_fixed([squeue_path, '--version'], timeout).strip()
+    sacct_version = run_fixed([sacct_path, '--version'], timeout).strip()
+
+    # Sample active jobs in a fixed pipe-delimited format
+    squeue_format = '%i|%T|%r'
+    squeue_output = run_fixed([
+        squeue_path,
+        '--noheader',
+        '--user',
+        user,
+        '--format',
+        squeue_format,
+    ], timeout)
+
+    # Sample recent allocations in a fixed parsable format
+    sacct_format = 'JobIDRaw,State,ExitCode'
+    sacct_output = run_fixed([
+        sacct_path,
+        '--noheader',
+        '--parsable2',
+        '--allocations',
+        '--starttime',
+        'now-1hours',
+        '--user',
+        user,
+        '--format',
+        sacct_format,
+    ], timeout)
+
+    return {
+        'schema_version': 1,
+        'target': 'grid',
+        'status': 'ok',
+        'remote_host': socket.gethostname(),
+        'helper': helper_identity(),
+        'remote_config_sha256': config_identity(config),
+        'scheduler': {
+            'squeue_version': squeue_version,
+            'sacct_version': sacct_version,
+            'squeue': {
+                'delimiter': '|',
+                'fields': ['job_id', 'state', 'reason'],
+                'raw_format': squeue_format,
+                **sample_rows(squeue_output),
+            },
+            'sacct': {
+                'delimiter': '|',
+                'fields': ['job_id_raw', 'state', 'exit_code'],
+                'raw_format': sacct_format,
+                **sample_rows(sacct_output),
+            },
+        },
+    }
+
+
+def unknown_result(reason, details=None):
+    """Build one structured unknown grid result."""
+    result = {
+        'schema_version': 1,
+        'target': 'grid',
+        'status': 'unknown',
+        'reason': reason,
+    }
+    if details:
+        result['details'] = str(details)[:500]
+    return result
+
+
+def build_parser():
+    """Build the fixed grid-helper parser."""
+    parser = argparse.ArgumentParser(
+        description='Run fixed A1 Slurm connectivity probes.',
+    )
+    parser.add_argument('action', choices=('version', 'probe'))
+    return parser
+
+
+def main():
+    """Run one fixed grid-side probe operation."""
+    parser = build_parser()
+    try:
+        args = parser.parse_args()
+    except SystemExit as exc:
+        return int(exc.code)
+
+    try:
+        if args.action == 'version':
+            result = {'status': 'ok', 'helper': helper_identity()}
+        else:
+            result = probe_scheduler(load_config())
+    except ProbeFailure as exc:
+        result = unknown_result('scheduler-unavailable', exc)
+        print(json.dumps(result, sort_keys=True))
+        return EXIT_UNKNOWN
+
+    print(json.dumps(result, sort_keys=True))
+    return EXIT_SUCCESS
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())

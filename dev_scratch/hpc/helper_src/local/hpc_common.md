@@ -148,7 +148,7 @@ The runtime validator is authoritative. `schemas/hpc-helper-config.schema.json` 
 `_require_regular_file()` uses `lstat()` and rejects symlinks and non-regular files. It is used for:
 
 - the protected configuration;
-- both installed runtime source files;
+- all five installed runtime source files;
 - the audit log when it already exists.
 
 The audit file may be absent before its first append, but its parent directory must already exist and must be a real directory rather than a symlink.
@@ -157,14 +157,19 @@ The audit file may be absent before its first append, but its parent directory m
 
 ### Installed source identity
 
-`get_bundle_identity()` hashes the installed `hpc-helper-info` and `hpc_common.py` files. It returns:
+`get_bundle_identity()` hashes the installed `hpc-code-status`,
+`hpc-code-update`, `hpc-helper-info`, `hpc-probe`, and `hpc_common.py` files. It
+returns:
 
 ```json
 {
-  "bundle_version": "0.1.0-a0",
+  "bundle_version": "0.3.0-a2",
   "bundle_sha256": "...",
   "source_sha256": {
+    "hpc-code-status": "...",
+    "hpc-code-update": "...",
     "hpc-helper-info": "...",
+    "hpc-probe": "...",
     "hpc_common.py": "..."
   }
 }
@@ -360,7 +365,7 @@ Checks a fixed path using `lstat()` so a symlink is distinguishable from its tar
 - `label`: file description for errors.
 - `allow_missing`: when true, absence is accepted.
 - Returns: `True` for a real regular file; `False` only when the file is absent and `allow_missing=True`.
-- Raises: `HelperFailure` when a required file is absent or the path is a symlink/non-regular file. Other operating-system errors may propagate.
+- Raises: `HelperFailure` when a required file is absent, the path is a symlink/non-regular file, or the metadata lookup fails.
 - Side effects: one metadata lookup; it does not open or modify the file.
 - Security role: rejects symlink redirection for protected source, configuration, and audit files.
 
@@ -540,7 +545,7 @@ Checks the pre-created audit directory.
 
 - `dirpath`: expected audit parent as a `Path`.
 - Returns: `None` on success.
-- Raises: `HelperFailure` if it is absent, a symlink, or not a directory; other `lstat()` errors may propagate.
+- Raises: `HelperFailure` if it is absent, a symlink, not a directory, or cannot be inspected.
 - Side effects: one metadata lookup.
 - Security role: prevents audit creation through a redirected parent path.
 
@@ -566,7 +571,7 @@ Reads a bounded tail from the fixed audit log.
 
 The current function is internal to the fixed CLI call and does not validate caller-supplied `limit` or `max_bytes`. Future public exposure of those parameters would require strict upper-bound validation.
 
-### `append_audit_event(action, status, exit_code, args, details=None)`
+### `append_audit_event(action, status, exit_code, args, details=None, helper='hpc-helper-info')`
 
 Appends one mandatory JSONL event to the fixed audit log.
 
@@ -575,6 +580,7 @@ Appends one mandatory JSONL event to the fixed audit log.
 - `exit_code`: numeric result code.
 - `args`: raw command argument sequence, passed through `sanitize_audit_args()`.
 - `details`: optional diagnostic converted to text and truncated to 500 characters.
+- `helper`: trusted installed-helper name; defaults to `hpc-helper-info`.
 - Returns: the dictionary that was serialized.
 - Raises: `HelperFailure` for an invalid/missing parent, an existing symlink/non-regular audit file, or an append/lock/fsync failure. A non-Linux platform without `fcntl` is unsupported.
 - Side effects: creates the audit file with mode `0600` if absent, otherwise appends one line; acquires an exclusive advisory lock and calls `fsync()`.

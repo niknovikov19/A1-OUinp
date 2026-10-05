@@ -1,0 +1,268 @@
+#!/usr/bin/env python3
+import argparse
+import json
+from pathlib import Path
+import shlex
+import subprocess
+import sys
+
+sys.dont_write_bytecode = True
+
+from hpc_common import (
+    EXIT_FAILED,
+    EXIT_REJECTED,
+    EXIT_SUCCESS,
+    EXIT_UNKNOWN,
+    HelperFailure,
+    RejectedInput,
+    append_audit_event,
+    get_config_identity,
+    load_config,
+    validate_git_commit,
+)
+
+
+SSH_PATH = '/usr/bin/ssh'
+MAX_REMOTE_BYTES = 65536
+REMOTE_OPERATION_TIMEOUT_SEC = 150
+
+
+class RemoteUnavailable(RuntimeError):
+    """Represent an unavailable or invalid remote update response."""
+
+
+def build_parser():
+    """Build the fixed code-update parser."""
+    parser = argparse.ArgumentParser(
+        description='Fast-forward the fixed HPC checkout to one exact commit.',
+    )
+    parser.add_argument(
+        '--json',
+        action='store_true',
+        help='Print structured JSON instead of a concise summary.',
+    )
+    parser.add_argument('expected_commit')
+    return parser
+
+
+def build_ssh_command(config, expected_commit):
+    """Build the one allowlisted remote code-update invocation."""
+    helper = Path(config['remote_helpers']['lethe_dir']) / 'hpc-lethe-code'
+    remote_command = ' '.join((
+        shlex.quote(helper.as_posix()),
+        'update',
+        shlex.quote(expected_commit),
+    ))
+    timeout = config['ssh']['connect_timeout_sec']
+    return [
+        SSH_PATH,
+        '-o',
+        'BatchMode=yes',
+        '-o',
+        f'ConnectTimeout={timeout}',
+        '-o',
+        'ConnectionAttempts=1',
+        '--',
+        config['ssh']['lethe_host_alias'],
+        remote_command,
+    ]
+
+
+def decode_bounded(value, label):
+    """Decode one bounded UTF-8 subprocess stream."""
+    if len(value) > MAX_REMOTE_BYTES:
+        raise RemoteUnavailable(f'{label} exceeded {MAX_REMOTE_BYTES} bytes')
+    try:
+        return value.decode('utf-8')
+    except UnicodeDecodeError as exc:
+        raise RemoteUnavailable(f'{label} was not valid UTF-8') from exc
+
+
+def summarize_stderr(value):
+    """Return a bounded single-line SSH error summary."""
+    summary = value.replace('\r', ' ').replace('\n', ' ').strip()
+    return summary[:500] if summary else 'no error details'
+
+
+def error_result(status, reason, details=None):
+    """Build one structured non-success update result."""
+    result = {
+        'schema_version': 1,
+        'operation': 'code-update',
+        'status': status,
+        'reason': reason,
+    }
+    if details:
+        result['details'] = str(details)[:500]
+    return result
+
+
+def parse_remote_result(stdout):
+    """Parse and minimally validate the remote update object."""
+    try:
+        result = json.loads(stdout)
+    except json.JSONDecodeError as exc:
+        raise RemoteUnavailable('Remote update was not valid JSON') from exc
+    valid = (
+        isinstance(result, dict) and
+        result.get('operation') == 'code-update' and
+        result.get('status') in {'ok', 'rejected', 'unknown', 'failed'}
+    )
+    if not valid:
+        raise RemoteUnavailable('Remote update object was invalid')
+    return result
+
+
+def run_update(config, expected_commit):
+    """Run the fixed remote update and normalize its exit state."""
+    command = build_ssh_command(config, expected_commit)
+    try:
+        completed = subprocess.run(
+            command,
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            timeout=REMOTE_OPERATION_TIMEOUT_SEC,
+            check=False,
+        )
+    except subprocess.TimeoutExpired:
+        return error_result('unknown', 'operation-timeout'), EXIT_UNKNOWN
+    except OSError as exc:
+        return error_result('unknown', 'ssh-unavailable', exc), EXIT_UNKNOWN
+
+    try:
+        stdout = decode_bounded(completed.stdout, 'Remote stdout')
+        stderr = decode_bounded(completed.stderr, 'Remote stderr')
+        result = parse_remote_result(stdout)
+    except RemoteUnavailable as exc:
+        details = completed.stderr.decode('utf-8', errors='replace')
+        return error_result(
+            'unknown',
+            str(exc),
+            summarize_stderr(details),
+        ), EXIT_UNKNOWN
+
+    expected = {
+        EXIT_SUCCESS: 'ok',
+        EXIT_REJECTED: 'rejected',
+        EXIT_UNKNOWN: 'unknown',
+        EXIT_FAILED: 'failed',
+    }
+    if expected.get(completed.returncode) != result['status']:
+        details = summarize_stderr(stderr)
+        return error_result(
+            'unknown',
+            'inconsistent-remote-result',
+            details,
+        ), EXIT_UNKNOWN
+    result['local_config_sha256'] = get_config_identity(config)
+    return result, completed.returncode
+
+
+def audit_or_fail(action, status, exit_code, raw_args, details=None):
+    """Write one mandatory local code-update audit event."""
+    try:
+        append_audit_event(
+            action,
+            status,
+            exit_code,
+            raw_args,
+            details=details,
+            helper='hpc-code-update',
+        )
+    except HelperFailure as exc:
+        print(f'Audit failure: {exc}', file=sys.stderr)
+        return False
+    return True
+
+
+def print_result(result, as_json):
+    """Print one structured or concise update result."""
+    if as_json:
+        print(json.dumps(result, indent=2, sort_keys=True))
+        return
+    print(f'Status: {result["status"]}')
+    if result['status'] != 'ok':
+        print(f'Reason: {result["reason"]}')
+        return
+    print(f'Result: {result["result"]}')
+    print(f'Before commit: {result["before_commit"]}')
+    print(f'After commit: {result["after_commit"]}')
+
+
+def reject_input(raw_args, details):
+    """Audit and report one locally rejected update request."""
+    if not audit_or_fail(
+        'code-update',
+        'rejected',
+        EXIT_REJECTED,
+        raw_args,
+        details,
+    ):
+        return EXIT_FAILED
+    print(f'Rejected: {details}', file=sys.stderr)
+    return EXIT_REJECTED
+
+
+def main():
+    """Run the protected A2 exact-commit update command."""
+    raw_args = sys.argv[1:]
+    parser = build_parser()
+    try:
+        args = parser.parse_args(raw_args)
+    except SystemExit as exc:
+        exit_code = int(exc.code)
+        status = 'success' if exit_code == 0 else 'rejected'
+        if not audit_or_fail(
+            'code-update-argument-parse',
+            status,
+            exit_code,
+            raw_args,
+        ):
+            return EXIT_FAILED
+        return exit_code
+
+    try:
+        expected_commit = validate_git_commit(args.expected_commit)
+        config = load_config()
+    except RejectedInput as exc:
+        return reject_input(raw_args, exc)
+    except HelperFailure as exc:
+        if not audit_or_fail(
+            'code-update',
+            'failed',
+            EXIT_FAILED,
+            raw_args,
+            type(exc).__name__,
+        ):
+            return EXIT_FAILED
+        print(f'Failed: {exc}', file=sys.stderr)
+        return EXIT_FAILED
+
+    # Persist approved intent before the remote state-changing operation
+    if not audit_or_fail(
+        'code-update-intent',
+        'success',
+        EXIT_SUCCESS,
+        raw_args,
+        'remote update invocation started',
+    ):
+        return EXIT_FAILED
+
+    result, exit_code = run_update(config, expected_commit)
+    status = result['status']
+    status = 'success' if status == 'ok' else status
+    if not audit_or_fail(
+        'code-update',
+        status,
+        exit_code,
+        raw_args,
+        result.get('reason') or result.get('result'),
+    ):
+        return EXIT_FAILED
+    print_result(result, args.json)
+    return exit_code
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())

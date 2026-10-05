@@ -1,0 +1,30 @@
+{
+  "baseline": {
+    "branch": "codex-hpc",
+    "commit": "b2c7595198e0128bc9a5f73f25c55b57733422ae",
+    "clean": true,
+    "remote": "origin"
+  },
+  "valid_commits": [
+    "b2c7595198e0128bc9a5f73f25c55b57733422ae"
+  ],
+  "invalid_commits": [
+    "b2c7595",
+    "B2C7595198E0128BC9A5F73F25C55B57733422AE",
+    "g2c7595198e0128bc9a5f73f25c55b57733422ae",
+    "b2c7595198e0128bc9a5f73f25c55b57733422ae0",
+    "../b2c7595198e0128bc9a5f73f25c55b57733422ae",
+    "b2c7595198e0128bc9a5f73f25c55b57733422ae;id"
+  ],
+  "update_outcomes": [
+    "fast-forwarded",
+    "no-op",
+    "expected-commit-is-not-remote-branch-head",
+    "non-fast-forward",
+    "dirty-checkout",
+    "wrong-branch",
+    "active-run",
+    "lock-active",
+    "fetch-unavailable"
+  ]
+}

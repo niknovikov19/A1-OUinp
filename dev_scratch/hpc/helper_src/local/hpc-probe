@@ -1,0 +1,243 @@
+#!/usr/bin/env python3
+import argparse
+import json
+from pathlib import Path
+import shlex
+import subprocess
+import sys
+
+sys.dont_write_bytecode = True
+
+from hpc_common import (
+    EXIT_FAILED,
+    EXIT_SUCCESS,
+    EXIT_UNKNOWN,
+    HelperFailure,
+    append_audit_event,
+    get_config_identity,
+    load_config,
+)
+
+
+SSH_PATH = '/usr/bin/ssh'
+MAX_REMOTE_BYTES = 65536
+
+
+class RemoteUnavailable(RuntimeError):
+    """Represent an unavailable or unparseable remote probe."""
+
+
+def build_parser():
+    """Build the fixed connectivity-probe parser."""
+    parser = argparse.ArgumentParser(
+        description='Probe fixed A1 HPC connectivity targets.',
+    )
+    parser.add_argument(
+        '--json',
+        action='store_true',
+        help='Print structured JSON instead of a concise summary.',
+    )
+    parser.add_argument('target', choices=('lethe', 'grid'))
+    return parser
+
+
+def build_ssh_command(config, target):
+    """Build the one allowlisted SSH invocation for a probe target."""
+    helper = Path(config['remote_helpers']['lethe_dir']) / 'hpc-lethe-probe'
+    remote_command = ' '.join((
+        shlex.quote(helper.as_posix()),
+        shlex.quote(target),
+    ))
+    timeout = config['ssh']['connect_timeout_sec']
+    return [
+        SSH_PATH,
+        '-o',
+        'BatchMode=yes',
+        '-o',
+        f'ConnectTimeout={timeout}',
+        '-o',
+        'ConnectionAttempts=1',
+        '--',
+        config['ssh']['lethe_host_alias'],
+        remote_command,
+    ]
+
+
+def decode_bounded(value, label):
+    """Decode one bounded UTF-8 subprocess stream."""
+    if len(value) > MAX_REMOTE_BYTES:
+        raise RemoteUnavailable(f'{label} exceeded {MAX_REMOTE_BYTES} bytes')
+    try:
+        return value.decode('utf-8')
+    except UnicodeDecodeError as exc:
+        raise RemoteUnavailable(f'{label} was not valid UTF-8') from exc
+
+
+def summarize_stderr(value):
+    """Return a bounded single-line SSH error summary."""
+    summary = value.replace('\r', ' ').replace('\n', ' ').strip()
+    return summary[:500] if summary else 'no error details'
+
+
+def parse_remote_result(stdout, target):
+    """Parse one bounded remote JSON object."""
+    try:
+        result = json.loads(stdout)
+    except json.JSONDecodeError as exc:
+        raise RemoteUnavailable('Remote probe did not return valid JSON') from exc
+    if not isinstance(result, dict):
+        raise RemoteUnavailable('Remote probe result was not an object')
+    if result.get('status') not in {'ok', 'unknown'}:
+        raise RemoteUnavailable('Remote probe returned an invalid status')
+    if result.get('target') != target:
+        raise RemoteUnavailable('Remote probe returned the wrong target')
+    if result['status'] == 'ok' and not isinstance(
+        result.get('remote_host'),
+        str,
+    ):
+        raise RemoteUnavailable('Successful remote probe omitted its host')
+    if result['status'] == 'unknown' and not isinstance(
+        result.get('reason'),
+        str,
+    ):
+        raise RemoteUnavailable('Unknown remote probe omitted its reason')
+    return result
+
+
+def unknown_result(target, reason, details=None):
+    """Build a structured unknown-state result."""
+    result = {
+        'schema_version': 1,
+        'target': target,
+        'status': 'unknown',
+        'reason': reason,
+    }
+    if details:
+        result['details'] = str(details)[:500]
+    return result
+
+
+def run_probe(config, target):
+    """Run one fixed remote probe and normalize its exit state."""
+    command = build_ssh_command(config, target)
+    timeout = config['ssh']['connect_timeout_sec'] + 10
+    try:
+        completed = subprocess.run(
+            command,
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            timeout=timeout,
+            check=False,
+        )
+    except subprocess.TimeoutExpired:
+        return unknown_result(target, 'connection-timeout'), EXIT_UNKNOWN
+    except OSError as exc:
+        return unknown_result(target, 'ssh-unavailable', exc), EXIT_UNKNOWN
+
+    try:
+        stdout = decode_bounded(completed.stdout, 'Remote stdout')
+        stderr = decode_bounded(completed.stderr, 'Remote stderr')
+    except RemoteUnavailable as exc:
+        return unknown_result(target, 'invalid-remote-output', exc), EXIT_UNKNOWN
+
+    # Accept structured unknown results from reviewed remote helpers
+    if completed.returncode in {EXIT_SUCCESS, EXIT_UNKNOWN}:
+        try:
+            result = parse_remote_result(stdout, target)
+        except RemoteUnavailable as exc:
+            details = summarize_stderr(stderr)
+            return unknown_result(target, str(exc), details), EXIT_UNKNOWN
+        result['local_config_sha256'] = get_config_identity(config)
+        valid_success = completed.returncode == 0 and result['status'] == 'ok'
+        valid_unknown = (
+            completed.returncode == EXIT_UNKNOWN and
+            result['status'] == 'unknown'
+        )
+        if not valid_success and not valid_unknown:
+            return unknown_result(
+                target,
+                'inconsistent-remote-result',
+            ), EXIT_UNKNOWN
+        exit_code = EXIT_SUCCESS if valid_success else EXIT_UNKNOWN
+        return result, exit_code
+
+    details = summarize_stderr(stderr)
+    result = unknown_result(target, 'ssh-or-remote-exit', details)
+    result['remote_exit_code'] = completed.returncode
+    return result, EXIT_UNKNOWN
+
+
+def audit_or_fail(target, status, exit_code, raw_args, details=None):
+    """Write the mandatory local probe audit event."""
+    try:
+        append_audit_event(
+            f'probe-{target}',
+            status,
+            exit_code,
+            raw_args,
+            details=details,
+            helper='hpc-probe',
+        )
+    except HelperFailure as exc:
+        print(f'Audit failure: {exc}', file=sys.stderr)
+        return False
+    return True
+
+
+def print_result(result, as_json):
+    """Print one structured or concise probe result."""
+    if as_json:
+        print(json.dumps(result, indent=2, sort_keys=True))
+        return
+    print(f'Target: {result["target"]}')
+    print(f'Status: {result["status"]}')
+    if result['status'] == 'unknown':
+        print(f'Reason: {result["reason"]}')
+        return
+    print(f'Remote host: {result["remote_host"]}')
+
+
+def main():
+    """Run the protected A1 connectivity probe."""
+    raw_args = sys.argv[1:]
+    parser = build_parser()
+    try:
+        args = parser.parse_args(raw_args)
+    except SystemExit as exc:
+        exit_code = int(exc.code)
+        status = 'success' if exit_code == 0 else 'rejected'
+        if not audit_or_fail('argument-parse', status, exit_code, raw_args):
+            return EXIT_FAILED
+        return exit_code
+
+    try:
+        config = load_config()
+        result, exit_code = run_probe(config, args.target)
+    except HelperFailure as exc:
+        if not audit_or_fail(
+            args.target,
+            'failed',
+            EXIT_FAILED,
+            raw_args,
+            type(exc).__name__,
+        ):
+            return EXIT_FAILED
+        print(f'Failed: {exc}', file=sys.stderr)
+        return EXIT_FAILED
+
+    status = 'success' if exit_code == EXIT_SUCCESS else 'unknown'
+    if not audit_or_fail(
+        args.target,
+        status,
+        exit_code,
+        raw_args,
+        result.get('reason'),
+    ):
+        return EXIT_FAILED
+    print_result(result, args.json)
+    return exit_code
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())

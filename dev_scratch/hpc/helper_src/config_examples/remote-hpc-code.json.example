@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "deployment_id": "a1-ouinp-codex-hpc",
+  "git": {
+    "path": "/usr/bin/git",
+    "automation_checkout": "/ddn/niknovikov19/repo/A1_OUinp_codex",
+    "branch": "codex-hpc",
+    "remote_name": "origin"
+  },
+  "state": {
+    "root": "/ddn/niknovikov19/hpc_codex/state/A1_OUinp"
+  }
+}

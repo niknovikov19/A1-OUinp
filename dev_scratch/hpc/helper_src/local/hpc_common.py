@@ -7,7 +7,7 @@ import stat
 from datetime import datetime, timezone
 
 
-BUNDLE_VERSION = '0.1.0-a0'
+BUNDLE_VERSION = '0.3.0-a2'
 CONFIG_SCHEMA_VERSION = 1
 
 EXIT_SUCCESS = 0
@@ -16,7 +16,10 @@ EXIT_UNKNOWN = 3
 EXIT_FAILED = 4
 
 RUNTIME_SOURCE_NAMES = (
+    'hpc-code-status',
+    'hpc-code-update',
     'hpc-helper-info',
+    'hpc-probe',
     'hpc_common.py',
 )
 
@@ -43,8 +46,10 @@ PUBLIC_AUDIT_ARGS = {
     'audit-tail',
     'experiment-id',
     'git-commit',
+    'grid',
     'info',
     'job-label',
+    'lethe',
     'run-id',
     'validate',
     'version',
@@ -163,6 +168,8 @@ def _require_regular_file(fpath, label, allow_missing=False):
         if allow_missing:
             return False
         raise HelperFailure(f'{label} is missing: {fpath}')
+    except OSError as exc:
+        raise HelperFailure(f'Cannot inspect {label}: {exc}') from exc
     if stat.S_ISLNK(file_stat.st_mode) or not stat.S_ISREG(file_stat.st_mode):
         raise HelperFailure(f'{label} must be a real regular file: {fpath}')
     return True
@@ -427,6 +434,10 @@ def _validate_audit_parent(dirpath):
         raise HelperFailure(
             f'Protected audit directory is missing: {dirpath}'
         ) from exc
+    except OSError as exc:
+        raise HelperFailure(
+            f'Cannot inspect protected audit directory: {exc}'
+        ) from exc
     if stat.S_ISLNK(file_stat.st_mode) or not stat.S_ISDIR(file_stat.st_mode):
         raise HelperFailure(
             f'Protected audit parent must be a real directory: {dirpath}'
@@ -477,7 +488,14 @@ def read_recent_audit_events(limit=20, max_bytes=65536):
     return events
 
 
-def append_audit_event(action, status, exit_code, args, details=None):
+def append_audit_event(
+    action,
+    status,
+    exit_code,
+    args,
+    details=None,
+    helper='hpc-helper-info',
+):
     """Append one bounded JSON event to the protected audit log."""
     fpath = get_audit_path()
     _validate_audit_parent(fpath.parent)
@@ -489,7 +507,7 @@ def append_audit_event(action, status, exit_code, args, details=None):
     event = {
         'schema_version': 1,
         'timestamp_utc': datetime.now(timezone.utc).isoformat(),
-        'helper': 'hpc-helper-info',
+        'helper': helper,
         'helper_version': BUNDLE_VERSION,
         'action': action,
         'status': status,

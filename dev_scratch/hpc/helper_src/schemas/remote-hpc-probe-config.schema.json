@@ -1,0 +1,95 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/a1-hpc/remote-hpc-probe-config.schema.json",
+  "title": "A1 remote HPC probe configuration",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "deployment_id",
+    "git",
+    "ssh",
+    "remote_helpers",
+    "scheduler"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "deployment_id": {
+      "$ref": "#/$defs/safeName"
+    },
+    "git": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "automation_checkout"
+      ],
+      "properties": {
+        "automation_checkout": {
+          "$ref": "#/$defs/absolutePath"
+        }
+      }
+    },
+    "ssh": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "grid_host_alias",
+        "connect_timeout_sec"
+      ],
+      "properties": {
+        "grid_host_alias": {
+          "$ref": "#/$defs/safeName"
+        },
+        "connect_timeout_sec": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 120
+        }
+      }
+    },
+    "remote_helpers": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "grid_probe"
+      ],
+      "properties": {
+        "grid_probe": {
+          "$ref": "#/$defs/absolutePath"
+        }
+      }
+    },
+    "scheduler": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "user",
+        "squeue_path",
+        "sacct_path"
+      ],
+      "properties": {
+        "user": {
+          "$ref": "#/$defs/safeName"
+        },
+        "squeue_path": {
+          "$ref": "#/$defs/absolutePath"
+        },
+        "sacct_path": {
+          "$ref": "#/$defs/absolutePath"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "safeName": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$"
+    },
+    "absolutePath": {
+      "type": "string",
+      "pattern": "^/[^\\u0000]*$"
+    }
+  }
+}

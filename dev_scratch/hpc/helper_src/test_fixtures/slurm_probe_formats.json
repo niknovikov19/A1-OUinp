@@ -1,0 +1,20 @@
+{
+  "squeue": {
+    "command_fields": "%i|%T|%r",
+    "normalized_fields": [
+      "job_id",
+      "state",
+      "reason"
+    ],
+    "sample": "12345|RUNNING|None"
+  },
+  "sacct": {
+    "command_fields": "JobIDRaw,State,ExitCode",
+    "normalized_fields": [
+      "job_id_raw",
+      "state",
+      "exit_code"
+    ],
+    "sample": "12345|COMPLETED|0:0"
+  }
+}
