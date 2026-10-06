@@ -53,45 +53,187 @@ commit mismatch rejection.
 
 ## Local promotion
 
-Manually copy the changed local files to:
+Run these commands in the local WSL shell after Codex reports the final pushed
+`A3_COMMIT`. Replace the value on the first line before running anything:
 
-```text
-/opt/a1-hpc/bin/hpc-run-preview
-/opt/a1-hpc/bin/hpc_common.py
-/opt/a1-hpc/share/schemas/remote-hpc-preview-config.schema.json
-/opt/a1-hpc/share/schemas/run-request.schema.json
+```bash
+A3_COMMIT='<full 40-character commit reported by Codex>'
+A3_LOCAL_REPO=/home/nnovikov/repo/A1-OUinp
+A3_SRC="$A3_LOCAL_REPO/dev_scratch/hpc/helper_src"
+A3_CATALOG_TMP=$(mktemp)
+
+printf '%s\n' "$A3_COMMIT" | grep -Eq '^[0-9a-f]{40}$'
+test "$(git -C "$A3_LOCAL_REPO" rev-parse HEAD)" = "$A3_COMMIT"
+
+sha256sum \
+    "$A3_SRC/local/hpc-run-preview" \
+    "$A3_SRC/local/hpc_common.py" \
+    "$A3_SRC/schemas/remote-hpc-preview-config.schema.json" \
+    "$A3_SRC/schemas/run-request.schema.json" \
+    "$A3_SRC/config_examples/preview-requests.json.example"
 ```
 
-Install `hpc-run-preview` with mode `0555` and the module and schemas with mode
-`0444`. Copy `config_examples/preview-requests.json.example` to:
+Create the protected catalog in a temporary file. This replaces only the
+40-zero placeholder; the deliberate 40-one changed-commit fixture remains
+unchanged:
 
-```text
-/opt/a1-hpc/config/A1_OUinp-preview-requests.json
+```bash
+sed "s/0000000000000000000000000000000000000000/$A3_COMMIT/g" \
+    "$A3_SRC/config_examples/preview-requests.json.example" \
+    > "$A3_CATALOG_TMP"
+
+python3 -m json.tool "$A3_CATALOG_TMP" >/dev/null
+test "$(grep -c "\"expected_commit\": \"$A3_COMMIT\"" "$A3_CATALOG_TMP")" -eq 8
+test "$(grep -c '"expected_commit": "1111111111111111111111111111111111111111"' "$A3_CATALOG_TMP")" -eq 1
+sha256sum "$A3_CATALOG_TMP"
 ```
 
-Replace the 40-zero placeholders with exact `A3_COMMIT`, review the resulting
-JSON, and set it to mode `0444`. Restore the protected local `bin`, `config`,
-and `share/schemas` directories to mode `0555`. Keep local audit-state
-ownership and permissions unchanged.
+Install the files as `root:root`. The first `chmod` makes only root able to
+write because the directories remain root-owned. If any install command fails,
+run the final `chmod 0555` command before stopping:
+
+```bash
+sudo chmod 0755 \
+    /opt/a1-hpc/bin \
+    /opt/a1-hpc/config \
+    /opt/a1-hpc/share/schemas
+
+sudo install -o root -g root -m 0555 \
+    "$A3_SRC/local/hpc-run-preview" \
+    /opt/a1-hpc/bin/hpc-run-preview
+
+sudo install -o root -g root -m 0444 \
+    "$A3_SRC/local/hpc_common.py" \
+    /opt/a1-hpc/bin/hpc_common.py
+
+sudo install -o root -g root -m 0444 \
+    "$A3_SRC/schemas/remote-hpc-preview-config.schema.json" \
+    /opt/a1-hpc/share/schemas/remote-hpc-preview-config.schema.json
+
+sudo install -o root -g root -m 0444 \
+    "$A3_SRC/schemas/run-request.schema.json" \
+    /opt/a1-hpc/share/schemas/run-request.schema.json
+
+sudo install -o root -g root -m 0444 \
+    "$A3_CATALOG_TMP" \
+    /opt/a1-hpc/config/A1_OUinp-preview-requests.json
+
+sudo chmod 0555 \
+    /opt/a1-hpc/bin \
+    /opt/a1-hpc/config \
+    /opt/a1-hpc/share/schemas
+```
+
+Verify the installed hashes and modes before removing the temporary file:
+
+```bash
+sha256sum \
+    /opt/a1-hpc/bin/hpc-run-preview \
+    /opt/a1-hpc/bin/hpc_common.py \
+    /opt/a1-hpc/share/schemas/remote-hpc-preview-config.schema.json \
+    /opt/a1-hpc/share/schemas/run-request.schema.json \
+    /opt/a1-hpc/config/A1_OUinp-preview-requests.json
+
+stat -c '%A %a %U:%G %n' \
+    /opt/a1-hpc/bin \
+    /opt/a1-hpc/config \
+    /opt/a1-hpc/share/schemas \
+    /opt/a1-hpc/bin/hpc-run-preview \
+    /opt/a1-hpc/bin/hpc_common.py \
+    /opt/a1-hpc/config/A1_OUinp-preview-requests.json
+
+rm -f "$A3_CATALOG_TMP"
+unset A3_CATALOG_TMP
+```
+
+Do not change `/opt/a1-hpc/state` or `actions.jsonl` ownership or modes.
 
 ## Remote promotion
 
-Manually copy the lethe helper to:
+First update the automation checkout to exact `A3_COMMIT` through the approved
+A2 helper. Then log in to lethe and run the following commands. Set
+`A3_COMMIT` to the same final commit:
 
-```text
-/ddn/niknovikov19/hpc_codex/helpers/lethe/hpc-lethe-preview
+```bash
+A3_COMMIT='<same full 40-character commit>'
+A3_REMOTE_REPO=/ddn/niknovikov19/repo/A1_OUinp_codex
+A3_SRC="$A3_REMOTE_REPO/dev_scratch/hpc/helper_src"
+A3_REMOTE_ROOT=/ddn/niknovikov19/hpc_codex
+A3_REMOTE_OWNER=niknovikov19
+A3_REMOTE_GROUP=salvadord
+
+printf '%s\n' "$A3_COMMIT" | grep -Eq '^[0-9a-f]{40}$'
+test "$(git -C "$A3_REMOTE_REPO" rev-parse HEAD)" = "$A3_COMMIT"
+test -z "$(git -C "$A3_REMOTE_REPO" status --porcelain=v1)"
+
+test "$(stat -c '%U' "$A3_REMOTE_ROOT/helpers/lethe")" = "$A3_REMOTE_OWNER"
+test "$(stat -c '%G' "$A3_REMOTE_ROOT/helpers/lethe")" = "$A3_REMOTE_GROUP"
+test "$(stat -c '%U' "$A3_REMOTE_ROOT/config")" = "$A3_REMOTE_OWNER"
+test "$(stat -c '%G' "$A3_REMOTE_ROOT/config")" = "$A3_REMOTE_GROUP"
+
+python3 -m json.tool \
+    "$A3_SRC/config_examples/remote-hpc-preview.json.example" \
+    >/dev/null
+
+sha256sum \
+    "$A3_SRC/remote_lethe/hpc-lethe-preview" \
+    "$A3_SRC/config_examples/remote-hpc-preview.json.example"
 ```
 
-Install it with mode `0555`. Copy
-`config_examples/remote-hpc-preview.json.example` to:
+Review the displayed source configuration before installation:
 
-```text
-/ddn/niknovikov19/hpc_codex/config/A1_OUinp-preview.json
+```bash
+python3 -m json.tool \
+    "$A3_SRC/config_examples/remote-hpc-preview.json.example"
 ```
 
-Review every path, allowlist, and limit. They should agree with the existing
-protected local configuration. Set the file to mode `0444`, then restore the
-remote `helpers/lethe` and `config` directories to mode `0555`.
+Install using the established shared-filesystem owner and group. If an install
+command fails, run the final `chmod 0555` command before stopping:
+
+```bash
+sudo chmod 0755 \
+    "$A3_REMOTE_ROOT/helpers/lethe" \
+    "$A3_REMOTE_ROOT/config"
+
+sudo install \
+    -o "$A3_REMOTE_OWNER" \
+    -g "$A3_REMOTE_GROUP" \
+    -m 0555 \
+    "$A3_SRC/remote_lethe/hpc-lethe-preview" \
+    "$A3_REMOTE_ROOT/helpers/lethe/hpc-lethe-preview"
+
+sudo install \
+    -o "$A3_REMOTE_OWNER" \
+    -g "$A3_REMOTE_GROUP" \
+    -m 0444 \
+    "$A3_SRC/config_examples/remote-hpc-preview.json.example" \
+    "$A3_REMOTE_ROOT/config/A1_OUinp-preview.json"
+
+sudo chmod 0555 \
+    "$A3_REMOTE_ROOT/helpers/lethe" \
+    "$A3_REMOTE_ROOT/config"
+```
+
+Verify the protected copies:
+
+```bash
+python3 -m json.tool \
+    "$A3_REMOTE_ROOT/config/A1_OUinp-preview.json" \
+    >/dev/null
+
+sha256sum \
+    "$A3_REMOTE_ROOT/helpers/lethe/hpc-lethe-preview" \
+    "$A3_REMOTE_ROOT/config/A1_OUinp-preview.json"
+
+stat -c '%A %a %U:%G %n' \
+    "$A3_REMOTE_ROOT/helpers/lethe" \
+    "$A3_REMOTE_ROOT/config" \
+    "$A3_REMOTE_ROOT/helpers/lethe/hpc-lethe-preview" \
+    "$A3_REMOTE_ROOT/config/A1_OUinp-preview.json"
+```
+
+The helper hash must match the reviewed candidate. The installed remote
+configuration hash must match the example because no substitution is needed.
 
 Neither configuration file may contain credentials, a repository URL, key
 path, token, password, arbitrary command, or caller-selectable filesystem
