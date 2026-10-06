@@ -167,6 +167,59 @@ Rejected commit syntax is audited locally with exit code `2` and opens no SSH
 connection. A validly formatted hash that is not the fetched branch head is
 rejected remotely with exit code `2` and cannot move the checkout.
 
+## A3 contents
+
+```text
+local/hpc-run-preview
+remote_lethe/hpc-lethe-preview
+config_examples/preview-requests.json.example
+config_examples/remote-hpc-preview.json.example
+schemas/run-request.schema.json
+schemas/remote-hpc-preview-config.schema.json
+test_fixtures/a3_preview_cases.json
+INSTALL_A3.md
+```
+
+`hpc-run-preview` accepts only a request ID. It selects the matching entry from
+the fixed protected local catalog, sends canonical JSON to the fixed lethe
+helper, and verifies the returned request digest. It never accepts a request
+file path, raw JSON, repository path, host, partition, or resource override.
+
+The lethe helper independently validates the complete request and the remote
+preview configuration. It requires the exact clean configured branch and
+commit, resolves the experiment only below `exp_configs`, verifies every
+declared repository dependency is a tracked regular file, and reports bounded
+suspicious ignored files under the selected experiment.
+
+The request contains parameter axes but no caller-supplied child count. The
+helper calculates the Cartesian product, compares it and every requested
+resource with protected limits, and returns a canonical request SHA256. A
+limit violation is a rejected preview and cannot become a submission. A3
+contains no Slurm invocation, run-directory creation, Git mutation, or file
+transfer.
+
+### A3 call chain
+
+```text
+Codex
+  -> /opt/a1-hpc/bin/hpc-run-preview REQUEST_ID
+  -> select one request from the fixed protected local catalog
+  -> canonicalize and encode the request
+  -> /usr/bin/ssh lethe
+  -> hpc-lethe-preview preview ENCODED_REQUEST
+  -> validate the fixed remote config and complete request
+  -> inspect the exact clean Git checkout and selected experiment
+  -> verify declared tracked files and report bounded ignored-path warnings
+  -> calculate axis product and enforce protected limits
+  -> return deterministic bounded JSON and request digest
+  -> verify the digest and append the local audit event
+```
+
+Malformed or unknown request IDs are rejected locally before SSH. Malformed
+protected request entries, changed commits, unknown experiments, empty axes,
+unsupported partitions, excessive resources, and excessive job counts are
+rejected by the lethe helper with exit code `2`.
+
 ## Exit codes
 
 - `0`: success;

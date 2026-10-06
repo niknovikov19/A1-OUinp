@@ -1,0 +1,220 @@
+{
+  "schema_version": 1,
+  "requests": {
+    "a3-probe-one": {
+      "schema_version": 1,
+      "request_id": "a3-probe-one",
+      "run_type": "probe",
+      "experiment": "single_rxbkg_state1_mech1/net_newsec",
+      "expected_commit": "0000000000000000000000000000000000000000",
+      "resources": {
+        "partition": "cpu.q",
+        "nodes": 1,
+        "cores": 1,
+        "memory_gb": 1,
+        "wall_time_min": 2
+      },
+      "max_concurrent_jobs": 1,
+      "expected_output_kind": "marker",
+      "parameter_axes": {},
+      "required_repo_paths": [
+        "run_exp.py",
+        "exp_configs/single_rxbkg_state1_mech1/net_newsec/exp_cfg.py"
+      ]
+    },
+    "a3-tiny-six": {
+      "schema_version": 1,
+      "request_id": "a3-tiny-six",
+      "run_type": "batch",
+      "experiment": "batch_rxbkg_state1_mech1/net_2pulses_var_seed_f_amps_dt0",
+      "expected_commit": "0000000000000000000000000000000000000000",
+      "resources": {
+        "partition": "cpu.q",
+        "nodes": 1,
+        "cores": 1,
+        "memory_gb": 2,
+        "wall_time_min": 10
+      },
+      "max_concurrent_jobs": 3,
+      "expected_output_kind": "batch-pkl",
+      "parameter_axes": {
+        "seed_main": [
+          1000,
+          1001
+        ],
+        "amp1": [
+          0,
+          0.02,
+          0.04
+        ]
+      },
+      "required_repo_paths": [
+        "run_exp.py",
+        "exp_configs/batch_rxbkg_state1_mech1/net_2pulses_var_seed_f_amps_dt0/batch_params.py",
+        "exp_configs/batch_rxbkg_state1_mech1/net_2pulses_var_seed_f_amps_dt0/exp_cfg.py"
+      ]
+    },
+    "a3-existing-48": {
+      "schema_version": 1,
+      "request_id": "a3-existing-48",
+      "run_type": "batch",
+      "experiment": "batch_rxbkg_state1_mech1/net_2pulses_var_seed_f_amps_dt0",
+      "expected_commit": "0000000000000000000000000000000000000000",
+      "resources": {
+        "partition": "cpu.q",
+        "nodes": 1,
+        "cores": 60,
+        "memory_gb": 256,
+        "wall_time_min": 420
+      },
+      "max_concurrent_jobs": 6,
+      "expected_output_kind": "batch-pkl",
+      "parameter_axes": {
+        "seed_main": [
+          1000
+        ],
+        "f": [
+          2
+        ],
+        "amp1": [
+          0,
+          0.02,
+          0.04,
+          0.06
+        ],
+        "amp2": [
+          0,
+          0.1,
+          0.2,
+          0.3,
+          0.4,
+          0.5
+        ],
+        "dt0": [
+          0,
+          20
+        ]
+      },
+      "required_repo_paths": [
+        "run_exp.py",
+        "exp_configs/batch_rxbkg_state1_mech1/net_2pulses_var_seed_f_amps_dt0/batch_params.py",
+        "exp_configs/batch_rxbkg_state1_mech1/net_2pulses_var_seed_f_amps_dt0/exp_cfg.py"
+      ]
+    },
+    "a3-unknown-experiment": {
+      "schema_version": 1,
+      "request_id": "a3-unknown-experiment",
+      "run_type": "probe",
+      "experiment": "missing_group/missing_experiment",
+      "expected_commit": "0000000000000000000000000000000000000000",
+      "resources": {
+        "partition": "cpu.q",
+        "nodes": 1,
+        "cores": 1,
+        "memory_gb": 1,
+        "wall_time_min": 2
+      },
+      "max_concurrent_jobs": 1,
+      "expected_output_kind": "marker",
+      "parameter_axes": {},
+      "required_repo_paths": [
+        "run_exp.py"
+      ]
+    },
+    "a3-changed-commit": {
+      "schema_version": 1,
+      "request_id": "a3-changed-commit",
+      "run_type": "probe",
+      "experiment": "single_rxbkg_state1_mech1/net_newsec",
+      "expected_commit": "1111111111111111111111111111111111111111",
+      "resources": {
+        "partition": "cpu.q",
+        "nodes": 1,
+        "cores": 1,
+        "memory_gb": 1,
+        "wall_time_min": 2
+      },
+      "max_concurrent_jobs": 1,
+      "expected_output_kind": "marker",
+      "parameter_axes": {},
+      "required_repo_paths": [
+        "run_exp.py"
+      ]
+    },
+    "a3-unsupported-partition": {
+      "schema_version": 1,
+      "request_id": "a3-unsupported-partition",
+      "run_type": "probe",
+      "experiment": "single_rxbkg_state1_mech1/net_newsec",
+      "expected_commit": "0000000000000000000000000000000000000000",
+      "resources": {
+        "partition": "not-allowed",
+        "nodes": 1,
+        "cores": 1,
+        "memory_gb": 1,
+        "wall_time_min": 2
+      },
+      "max_concurrent_jobs": 1,
+      "expected_output_kind": "marker",
+      "parameter_axes": {},
+      "required_repo_paths": [
+        "run_exp.py"
+      ]
+    },
+    "a3-excessive-resources": {
+      "schema_version": 1,
+      "request_id": "a3-excessive-resources",
+      "run_type": "probe",
+      "experiment": "single_rxbkg_state1_mech1/net_newsec",
+      "expected_commit": "0000000000000000000000000000000000000000",
+      "resources": {
+        "partition": "cpu.q",
+        "nodes": 2,
+        "cores": 2,
+        "memory_gb": 3,
+        "wall_time_min": 11
+      },
+      "max_concurrent_jobs": 1,
+      "expected_output_kind": "marker",
+      "parameter_axes": {},
+      "required_repo_paths": [
+        "run_exp.py"
+      ]
+    },
+    "a3-empty-axis": {
+      "schema_version": 1,
+      "request_id": "a3-empty-axis",
+      "run_type": "batch",
+      "experiment": "batch_rxbkg_state1_mech1/net_2pulses_var_seed_f_amps_dt0",
+      "expected_commit": "0000000000000000000000000000000000000000",
+      "resources": {
+        "partition": "cpu.q",
+        "nodes": 1,
+        "cores": 1,
+        "memory_gb": 2,
+        "wall_time_min": 10
+      },
+      "max_concurrent_jobs": 1,
+      "expected_output_kind": "batch-pkl",
+      "parameter_axes": {
+        "seed_main": []
+      },
+      "required_repo_paths": [
+        "run_exp.py"
+      ]
+    },
+    "a3-malformed": {
+      "schema_version": 1,
+      "request_id": "a3-malformed",
+      "run_type": "probe",
+      "experiment": "single_rxbkg_state1_mech1/net_newsec",
+      "expected_commit": "0000000000000000000000000000000000000000",
+      "max_concurrent_jobs": 1,
+      "expected_output_kind": "marker",
+      "parameter_axes": {},
+      "required_repo_paths": [
+        "run_exp.py"
+      ]
+    }
+  }
+}

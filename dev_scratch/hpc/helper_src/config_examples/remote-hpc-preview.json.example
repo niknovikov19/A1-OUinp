@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "deployment_id": "a1-ouinp-codex-hpc",
+  "git": {
+    "path": "/usr/bin/git",
+    "automation_checkout": "/ddn/niknovikov19/repo/A1_OUinp_codex",
+    "branch": "codex-hpc"
+  },
+  "runs": {
+    "root": "/ddn/niknovikov19/hpc_codex/runs/A1_OUinp"
+  },
+  "preview": {
+    "max_request_bytes": 65536,
+    "max_required_paths": 32,
+    "max_reported_paths": 20
+  },
+  "scheduler": {
+    "allowed_partitions": [
+      "cpu.q"
+    ],
+    "allowed_output_kinds": [
+      "marker",
+      "simulation-pkl",
+      "batch-pkl"
+    ],
+    "limits": {
+      "max_child_jobs": 10,
+      "max_concurrent_jobs": 4,
+      "max_nodes_per_job": 1,
+      "max_cores_per_job": 1,
+      "max_memory_gb_per_job": 2,
+      "max_wall_time_min": 10
+    }
+  }
+}

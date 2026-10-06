@@ -2,11 +2,12 @@
 
 ## Purpose
 
-`hpc_common.py` contains the local safety and bookkeeping primitives shared by protected HPC helper commands. In A0 it is imported only by `hpc-helper-info`.
+`hpc_common.py` contains the local safety and bookkeeping primitives shared by
+the protected HPC helper commands.
 
 The module provides:
 
-- fixed installation, configuration, and audit-log locations;
+- fixed installation, configuration, audit-log, and preview-catalog locations;
 - strict identifier and configuration validation;
 - installed-source and configuration hashing;
 - configuration redaction for display;
@@ -38,6 +39,8 @@ For `/opt/a1-hpc/bin/hpc_common.py`, the functions resolve:
 get_install_root()  -> /opt/a1-hpc
 get_config_path()   -> /opt/a1-hpc/config/hpc-helper.json
 get_audit_path()    -> /opt/a1-hpc/state/actions.jsonl
+get_request_catalog_path()
+    -> /opt/a1-hpc/config/A1_OUinp-preview-requests.json
 ```
 
 `Path(__file__).resolve()` is used before moving to the installation root.
@@ -81,6 +84,10 @@ Examples include a missing protected configuration, a symlink where a regular pr
 | `job-label` | 1–128 ASCII letters, digits, `.`, `_`, or `-`; first character must be alphanumeric; no path separators. |
 
 The individual functions are `validate_run_id`, `validate_git_commit`, `validate_experiment_id`, and `validate_job_label`. Successful validation returns the original string unchanged.
+
+`validate_request_id()` applies the same path-safe syntax as a run ID but
+reports request-specific errors. Preview uses it before selecting an entry
+from the fixed protected request catalog.
 
 These functions establish safe identifier syntax only. They do not prove that a commit exists, an experiment is present, or a job label belongs to a run.
 
@@ -158,18 +165,19 @@ The audit file may be absent before its first append, but its parent directory m
 ### Installed source identity
 
 `get_bundle_identity()` hashes the installed `hpc-code-status`,
-`hpc-code-update`, `hpc-helper-info`, `hpc-probe`, and `hpc_common.py` files. It
-returns:
+`hpc-code-update`, `hpc-helper-info`, `hpc-probe`, `hpc-run-preview`, and
+`hpc_common.py` files. It returns:
 
 ```json
 {
-  "bundle_version": "0.3.0-a2",
+  "bundle_version": "0.4.0-a3",
   "bundle_sha256": "...",
   "source_sha256": {
     "hpc-code-status": "...",
     "hpc-code-update": "...",
     "hpc-helper-info": "...",
     "hpc-probe": "...",
+    "hpc-run-preview": "...",
     "hpc_common.py": "..."
   }
 }
@@ -274,6 +282,15 @@ Builds the only audit-log path accepted by this module.
 - Side effects: none; it does not create or read the file.
 - Security role: prevents callers from redirecting audit writes to another path.
 
+### `get_request_catalog_path()`
+
+Builds the only preview-request catalog path accepted by the local helper.
+
+- Parameters: none.
+- Returns: `<install root>/config/A1_OUinp-preview-requests.json` as a `Path`.
+- Side effects: none; it does not inspect or read the path.
+- Security role: prevents callers from selecting a request file or directory.
+
 ### `_require_string(value, label)`
 
 Checks the common minimum requirements for identifier strings.
@@ -293,6 +310,16 @@ Validates one path-safe run identifier.
 - Raises: `RejectedInput` unless it is 1–80 allowed characters, starts alphanumerically, and is neither `.` nor `..`.
 - Side effects: none.
 - Security role: makes run IDs safe to use as one directory-name component; it does not resolve or create a directory.
+
+### `validate_request_id(value)`
+
+Validates one path-safe protected request identifier.
+
+- `value`: candidate request ID.
+- Returns: the unchanged validated string.
+- Raises: `RejectedInput` unless it is 1–64 allowed characters, starts alphanumerically, and is neither `.` nor `..`.
+- Side effects: none.
+- Security role: permits selection by identifier without accepting a request-file path.
 
 ### `validate_git_commit(value)`
 
@@ -480,6 +507,16 @@ Loads and validates the one fixed protected configuration.
 - Raises: `HelperFailure` when the fixed path is missing, is not a real regular file, cannot be read/decoded, or contains a configuration rejected by `validate_config()`.
 - Side effects: reads one fixed local JSON file.
 - Security role: converts validation exceptions into an operational helper failure because the protected installed configuration, not a caller-supplied value, is defective.
+
+### `load_preview_request(request_id)`
+
+Loads one request from the fixed protected A3 catalog.
+
+- `request_id`: path-safe catalog key validated by `validate_request_id()`.
+- Returns: the selected request dictionary without mutating it.
+- Raises: `HelperFailure` for a missing, redirected, unreadable, or structurally invalid protected catalog; raises `RejectedInput` for an unknown request, a non-object selected entry, or a mismatched embedded request ID.
+- Side effects: reads one fixed local JSON file.
+- Security role: callers select only an ID; they cannot supply request JSON or a filesystem path. Detailed request policy is independently enforced by the protected lethe helper.
 
 ### `canonical_json(value)`
 

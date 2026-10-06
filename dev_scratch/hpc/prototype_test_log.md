@@ -207,8 +207,8 @@ mutation.
 
 ## Gate A2: exact-commit Git synchronization
 
-Status: candidate source prepared; manual promotion and protected tests
-pending.
+Status: operational tests passed; isolated non-fast-forward test deferred by
+user choice on 2026-10-05.
 
 Remote preflight supplied by the user:
 
@@ -288,3 +288,150 @@ Corrected promotion verification 2026-10-05:
 - the audit trail recorded the successful status and rejected update request,
   with the malformed caller value stored as `<value>`;
 - no fetch or checkout update occurred.
+
+Push and first exact-update attempt 2026-10-05:
+
+- scoped local commit:
+  `e0c4d394e43ea51ba318e0c087f209cea6d8ccd5`;
+- the commit contained only reviewed `dev_scratch/hpc/` changes; unrelated
+  untracked `doc/paper/` content was not staged;
+- the push advanced `origin/codex-hpc` from the baseline to the exact scoped
+  commit;
+- protected status before update confirmed the HPC checkout remained clean at
+  baseline `b2c7595198e0128bc9a5f73f25c55b57733422ae`;
+- the separately approved exact update returned structured `unknown` with exit
+  code `3` because lethe's non-interactive Git fetch received GitHub SSH
+  `Permission denied (publickey)`;
+- the helper did not retry or move the checkout;
+- protected status after the failed fetch confirmed the checkout remained
+  clean at the baseline, with no active run or update lock;
+- read-only GitHub fetch authentication on lethe must be established before a
+  separately approved retry.
+
+HTTPS recovery and exact fast-forward 2026-10-05:
+
+- because the repository is public, the user changed only the automation
+  checkout's `origin` URL to unauthenticated GitHub HTTPS;
+- a non-interactive `ls-remote` resolved `origin/codex-hpc` to exact approved
+  commit `e0c4d394e43ea51ba318e0c087f209cea6d8ccd5`;
+- the separately approved retry returned exit code `0` and result
+  `fast-forwarded`;
+- the helper reported before commit
+  `b2c7595198e0128bc9a5f73f25c55b57733422ae` and after commit exactly
+  `e0c4d394e43ea51ba318e0c087f209cea6d8ccd5`;
+- independent protected status confirmed local and remote-tracking commits at
+  the exact target, branch `codex-hpc`, a clean checkout, zero changes, no
+  active run, and no active update lock;
+- the audit trail contained a redacted update intent followed by a successful
+  `fast-forwarded` result;
+- the separately approved same-commit retry returned exit code `0` and result
+  `no-op`, with identical before, expected, and after commits;
+- independent status after the no-op confirmed the exact commit, clean branch,
+  zero changes, no active run, and no active update lock.
+
+Unapproved full-hash rejection 2026-10-05:
+
+- the separately approved update using 40 zeroes returned exit code `2` and
+  status `rejected`;
+- the helper reported reason `expected-commit-is-not-remote-branch-head` and
+  the actual remote head remained the approved exact commit;
+- independent status confirmed the checkout remained clean at the exact
+  approved commit, with no active run or update lock.
+
+Dirty-checkout rejection 2026-10-05:
+
+- the user created one harmless untracked marker in the dedicated automation
+  checkout;
+- protected status reported `clean: false` and exactly one change while
+  retaining the exact approved commit;
+- the approved exact-commit update returned exit code `4`, status `failed`,
+  and detail `Automation checkout is not clean`;
+- post-rejection status confirmed the commit and remote-tracking commit were
+  unchanged, the marker remained present, and the update lock was released;
+- after manual marker removal, protected status confirmed the real automation
+  checkout was clean again at the exact approved commit with no active lock.
+
+Final verification and deferred test 2026-10-05:
+
+- final protected status confirmed the real automation checkout remained clean
+  at exact commit `e0c4d394e43ea51ba318e0c087f209cea6d8ccd5`;
+- the remote-tracking commit matched, the configured branch was correct, and
+  no active run or update lock was present;
+- the protected audit tail retained the unavailable-fetch, successful
+  fast-forward, successful no-op, unknown-hash rejection, and dirty-checkout
+  rejection events with caller commit values redacted;
+- the user elected to defer the disposable-fixture non-fast-forward test;
+- no disposable repository was created and no configuration change was made.
+
+Gate conclusion: PARTIAL PASS. The exact GitHub round trip, clean
+fast-forward, idempotent no-op, strict hash validation, remote-head pinning,
+dirty-checkout refusal, failure safety, locking, and audit behavior are proven.
+The installed helper's non-fast-forward refusal remains statically reviewed
+but not exercised against a divergent repository, so A2 is not recorded as an
+unqualified pass.
+
+## Gate A3: deterministic run preview and request pinning
+
+Status: candidate source prepared; commit, manual promotion, and protected
+tests pending.
+
+Prepared A3 behavior:
+
+- local `hpc-run-preview` accepts only a path-safe request ID and selects it
+  from one fixed protected catalog;
+- the catalog request is canonicalized, hashed, URL-safe-base64 encoded, and
+  sent only to the fixed lethe preview helper;
+- the remote helper independently validates the request and a separate
+  protected configuration before inspecting the repository;
+- the configured automation checkout must be clean, on `codex-hpc`, and at
+  the request's exact full commit;
+- experiments resolve only below `exp_configs`, and every declared dependency
+  must be a tracked non-symlink regular file;
+- parameter axes are part of the pinned request, while child count is omitted
+  and mechanically calculated as their Cartesian product;
+- partition, output kind, concurrency, job count, cores, memory, nodes, and
+  wall time are checked against independent protected limits;
+- ignored files below the experiment are inspected with a bounded report of
+  source/config-like paths;
+- responses contain no timestamp, so unchanged requests and repository state
+  produce identical output and canonical request digests;
+- A3 contains no Git mutation, Slurm command, run-directory creation,
+  repository-Python execution, or file transfer.
+
+Static review:
+
+- all candidate Python entry/source files parsed with `ast.parse` without
+  import or execution;
+- all JSON, schema, configuration-example, and fixture files decoded
+  successfully;
+- no trailing whitespace or code lines longer than 88 characters were found;
+- the new helpers contain no `shell=True`, arbitrary-command interface, Git
+  mutation, Slurm command, or transfer primitive;
+- all four repository dependencies declared by the example catalog were
+  confirmed tracked;
+- independent AST/literal inspection of the existing experiment confirmed
+  axis sizes `1 x 1 x 4 x 6 x 2`, or 48 jobs;
+- independent fixture inspection confirmed the one-job, six-job, 48-job, and
+  empty-axis products without invoking candidate code;
+- candidate helpers were not invoked, sourced, or imported.
+
+Reviewed candidate SHA256 values:
+
+- `hpc-run-preview`:
+  `e677e8afc2018c46f1994d58765de8278acbf66140b5e23bd8c94591610adf20`;
+- `hpc_common.py`:
+  `97851c0a7f1cea91283b56e95e63b15b8ba1250464242d381797c65040dd93e6`;
+- `hpc-lethe-preview`:
+  `483e6f085b703217cd40069f342801de33fe2cf52c5b3c03eec82b50cd523547`;
+- `remote-hpc-preview.json.example`:
+  `2183dc0f0d31d69f91f95ecd2a479e7918a6e1f35c77406783f4a02aa4fa3c3e`;
+- `preview-requests.json.example`:
+  `738db5d5a032af0203aedf98da5fd5b9cf21f845af18021b69b636179548ace5`;
+- `remote-hpc-preview-config.schema.json`:
+  `454eaa3b79da53749b4599a6d4bf3275ae8f136cca94d616a89875192c07c499`;
+- `run-request.schema.json`:
+  `4add2e162b8037fb25c50e4a82b567eabe48c9c48658b899a4ac83a6a2ccc975`;
+- `a3_preview_cases.json`:
+  `a2989f2e5ab9aa6afae5779e2c38c4401b4489f3184127b771a4cfefed692ad6`;
+- expected installed local bundle:
+  `71b493bba432c9e1385140d42526c6705b030e11d55dd211fc1611fd72ee474c`.

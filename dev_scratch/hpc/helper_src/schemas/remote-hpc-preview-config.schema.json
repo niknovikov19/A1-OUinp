@@ -1,0 +1,153 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/a1-hpc/remote-hpc-preview-config.schema.json",
+  "title": "A1 remote HPC preview configuration",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "deployment_id",
+    "git",
+    "runs",
+    "preview",
+    "scheduler"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "deployment_id": {
+      "$ref": "#/$defs/safeName"
+    },
+    "git": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "automation_checkout",
+        "branch"
+      ],
+      "properties": {
+        "path": {
+          "$ref": "#/$defs/absolutePath"
+        },
+        "automation_checkout": {
+          "$ref": "#/$defs/absolutePath"
+        },
+        "branch": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._/-]{0,127}$"
+        }
+      }
+    },
+    "runs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "root"
+      ],
+      "properties": {
+        "root": {
+          "$ref": "#/$defs/absolutePath"
+        }
+      }
+    },
+    "preview": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "max_request_bytes",
+        "max_required_paths",
+        "max_reported_paths"
+      ],
+      "properties": {
+        "max_request_bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 131072
+        },
+        "max_required_paths": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 256
+        },
+        "max_reported_paths": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000
+        }
+      }
+    },
+    "scheduler": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "allowed_partitions",
+        "allowed_output_kinds",
+        "limits"
+      ],
+      "properties": {
+        "allowed_partitions": {
+          "$ref": "#/$defs/safeNameList"
+        },
+        "allowed_output_kinds": {
+          "$ref": "#/$defs/safeNameList"
+        },
+        "limits": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "max_child_jobs",
+            "max_concurrent_jobs",
+            "max_nodes_per_job",
+            "max_cores_per_job",
+            "max_memory_gb_per_job",
+            "max_wall_time_min"
+          ],
+          "properties": {
+            "max_child_jobs": {
+              "$ref": "#/$defs/positiveInteger"
+            },
+            "max_concurrent_jobs": {
+              "$ref": "#/$defs/positiveInteger"
+            },
+            "max_nodes_per_job": {
+              "$ref": "#/$defs/positiveInteger"
+            },
+            "max_cores_per_job": {
+              "$ref": "#/$defs/positiveInteger"
+            },
+            "max_memory_gb_per_job": {
+              "$ref": "#/$defs/positiveInteger"
+            },
+            "max_wall_time_min": {
+              "$ref": "#/$defs/positiveInteger"
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "safeName": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$"
+    },
+    "absolutePath": {
+      "type": "string",
+      "pattern": "^/[^\\u0000]*$"
+    },
+    "positiveInteger": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "safeNameList": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/safeName"
+      }
+    }
+  }
+}

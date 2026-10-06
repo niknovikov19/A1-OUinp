@@ -1,0 +1,121 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/a1-hpc/run-request.schema.json",
+  "title": "A1 HPC pinned run request",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "request_id",
+    "run_type",
+    "experiment",
+    "expected_commit",
+    "resources",
+    "max_concurrent_jobs",
+    "expected_output_kind",
+    "parameter_axes",
+    "required_repo_paths"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "request_id": {
+      "$ref": "#/$defs/safeName"
+    },
+    "run_type": {
+      "enum": [
+        "probe",
+        "single",
+        "batch"
+      ]
+    },
+    "experiment": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}(/[A-Za-z0-9][A-Za-z0-9_.-]{0,63})*$",
+      "maxLength": 255
+    },
+    "expected_commit": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "resources": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "partition",
+        "nodes",
+        "cores",
+        "memory_gb",
+        "wall_time_min"
+      ],
+      "properties": {
+        "partition": {
+          "$ref": "#/$defs/safeName"
+        },
+        "nodes": {
+          "$ref": "#/$defs/positiveInteger"
+        },
+        "cores": {
+          "$ref": "#/$defs/positiveInteger"
+        },
+        "memory_gb": {
+          "$ref": "#/$defs/positiveInteger"
+        },
+        "wall_time_min": {
+          "$ref": "#/$defs/positiveInteger"
+        }
+      }
+    },
+    "max_concurrent_jobs": {
+      "$ref": "#/$defs/positiveInteger"
+    },
+    "expected_output_kind": {
+      "$ref": "#/$defs/safeName"
+    },
+    "parameter_axes": {
+      "type": "object",
+      "maxProperties": 32,
+      "propertyNames": {
+        "$ref": "#/$defs/safeName"
+      },
+      "additionalProperties": {
+        "type": "array",
+        "minItems": 1,
+        "maxItems": 10000,
+        "uniqueItems": true,
+        "items": {
+          "type": [
+            "string",
+            "number",
+            "integer",
+            "boolean"
+          ]
+        }
+      }
+    },
+    "required_repo_paths": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 32,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/repositoryPath"
+      }
+    }
+  },
+  "$defs": {
+    "safeName": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$"
+    },
+    "positiveInteger": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "repositoryPath": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,127}(/[A-Za-z0-9][A-Za-z0-9_.-]{0,127})*$"
+    }
+  }
+}

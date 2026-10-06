@@ -7,7 +7,7 @@ import stat
 from datetime import datetime, timezone
 
 
-BUNDLE_VERSION = '0.3.0-a2'
+BUNDLE_VERSION = '0.4.0-a3'
 CONFIG_SCHEMA_VERSION = 1
 
 EXIT_SUCCESS = 0
@@ -20,6 +20,7 @@ RUNTIME_SOURCE_NAMES = (
     'hpc-code-update',
     'hpc-helper-info',
     'hpc-probe',
+    'hpc-run-preview',
     'hpc_common.py',
 )
 
@@ -79,6 +80,11 @@ def get_audit_path():
     return get_install_root() / 'state' / 'actions.jsonl'
 
 
+def get_request_catalog_path():
+    """Return the one fixed protected preview-request catalog path."""
+    return get_install_root() / 'config' / 'A1_OUinp-preview-requests.json'
+
+
 def _require_string(value, label):
     """Return a non-empty string or reject it."""
     if not isinstance(value, str) or not value:
@@ -93,6 +99,14 @@ def validate_run_id(value):
     value = _require_string(value, 'run ID')
     if value in {'.', '..'} or RUN_ID_RE.fullmatch(value) is None:
         raise RejectedInput(f'Invalid run ID: {value!r}')
+    return value
+
+
+def validate_request_id(value):
+    """Validate one path-safe preview request ID."""
+    value = _require_string(value, 'request ID')
+    if value in {'.', '..'} or SAFE_NAME_RE.fullmatch(value) is None:
+        raise RejectedInput(f'Invalid request ID: {value!r}')
     return value
 
 
@@ -366,6 +380,46 @@ def load_config():
         return validate_config(config)
     except RejectedInput as exc:
         raise HelperFailure(f'Invalid protected configuration: {exc}') from exc
+
+
+def load_preview_request(request_id):
+    """Load one request by ID from the fixed protected preview catalog."""
+    request_id = validate_request_id(request_id)
+    fpath = get_request_catalog_path()
+    _require_regular_file(fpath, 'Protected preview-request catalog')
+    try:
+        with open(fpath, 'r') as fid:
+            catalog = json.load(fid)
+    except (OSError, json.JSONDecodeError) as exc:
+        raise HelperFailure(
+            f'Cannot read protected preview-request catalog {fpath}: {exc}'
+        ) from exc
+
+    try:
+        catalog = _require_mapping(catalog, 'preview-request catalog')
+        _require_exact_keys(
+            catalog,
+            {'requests', 'schema_version'},
+            'preview-request catalog',
+        )
+        if catalog['schema_version'] != 1:
+            raise RejectedInput('Unsupported preview-request catalog schema')
+        requests = _require_mapping(catalog['requests'], 'preview requests')
+        for key in requests:
+            validate_request_id(key)
+    except RejectedInput as exc:
+        raise HelperFailure(
+            f'Invalid protected preview-request catalog: {exc}'
+        ) from exc
+
+    if request_id not in requests:
+        raise RejectedInput(f'Unknown preview request ID: {request_id!r}')
+    request = requests[request_id]
+    if not isinstance(request, dict):
+        raise RejectedInput('Selected preview request must be an object')
+    if request.get('request_id') != request_id:
+        raise RejectedInput('Selected preview request ID does not match catalog')
+    return request
 
 
 def canonical_json(value):

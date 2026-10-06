@@ -1,0 +1,709 @@
+#!/ddn/niknovikov19/miniconda3/bin/python3
+import argparse
+import base64
+import binascii
+import hashlib
+import json
+import math
+import os
+from pathlib import Path, PurePosixPath
+import re
+import socket
+import stat
+import subprocess
+
+
+HELPER_VERSION = '0.4.0-a3'
+EXIT_SUCCESS = 0
+EXIT_REJECTED = 2
+EXIT_FAILED = 4
+
+MAX_ARGUMENT_BYTES = 131072
+MAX_COMMAND_BYTES = 131072
+GIT_TIMEOUT_SEC = 30
+
+GIT_COMMIT_RE = re.compile(r'[0-9a-f]{40}')
+SAFE_NAME_RE = re.compile(r'[A-Za-z0-9][A-Za-z0-9_.-]{0,63}')
+SAFE_BRANCH_RE = re.compile(r'[A-Za-z0-9][A-Za-z0-9._/-]{0,127}')
+EXPERIMENT_SEGMENT_RE = re.compile(r'[A-Za-z0-9][A-Za-z0-9_.-]{0,63}')
+SAFE_PATH_SEGMENT_RE = re.compile(r'[A-Za-z0-9][A-Za-z0-9_.-]{0,127}')
+SUSPICIOUS_IGNORED_SUFFIXES = {
+    '.csv',
+    '.hoc',
+    '.json',
+    '.mod',
+    '.py',
+    '.yaml',
+    '.yml',
+}
+
+
+class RejectedInput(ValueError):
+    """Represent a request rejected by preview policy."""
+
+
+class PreviewFailure(RuntimeError):
+    """Represent a known remote preview failure."""
+
+
+def get_common_root():
+    """Return the fixed shared helper root derived from this script."""
+    return Path(__file__).resolve().parents[2]
+
+
+def get_config_path():
+    """Return the fixed remote preview configuration path."""
+    return get_common_root() / 'config' / 'A1_OUinp-preview.json'
+
+
+def canonical_json(value):
+    """Serialize JSON deterministically for hashing."""
+    return json.dumps(value, sort_keys=True, separators=(',', ':'))
+
+
+def hash_bytes(value):
+    """Return a SHA256 digest for bytes."""
+    return hashlib.sha256(value).hexdigest()
+
+
+def helper_identity():
+    """Return the installed preview-helper version and source hash."""
+    fpath = Path(__file__).resolve()
+    return {
+        'name': 'hpc-lethe-preview',
+        'version': HELPER_VERSION,
+        'source_sha256': hash_bytes(fpath.read_bytes()),
+    }
+
+
+def require_mapping(value, label):
+    """Return a mapping or reject it."""
+    if not isinstance(value, dict):
+        raise RejectedInput(f'{label} must be an object')
+    return value
+
+
+def require_exact_keys(value, required, label):
+    """Reject missing or unknown mapping keys."""
+    missing = sorted(set(required) - set(value))
+    unknown = sorted(set(value) - set(required))
+    if missing:
+        raise RejectedInput(f'{label} is missing keys: {missing}')
+    if unknown:
+        raise RejectedInput(f'{label} has unknown keys: {unknown}')
+
+
+def validate_positive_int(value, label, maximum=None):
+    """Validate one positive optionally bounded integer."""
+    if isinstance(value, bool) or not isinstance(value, int) or value < 1:
+        raise RejectedInput(f'{label} must be a positive integer')
+    if maximum is not None and value > maximum:
+        raise RejectedInput(f'{label} must be <= {maximum}')
+    return value
+
+
+def validate_safe_name(value, label):
+    """Validate one short shell-inert name."""
+    if not isinstance(value, str) or SAFE_NAME_RE.fullmatch(value) is None:
+        raise RejectedInput(f'Invalid {label}')
+    return value
+
+
+def validate_branch(value):
+    """Validate one configured Git branch."""
+    invalid = (
+        not isinstance(value, str) or
+        SAFE_BRANCH_RE.fullmatch(value) is None or
+        value.startswith('/') or
+        value.endswith('/') or
+        '..' in value or
+        '//' in value
+    )
+    if invalid:
+        raise RejectedInput('Invalid Git branch')
+    return value
+
+
+def validate_absolute_path(value, label):
+    """Validate one normalized absolute POSIX path."""
+    if not isinstance(value, str) or not value:
+        raise RejectedInput(f'{label} must be a non-empty string')
+    fpath = Path(value)
+    if not fpath.is_absolute() or '..' in fpath.parts:
+        raise RejectedInput(f'{label} must be an absolute normalized path')
+    if value != fpath.as_posix():
+        raise RejectedInput(f'{label} must use normalized POSIX syntax')
+    return value
+
+
+def validate_string_list(value, label):
+    """Validate one non-empty duplicate-free safe-name list."""
+    if not isinstance(value, list) or not value:
+        raise RejectedInput(f'{label} must be a non-empty list')
+    for item in value:
+        validate_safe_name(item, label)
+    if len(value) != len(set(value)):
+        raise RejectedInput(f'{label} contains duplicates')
+    return value
+
+
+def validate_config(config):
+    """Validate the fixed remote preview configuration."""
+    config = require_mapping(config, 'configuration')
+    required = {
+        'deployment_id',
+        'git',
+        'preview',
+        'runs',
+        'scheduler',
+        'schema_version',
+    }
+    require_exact_keys(config, required, 'configuration')
+    if config['schema_version'] != 1:
+        raise RejectedInput('Unsupported preview configuration schema')
+    validate_safe_name(config['deployment_id'], 'deployment ID')
+
+    git = require_mapping(config['git'], 'git')
+    require_exact_keys(
+        git,
+        {'automation_checkout', 'branch', 'path'},
+        'git',
+    )
+    validate_absolute_path(git['path'], 'Git executable')
+    validate_absolute_path(git['automation_checkout'], 'automation checkout')
+    validate_branch(git['branch'])
+
+    runs = require_mapping(config['runs'], 'runs')
+    require_exact_keys(runs, {'root'}, 'runs')
+    validate_absolute_path(runs['root'], 'run root')
+
+    preview = require_mapping(config['preview'], 'preview')
+    preview_keys = {
+        'max_reported_paths',
+        'max_request_bytes',
+        'max_required_paths',
+    }
+    require_exact_keys(preview, preview_keys, 'preview')
+    validate_positive_int(
+        preview['max_request_bytes'],
+        'max_request_bytes',
+        maximum=131072,
+    )
+    validate_positive_int(
+        preview['max_required_paths'],
+        'max_required_paths',
+        maximum=256,
+    )
+    validate_positive_int(
+        preview['max_reported_paths'],
+        'max_reported_paths',
+        maximum=1000,
+    )
+
+    scheduler = require_mapping(config['scheduler'], 'scheduler')
+    scheduler_keys = {'allowed_output_kinds', 'allowed_partitions', 'limits'}
+    require_exact_keys(scheduler, scheduler_keys, 'scheduler')
+    validate_string_list(
+        scheduler['allowed_output_kinds'],
+        'allowed output kind',
+    )
+    validate_string_list(scheduler['allowed_partitions'], 'allowed partition')
+    limits = require_mapping(scheduler['limits'], 'scheduler limits')
+    limit_keys = {
+        'max_child_jobs',
+        'max_concurrent_jobs',
+        'max_cores_per_job',
+        'max_memory_gb_per_job',
+        'max_nodes_per_job',
+        'max_wall_time_min',
+    }
+    require_exact_keys(limits, limit_keys, 'scheduler limits')
+    for key in sorted(limit_keys):
+        validate_positive_int(limits[key], key)
+    return config
+
+
+def require_regular_file(fpath, label):
+    """Require a non-symlink regular file."""
+    try:
+        file_stat = fpath.lstat()
+    except OSError as exc:
+        raise PreviewFailure(f'Cannot inspect {label}: {exc}') from exc
+    if stat.S_ISLNK(file_stat.st_mode) or not stat.S_ISREG(file_stat.st_mode):
+        raise PreviewFailure(f'{label} must be a regular file')
+
+
+def require_real_directory(dirpath, label):
+    """Require a non-symlink directory."""
+    try:
+        file_stat = dirpath.lstat()
+    except OSError as exc:
+        raise PreviewFailure(f'Cannot inspect {label}: {exc}') from exc
+    if stat.S_ISLNK(file_stat.st_mode) or not stat.S_ISDIR(file_stat.st_mode):
+        raise PreviewFailure(f'{label} must be a real directory')
+
+
+def load_config():
+    """Load and validate the fixed remote preview configuration."""
+    fpath = get_config_path()
+    require_regular_file(fpath, 'Remote preview configuration')
+    try:
+        with open(fpath, 'r') as fid:
+            config = json.load(fid)
+    except (OSError, json.JSONDecodeError) as exc:
+        raise PreviewFailure(
+            f'Cannot load remote preview configuration: {exc}'
+        ) from exc
+    try:
+        return validate_config(config)
+    except RejectedInput as exc:
+        raise PreviewFailure(f'Invalid remote preview configuration: {exc}')
+
+
+def config_identity(config):
+    """Return the validated configuration digest."""
+    return hash_bytes(canonical_json(config).encode())
+
+
+def decode_request(payload, max_bytes):
+    """Decode one bounded URL-safe base64 JSON request."""
+    if len(payload.encode('ascii', errors='ignore')) > MAX_ARGUMENT_BYTES:
+        raise RejectedInput('Encoded request exceeds the argument limit')
+    try:
+        data = base64.b64decode(
+            payload.encode('ascii'),
+            altchars=b'-_',
+            validate=True,
+        )
+    except (binascii.Error, UnicodeEncodeError, ValueError) as exc:
+        raise RejectedInput('Request payload is not valid base64') from exc
+    if len(data) > max_bytes:
+        raise RejectedInput('Decoded request exceeds the configured limit')
+    try:
+        return json.loads(data.decode('utf-8'))
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise RejectedInput('Request payload is not valid UTF-8 JSON') from exc
+
+
+def validate_experiment(value):
+    """Validate one repository-relative experiment ID."""
+    if not isinstance(value, str) or len(value) > 255 or '\\' in value:
+        raise RejectedInput('Invalid experiment ID')
+    segments = value.split('/')
+    valid = all(
+        segment not in {'.', '..'} and
+        EXPERIMENT_SEGMENT_RE.fullmatch(segment) is not None
+        for segment in segments
+    )
+    if not valid:
+        raise RejectedInput('Invalid experiment ID')
+    return value
+
+
+def validate_relative_path(value, label):
+    """Validate one normalized safe repository-relative file path."""
+    if not isinstance(value, str) or not value or '\\' in value:
+        raise RejectedInput(f'Invalid {label}')
+    fpath = PurePosixPath(value)
+    valid = (
+        not fpath.is_absolute() and
+        fpath.as_posix() == value and
+        all(
+            part not in {'.', '..'} and
+            SAFE_PATH_SEGMENT_RE.fullmatch(part) is not None
+            for part in fpath.parts
+        )
+    )
+    if not valid:
+        raise RejectedInput(f'Invalid {label}')
+    return value
+
+
+def validate_axis_value(value, axis_name):
+    """Validate one bounded JSON-scalar parameter value."""
+    if value is None or isinstance(value, (dict, list)):
+        raise RejectedInput(f'Axis {axis_name} contains a non-scalar value')
+    if isinstance(value, str):
+        if not value or len(value) > 256 or '\x00' in value:
+            raise RejectedInput(f'Axis {axis_name} contains an invalid string')
+    elif isinstance(value, float) and not math.isfinite(value):
+        raise RejectedInput(f'Axis {axis_name} contains a non-finite number')
+    elif not isinstance(value, (bool, int, float)):
+        raise RejectedInput(f'Axis {axis_name} contains an invalid value')
+    return value
+
+
+def validate_parameter_axes(value, run_type):
+    """Validate parameter axes and return their Cartesian-product size."""
+    axes = require_mapping(value, 'parameter_axes')
+    if len(axes) > 32:
+        raise RejectedInput('parameter_axes contains more than 32 axes')
+    if run_type == 'batch' and not axes:
+        raise RejectedInput('Batch requests require at least one axis')
+    if run_type != 'batch' and axes:
+        raise RejectedInput('Only batch requests may contain parameter axes')
+
+    child_jobs = 1
+    for axis_name, axis_values in axes.items():
+        validate_safe_name(axis_name, 'parameter axis name')
+        if not isinstance(axis_values, list) or not axis_values:
+            raise RejectedInput(f'Axis {axis_name} must be a non-empty list')
+        if len(axis_values) > 10000:
+            raise RejectedInput(f'Axis {axis_name} exceeds 10000 values')
+        encoded_values = []
+        for axis_value in axis_values:
+            validate_axis_value(axis_value, axis_name)
+            encoded_values.append(canonical_json(axis_value))
+        if len(encoded_values) != len(set(encoded_values)):
+            raise RejectedInput(f'Axis {axis_name} contains duplicate values')
+        child_jobs *= len(axis_values)
+        if child_jobs > 1000000:
+            raise RejectedInput('Calculated child jobs exceed 1000000')
+    return child_jobs
+
+
+def validate_resources(value):
+    """Validate one per-child resource request."""
+    resources = require_mapping(value, 'resources')
+    required = {'cores', 'memory_gb', 'nodes', 'partition', 'wall_time_min'}
+    require_exact_keys(resources, required, 'resources')
+    validate_safe_name(resources['partition'], 'partition')
+    for key in ('cores', 'memory_gb', 'nodes', 'wall_time_min'):
+        validate_positive_int(resources[key], key)
+    return resources
+
+
+def validate_request(request, config):
+    """Validate one complete versioned run request."""
+    request = require_mapping(request, 'run request')
+    required = {
+        'expected_commit',
+        'expected_output_kind',
+        'experiment',
+        'max_concurrent_jobs',
+        'parameter_axes',
+        'request_id',
+        'required_repo_paths',
+        'resources',
+        'run_type',
+        'schema_version',
+    }
+    require_exact_keys(request, required, 'run request')
+    if request['schema_version'] != 1:
+        raise RejectedInput('Unsupported run-request schema')
+    validate_safe_name(request['request_id'], 'request ID')
+    if request['run_type'] not in {'batch', 'probe', 'single'}:
+        raise RejectedInput('Unsupported run type')
+    validate_experiment(request['experiment'])
+    if not isinstance(request['expected_commit'], str):
+        raise RejectedInput('Invalid expected commit')
+    if GIT_COMMIT_RE.fullmatch(request['expected_commit']) is None:
+        raise RejectedInput('Invalid expected commit')
+    validate_safe_name(request['expected_output_kind'], 'output kind')
+    validate_positive_int(
+        request['max_concurrent_jobs'],
+        'max_concurrent_jobs',
+    )
+    resources = validate_resources(request['resources'])
+    child_jobs = validate_parameter_axes(
+        request['parameter_axes'],
+        request['run_type'],
+    )
+    if request['max_concurrent_jobs'] > child_jobs:
+        raise RejectedInput('Concurrency cannot exceed calculated child jobs')
+
+    paths = request['required_repo_paths']
+    max_paths = config['preview']['max_required_paths']
+    if not isinstance(paths, list) or not paths or len(paths) > max_paths:
+        raise RejectedInput(
+            f'required_repo_paths must contain 1 through {max_paths} paths'
+        )
+    for path in paths:
+        validate_relative_path(path, 'required repository path')
+    if len(paths) != len(set(paths)):
+        raise RejectedInput('required_repo_paths contains duplicates')
+    return child_jobs, resources
+
+
+def decode_bounded(value, label):
+    """Decode one bounded UTF-8 subprocess stream."""
+    if len(value) > MAX_COMMAND_BYTES:
+        raise PreviewFailure(f'{label} exceeded {MAX_COMMAND_BYTES} bytes')
+    try:
+        return value.decode('utf-8')
+    except UnicodeDecodeError as exc:
+        raise PreviewFailure(f'{label} was not valid UTF-8') from exc
+
+
+def run_git(config, arguments, allowed_codes=(0,)):
+    """Run one fixed read-only Git invocation."""
+    git = config['git']
+    command = [git['path'], '-C', git['automation_checkout'], *arguments]
+    environment = os.environ.copy()
+    environment.update({'LANG': 'C', 'LC_ALL': 'C'})
+    try:
+        completed = subprocess.run(
+            command,
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            timeout=GIT_TIMEOUT_SEC,
+            check=False,
+            env=environment,
+        )
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        raise PreviewFailure(f'Cannot run Git {arguments[0]}: {exc}') from exc
+    stdout = decode_bounded(completed.stdout, 'Git stdout')
+    stderr = decode_bounded(completed.stderr, 'Git stderr')
+    if completed.returncode not in allowed_codes:
+        details = stderr.replace('\r', ' ').replace('\n', ' ').strip()[:500]
+        raise PreviewFailure(
+            f'Git {arguments[0]} exited {completed.returncode}: {details}'
+        )
+    return completed.returncode, stdout.strip()
+
+
+def inspect_checkout(config, request):
+    """Verify the clean exact checkout required by the request."""
+    git = config['git']
+    checkout = Path(git['automation_checkout'])
+    require_real_directory(checkout, 'Automation checkout')
+    _, toplevel = run_git(config, ['rev-parse', '--show-toplevel'])
+    if Path(toplevel).resolve() != checkout.resolve():
+        raise PreviewFailure('Git top-level path does not match configuration')
+    _, branch = run_git(config, ['branch', '--show-current'])
+    _, commit = run_git(config, ['rev-parse', '--verify', 'HEAD^{commit}'])
+    _, porcelain = run_git(
+        config,
+        ['status', '--porcelain=v1', '--untracked-files=all'],
+    )
+    if branch != git['branch']:
+        raise PreviewFailure('Automation checkout is on the wrong branch')
+    if porcelain:
+        raise PreviewFailure('Automation checkout is not clean')
+    if commit != request['expected_commit']:
+        raise RejectedInput('Expected commit does not match checkout HEAD')
+    return {
+        'path': checkout.as_posix(),
+        'branch': branch,
+        'commit': commit,
+        'clean': True,
+        'untracked_count': 0,
+    }
+
+
+def resolve_experiment(config, experiment):
+    """Resolve and require one real experiment directory below exp_configs."""
+    checkout = Path(config['git']['automation_checkout']).resolve()
+    experiment_root = (checkout / 'exp_configs').resolve()
+    experiment_raw = experiment_root / experiment
+    experiment_path = experiment_raw.resolve()
+    if not experiment_path.is_relative_to(experiment_root):
+        raise RejectedInput('Experiment path leaves exp_configs')
+    try:
+        require_real_directory(experiment_raw, 'Experiment directory')
+    except PreviewFailure as exc:
+        raise RejectedInput('Unknown experiment') from exc
+    return experiment_path
+
+
+def inspect_required_paths(config, request):
+    """Require every declared repository dependency to exist and be tracked."""
+    checkout = Path(config['git']['automation_checkout']).resolve()
+    tracked = []
+    for relative in request['required_repo_paths']:
+        raw_path = checkout / relative
+        fpath = raw_path.resolve()
+        if not fpath.is_relative_to(checkout):
+            raise RejectedInput('Required repository path leaves checkout')
+        try:
+            require_regular_file(raw_path, 'Required repository path')
+        except PreviewFailure as exc:
+            raise RejectedInput(
+                f'Required repository path is unavailable: {relative}'
+            ) from exc
+        code, _ = run_git(
+            config,
+            ['ls-files', '--error-unmatch', '--', relative],
+            allowed_codes=(0, 1),
+        )
+        if code != 0:
+            raise RejectedInput(
+                f'Required repository path is not tracked: {relative}'
+            )
+        tracked.append(relative)
+    return tracked
+
+
+def inspect_ignored_paths(config, experiment_path):
+    """Report bounded suspicious ignored files below the experiment."""
+    checkout = Path(config['git']['automation_checkout']).resolve()
+    relative = experiment_path.relative_to(checkout).as_posix()
+    _, output = run_git(
+        config,
+        ['ls-files', '--others', '--ignored', '--exclude-standard', '--', relative],
+    )
+    paths = output.splitlines() if output else []
+    suspicious = [
+        path for path in paths
+        if Path(path).suffix.lower() in SUSPICIOUS_IGNORED_SUFFIXES
+    ]
+    limit = config['preview']['max_reported_paths']
+    return {
+        'ignored_count': len(paths),
+        'suspicious_ignored_count': len(suspicious),
+        'suspicious_ignored_paths': suspicious[:limit],
+        'suspicious_paths_truncated': len(suspicious) > limit,
+    }
+
+
+def get_limit_violations(config, request, child_jobs):
+    """Return deterministic protected-limit violations."""
+    scheduler = config['scheduler']
+    limits = scheduler['limits']
+    resources = request['resources']
+    violations = []
+    if request['resources']['partition'] not in scheduler['allowed_partitions']:
+        violations.append('partition is not allowed')
+    if request['expected_output_kind'] not in scheduler['allowed_output_kinds']:
+        violations.append('output kind is not allowed')
+    comparisons = (
+        ('calculated child jobs', child_jobs, limits['max_child_jobs']),
+        (
+            'concurrent jobs',
+            request['max_concurrent_jobs'],
+            limits['max_concurrent_jobs'],
+        ),
+        ('cores per job', resources['cores'], limits['max_cores_per_job']),
+        (
+            'memory GB per job',
+            resources['memory_gb'],
+            limits['max_memory_gb_per_job'],
+        ),
+        ('nodes per job', resources['nodes'], limits['max_nodes_per_job']),
+        (
+            'wall time minutes',
+            resources['wall_time_min'],
+            limits['max_wall_time_min'],
+        ),
+    )
+    for label, requested, maximum in comparisons:
+        if requested > maximum:
+            violations.append(f'{label} {requested} exceeds {maximum}')
+    return violations
+
+
+def base_result(config, status):
+    """Build common remote preview result metadata."""
+    return {
+        'schema_version': 1,
+        'operation': 'run-preview',
+        'status': status,
+        'remote_host': socket.gethostname(),
+        'helper': helper_identity(),
+        'remote_config_sha256': config_identity(config),
+    }
+
+
+def preview_request(config, request):
+    """Build one deterministic exact-commit run preview."""
+    child_jobs, _ = validate_request(request, config)
+    checkout = inspect_checkout(config, request)
+    experiment_path = resolve_experiment(config, request['experiment'])
+    tracked = inspect_required_paths(config, request)
+    ignored = inspect_ignored_paths(config, experiment_path)
+    digest = hash_bytes(canonical_json(request).encode())
+    expected_result_dir = (
+        Path(config['runs']['root']) / request['request_id']
+    ).as_posix()
+    preview = {
+        'request_id': request['request_id'],
+        'request_sha256': digest,
+        'expected_commit': request['expected_commit'],
+        'run_type': request['run_type'],
+        'experiment': request['experiment'],
+        'parameter_axes': request['parameter_axes'],
+        'axis_sizes': {
+            name: len(values)
+            for name, values in sorted(request['parameter_axes'].items())
+        },
+        'calculated_child_jobs': child_jobs,
+        'max_concurrent_jobs': request['max_concurrent_jobs'],
+        'resources': request['resources'],
+        'expected_output_kind': request['expected_output_kind'],
+        'expected_result_dir': expected_result_dir,
+        'required_repo_paths': tracked,
+        'repository': {**checkout, **ignored},
+        'protected_limits': config['scheduler']['limits'],
+    }
+    violations = get_limit_violations(config, request, child_jobs)
+    status = 'rejected' if violations else 'ok'
+    result = base_result(config, status)
+    result['preview'] = preview
+    if violations:
+        result.update({
+            'reason': 'protected-limits-exceeded',
+            'violations': violations,
+        })
+        return result, EXIT_REJECTED
+    return result, EXIT_SUCCESS
+
+
+def error_result(operation, status, reason, details=None):
+    """Build one structured non-success result."""
+    result = {
+        'schema_version': 1,
+        'operation': operation,
+        'status': status,
+        'reason': reason,
+    }
+    if details:
+        result['details'] = str(details)[:500]
+    return result
+
+
+def build_parser():
+    """Build the fixed remote preview parser."""
+    parser = argparse.ArgumentParser(
+        description='Preview one protected exact-commit HPC request.',
+    )
+    commands = parser.add_subparsers(dest='operation', required=True)
+    commands.add_parser('version')
+    preview = commands.add_parser('preview')
+    preview.add_argument('request_payload')
+    return parser
+
+
+def main():
+    """Run one fixed lethe-side preview operation."""
+    parser = build_parser()
+    try:
+        args = parser.parse_args()
+    except SystemExit as exc:
+        return int(exc.code)
+
+    operation = f'run-{args.operation}'
+    try:
+        if args.operation == 'version':
+            result = {'status': 'ok', 'helper': helper_identity()}
+            exit_code = EXIT_SUCCESS
+        else:
+            config = load_config()
+            request = decode_request(
+                args.request_payload,
+                config['preview']['max_request_bytes'],
+            )
+            result, exit_code = preview_request(config, request)
+    except RejectedInput as exc:
+        result = error_result(operation, 'rejected', 'request-rejected', exc)
+        exit_code = EXIT_REJECTED
+    except PreviewFailure as exc:
+        result = error_result(operation, 'failed', 'preview-failed', exc)
+        exit_code = EXIT_FAILED
+
+    print(json.dumps(result, sort_keys=True))
+    return exit_code
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())
