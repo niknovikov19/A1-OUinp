@@ -62,6 +62,17 @@ Do not promote remote files until `hpc-code-status --json` reports a clean
 Run this section in the local WSL shell. Local protected installation needs
 `sudo` because `/opt/a1-hpc` is owned by `root:root`.
 
+The reviewed promotion script performs this section, restores protected
+directory modes on failure, and writes a copy-pasteable report under `/tmp`:
+
+```bash
+A4_COMMIT='<full 40-character commit reported by Codex>'
+sudo bash /home/nnovikov/repo/A1-OUinp/dev_scratch/hpc/helper_src/promotion/promote_a4_local.sh \
+    "$A4_COMMIT"
+```
+
+The explicit commands below document the operations performed by the script.
+
 ```bash
 A4_COMMIT='<full 40-character commit reported by Codex>'
 A4_LOCAL_REPO=/home/nnovikov/repo/A1-OUinp
@@ -163,6 +174,17 @@ Do not change `/opt/a1-hpc/state` or `actions.jsonl` ownership or modes.
 
 Log in to lethe as `niknovikov19`. Remote promotion uses the owning account;
 `sudo` is neither needed nor expected.
+
+The reviewed promotion script performs this section, restores protected
+directory modes on failure, and writes a copy-pasteable report in `$HOME`:
+
+```bash
+A4_COMMIT='<same full 40-character commit>'
+bash /ddn/niknovikov19/repo/A1_OUinp_codex/dev_scratch/hpc/helper_src/promotion/promote_a4_lethe.sh \
+    "$A4_COMMIT"
+```
+
+The explicit commands below document the operations performed by the script.
 
 ```bash
 A4_COMMIT='<same full 40-character commit>'
@@ -292,7 +314,8 @@ stat -c '%A %a %U:%G %n' \
 
 ## Handoff to Codex
 
-Report:
+Copy and paste both complete report files printed as `A4_REPORT` by the
+promotion scripts. They contain:
 
 1. `A4_COMMIT` and a clean exact automation checkout.
 2. All five installed remote hashes, the installed local `hpc-submit` and

@@ -232,8 +232,14 @@ config_examples/remote-hpc-submit.json.example
 schemas/remote-hpc-submit-config.schema.json
 schemas/submission-record.schema.json
 test_fixtures/a4_submit_cases.json
+promotion/promote_a4_local.sh
+promotion/promote_a4_lethe.sh
 INSTALL_A4.md
 ```
+
+The two promotion scripts are user-run installation conveniences, not
+protected runtime helpers. They enforce the reviewed hashes, restore directory
+modes after errors, and save complete local and lethe verification reports.
 
 `hpc-submit` accepts only a request ID from the protected request registry.
 A4 permits only `a4-slurm-probe-v2`: one fixed marker-producing Slurm job using
