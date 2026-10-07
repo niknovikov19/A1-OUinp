@@ -181,8 +181,8 @@ INSTALL_A3.md
 ```
 
 `hpc-run-preview` accepts only a request ID. It selects the matching entry from
-the fixed protected local catalog, sends canonical JSON to the fixed lethe
-helper, and verifies the returned request digest. It never accepts a request
+the fixed protected local request registry, sends canonical JSON to the fixed
+lethe helper, and verifies the returned request digest. It never accepts a request
 file path, raw JSON, repository path, host, partition, or resource override.
 
 The lethe helper independently validates the complete request and the remote
@@ -203,7 +203,7 @@ transfer.
 ```text
 Codex
   -> /opt/a1-hpc/bin/hpc-run-preview REQUEST_ID
-  -> select one request from the fixed protected local catalog
+  -> select one request from the fixed protected local request registry
   -> canonicalize and encode the request
   -> /usr/bin/ssh lethe
   -> hpc-lethe-preview preview ENCODED_REQUEST
@@ -219,6 +219,61 @@ Malformed or unknown request IDs are rejected locally before SSH. Malformed
 protected request entries, changed commits, unknown experiments, empty axes,
 unsupported partitions, excessive resources, and excessive job counts are
 rejected by the lethe helper with exit code `2`.
+
+## A4 contents
+
+```text
+local/hpc-submit
+remote_lethe/hpc-lethe-submit
+remote_grid/hpc-grid-submit
+remote_grid/hpc-grid-probe-job
+config_examples/remote-hpc-submit.json.example
+schemas/remote-hpc-submit-config.schema.json
+schemas/submission-record.schema.json
+test_fixtures/a4_submit_cases.json
+INSTALL_A4.md
+```
+
+`hpc-submit` accepts only a request ID from the protected request registry.
+A4 permits only `a4-slurm-probe`: one fixed marker-producing Slurm job using
+`cpu.q`, one node, one core, 1 GB, and two minutes. It does not execute
+repository simulation code or accept a host, command, path, partition,
+resource, environment, or Slurm option from the caller.
+
+The lethe helper first invokes the installed A3 preview helper. It requires a
+successful exact-commit preview whose request type, output kind, job count,
+concurrency, resources, digest, and result directory match the fixed A4
+policy. It then creates `run.json` before contacting the grid helper.
+
+The grid helper writes `submission.json` with status `pending` before calling
+the fixed `/usr/bin/sbatch --parsable` command. It changes the receipt to
+`submitted` immediately after obtaining a valid job ID. A retry returns that
+existing ID. A `pending` or `unknown` receipt fails closed because an earlier
+submission may have succeeded; A4 never guesses by submitting another job.
+
+### A4 call chain
+
+```text
+Codex, after explicit submission approval
+  -> /opt/a1-hpc/bin/hpc-submit --json a4-slurm-probe
+  -> select and hash the request from the protected local registry
+  -> append the mandatory local submit-intent audit event
+  -> /usr/bin/ssh lethe
+  -> hpc-lethe-submit submit ENCODED_REQUEST
+  -> hpc-lethe-preview preview ENCODED_REQUEST
+  -> require the exact clean commit and fixed A4 policy
+  -> create or validate runs/A1_OUinp/a4-slurm-probe/run.json
+  -> /usr/bin/ssh lattice
+  -> hpc-grid-submit submit REQUEST_ID REQUEST_SHA256
+  -> create pending submission.json under an exclusive per-run lock
+  -> /usr/bin/sbatch --parsable with fixed protected options
+  -> hpc-grid-probe-job writes probe-result.json on the compute node
+  -> persist and return the Slurm job ID
+  -> append the final local audit event
+```
+
+A4 proves protected submission and retry safety. Scheduler monitoring,
+completion reconciliation, and log/result retrieval are separate later gates.
 
 ## Exit codes
 

@@ -1,0 +1,580 @@
+#!/ddn/niknovikov19/miniconda3/bin/python3
+import argparse
+from datetime import datetime, timezone
+import fcntl
+import hashlib
+import json
+import os
+from pathlib import Path
+import pwd
+import re
+import stat
+import subprocess
+
+
+HELPER_VERSION = '0.5.0-a4'
+EXIT_SUCCESS = 0
+EXIT_REJECTED = 2
+EXIT_UNKNOWN = 3
+EXIT_FAILED = 4
+
+SBATCH_TIMEOUT_SEC = 30
+MAX_COMMAND_BYTES = 65536
+SAFE_NAME_RE = re.compile(r'[A-Za-z0-9][A-Za-z0-9_.-]{0,63}')
+SHA256_RE = re.compile(r'[0-9a-f]{64}')
+SBATCH_RESULT_RE = re.compile(r'([1-9][0-9]*)(?:;[A-Za-z0-9_.-]+)?')
+
+
+class RejectedInput(ValueError):
+    """Represent a grid submission rejected by policy."""
+
+
+class SubmitFailure(RuntimeError):
+    """Represent a known grid submission failure."""
+
+
+class SubmitUnavailable(RuntimeError):
+    """Represent an uncertain grid submission outcome."""
+
+
+def get_common_root():
+    """Return the fixed shared helper root derived from this script."""
+    return Path(__file__).resolve().parents[2]
+
+
+def get_config_path():
+    """Return the fixed remote submission configuration path."""
+    return get_common_root() / 'config' / 'A1_OUinp-submit.json'
+
+
+def canonical_json(value):
+    """Serialize JSON deterministically for hashing and records."""
+    return json.dumps(value, sort_keys=True, separators=(',', ':'))
+
+
+def hash_bytes(value):
+    """Return a SHA256 digest for bytes."""
+    return hashlib.sha256(value).hexdigest()
+
+
+def helper_identity():
+    """Return the installed grid-submit helper identity."""
+    fpath = Path(__file__).resolve()
+    return {
+        'name': 'hpc-grid-submit',
+        'version': HELPER_VERSION,
+        'source_sha256': hash_bytes(fpath.read_bytes()),
+    }
+
+
+def require_mapping(value, label):
+    """Return a mapping or reject it."""
+    if not isinstance(value, dict):
+        raise SubmitFailure(f'{label} must be an object')
+    return value
+
+
+def require_exact_keys(value, required, label):
+    """Reject missing or unknown mapping keys."""
+    missing = sorted(set(required) - set(value))
+    unknown = sorted(set(value) - set(required))
+    if missing:
+        raise SubmitFailure(f'{label} is missing keys: {missing}')
+    if unknown:
+        raise SubmitFailure(f'{label} has unknown keys: {unknown}')
+
+
+def validate_safe_name(value, label):
+    """Validate one short shell-inert name."""
+    if not isinstance(value, str) or SAFE_NAME_RE.fullmatch(value) is None:
+        raise SubmitFailure(f'Invalid {label}')
+    return value
+
+
+def validate_absolute_path(value, label):
+    """Validate one normalized absolute POSIX path."""
+    if not isinstance(value, str) or not value:
+        raise SubmitFailure(f'{label} must be a non-empty string')
+    fpath = Path(value)
+    if not fpath.is_absolute() or '..' in fpath.parts:
+        raise SubmitFailure(f'{label} must be an absolute normalized path')
+    if value != fpath.as_posix():
+        raise SubmitFailure(f'{label} must use normalized POSIX syntax')
+    return value
+
+
+def validate_positive_int(value, label, maximum=None):
+    """Validate one positive optionally bounded integer."""
+    if isinstance(value, bool) or not isinstance(value, int) or value < 1:
+        raise SubmitFailure(f'{label} must be a positive integer')
+    if maximum is not None and value > maximum:
+        raise SubmitFailure(f'{label} must be <= {maximum}')
+    return value
+
+
+def validate_resources(resources):
+    """Validate the fixed probe resources."""
+    resources = require_mapping(resources, 'scheduler resources')
+    required = {'cores', 'memory_gb', 'nodes', 'wall_time_min'}
+    require_exact_keys(resources, required, 'scheduler resources')
+    for key in ('cores', 'memory_gb', 'nodes'):
+        validate_positive_int(resources[key], key)
+    validate_positive_int(
+        resources['wall_time_min'],
+        'wall_time_min',
+        maximum=59,
+    )
+
+
+def validate_config(config):
+    """Validate the fixed grid submission configuration."""
+    config = require_mapping(config, 'configuration')
+    required = {
+        'deployment_id',
+        'remote_helpers',
+        'runs',
+        'scheduler',
+        'schema_version',
+        'ssh',
+        'state',
+        'submission',
+    }
+    require_exact_keys(config, required, 'configuration')
+    if config['schema_version'] != 1:
+        raise SubmitFailure('Unsupported submission configuration schema')
+    validate_safe_name(config['deployment_id'], 'deployment ID')
+
+    ssh = require_mapping(config['ssh'], 'ssh')
+    require_exact_keys(ssh, {'connect_timeout_sec', 'grid_host_alias'}, 'ssh')
+    validate_safe_name(ssh['grid_host_alias'], 'grid host alias')
+    validate_positive_int(
+        ssh['connect_timeout_sec'],
+        'connection timeout',
+        maximum=120,
+    )
+
+    helpers = require_mapping(config['remote_helpers'], 'remote_helpers')
+    helper_keys = {'grid_probe_job', 'grid_submit', 'lethe_preview'}
+    require_exact_keys(helpers, helper_keys, 'remote_helpers')
+    for key in sorted(helper_keys):
+        validate_absolute_path(helpers[key], key)
+
+    runs = require_mapping(config['runs'], 'runs')
+    require_exact_keys(runs, {'root'}, 'runs')
+    validate_absolute_path(runs['root'], 'run root')
+
+    state_config = require_mapping(config['state'], 'state')
+    require_exact_keys(state_config, {'submit_lock'}, 'state')
+    validate_absolute_path(state_config['submit_lock'], 'submit lock')
+
+    scheduler = require_mapping(config['scheduler'], 'scheduler')
+    scheduler_keys = {
+        'account',
+        'partition',
+        'resources',
+        'sbatch_path',
+        'user',
+    }
+    require_exact_keys(scheduler, scheduler_keys, 'scheduler')
+    validate_safe_name(scheduler['user'], 'scheduler user')
+    validate_safe_name(scheduler['partition'], 'partition')
+    validate_absolute_path(scheduler['sbatch_path'], 'sbatch path')
+    if scheduler['account']:
+        validate_safe_name(scheduler['account'], 'scheduler account')
+    validate_resources(scheduler['resources'])
+
+    submission = require_mapping(config['submission'], 'submission')
+    submission_keys = {
+        'allowed_output_kind',
+        'allowed_request_ids',
+        'allowed_run_type',
+        'job_name_prefix',
+        'max_request_bytes',
+        'probe_job_sha256',
+    }
+    require_exact_keys(submission, submission_keys, 'submission')
+    ids = submission['allowed_request_ids']
+    if not isinstance(ids, list) or not ids or len(ids) != len(set(ids)):
+        raise SubmitFailure('allowed_request_ids must be unique and non-empty')
+    for request_id in ids:
+        validate_safe_name(request_id, 'allowed request ID')
+    validate_safe_name(submission['allowed_run_type'], 'allowed run type')
+    validate_safe_name(submission['allowed_output_kind'], 'allowed output kind')
+    validate_safe_name(submission['job_name_prefix'], 'job-name prefix')
+    validate_positive_int(
+        submission['max_request_bytes'],
+        'max request bytes',
+        maximum=131072,
+    )
+    digest = submission['probe_job_sha256']
+    if not isinstance(digest, str) or SHA256_RE.fullmatch(digest) is None:
+        raise SubmitFailure('Invalid probe-job SHA256')
+    return config
+
+
+def require_regular_file(fpath, label):
+    """Require a non-symlink regular file."""
+    try:
+        file_stat = fpath.lstat()
+    except OSError as exc:
+        raise SubmitFailure(f'Cannot inspect {label}: {exc}') from exc
+    if stat.S_ISLNK(file_stat.st_mode) or not stat.S_ISREG(file_stat.st_mode):
+        raise SubmitFailure(f'{label} must be a regular file')
+
+
+def require_real_directory(dirpath, label):
+    """Require a non-symlink directory."""
+    try:
+        file_stat = dirpath.lstat()
+    except OSError as exc:
+        raise SubmitFailure(f'Cannot inspect {label}: {exc}') from exc
+    if stat.S_ISLNK(file_stat.st_mode) or not stat.S_ISDIR(file_stat.st_mode):
+        raise SubmitFailure(f'{label} must be a real directory')
+
+
+def load_config():
+    """Load and validate the fixed remote submission configuration."""
+    fpath = get_config_path()
+    require_regular_file(fpath, 'Submission configuration')
+    try:
+        with open(fpath, 'r') as fid:
+            config = json.load(fid)
+    except (OSError, json.JSONDecodeError) as exc:
+        raise SubmitFailure(f'Cannot load submission configuration: {exc}')
+    return validate_config(config)
+
+
+def config_identity(config):
+    """Return the validated configuration digest."""
+    return hash_bytes(canonical_json(config).encode())
+
+
+def validate_request_args(config, request_id, request_sha256):
+    """Validate one fixed request ID and digest pair."""
+    if SAFE_NAME_RE.fullmatch(request_id) is None:
+        raise RejectedInput('Invalid request ID')
+    if request_id not in config['submission']['allowed_request_ids']:
+        raise RejectedInput('Request ID is not allowed for submission')
+    if SHA256_RE.fullmatch(request_sha256) is None:
+        raise RejectedInput('Invalid request digest')
+
+
+def get_run_paths(config, request_id):
+    """Return fixed paths beneath the configured run root."""
+    run_root = Path(config['runs']['root'])
+    require_real_directory(run_root, 'Run root')
+    run_dir = run_root / request_id
+    require_real_directory(run_dir, 'Run directory')
+    return {
+        'run_dir': run_dir,
+        'lock': run_dir / 'submit.lock',
+        'receipt': run_dir / 'submission.json',
+        'stdout': run_dir / 'controller' / 'slurm-%j.out',
+        'stderr': run_dir / 'controller' / 'slurm-%j.err',
+    }
+
+
+def acquire_submit_lock(lock_path):
+    """Acquire the pre-created per-run submit lock."""
+    require_regular_file(lock_path, 'Per-run submit lock')
+    flags = os.O_RDWR | getattr(os, 'O_CLOEXEC', 0)
+    flags |= getattr(os, 'O_NOFOLLOW', 0)
+    try:
+        file_id = os.open(lock_path, flags, 0o600)
+        fcntl.flock(file_id, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError as exc:
+        os.close(file_id)
+        raise SubmitFailure('Per-run submission lock is active') from exc
+    except OSError as exc:
+        raise SubmitFailure(f'Cannot acquire per-run submit lock: {exc}')
+    return file_id
+
+
+def write_json_atomic(fpath, value):
+    """Atomically replace one fixed JSON record."""
+    temp_path = fpath.with_name(f'.{fpath.name}.{os.getpid()}.tmp')
+    data = (canonical_json(value) + '\n').encode()
+    flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
+    flags |= getattr(os, 'O_CLOEXEC', 0)
+    flags |= getattr(os, 'O_NOFOLLOW', 0)
+    try:
+        file_id = os.open(temp_path, flags, 0o600)
+        try:
+            os.write(file_id, data)
+            os.fsync(file_id)
+        finally:
+            os.close(file_id)
+        os.replace(temp_path, fpath)
+    except OSError as exc:
+        raise SubmitFailure(f'Cannot write submission record: {exc}') from exc
+
+
+def load_receipt(receipt_path, request_id, request_sha256):
+    """Load and bind an existing grid submission receipt."""
+    try:
+        receipt_stat = receipt_path.lstat()
+    except FileNotFoundError:
+        return None
+    except OSError as exc:
+        raise SubmitFailure(f'Cannot inspect submission receipt: {exc}')
+    if stat.S_ISLNK(receipt_stat.st_mode):
+        raise SubmitFailure('Submission receipt cannot be a symlink')
+    if not stat.S_ISREG(receipt_stat.st_mode):
+        raise SubmitFailure('Submission receipt must be a regular file')
+    try:
+        with open(receipt_path, 'r') as fid:
+            receipt = json.load(fid)
+    except (OSError, json.JSONDecodeError) as exc:
+        raise SubmitFailure(f'Cannot load submission receipt: {exc}')
+    if receipt.get('request_id') != request_id:
+        raise RejectedInput('Existing receipt request ID does not match')
+    if receipt.get('request_sha256') != request_sha256:
+        raise RejectedInput('Existing receipt request digest does not match')
+    return receipt
+
+
+def verify_probe_job(config):
+    """Verify the installed immutable probe-job script."""
+    fpath = Path(config['remote_helpers']['grid_probe_job'])
+    require_regular_file(fpath, 'Grid probe job')
+    actual = hash_bytes(fpath.read_bytes())
+    expected = config['submission']['probe_job_sha256']
+    if actual != expected:
+        raise SubmitFailure('Grid probe-job SHA256 does not match configuration')
+    return fpath
+
+
+def decode_bounded(value, label):
+    """Decode one bounded UTF-8 subprocess stream."""
+    if len(value) > MAX_COMMAND_BYTES:
+        raise SubmitFailure(f'{label} exceeded {MAX_COMMAND_BYTES} bytes')
+    try:
+        return value.decode('utf-8')
+    except UnicodeDecodeError as exc:
+        raise SubmitFailure(f'{label} was not valid UTF-8') from exc
+
+
+def build_sbatch_command(config, paths, request_id, request_sha256, job_name):
+    """Build the one fixed minimal sbatch invocation."""
+    scheduler = config['scheduler']
+    resources = scheduler['resources']
+    command = [
+        scheduler['sbatch_path'],
+        '--parsable',
+        f'--job-name={job_name}',
+        f'--partition={scheduler["partition"]}',
+        f'--nodes={resources["nodes"]}',
+        '--ntasks=1',
+        f'--cpus-per-task={resources["cores"]}',
+        f'--mem={resources["memory_gb"]}G',
+        f'--time=00:{resources["wall_time_min"]:02d}:00',
+        f'--output={paths["stdout"]}',
+        f'--error={paths["stderr"]}',
+        f'--chdir={paths["run_dir"]}',
+        '--export=NONE',
+    ]
+    if scheduler['account']:
+        command.append(f'--account={scheduler["account"]}')
+    command.extend([
+        config['remote_helpers']['grid_probe_job'],
+        request_id,
+        request_sha256,
+    ])
+    return command
+
+
+def run_sbatch(command):
+    """Run the fixed sbatch invocation and return its parsed job ID."""
+    environment = os.environ.copy()
+    environment.update({'LANG': 'C', 'LC_ALL': 'C'})
+    try:
+        completed = subprocess.run(
+            command,
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            timeout=SBATCH_TIMEOUT_SEC,
+            check=False,
+            env=environment,
+        )
+    except subprocess.TimeoutExpired as exc:
+        raise SubmitUnavailable('sbatch timed out; outcome is uncertain') from exc
+    except OSError as exc:
+        raise SubmitUnavailable(f'Cannot execute sbatch: {exc}') from exc
+    stdout = decode_bounded(completed.stdout, 'sbatch stdout').strip()
+    stderr = decode_bounded(completed.stderr, 'sbatch stderr')
+    if completed.returncode != 0:
+        details = stderr.replace('\r', ' ').replace('\n', ' ').strip()[:500]
+        raise SubmitFailure(
+            f'sbatch exited {completed.returncode}: {details}'
+        )
+    if SBATCH_RESULT_RE.fullmatch(stdout) is None:
+        raise SubmitUnavailable('sbatch output was not a parsable job ID')
+    return int(stdout.split(';', 1)[0]), stdout
+
+
+def existing_result(config, receipt):
+    """Return an idempotent result from a completed receipt."""
+    status = receipt.get('status')
+    job_id = receipt.get('slurm_job_id')
+    valid_job_id = (
+        isinstance(job_id, int) and
+        not isinstance(job_id, bool) and
+        job_id > 0
+    )
+    if status == 'submitted' and valid_job_id:
+        required = {
+            'job_name',
+            'request_id',
+            'request_sha256',
+            'stderr_path',
+            'stdout_path',
+        }
+        if required - set(receipt):
+            raise SubmitFailure('Submitted receipt is incomplete')
+        return {
+            'schema_version': 1,
+            'operation': 'grid-submit',
+            'status': 'ok',
+            'result': 'existing',
+            'request_id': receipt['request_id'],
+            'request_sha256': receipt['request_sha256'],
+            'slurm_job_id': receipt['slurm_job_id'],
+            'job_name': receipt['job_name'],
+            'stdout_path': receipt['stdout_path'],
+            'stderr_path': receipt['stderr_path'],
+            'helper': helper_identity(),
+            'remote_config_sha256': config_identity(config),
+        }, EXIT_SUCCESS
+    if status in {'pending', 'unknown'}:
+        raise SubmitUnavailable(
+            'A prior sbatch outcome is uncertain; refusing duplicate submission'
+        )
+    raise SubmitFailure('A prior submission attempt failed; refusing retry')
+
+
+def submit_probe(config, request_id, request_sha256):
+    """Submit or recover one fixed idempotent Slurm probe."""
+    validate_request_args(config, request_id, request_sha256)
+    if pwd.getpwuid(os.getuid()).pw_name != config['scheduler']['user']:
+        raise SubmitFailure('Current user does not match scheduler policy')
+    paths = get_run_paths(config, request_id)
+    lock_id = acquire_submit_lock(paths['lock'])
+    try:
+        receipt = load_receipt(paths['receipt'], request_id, request_sha256)
+        if receipt is not None:
+            return existing_result(config, receipt)
+
+        verify_probe_job(config)
+        prefix = config['submission']['job_name_prefix']
+        job_name = f'{prefix}-{request_sha256[:12]}'
+        intent_time = datetime.now(timezone.utc).isoformat()
+        receipt = {
+            'schema_version': 1,
+            'request_id': request_id,
+            'request_sha256': request_sha256,
+            'status': 'pending',
+            'job_name': job_name,
+            'intent_at_utc': intent_time,
+            'slurm_job_id': None,
+            'sbatch_result': None,
+            'submitted_at_utc': None,
+            'stdout_path': paths['stdout'].as_posix(),
+            'stderr_path': paths['stderr'].as_posix(),
+            'details': None,
+        }
+        write_json_atomic(paths['receipt'], receipt)
+        command = build_sbatch_command(
+            config,
+            paths,
+            request_id,
+            request_sha256,
+            job_name,
+        )
+        try:
+            job_id, sbatch_result = run_sbatch(command)
+        except SubmitUnavailable as exc:
+            receipt.update({'status': 'unknown', 'details': str(exc)[:500]})
+            write_json_atomic(paths['receipt'], receipt)
+            raise
+        except SubmitFailure as exc:
+            receipt.update({'status': 'failed', 'details': str(exc)[:500]})
+            write_json_atomic(paths['receipt'], receipt)
+            raise
+
+        receipt.update({
+            'status': 'submitted',
+            'slurm_job_id': job_id,
+            'sbatch_result': sbatch_result,
+            'submitted_at_utc': datetime.now(timezone.utc).isoformat(),
+        })
+        write_json_atomic(paths['receipt'], receipt)
+        result = existing_result(config, receipt)[0]
+        result['result'] = 'submitted'
+        return result, EXIT_SUCCESS
+    finally:
+        fcntl.flock(lock_id, fcntl.LOCK_UN)
+        os.close(lock_id)
+
+
+def error_result(status, reason, details=None):
+    """Build one structured non-success result."""
+    result = {
+        'schema_version': 1,
+        'operation': 'grid-submit',
+        'status': status,
+        'reason': reason,
+    }
+    if details:
+        result['details'] = str(details)[:500]
+    return result
+
+
+def build_parser():
+    """Build the fixed grid-submit parser."""
+    parser = argparse.ArgumentParser(
+        description='Submit one fixed idempotent Slurm probe.',
+    )
+    commands = parser.add_subparsers(dest='operation', required=True)
+    commands.add_parser('version')
+    submit = commands.add_parser('submit')
+    submit.add_argument('request_id')
+    submit.add_argument('request_sha256')
+    return parser
+
+
+def main():
+    """Run one fixed grid-side submission operation."""
+    parser = build_parser()
+    try:
+        args = parser.parse_args()
+    except SystemExit as exc:
+        return int(exc.code)
+
+    try:
+        if args.operation == 'version':
+            result = {'status': 'ok', 'helper': helper_identity()}
+            exit_code = EXIT_SUCCESS
+        else:
+            config = load_config()
+            result, exit_code = submit_probe(
+                config,
+                args.request_id,
+                args.request_sha256,
+            )
+    except RejectedInput as exc:
+        result = error_result('rejected', 'request-rejected', exc)
+        exit_code = EXIT_REJECTED
+    except SubmitUnavailable as exc:
+        result = error_result('unknown', 'submission-uncertain', exc)
+        exit_code = EXIT_UNKNOWN
+    except SubmitFailure as exc:
+        result = error_result('failed', 'submission-failed', exc)
+        exit_code = EXIT_FAILED
+
+    print(json.dumps(result, sort_keys=True))
+    return exit_code
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())

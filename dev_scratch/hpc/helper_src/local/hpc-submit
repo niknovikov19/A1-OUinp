@@ -1,0 +1,316 @@
+#!/usr/bin/env python3
+import argparse
+import base64
+import json
+from pathlib import Path
+import shlex
+import subprocess
+import sys
+
+sys.dont_write_bytecode = True
+
+from hpc_common import (
+    EXIT_FAILED,
+    EXIT_REJECTED,
+    EXIT_SUCCESS,
+    EXIT_UNKNOWN,
+    HelperFailure,
+    RejectedInput,
+    append_audit_event,
+    canonical_json,
+    get_config_identity,
+    hash_bytes,
+    load_config,
+    load_preview_request,
+    validate_request_id,
+)
+
+
+SSH_PATH = '/usr/bin/ssh'
+MAX_REQUEST_BYTES = 65536
+MAX_REMOTE_BYTES = 131072
+REMOTE_OPERATION_TIMEOUT_SEC = 90
+
+
+class RemoteUnavailable(RuntimeError):
+    """Represent an unavailable or invalid remote submission response."""
+
+
+def build_parser():
+    """Build the fixed submit parser."""
+    parser = argparse.ArgumentParser(
+        description='Submit one protected idempotent HPC request.',
+    )
+    parser.add_argument(
+        '--json',
+        action='store_true',
+        help='Print structured JSON instead of a concise summary.',
+    )
+    parser.add_argument('request_id')
+    return parser
+
+
+def encode_request(request):
+    """Encode one canonical request as bounded URL-safe base64."""
+    data = canonical_json(request).encode()
+    if len(data) > MAX_REQUEST_BYTES:
+        raise HelperFailure(
+            f'Protected submission request exceeds {MAX_REQUEST_BYTES} bytes'
+        )
+    return base64.urlsafe_b64encode(data).decode('ascii')
+
+
+def get_request_digest(request):
+    """Return the canonical request SHA256 digest."""
+    return hash_bytes(canonical_json(request).encode())
+
+
+def build_ssh_command(config, payload):
+    """Build the one allowlisted remote submission invocation."""
+    helper = Path(config['remote_helpers']['lethe_dir']) / 'hpc-lethe-submit'
+    remote_command = ' '.join((
+        shlex.quote(helper.as_posix()),
+        'submit',
+        shlex.quote(payload),
+    ))
+    timeout = config['ssh']['connect_timeout_sec']
+    return [
+        SSH_PATH,
+        '-o',
+        'BatchMode=yes',
+        '-o',
+        f'ConnectTimeout={timeout}',
+        '-o',
+        'ConnectionAttempts=1',
+        '--',
+        config['ssh']['lethe_host_alias'],
+        remote_command,
+    ]
+
+
+def decode_bounded(value, label):
+    """Decode one bounded UTF-8 subprocess stream."""
+    if len(value) > MAX_REMOTE_BYTES:
+        raise RemoteUnavailable(f'{label} exceeded {MAX_REMOTE_BYTES} bytes')
+    try:
+        return value.decode('utf-8')
+    except UnicodeDecodeError as exc:
+        raise RemoteUnavailable(f'{label} was not valid UTF-8') from exc
+
+
+def summarize_stderr(value):
+    """Return a bounded single-line SSH error summary."""
+    summary = value.replace('\r', ' ').replace('\n', ' ').strip()
+    return summary[:500] if summary else 'no error details'
+
+
+def error_result(status, reason, details=None):
+    """Build one structured non-success submission result."""
+    result = {
+        'schema_version': 1,
+        'operation': 'submit',
+        'status': status,
+        'reason': reason,
+    }
+    if details:
+        result['details'] = str(details)[:500]
+    return result
+
+
+def parse_remote_result(stdout):
+    """Parse and minimally validate the remote submission object."""
+    try:
+        result = json.loads(stdout)
+    except json.JSONDecodeError as exc:
+        raise RemoteUnavailable('Remote submission was not valid JSON') from exc
+    valid = (
+        isinstance(result, dict) and
+        result.get('operation') == 'submit' and
+        result.get('status') in {'ok', 'rejected', 'unknown', 'failed'}
+    )
+    if not valid:
+        raise RemoteUnavailable('Remote submission object was invalid')
+    if result['status'] == 'ok':
+        required = {
+            'result',
+            'run_id',
+            'request_id',
+            'request_sha256',
+            'run_record',
+            'slurm_job_id',
+        }
+        job_id = result.get('slurm_job_id')
+        valid_success = (
+            not (required - set(result)) and
+            result.get('result') in {'submitted', 'existing'} and
+            isinstance(job_id, int) and
+            not isinstance(job_id, bool) and
+            job_id > 0
+        )
+        if not valid_success:
+            raise RemoteUnavailable('Remote success object was incomplete')
+    return result
+
+
+def run_submit(config, request):
+    """Run the fixed remote submission and normalize its exit state."""
+    payload = encode_request(request)
+    command = build_ssh_command(config, payload)
+    try:
+        completed = subprocess.run(
+            command,
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            timeout=REMOTE_OPERATION_TIMEOUT_SEC,
+            check=False,
+        )
+    except subprocess.TimeoutExpired:
+        return error_result('unknown', 'operation-timeout'), EXIT_UNKNOWN
+    except OSError as exc:
+        return error_result('unknown', 'ssh-unavailable', exc), EXIT_UNKNOWN
+
+    try:
+        stdout = decode_bounded(completed.stdout, 'Remote stdout')
+        stderr = decode_bounded(completed.stderr, 'Remote stderr')
+        result = parse_remote_result(stdout)
+    except RemoteUnavailable as exc:
+        details = completed.stderr.decode('utf-8', errors='replace')
+        return error_result(
+            'unknown',
+            str(exc),
+            summarize_stderr(details),
+        ), EXIT_UNKNOWN
+
+    expected = {
+        EXIT_SUCCESS: 'ok',
+        EXIT_REJECTED: 'rejected',
+        EXIT_UNKNOWN: 'unknown',
+        EXIT_FAILED: 'failed',
+    }
+    if expected.get(completed.returncode) != result['status']:
+        details = summarize_stderr(stderr)
+        return error_result(
+            'unknown',
+            'inconsistent-remote-result',
+            details,
+        ), EXIT_UNKNOWN
+    result['local_config_sha256'] = get_config_identity(config)
+    return result, completed.returncode
+
+
+def audit_or_fail(action, status, exit_code, raw_args, details=None):
+    """Write one mandatory local submission audit event."""
+    try:
+        append_audit_event(
+            action,
+            status,
+            exit_code,
+            raw_args,
+            details=details,
+            helper='hpc-submit',
+        )
+    except HelperFailure as exc:
+        print(f'Audit failure: {exc}', file=sys.stderr)
+        return False
+    return True
+
+
+def print_result(result, as_json):
+    """Print one structured or concise submission result."""
+    if as_json:
+        print(json.dumps(result, indent=2, sort_keys=True))
+        return
+    print(f'Status: {result["status"]}')
+    if result['status'] != 'ok':
+        print(f'Reason: {result["reason"]}')
+        return
+    print(f'Result: {result["result"]}')
+    print(f'Run ID: {result["run_id"]}')
+    print(f'Slurm job ID: {result["slurm_job_id"]}')
+    print(f'Run record: {result["run_record"]}')
+
+
+def reject_input(raw_args, details):
+    """Audit and report one locally rejected submission request."""
+    if not audit_or_fail(
+        'submit',
+        'rejected',
+        EXIT_REJECTED,
+        raw_args,
+        details,
+    ):
+        return EXIT_FAILED
+    print(f'Rejected: {details}', file=sys.stderr)
+    return EXIT_REJECTED
+
+
+def main():
+    """Run the protected A4 idempotent submission command."""
+    raw_args = sys.argv[1:]
+    parser = build_parser()
+    try:
+        args = parser.parse_args(raw_args)
+    except SystemExit as exc:
+        exit_code = int(exc.code)
+        status = 'success' if exit_code == 0 else 'rejected'
+        if not audit_or_fail(
+            'submit-argument-parse',
+            status,
+            exit_code,
+            raw_args,
+        ):
+            return EXIT_FAILED
+        return exit_code
+
+    try:
+        request_id = validate_request_id(args.request_id)
+        config = load_config()
+        request = load_preview_request(request_id)
+    except RejectedInput as exc:
+        return reject_input(raw_args, exc)
+    except HelperFailure as exc:
+        if not audit_or_fail('submit', 'failed', EXIT_FAILED, raw_args):
+            return EXIT_FAILED
+        print(f'Failed: {exc}', file=sys.stderr)
+        return EXIT_FAILED
+
+    request_digest = get_request_digest(request)
+    if not audit_or_fail(
+        'submit-intent',
+        'success',
+        EXIT_SUCCESS,
+        raw_args,
+        f'request-sha256={request_digest}',
+    ):
+        return EXIT_FAILED
+
+    try:
+        result, exit_code = run_submit(config, request)
+    except HelperFailure as exc:
+        if not audit_or_fail('submit', 'failed', EXIT_FAILED, raw_args):
+            return EXIT_FAILED
+        print(f'Failed: {exc}', file=sys.stderr)
+        return EXIT_FAILED
+
+    remote_digest = result.get('request_sha256')
+    if remote_digest is not None and remote_digest != request_digest:
+        result = error_result('unknown', 'request-digest-mismatch')
+        exit_code = EXIT_UNKNOWN
+
+    status = result['status']
+    status = 'success' if status == 'ok' else status
+    if not audit_or_fail(
+        'submit',
+        status,
+        exit_code,
+        raw_args,
+        result.get('reason') or result.get('result'),
+    ):
+        return EXIT_FAILED
+    print_result(result, args.json)
+    return exit_code
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())

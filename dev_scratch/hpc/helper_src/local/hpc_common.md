@@ -7,7 +7,7 @@ the protected HPC helper commands.
 
 The module provides:
 
-- fixed installation, configuration, audit-log, and preview-catalog locations;
+- fixed installation, configuration, audit-log, and request-registry locations;
 - strict identifier and configuration validation;
 - installed-source and configuration hashing;
 - configuration redaction for display;
@@ -86,8 +86,8 @@ Examples include a missing protected configuration, a symlink where a regular pr
 The individual functions are `validate_run_id`, `validate_git_commit`, `validate_experiment_id`, and `validate_job_label`. Successful validation returns the original string unchanged.
 
 `validate_request_id()` applies the same path-safe syntax as a run ID but
-reports request-specific errors. Preview uses it before selecting an entry
-from the fixed protected request catalog.
+reports request-specific errors. Preview and submission use it before
+selecting an entry from the fixed protected request registry.
 
 These functions establish safe identifier syntax only. They do not prove that a commit exists, an experiment is present, or a job label belongs to a run.
 
@@ -155,7 +155,7 @@ The runtime validator is authoritative. `schemas/hpc-helper-config.schema.json` 
 `_require_regular_file()` uses `lstat()` and rejects symlinks and non-regular files. It is used for:
 
 - the protected configuration;
-- all five installed runtime source files;
+- all seven installed runtime source files;
 - the audit log when it already exists.
 
 The audit file may be absent before its first append, but its parent directory must already exist and must be a real directory rather than a symlink.
@@ -165,12 +165,12 @@ The audit file may be absent before its first append, but its parent directory m
 ### Installed source identity
 
 `get_bundle_identity()` hashes the installed `hpc-code-status`,
-`hpc-code-update`, `hpc-helper-info`, `hpc-probe`, `hpc-run-preview`, and
-`hpc_common.py` files. It returns:
+`hpc-code-update`, `hpc-helper-info`, `hpc-probe`, `hpc-run-preview`,
+`hpc-submit`, and `hpc_common.py` files. It returns:
 
 ```json
 {
-  "bundle_version": "0.4.0-a3",
+  "bundle_version": "0.5.0-a4",
   "bundle_sha256": "...",
   "source_sha256": {
     "hpc-code-status": "...",
@@ -178,6 +178,7 @@ The audit file may be absent before its first append, but its parent directory m
     "hpc-helper-info": "...",
     "hpc-probe": "...",
     "hpc-run-preview": "...",
+    "hpc-submit": "...",
     "hpc_common.py": "..."
   }
 }
@@ -284,7 +285,7 @@ Builds the only audit-log path accepted by this module.
 
 ### `get_request_catalog_path()`
 
-Builds the only preview-request catalog path accepted by the local helper.
+Builds the only protected request-registry path accepted by the local helper.
 
 - Parameters: none.
 - Returns: `<install root>/config/A1_OUinp-preview-requests.json` as a `Path`.
@@ -510,11 +511,11 @@ Loads and validates the one fixed protected configuration.
 
 ### `load_preview_request(request_id)`
 
-Loads one request from the fixed protected A3 catalog.
+Loads one request from the fixed protected request registry.
 
-- `request_id`: path-safe catalog key validated by `validate_request_id()`.
+- `request_id`: path-safe registry key validated by `validate_request_id()`.
 - Returns: the selected request dictionary without mutating it.
-- Raises: `HelperFailure` for a missing, redirected, unreadable, or structurally invalid protected catalog; raises `RejectedInput` for an unknown request, a non-object selected entry, or a mismatched embedded request ID.
+- Raises: `HelperFailure` for a missing, redirected, unreadable, or structurally invalid protected registry; raises `RejectedInput` for an unknown request, a non-object selected entry, or a mismatched embedded request ID.
 - Side effects: reads one fixed local JSON file.
 - Security role: callers select only an ID; they cannot supply request JSON or a filesystem path. Detailed request policy is independently enforced by the protected lethe helper.
 

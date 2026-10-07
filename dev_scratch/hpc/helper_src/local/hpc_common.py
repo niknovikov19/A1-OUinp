@@ -7,7 +7,7 @@ import stat
 from datetime import datetime, timezone
 
 
-BUNDLE_VERSION = '0.4.0-a3'
+BUNDLE_VERSION = '0.5.0-a4'
 CONFIG_SCHEMA_VERSION = 1
 
 EXIT_SUCCESS = 0
@@ -21,6 +21,7 @@ RUNTIME_SOURCE_NAMES = (
     'hpc-helper-info',
     'hpc-probe',
     'hpc-run-preview',
+    'hpc-submit',
     'hpc_common.py',
 )
 

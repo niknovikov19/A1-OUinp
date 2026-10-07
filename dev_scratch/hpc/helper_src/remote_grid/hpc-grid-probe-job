@@ -1,0 +1,166 @@
+#!/ddn/niknovikov19/miniconda3/bin/python3
+from datetime import datetime, timezone
+import json
+import os
+from pathlib import Path
+import re
+import socket
+import stat
+import sys
+
+
+REQUEST_ID_RE = re.compile(r'[A-Za-z0-9][A-Za-z0-9_.-]{0,63}')
+SHA256_RE = re.compile(r'[0-9a-f]{64}')
+JOB_ID_RE = re.compile(r'[1-9][0-9]*')
+
+
+class ProbeJobFailure(RuntimeError):
+    """Represent a fixed probe-job failure."""
+
+
+def get_common_root():
+    """Return the fixed shared helper root derived from this script."""
+    return Path(__file__).resolve().parents[2]
+
+
+def get_config_path():
+    """Return the fixed submission configuration path."""
+    return get_common_root() / 'config' / 'A1_OUinp-submit.json'
+
+
+def require_regular_file(fpath, label):
+    """Require one non-symlink regular file."""
+    try:
+        file_stat = fpath.lstat()
+    except OSError as exc:
+        raise ProbeJobFailure(f'Cannot inspect {label}: {exc}') from exc
+    if stat.S_ISLNK(file_stat.st_mode) or not stat.S_ISREG(file_stat.st_mode):
+        raise ProbeJobFailure(f'{label} must be a regular file')
+
+
+def require_real_directory(dirpath, label):
+    """Require one non-symlink directory."""
+    try:
+        file_stat = dirpath.lstat()
+    except OSError as exc:
+        raise ProbeJobFailure(f'Cannot inspect {label}: {exc}') from exc
+    if stat.S_ISLNK(file_stat.st_mode) or not stat.S_ISDIR(file_stat.st_mode):
+        raise ProbeJobFailure(f'{label} must be a real directory')
+
+
+def load_probe_config():
+    """Load the fixed run root and allowed probe request IDs."""
+    fpath = get_config_path()
+    require_regular_file(fpath, 'Submission configuration')
+    try:
+        with open(fpath, 'r') as fid:
+            config = json.load(fid)
+        run_root = config['runs']['root']
+        allowed = config['submission']['allowed_request_ids']
+    except (KeyError, OSError, TypeError, json.JSONDecodeError) as exc:
+        raise ProbeJobFailure(f'Invalid submission configuration: {exc}') from exc
+    root_path = Path(run_root) if isinstance(run_root, str) else Path('.')
+    invalid_root = (
+        not isinstance(run_root, str) or
+        not root_path.is_absolute() or
+        '..' in root_path.parts or
+        root_path.as_posix() != run_root
+    )
+    if invalid_root:
+        raise ProbeJobFailure('Invalid configured run root')
+    if not isinstance(allowed, list) or not allowed:
+        raise ProbeJobFailure('Invalid allowed request IDs')
+    if any(
+        not isinstance(value, str) or REQUEST_ID_RE.fullmatch(value) is None
+        for value in allowed
+    ):
+        raise ProbeJobFailure('Invalid allowed request ID')
+    if len(allowed) != len(set(allowed)):
+        raise ProbeJobFailure('Duplicate allowed request ID')
+    return root_path, allowed
+
+
+def validate_args(request_id, request_sha256, allowed):
+    """Validate the fixed probe-job arguments."""
+    if REQUEST_ID_RE.fullmatch(request_id) is None:
+        raise ProbeJobFailure('Invalid request ID')
+    if request_id not in allowed:
+        raise ProbeJobFailure('Request ID is not allowed')
+    if SHA256_RE.fullmatch(request_sha256) is None:
+        raise ProbeJobFailure('Invalid request digest')
+    job_id = os.environ.get('SLURM_JOB_ID', '')
+    if JOB_ID_RE.fullmatch(job_id) is None:
+        raise ProbeJobFailure('Missing or invalid SLURM_JOB_ID')
+    return int(job_id)
+
+
+def write_marker(run_dir, marker):
+    """Atomically write the fixed probe result marker."""
+    fpath = run_dir / 'probe-result.json'
+    if fpath.exists():
+        require_regular_file(fpath, 'Probe result marker')
+        try:
+            with open(fpath, 'r') as fid:
+                existing = json.load(fid)
+        except (OSError, json.JSONDecodeError) as exc:
+            raise ProbeJobFailure(f'Cannot read probe marker: {exc}') from exc
+        keys = ('request_id', 'request_sha256', 'slurm_job_id')
+        if isinstance(existing.get('slurm_job_id'), bool):
+            raise ProbeJobFailure('Existing probe marker has invalid job ID')
+        if any(existing.get(key) != marker[key] for key in keys):
+            raise ProbeJobFailure('Existing probe marker does not match job')
+        return 'existing'
+
+    temp_path = run_dir / f'.probe-result.{os.getpid()}.tmp'
+    data = (json.dumps(marker, sort_keys=True, separators=(',', ':')) + '\n')
+    flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
+    flags |= getattr(os, 'O_CLOEXEC', 0)
+    flags |= getattr(os, 'O_NOFOLLOW', 0)
+    try:
+        file_id = os.open(temp_path, flags, 0o600)
+        try:
+            os.write(file_id, data.encode())
+            os.fsync(file_id)
+        finally:
+            os.close(file_id)
+        os.replace(temp_path, fpath)
+    except OSError as exc:
+        raise ProbeJobFailure(f'Cannot write probe marker: {exc}') from exc
+    return 'created'
+
+
+def main():
+    """Write one known marker from a minimal immutable Slurm probe."""
+    if len(sys.argv) != 3:
+        print('Expected request ID and request digest', file=sys.stderr)
+        return 2
+    request_id, request_sha256 = sys.argv[1:]
+    try:
+        run_root, allowed = load_probe_config()
+        job_id = validate_args(request_id, request_sha256, allowed)
+        require_real_directory(run_root, 'Run root')
+        run_dir = run_root / request_id
+        require_real_directory(run_dir, 'Run directory')
+        marker = {
+            'schema_version': 1,
+            'status': 'complete',
+            'completed_at_utc': datetime.now(timezone.utc).isoformat(),
+            'request_id': request_id,
+            'request_sha256': request_sha256,
+            'slurm_job_id': job_id,
+            'compute_host': socket.gethostname(),
+        }
+        result = write_marker(run_dir, marker)
+    except ProbeJobFailure as exc:
+        print(f'Probe failed: {exc}', file=sys.stderr)
+        return 1
+
+    print('A1 HPC fixed probe')
+    print(f'request_id={request_id}')
+    print(f'slurm_job_id={job_id}')
+    print(f'marker={result}')
+    return 0
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())

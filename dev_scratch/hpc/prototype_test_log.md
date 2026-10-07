@@ -372,8 +372,7 @@ unqualified pass.
 
 ## Gate A3: deterministic run preview and request pinning
 
-Status: candidate source prepared; commit, manual promotion, and protected
-tests pending.
+Status: passed 2026-10-06.
 
 Prepared A3 behavior:
 
@@ -435,3 +434,138 @@ Reviewed candidate SHA256 values:
   `a2989f2e5ab9aa6afae5779e2c38c4401b4489f3184127b771a4cfefed692ad6`;
 - expected installed local bundle:
   `71b493bba432c9e1385140d42526c6705b030e11d55dd211fc1611fd72ee474c`.
+
+Commit, promotion, and identity verification 2026-10-06:
+
+- the reviewed A3 implementation was committed as `5700b5d`, followed by the
+  promotion-command documentation commit `da79b85`;
+- final pinned and pushed A3 commit:
+  `da79b85c85921b26f604cfcf7a15d87db1f8f045`;
+- the protected A2 updater fast-forwarded the clean automation checkout from
+  `e0c4d394e43ea51ba318e0c087f209cea6d8ccd5` to the exact A3 commit;
+- independent status confirmed matching local and remote-tracking commits, a
+  clean branch, no active run, and no update lock;
+- the installed local bundle reported version `0.4.0-a3` and exact expected
+  SHA256 `71b493bba432c9e1385140d42526c6705b030e11d55dd211fc1611fd72ee474c`;
+- all installed local source and schema hashes matched the reviewed values;
+- the protected request catalog replaced exactly eight zero placeholders with
+  the A3 commit, retained one deliberate 40-one mismatch fixture, and had
+  SHA256 `8583446bb3ada302776df10f3b5bc67604aa6a038af4a9e5dc771d16ea47d00f`;
+- local protected directories were restored to mode `0555`, the preview entry
+  point to `0555`, and the module, schemas, and catalog to `0444`, all owned by
+  `root:root`;
+- installed `hpc-lethe-preview` and `A1_OUinp-preview.json` matched reviewed
+  raw hashes `483e6f085b703217cd40069f342801de33fe2cf52c5b3c03eec82b50cd523547`
+  and `2183dc0f0d31d69f91f95ecd2a479e7918a6e1f35c77406783f4a02aa4fa3c3e`;
+- their canonical remote configuration SHA256 was
+  `b8c5d3c474fcfe5c5a23cde19b946b844f87887b4be7ddddaa8422f09d1666cc`;
+- remote directories and helper were mode `0555`, configuration was mode
+  `0444`, and all were owned by `niknovikov19:salvadord`;
+- remote promotion used the owning lethe account without `sudo`; the local
+  installation guide was corrected accordingly after the pinned commit.
+
+Protected tests 2026-10-06:
+
+- the first sandboxed local-rejection attempts failed closed with exit code
+  `4` because mandatory audit appends were blocked by the Codex filesystem
+  sandbox; no SSH or preview occurred in those attempts;
+- after protected audit permission was granted, missing, unknown, traversal,
+  and extra-argument request forms all returned exit code `2` locally;
+- `a3-probe-one` returned exit code `0`, exact A3 commit, one calculated job,
+  allowed resources, two tracked dependencies, and zero suspicious ignored
+  files;
+- `a3-tiny-six` reported axis sizes 2 and 3, six calculated jobs, concurrency
+  3, and request SHA256
+  `e1c69d04e31e5cea607271a1fa3bc38af81c96fca2e47a94e7ec989c851d098d`;
+- two consecutive `a3-tiny-six` responses were byte-for-byte identical;
+- `a3-existing-48` mechanically reported axis sizes `1 x 1 x 4 x 6 x 2`
+  and 48 jobs, then returned exit code `2` for job-count, concurrency, core,
+  memory, and wall-time ceiling violations;
+- the unknown experiment and changed-commit requests returned exit code `2`
+  with their specific mismatch details;
+- unsupported partition and excessive-resource requests returned exit code
+  `2` with explicit protected-limit violations;
+- the empty-axis and missing-resources requests returned exit code `2` with
+  precise structural errors;
+- the protected audit tail contained all successful and rejected preview
+  events, used helper version `0.4.0-a3`, and redacted request IDs as
+  `<value>`;
+- final independent status confirmed the automation checkout remained clean
+  and unchanged at the exact A3 commit with no active run or update lock.
+
+Gate conclusion: PASS. Preview selection is protected by request ID, exact
+commit and tracked dependencies are verified remotely, job count is derived
+from pinned axes, protected resource ceilings reject unsafe requests, repeated
+previews are deterministic, and the complete path is audited without Git
+mutation, Slurm access, run creation, repository-code execution, or transfer.
+
+## A4 minimal Slurm submission candidate
+
+Scheduler preflight reported by the user on lattice 2026-10-06:
+
+- `sbatch` resolved to `/usr/bin/sbatch` and reported Slurm `25.11.4`;
+- `sinfo` resolved to `/usr/bin/sinfo`;
+- `cpu.q` was `up`, with a seven-day limit, `64+` CPUs, and `515100+` MB;
+- the A4 request remains substantially below those values at one node, one
+  core, 1 GB, and two minutes.
+
+Candidate scope:
+
+- local `hpc-submit` accepts only a protected request ID and writes a
+  mandatory audit intent before opening SSH;
+- `hpc-lethe-submit` requires a successful installed A3 preview and binds its
+  digest, exact commit, result directory, job count, concurrency, output kind,
+  and resources to fixed A4 policy;
+- `run.json` and a per-run lock are created before grid submission;
+- `hpc-grid-submit` writes a pending `submission.json` before its one fixed
+  `/usr/bin/sbatch --parsable` call and persists the returned job ID;
+- a submitted receipt or run record returns the existing job ID, while a
+  pending or unknown receipt refuses a potentially duplicating retry;
+- the immutable compute job writes four known log lines and an atomic
+  `probe-result.json`; it does not execute repository simulation code.
+
+Static verification 2026-10-06:
+
+- all 14 Python candidate sources parsed with `ast.parse`, without import or
+  execution;
+- all 22 JSON, schema, configuration-example, and fixture files decoded;
+- the A4 configuration, request, representative run record, and representative
+  submission receipt passed their Draft 2020-12 schemas;
+- independent fixture checks accepted only the documented parsable Slurm
+  forms, confirmed a one-job request, matched the fixed resources, and bound
+  the configured compute-job hash to the candidate source;
+- every command block in `INSTALL_A4.md` passed `bash -n`;
+- the four new helpers contain no `shell=True`, `os.system`, `Popen`, `eval`,
+  or `exec` interface;
+- no trailing whitespace or code lines longer than 88 characters were found;
+- candidate helpers were not invoked, sourced, imported, or submitted.
+
+Reviewed candidate SHA256 values:
+
+- `hpc-submit`:
+  `93c535091808a7c5d7115916e8632f9140bbaf001c55245933a553a3ea1d7e78`;
+- `hpc_common.py`:
+  `84e2aaae3658a613ad47648641869df61ec1a4a2442ea0c94ba35ec52242215c`;
+- `hpc-lethe-submit`:
+  `fbd00314ea61dab8740cfade961892522ef30b47770c5f1e6813e83d64711708`;
+- `hpc-grid-submit`:
+  `1825dc659160afafa0bb50f9123ad850619bbfd4f434a33cab314177e9c87787`;
+- `hpc-grid-probe-job`:
+  `39c5b55c293cf90fe62a450dc116aa328a379cdf0e423a1258076b6bc0424d44`;
+- `remote-hpc-submit.json.example`:
+  `fcad5d8ae33165899c394e5b433a07842fe80973e5d72fa16e00af61068ecf2c`;
+- `preview-requests.json.example`:
+  `8f1b41151940d9966f61e8ce5172accf9703391e7850d3389e0f15caab0c1d00`;
+- `remote-hpc-submit-config.schema.json`:
+  `661208e7bbabeecc2cbba17527c9cc3b1629c39ef9f833f7830b09baf3160aa7`;
+- `submission-record.schema.json`:
+  `08275824f920de7c500f2658091e4b42b8d8d0ec4b4c497a7e9bfb21671c1e9e`;
+- `a4_submit_cases.json`:
+  `35a3b53e9e4ae48f2c54147e10744604d3e852f6181fce5902d1cb7bbc0859b5`;
+- expected installed local bundle:
+  `cb1d52d6b5bcaac811cdf0c33e529f64d223549bf3044c43ef6cd13f27eb30ed`.
+
+Gate conclusion: CANDIDATE READY, NOT YET PROMOTED OR TESTED. The next steps
+are a scoped commit and push, exact A2 checkout update, manual promotion from
+`INSTALL_A4.md`, protected read-only checks, and a separate explicit approval
+before the one real Slurm submission.

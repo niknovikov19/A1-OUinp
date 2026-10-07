@@ -170,6 +170,8 @@ test "$(stat -c '%U' "$A3_REMOTE_ROOT/helpers/lethe")" = "$A3_REMOTE_OWNER"
 test "$(stat -c '%G' "$A3_REMOTE_ROOT/helpers/lethe")" = "$A3_REMOTE_GROUP"
 test "$(stat -c '%U' "$A3_REMOTE_ROOT/config")" = "$A3_REMOTE_OWNER"
 test "$(stat -c '%G' "$A3_REMOTE_ROOT/config")" = "$A3_REMOTE_GROUP"
+test "$(id -un)" = "$A3_REMOTE_OWNER"
+id -nG | tr ' ' '\n' | grep -Fxq "$A3_REMOTE_GROUP"
 
 python3 -m json.tool \
     "$A3_SRC/config_examples/remote-hpc-preview.json.example" \
@@ -187,29 +189,29 @@ python3 -m json.tool \
     "$A3_SRC/config_examples/remote-hpc-preview.json.example"
 ```
 
-Install using the established shared-filesystem owner and group. If an install
-command fails, run the final `chmod 0555` command before stopping:
+Install as the owning lethe account; `sudo` is neither needed nor expected.
+The account already owns both directories and belongs to the established
+shared-filesystem group. If an install command fails, run the final
+`chmod 0555` command before stopping:
 
 ```bash
-sudo chmod 0755 \
+chmod 0755 \
     "$A3_REMOTE_ROOT/helpers/lethe" \
     "$A3_REMOTE_ROOT/config"
 
-sudo install \
-    -o "$A3_REMOTE_OWNER" \
+install \
     -g "$A3_REMOTE_GROUP" \
     -m 0555 \
     "$A3_SRC/remote_lethe/hpc-lethe-preview" \
     "$A3_REMOTE_ROOT/helpers/lethe/hpc-lethe-preview"
 
-sudo install \
-    -o "$A3_REMOTE_OWNER" \
+install \
     -g "$A3_REMOTE_GROUP" \
     -m 0444 \
     "$A3_SRC/config_examples/remote-hpc-preview.json.example" \
     "$A3_REMOTE_ROOT/config/A1_OUinp-preview.json"
 
-sudo chmod 0555 \
+chmod 0555 \
     "$A3_REMOTE_ROOT/helpers/lethe" \
     "$A3_REMOTE_ROOT/config"
 ```

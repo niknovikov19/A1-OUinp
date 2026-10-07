@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/a1-hpc/submission-record.schema.json",
+  "title": "A1 HPC grid submission receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "request_id",
+    "request_sha256",
+    "status",
+    "job_name",
+    "intent_at_utc",
+    "slurm_job_id",
+    "sbatch_result",
+    "submitted_at_utc",
+    "stdout_path",
+    "stderr_path",
+    "details"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "request_id": {
+      "$ref": "#/$defs/safe_name"
+    },
+    "request_sha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "status": {
+      "enum": [
+        "pending",
+        "submitted",
+        "unknown",
+        "failed"
+      ]
+    },
+    "job_name": {
+      "$ref": "#/$defs/safe_name"
+    },
+    "intent_at_utc": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "slurm_job_id": {
+      "anyOf": [
+        {
+          "type": "integer",
+          "minimum": 1
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "sbatch_result": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "submitted_at_utc": {
+      "anyOf": [
+        {
+          "type": "string",
+          "format": "date-time"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "stdout_path": {
+      "$ref": "#/$defs/absolute_path"
+    },
+    "stderr_path": {
+      "$ref": "#/$defs/absolute_path"
+    },
+    "details": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "$defs": {
+    "safe_name": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "absolute_path": {
+      "type": "string",
+      "pattern": "^/[^\\u0000]*$"
+    }
+  }
+}

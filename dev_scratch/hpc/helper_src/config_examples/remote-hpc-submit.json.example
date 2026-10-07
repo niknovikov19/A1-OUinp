@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "deployment_id": "a1-ouinp-codex-hpc",
+  "ssh": {
+    "grid_host_alias": "lattice",
+    "connect_timeout_sec": 15
+  },
+  "remote_helpers": {
+    "lethe_preview": "/ddn/niknovikov19/hpc_codex/helpers/lethe/hpc-lethe-preview",
+    "grid_submit": "/ddn/niknovikov19/hpc_codex/helpers/grid/hpc-grid-submit",
+    "grid_probe_job": "/ddn/niknovikov19/hpc_codex/helpers/grid/hpc-grid-probe-job"
+  },
+  "runs": {
+    "root": "/ddn/niknovikov19/hpc_codex/runs/A1_OUinp"
+  },
+  "state": {
+    "submit_lock": "/ddn/niknovikov19/hpc_codex/state/A1_OUinp/submit.lock"
+  },
+  "scheduler": {
+    "user": "niknovikov19",
+    "account": "",
+    "sbatch_path": "/usr/bin/sbatch",
+    "partition": "cpu.q",
+    "resources": {
+      "nodes": 1,
+      "cores": 1,
+      "memory_gb": 1,
+      "wall_time_min": 2
+    }
+  },
+  "submission": {
+    "allowed_request_ids": [
+      "a4-slurm-probe"
+    ],
+    "allowed_run_type": "probe",
+    "allowed_output_kind": "marker",
+    "job_name_prefix": "a1-a4-probe",
+    "max_request_bytes": 65536,
+    "probe_job_sha256": "39c5b55c293cf90fe62a450dc116aa328a379cdf0e423a1258076b6bc0424d44"
+  }
+}

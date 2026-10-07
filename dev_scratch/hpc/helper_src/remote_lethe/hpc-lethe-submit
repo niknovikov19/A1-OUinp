@@ -1,0 +1,663 @@
+#!/ddn/niknovikov19/miniconda3/bin/python3
+import argparse
+import base64
+import binascii
+from datetime import datetime, timezone
+import fcntl
+import hashlib
+import json
+import os
+from pathlib import Path
+import re
+import shlex
+import socket
+import stat
+import subprocess
+
+
+HELPER_VERSION = '0.5.0-a4'
+EXIT_SUCCESS = 0
+EXIT_REJECTED = 2
+EXIT_UNKNOWN = 3
+EXIT_FAILED = 4
+
+MAX_ARGUMENT_BYTES = 131072
+MAX_COMMAND_BYTES = 131072
+REMOTE_TIMEOUT_SEC = 90
+
+SAFE_NAME_RE = re.compile(r'[A-Za-z0-9][A-Za-z0-9_.-]{0,63}')
+SHA256_RE = re.compile(r'[0-9a-f]{64}')
+
+
+class RejectedInput(ValueError):
+    """Represent a submission rejected by protected policy."""
+
+
+class SubmitFailure(RuntimeError):
+    """Represent a known lethe-side submission failure."""
+
+
+class SubmitUnavailable(RuntimeError):
+    """Represent an uncertain remote submission outcome."""
+
+
+def get_common_root():
+    """Return the fixed shared helper root derived from this script."""
+    return Path(__file__).resolve().parents[2]
+
+
+def get_config_path():
+    """Return the fixed remote submission configuration path."""
+    return get_common_root() / 'config' / 'A1_OUinp-submit.json'
+
+
+def canonical_json(value):
+    """Serialize JSON deterministically for hashing and records."""
+    return json.dumps(value, sort_keys=True, separators=(',', ':'))
+
+
+def hash_bytes(value):
+    """Return a SHA256 digest for bytes."""
+    return hashlib.sha256(value).hexdigest()
+
+
+def helper_identity():
+    """Return the installed lethe-submit helper identity."""
+    fpath = Path(__file__).resolve()
+    return {
+        'name': 'hpc-lethe-submit',
+        'version': HELPER_VERSION,
+        'source_sha256': hash_bytes(fpath.read_bytes()),
+    }
+
+
+def require_mapping(value, label):
+    """Return a mapping or reject it."""
+    if not isinstance(value, dict):
+        raise SubmitFailure(f'{label} must be an object')
+    return value
+
+
+def require_exact_keys(value, required, label):
+    """Reject missing or unknown mapping keys."""
+    missing = sorted(set(required) - set(value))
+    unknown = sorted(set(value) - set(required))
+    if missing:
+        raise SubmitFailure(f'{label} is missing keys: {missing}')
+    if unknown:
+        raise SubmitFailure(f'{label} has unknown keys: {unknown}')
+
+
+def validate_safe_name(value, label):
+    """Validate one short shell-inert name."""
+    if not isinstance(value, str) or SAFE_NAME_RE.fullmatch(value) is None:
+        raise SubmitFailure(f'Invalid {label}')
+    return value
+
+
+def validate_absolute_path(value, label):
+    """Validate one normalized absolute POSIX path."""
+    if not isinstance(value, str) or not value:
+        raise SubmitFailure(f'{label} must be a non-empty string')
+    fpath = Path(value)
+    if not fpath.is_absolute() or '..' in fpath.parts:
+        raise SubmitFailure(f'{label} must be an absolute normalized path')
+    if value != fpath.as_posix():
+        raise SubmitFailure(f'{label} must use normalized POSIX syntax')
+    return value
+
+
+def validate_positive_int(value, label, maximum=None):
+    """Validate one positive optionally bounded integer."""
+    if isinstance(value, bool) or not isinstance(value, int) or value < 1:
+        raise SubmitFailure(f'{label} must be a positive integer')
+    if maximum is not None and value > maximum:
+        raise SubmitFailure(f'{label} must be <= {maximum}')
+    return value
+
+
+def validate_resources(resources):
+    """Validate the exact fixed probe resources."""
+    resources = require_mapping(resources, 'scheduler resources')
+    required = {'cores', 'memory_gb', 'nodes', 'wall_time_min'}
+    require_exact_keys(resources, required, 'scheduler resources')
+    for key in ('cores', 'memory_gb', 'nodes'):
+        validate_positive_int(resources[key], key)
+    validate_positive_int(
+        resources['wall_time_min'],
+        'wall_time_min',
+        maximum=59,
+    )
+    return resources
+
+
+def validate_config(config):
+    """Validate the fixed submission configuration."""
+    config = require_mapping(config, 'configuration')
+    required = {
+        'deployment_id',
+        'remote_helpers',
+        'runs',
+        'scheduler',
+        'schema_version',
+        'ssh',
+        'state',
+        'submission',
+    }
+    require_exact_keys(config, required, 'configuration')
+    if config['schema_version'] != 1:
+        raise SubmitFailure('Unsupported submission configuration schema')
+    validate_safe_name(config['deployment_id'], 'deployment ID')
+
+    ssh = require_mapping(config['ssh'], 'ssh')
+    require_exact_keys(ssh, {'connect_timeout_sec', 'grid_host_alias'}, 'ssh')
+    validate_safe_name(ssh['grid_host_alias'], 'grid host alias')
+    validate_positive_int(
+        ssh['connect_timeout_sec'],
+        'connection timeout',
+        maximum=120,
+    )
+
+    helpers = require_mapping(config['remote_helpers'], 'remote_helpers')
+    helper_keys = {'grid_probe_job', 'grid_submit', 'lethe_preview'}
+    require_exact_keys(helpers, helper_keys, 'remote_helpers')
+    for key in sorted(helper_keys):
+        validate_absolute_path(helpers[key], key)
+
+    runs = require_mapping(config['runs'], 'runs')
+    require_exact_keys(runs, {'root'}, 'runs')
+    validate_absolute_path(runs['root'], 'run root')
+
+    state_config = require_mapping(config['state'], 'state')
+    require_exact_keys(state_config, {'submit_lock'}, 'state')
+    validate_absolute_path(state_config['submit_lock'], 'submit lock')
+
+    scheduler = require_mapping(config['scheduler'], 'scheduler')
+    scheduler_keys = {
+        'account',
+        'partition',
+        'resources',
+        'sbatch_path',
+        'user',
+    }
+    require_exact_keys(scheduler, scheduler_keys, 'scheduler')
+    validate_safe_name(scheduler['user'], 'scheduler user')
+    validate_safe_name(scheduler['partition'], 'partition')
+    validate_absolute_path(scheduler['sbatch_path'], 'sbatch path')
+    if scheduler['account']:
+        validate_safe_name(scheduler['account'], 'scheduler account')
+    validate_resources(scheduler['resources'])
+
+    submission = require_mapping(config['submission'], 'submission')
+    submission_keys = {
+        'allowed_output_kind',
+        'allowed_request_ids',
+        'allowed_run_type',
+        'job_name_prefix',
+        'max_request_bytes',
+        'probe_job_sha256',
+    }
+    require_exact_keys(submission, submission_keys, 'submission')
+    ids = submission['allowed_request_ids']
+    if not isinstance(ids, list) or not ids or len(ids) != len(set(ids)):
+        raise SubmitFailure('allowed_request_ids must be unique and non-empty')
+    for request_id in ids:
+        validate_safe_name(request_id, 'allowed request ID')
+    validate_safe_name(submission['allowed_run_type'], 'allowed run type')
+    validate_safe_name(submission['allowed_output_kind'], 'allowed output kind')
+    validate_safe_name(submission['job_name_prefix'], 'job-name prefix')
+    validate_positive_int(
+        submission['max_request_bytes'],
+        'max request bytes',
+        maximum=131072,
+    )
+    digest = submission['probe_job_sha256']
+    if not isinstance(digest, str) or SHA256_RE.fullmatch(digest) is None:
+        raise SubmitFailure('Invalid probe-job SHA256')
+    return config
+
+
+def require_regular_file(fpath, label):
+    """Require a non-symlink regular file."""
+    try:
+        file_stat = fpath.lstat()
+    except OSError as exc:
+        raise SubmitFailure(f'Cannot inspect {label}: {exc}') from exc
+    if stat.S_ISLNK(file_stat.st_mode) or not stat.S_ISREG(file_stat.st_mode):
+        raise SubmitFailure(f'{label} must be a regular file')
+
+
+def require_real_directory(dirpath, label):
+    """Require a non-symlink directory."""
+    try:
+        file_stat = dirpath.lstat()
+    except OSError as exc:
+        raise SubmitFailure(f'Cannot inspect {label}: {exc}') from exc
+    if stat.S_ISLNK(file_stat.st_mode) or not stat.S_ISDIR(file_stat.st_mode):
+        raise SubmitFailure(f'{label} must be a real directory')
+
+
+def load_config():
+    """Load and validate the fixed remote submission configuration."""
+    fpath = get_config_path()
+    require_regular_file(fpath, 'Submission configuration')
+    try:
+        with open(fpath, 'r') as fid:
+            config = json.load(fid)
+    except (OSError, json.JSONDecodeError) as exc:
+        raise SubmitFailure(f'Cannot load submission configuration: {exc}')
+    return validate_config(config)
+
+
+def config_identity(config):
+    """Return the validated configuration digest."""
+    return hash_bytes(canonical_json(config).encode())
+
+
+def decode_request(payload, max_bytes):
+    """Decode one bounded URL-safe base64 JSON request."""
+    if len(payload.encode('ascii', errors='ignore')) > MAX_ARGUMENT_BYTES:
+        raise RejectedInput('Encoded request exceeds the argument limit')
+    try:
+        data = base64.b64decode(
+            payload.encode('ascii'),
+            altchars=b'-_',
+            validate=True,
+        )
+    except (binascii.Error, UnicodeEncodeError, ValueError) as exc:
+        raise RejectedInput('Request payload is not valid base64') from exc
+    if len(data) > max_bytes:
+        raise RejectedInput('Decoded request exceeds the configured limit')
+    try:
+        request = json.loads(data.decode('utf-8'))
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise RejectedInput('Request payload is not valid UTF-8 JSON') from exc
+    if not isinstance(request, dict):
+        raise RejectedInput('Request payload must be an object')
+    return request
+
+
+def decode_bounded(value, label):
+    """Decode one bounded UTF-8 subprocess stream."""
+    if len(value) > MAX_COMMAND_BYTES:
+        raise SubmitFailure(f'{label} exceeded {MAX_COMMAND_BYTES} bytes')
+    try:
+        return value.decode('utf-8')
+    except UnicodeDecodeError as exc:
+        raise SubmitFailure(f'{label} was not valid UTF-8') from exc
+
+
+def run_command(command, timeout):
+    """Run one fixed bounded subprocess command."""
+    try:
+        return subprocess.run(
+            command,
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            timeout=timeout,
+            check=False,
+        )
+    except subprocess.TimeoutExpired as exc:
+        raise SubmitUnavailable('Remote operation timed out') from exc
+    except OSError as exc:
+        raise SubmitUnavailable(f'Cannot execute remote operation: {exc}') from exc
+
+
+def run_preview(config, payload):
+    """Run the installed protected preview and return its result."""
+    command = [config['remote_helpers']['lethe_preview'], 'preview', payload]
+    completed = run_command(command, REMOTE_TIMEOUT_SEC)
+    stdout = decode_bounded(completed.stdout, 'Preview stdout')
+    try:
+        result = json.loads(stdout)
+    except json.JSONDecodeError as exc:
+        raise SubmitFailure('Preview response was not valid JSON') from exc
+    valid = (
+        completed.returncode == EXIT_SUCCESS and
+        isinstance(result, dict) and
+        result.get('operation') == 'run-preview' and
+        result.get('status') == 'ok' and
+        isinstance(result.get('preview'), dict)
+    )
+    if not valid:
+        details = decode_bounded(completed.stderr, 'Preview stderr').strip()
+        if completed.returncode == EXIT_REJECTED:
+            raise RejectedInput(result.get('details') or result.get('reason'))
+        raise SubmitFailure(details or 'Protected preview failed')
+    return result
+
+
+def validate_preview(config, request, result):
+    """Bind the successful preview to fixed A4 submission policy."""
+    preview = result['preview']
+    digest = hash_bytes(canonical_json(request).encode())
+    request_id = request.get('request_id')
+    fixed = config['submission']
+    expected_resources = {
+        'partition': config['scheduler']['partition'],
+        **config['scheduler']['resources'],
+    }
+    valid = (
+        isinstance(request_id, str) and
+        request_id in fixed['allowed_request_ids'] and
+        preview.get('request_id') == request_id and
+        preview.get('request_sha256') == digest and
+        preview.get('run_type') == fixed['allowed_run_type'] and
+        preview.get('expected_output_kind') == fixed['allowed_output_kind'] and
+        preview.get('resources') == expected_resources and
+        preview.get('calculated_child_jobs') == 1 and
+        preview.get('max_concurrent_jobs') == 1
+    )
+    if not valid:
+        raise RejectedInput('Preview does not match fixed A4 submission policy')
+    expected_dir = Path(config['runs']['root']) / request_id
+    if preview.get('expected_result_dir') != expected_dir.as_posix():
+        raise RejectedInput('Preview result directory does not match policy')
+    return preview, digest
+
+
+def acquire_global_lock(config):
+    """Acquire the pre-created global submission lock."""
+    lock_path = Path(config['state']['submit_lock'])
+    require_regular_file(lock_path, 'Global submission lock')
+    flags = os.O_RDWR | getattr(os, 'O_CLOEXEC', 0)
+    flags |= getattr(os, 'O_NOFOLLOW', 0)
+    try:
+        file_id = os.open(lock_path, flags, 0o600)
+        fcntl.flock(file_id, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError as exc:
+        os.close(file_id)
+        raise SubmitFailure('Global submission lock is active') from exc
+    except OSError as exc:
+        raise SubmitFailure(f'Cannot acquire global submission lock: {exc}')
+    return file_id
+
+
+def write_json_atomic(fpath, value):
+    """Atomically replace one fixed JSON record."""
+    temp_path = fpath.with_name(f'.{fpath.name}.{os.getpid()}.tmp')
+    data = (canonical_json(value) + '\n').encode()
+    flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
+    flags |= getattr(os, 'O_CLOEXEC', 0)
+    flags |= getattr(os, 'O_NOFOLLOW', 0)
+    try:
+        file_id = os.open(temp_path, flags, 0o600)
+        try:
+            os.write(file_id, data)
+            os.fsync(file_id)
+        finally:
+            os.close(file_id)
+        os.replace(temp_path, fpath)
+    except OSError as exc:
+        raise SubmitFailure(f'Cannot write run record: {exc}') from exc
+
+
+def prepare_run(config, preview, digest):
+    """Create or validate the durable run directory and record."""
+    run_root = Path(config['runs']['root'])
+    require_real_directory(run_root, 'Run root')
+    run_dir = run_root / preview['request_id']
+    if not run_dir.exists():
+        try:
+            run_dir.mkdir(mode=0o700)
+            (run_dir / 'controller').mkdir(mode=0o700)
+            lock_path = run_dir / 'submit.lock'
+            lock_path.touch(mode=0o600, exist_ok=False)
+        except OSError as exc:
+            raise SubmitFailure(f'Cannot create run directory: {exc}') from exc
+    require_real_directory(run_dir, 'Run directory')
+    require_real_directory(run_dir / 'controller', 'Controller directory')
+    require_regular_file(run_dir / 'submit.lock', 'Per-run submit lock')
+
+    record_path = run_dir / 'run.json'
+    if record_path.exists():
+        require_regular_file(record_path, 'Run record')
+        try:
+            with open(record_path, 'r') as fid:
+                record = json.load(fid)
+        except (OSError, json.JSONDecodeError) as exc:
+            raise SubmitFailure(f'Cannot read run record: {exc}') from exc
+        if record.get('request_sha256') != digest:
+            raise RejectedInput('Existing run record has another request digest')
+        if record.get('request_id') != preview['request_id']:
+            raise RejectedInput('Existing run record has another request ID')
+        return run_dir, record_path, record
+
+    record = {
+        'schema_version': 1,
+        'run_id': preview['request_id'],
+        'request_id': preview['request_id'],
+        'request_sha256': digest,
+        'branch': preview['repository']['branch'],
+        'git_commit': preview['expected_commit'],
+        'run_type': preview['run_type'],
+        'experiment': preview['experiment'],
+        'created_at_utc': datetime.now(timezone.utc).isoformat(),
+        'status': 'prepared',
+        'calculated_child_jobs': preview['calculated_child_jobs'],
+        'max_concurrent_jobs': preview['max_concurrent_jobs'],
+        'resources': preview['resources'],
+        'expected_result_dir': preview['expected_result_dir'],
+    }
+    write_json_atomic(record_path, record)
+    return run_dir, record_path, record
+
+
+def build_grid_command(config, request_id, digest):
+    """Build the one fixed grid submission SSH invocation."""
+    helper = config['remote_helpers']['grid_submit']
+    remote_command = ' '.join((
+        shlex.quote(helper),
+        'submit',
+        shlex.quote(request_id),
+        shlex.quote(digest),
+    ))
+    timeout = config['ssh']['connect_timeout_sec']
+    return [
+        '/usr/bin/ssh',
+        '-o',
+        'BatchMode=yes',
+        '-o',
+        f'ConnectTimeout={timeout}',
+        '-o',
+        'ConnectionAttempts=1',
+        '--',
+        config['ssh']['grid_host_alias'],
+        remote_command,
+    ]
+
+
+def run_grid_submit(config, request_id, digest):
+    """Submit through the installed grid helper and normalize its result."""
+    command = build_grid_command(config, request_id, digest)
+    completed = run_command(command, REMOTE_TIMEOUT_SEC)
+    stdout = decode_bounded(completed.stdout, 'Grid stdout')
+    stderr = decode_bounded(completed.stderr, 'Grid stderr')
+    try:
+        result = json.loads(stdout)
+    except json.JSONDecodeError as exc:
+        raise SubmitUnavailable('Grid response was not valid JSON') from exc
+    expected = {
+        EXIT_SUCCESS: 'ok',
+        EXIT_REJECTED: 'rejected',
+        EXIT_UNKNOWN: 'unknown',
+        EXIT_FAILED: 'failed',
+    }
+    valid = (
+        isinstance(result, dict) and
+        result.get('operation') == 'grid-submit' and
+        expected.get(completed.returncode) == result.get('status')
+    )
+    if not valid:
+        details = stderr.replace('\r', ' ').replace('\n', ' ').strip()[:500]
+        raise SubmitUnavailable(
+            f'Grid response was inconsistent: {details or "no details"}'
+        )
+    if result['status'] == 'ok':
+        job_id = result.get('slurm_job_id')
+        valid_success = (
+            result.get('result') in {'submitted', 'existing'} and
+            result.get('request_id') == request_id and
+            result.get('request_sha256') == digest and
+            isinstance(job_id, int) and
+            not isinstance(job_id, bool) and
+            job_id > 0 and
+            isinstance(result.get('helper'), dict)
+        )
+        if not valid_success:
+            raise SubmitUnavailable('Grid success response was incomplete')
+    return result, completed.returncode
+
+
+def result_paths(run_dir, job_id):
+    """Return concrete output paths for one submitted Slurm job."""
+    controller = run_dir / 'controller'
+    return {
+        'run_record': (run_dir / 'run.json').as_posix(),
+        'submission_record': (run_dir / 'submission.json').as_posix(),
+        'stdout_path': (controller / f'slurm-{job_id}.out').as_posix(),
+        'stderr_path': (controller / f'slurm-{job_id}.err').as_posix(),
+        'result_path': (run_dir / 'probe-result.json').as_posix(),
+    }
+
+
+def success_result(config, run_dir, record, result):
+    """Build one successful local-facing submission result."""
+    job_id = result['slurm_job_id']
+    response = {
+        'schema_version': 1,
+        'operation': 'submit',
+        'status': 'ok',
+        'result': result['result'],
+        'run_id': record['run_id'],
+        'request_id': record['request_id'],
+        'request_sha256': record['request_sha256'],
+        'slurm_job_id': job_id,
+        **result_paths(run_dir, job_id),
+        'remote_host': socket.gethostname(),
+        'helper': helper_identity(),
+        'remote_config_sha256': config_identity(config),
+    }
+    if 'helper' in result:
+        response['grid_helper'] = result['helper']
+    return response
+
+
+def submit_request(config, payload, request):
+    """Preview, durably prepare, and idempotently submit one probe."""
+    preview_result = run_preview(config, payload)
+    preview, digest = validate_preview(config, request, preview_result)
+    lock_id = acquire_global_lock(config)
+    try:
+        run_dir, record_path, record = prepare_run(config, preview, digest)
+        if record.get('status') == 'submitted':
+            job_id = record.get('controller_slurm_id')
+            if isinstance(job_id, bool) or not isinstance(job_id, int):
+                raise SubmitFailure('Submitted run record has no valid job ID')
+            recovered = {
+                'result': 'existing',
+                'slurm_job_id': job_id,
+            }
+            return success_result(config, run_dir, record, recovered), EXIT_SUCCESS
+
+        grid_result, exit_code = run_grid_submit(
+            config,
+            preview['request_id'],
+            digest,
+        )
+        if exit_code == EXIT_SUCCESS:
+            record.update({
+                'status': 'submitted',
+                'submitted_at_utc': datetime.now(timezone.utc).isoformat(),
+                'controller_slurm_id': grid_result['slurm_job_id'],
+            })
+            write_json_atomic(record_path, record)
+            return (
+                success_result(config, run_dir, record, grid_result),
+                EXIT_SUCCESS,
+            )
+
+        record['status'] = (
+            'unknown' if grid_result['status'] == 'unknown' else 'failed'
+        )
+        write_json_atomic(record_path, record)
+        return {
+            'schema_version': 1,
+            'operation': 'submit',
+            'status': grid_result['status'],
+            'reason': grid_result.get('reason', 'grid-submission-failed'),
+            'details': grid_result.get('details'),
+            'request_id': preview['request_id'],
+            'request_sha256': digest,
+            'run_record': record_path.as_posix(),
+        }, exit_code
+    finally:
+        fcntl.flock(lock_id, fcntl.LOCK_UN)
+        os.close(lock_id)
+
+
+def error_result(status, reason, details=None):
+    """Build one structured non-success result."""
+    result = {
+        'schema_version': 1,
+        'operation': 'submit',
+        'status': status,
+        'reason': reason,
+    }
+    if details:
+        result['details'] = str(details)[:500]
+    return result
+
+
+def build_parser():
+    """Build the fixed lethe-submit parser."""
+    parser = argparse.ArgumentParser(
+        description='Submit one protected idempotent Slurm probe.',
+    )
+    commands = parser.add_subparsers(dest='operation', required=True)
+    commands.add_parser('version')
+    submit = commands.add_parser('submit')
+    submit.add_argument('request_payload')
+    return parser
+
+
+def main():
+    """Run one fixed lethe-side submission operation."""
+    parser = build_parser()
+    try:
+        args = parser.parse_args()
+    except SystemExit as exc:
+        return int(exc.code)
+
+    try:
+        if args.operation == 'version':
+            result = {'status': 'ok', 'helper': helper_identity()}
+            exit_code = EXIT_SUCCESS
+        else:
+            config = load_config()
+            request = decode_request(
+                args.request_payload,
+                config['submission']['max_request_bytes'],
+            )
+            result, exit_code = submit_request(
+                config,
+                args.request_payload,
+                request,
+            )
+    except RejectedInput as exc:
+        result = error_result('rejected', 'request-rejected', exc)
+        exit_code = EXIT_REJECTED
+    except SubmitUnavailable as exc:
+        result = error_result('unknown', 'submission-uncertain', exc)
+        exit_code = EXIT_UNKNOWN
+    except SubmitFailure as exc:
+        result = error_result('failed', 'submission-failed', exc)
+        exit_code = EXIT_FAILED
+
+    print(json.dumps(result, sort_keys=True))
+    return exit_code
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())

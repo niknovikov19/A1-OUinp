@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "request_id": "a4-slurm-probe",
+  "resources": {
+    "partition": "cpu.q",
+    "nodes": 1,
+    "cores": 1,
+    "memory_gb": 1,
+    "wall_time_min": 2
+  },
+  "sbatch_parsable_cases": [
+    {
+      "stdout": "12345",
+      "accepted_job_id": 12345
+    },
+    {
+      "stdout": "12345;lattice",
+      "accepted_job_id": 12345
+    },
+    {
+      "stdout": "Submitted batch job 12345",
+      "accepted_job_id": null
+    },
+    {
+      "stdout": "0",
+      "accepted_job_id": null
+    },
+    {
+      "stdout": "12345 extra",
+      "accepted_job_id": null
+    }
+  ],
+  "existing_receipt_cases": [
+    {
+      "status": "submitted",
+      "expected_result": "existing"
+    },
+    {
+      "status": "pending",
+      "expected_result": "unknown"
+    },
+    {
+      "status": "unknown",
+      "expected_result": "unknown"
+    },
+    {
+      "status": "failed",
+      "expected_result": "failed"
+    }
+  ]
+}
