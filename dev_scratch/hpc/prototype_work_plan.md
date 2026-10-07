@@ -51,6 +51,24 @@ For every capability, use this exact loop:
 
 Each installed helper must support `--version` or an equivalent information command that reports a source hash. This lets us confirm that the protected copy matches the reviewed candidate.
 
+### Infrastructure helpers versus experiment launchers
+
+Manual promotion applies to infrastructure helpers that enforce the safety
+boundary. The A4 shell wrapper is also promoted because the A4 probe must test
+Slurm without executing repository code.
+
+Real-experiment launchers are different. Their source should remain tracked in
+the repository and travel with the exact approved commit. A protected helper
+will validate the clean commit, select an allowlisted launcher/template, render
+one run-specific `submit.sh` beneath the protected run directory, and record
+both its source and rendered SHA256 before calling `sbatch`. Experiment
+development therefore does not require manual helper promotion for every
+launcher edit.
+
+Only typed request fields may be rendered: resources, safe identifiers, and
+paths derived beneath fixed roots. Arbitrary shell text is never accepted.
+The protected rendering/submission helper remains manually promoted.
+
 The user will choose the protected paths. A representative arrangement is:
 
 ```text
@@ -274,6 +292,11 @@ Repository work:
 
 - Replace hardcoded `/ddn/.../A1_OUinp` locations with script-relative paths or one controlled configuration value.
 - Stop selecting experiments by editing constants in submission scripts; accept a strictly validated experiment/request identifier.
+- Keep the single and batch launcher sources in Git, parameterize them, and
+  render immutable per-run shell snapshots through the protected helper.
+- Separate controller resources from per-child resources in batch requests;
+  the outer controller allocation and each BatchTools child allocation are not
+  the same resource request.
 - Give every run unique controller stdout/stderr and result paths.
 - Add immutable `run.json` metadata containing commit, request digest, experiment, job count, resources, timestamps, and IDs.
 - Reuse `run_workflow.py`/`workflow_utils.py` patterns for resolved parameters, stage directories, job metadata, durable-output validation, and attempt-specific BatchTools artifacts.

@@ -111,6 +111,28 @@ Continue using commit, push, and pull for tracked source code. Git is preferable
 
 Use rsync or tar archives for result data, not for routine code deployment.
 
+### Repository launchers and protected infrastructure
+
+The protected installation should contain the generic helpers that enforce
+validation, rendering, locking, audit, and submission policy. Those helpers
+are manually promoted outside the automated checkout.
+
+The single- and batch-experiment launcher sources should remain ordinary
+tracked repository files. They are reviewed and selected through the exact
+commit rather than copied into the protected helper installation after every
+experiment change. For each approved run, the protected helper renders or
+copies the selected launcher into the protected run directory as `submit.sh`,
+validates its fixed command structure and `#SBATCH` resources, records its
+source commit/hash and rendered hash, and submits that snapshot.
+
+The A4 probe wrapper is an intentional exception: it is promoted with the
+infrastructure because A4 must prove Slurm submission without trusting or
+executing repository experiment code.
+
+For batch runs, record controller resources separately from child resources.
+The outer `submit_batch_slurm_local.sh` allocation launches the controller;
+BatchTools-generated child scripts carry the simulation allocations.
+
 The automated code-update helper should:
 
 1. Operate only in the automated checkout.
@@ -576,4 +598,3 @@ The first version is successful when Codex can:
 - retrieve one selected PNG or PKL without walking the entire result tree;
 - recognize uncertainty without automatically cancelling or duplicating jobs;
 - leave the manual VS Code–lethe checkout untouched.
-

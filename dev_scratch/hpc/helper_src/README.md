@@ -284,6 +284,12 @@ Codex, after explicit submission approval
 A4 proves protected submission and retry safety. Scheduler monitoring,
 completion reconciliation, and log/result retrieval are separate later gates.
 
+The promoted A4 wrapper is specific to the repository-independent probe. In
+integrated experiment gates, single and batch launcher sources remain tracked
+in the exact repository commit. A protected helper creates and hashes a
+run-specific shell snapshot beneath the protected run directory; launcher
+development does not require promoting a new infrastructure helper each time.
+
 ## Exit codes
 
 - `0`: success;
