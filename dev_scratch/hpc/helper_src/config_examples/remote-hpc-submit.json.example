@@ -8,7 +8,8 @@
   "remote_helpers": {
     "lethe_preview": "/ddn/niknovikov19/hpc_codex/helpers/lethe/hpc-lethe-preview",
     "grid_submit": "/ddn/niknovikov19/hpc_codex/helpers/grid/hpc-grid-submit",
-    "grid_probe_job": "/ddn/niknovikov19/hpc_codex/helpers/grid/hpc-grid-probe-job"
+    "grid_probe_job": "/ddn/niknovikov19/hpc_codex/helpers/grid/hpc-grid-probe-job",
+    "grid_probe_wrapper": "/ddn/niknovikov19/hpc_codex/helpers/grid/hpc-grid-probe-job.sh"
   },
   "runs": {
     "root": "/ddn/niknovikov19/hpc_codex/runs/A1_OUinp"
@@ -36,6 +37,7 @@
     "allowed_output_kind": "marker",
     "job_name_prefix": "a1-a4-probe",
     "max_request_bytes": 65536,
-    "probe_job_sha256": "174be04de6561b902f7d8a11ca516293ae35c05269847727181fd51a5f8dc2c8"
+    "probe_job_sha256": "39c5b55c293cf90fe62a450dc116aa328a379cdf0e423a1258076b6bc0424d44",
+    "probe_wrapper_sha256": "fdf35982027b6f33ff09a423072cdbd901fd42bd80f2ca766b1c3138cfdda665"
   }
 }

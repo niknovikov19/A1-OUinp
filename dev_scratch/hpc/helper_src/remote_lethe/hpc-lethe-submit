@@ -15,7 +15,7 @@ import stat
 import subprocess
 
 
-HELPER_VERSION = '0.5.0-a4'
+HELPER_VERSION = '0.5.1-a4'
 EXIT_SUCCESS = 0
 EXIT_REJECTED = 2
 EXIT_UNKNOWN = 3
@@ -159,7 +159,12 @@ def validate_config(config):
     )
 
     helpers = require_mapping(config['remote_helpers'], 'remote_helpers')
-    helper_keys = {'grid_probe_job', 'grid_submit', 'lethe_preview'}
+    helper_keys = {
+        'grid_probe_job',
+        'grid_probe_wrapper',
+        'grid_submit',
+        'lethe_preview',
+    }
     require_exact_keys(helpers, helper_keys, 'remote_helpers')
     for key in sorted(helper_keys):
         validate_absolute_path(helpers[key], key)
@@ -196,6 +201,7 @@ def validate_config(config):
         'job_name_prefix',
         'max_request_bytes',
         'probe_job_sha256',
+        'probe_wrapper_sha256',
     }
     require_exact_keys(submission, submission_keys, 'submission')
     ids = submission['allowed_request_ids']
@@ -211,9 +217,10 @@ def validate_config(config):
         'max request bytes',
         maximum=131072,
     )
-    digest = submission['probe_job_sha256']
-    if not isinstance(digest, str) or SHA256_RE.fullmatch(digest) is None:
-        raise SubmitFailure('Invalid probe-job SHA256')
+    for key in ('probe_job_sha256', 'probe_wrapper_sha256'):
+        digest = submission[key]
+        if not isinstance(digest, str) or SHA256_RE.fullmatch(digest) is None:
+            raise SubmitFailure(f'Invalid {key}')
     return config
 
 

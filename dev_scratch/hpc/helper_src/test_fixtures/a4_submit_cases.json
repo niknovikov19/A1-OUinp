@@ -8,6 +8,15 @@
     "memory_gb": 1,
     "wall_time_min": 2
   },
+  "wrapper_directives": [
+    "#SBATCH --partition=cpu.q",
+    "#SBATCH --nodes=1",
+    "#SBATCH --ntasks=1",
+    "#SBATCH --cpus-per-task=1",
+    "#SBATCH --mem=1G",
+    "#SBATCH --time=00:02:00",
+    "#SBATCH --export=NONE"
+  ],
   "sbatch_parsable_cases": [
     {
       "stdout": "12345",

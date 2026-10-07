@@ -19,6 +19,7 @@
       "parameter_axes": {},
       "required_repo_paths": [
         "dev_scratch/hpc/helper_src/remote_grid/hpc-grid-probe-job",
+        "dev_scratch/hpc/helper_src/remote_grid/hpc-grid-probe-job.sh",
         "exp_configs/single_rxbkg_state1_mech1/net_newsec/exp_cfg.py"
       ]
     },

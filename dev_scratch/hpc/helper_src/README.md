@@ -227,6 +227,7 @@ local/hpc-submit
 remote_lethe/hpc-lethe-submit
 remote_grid/hpc-grid-submit
 remote_grid/hpc-grid-probe-job
+remote_grid/hpc-grid-probe-job.sh
 config_examples/remote-hpc-submit.json.example
 schemas/remote-hpc-submit-config.schema.json
 schemas/submission-record.schema.json
@@ -251,9 +252,11 @@ the fixed `/usr/bin/sbatch --parsable` command. It changes the receipt to
 existing ID. A `pending` or `unknown` receipt fails closed because an earlier
 submission may have succeeded; A4 never guesses by submitting another job.
 
-Slurm executes a copied job script from its spool directory. The immutable
-compute script therefore uses the reviewed absolute shared configuration path
-instead of deriving that path from `__file__`.
+Slurm executes a copied shell wrapper from its spool directory. The wrapper
+contains the fixed `#SBATCH` resource directives and invokes the protected
+Python payload through its absolute shared path. The grid helper verifies both
+file hashes and requires the wrapper directives to match protected policy.
+The Python payload therefore retains its original shared-file `__file__`.
 
 ### A4 call chain
 
@@ -270,7 +273,9 @@ Codex, after explicit submission approval
   -> /usr/bin/ssh lattice
   -> hpc-grid-submit submit REQUEST_ID REQUEST_SHA256
   -> create pending submission.json under an exclusive per-run lock
-  -> /usr/bin/sbatch --parsable with fixed protected options
+  -> verify fixed wrapper directives and both installed file hashes
+  -> /usr/bin/sbatch --parsable hpc-grid-probe-job.sh
+  -> wrapper invokes the protected shared Python payload
   -> hpc-grid-probe-job writes probe-result.json on the compute node
   -> persist and return the Slurm job ID
   -> append the final local audit event

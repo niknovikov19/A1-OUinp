@@ -12,7 +12,7 @@ import stat
 import subprocess
 
 
-HELPER_VERSION = '0.5.0-a4'
+HELPER_VERSION = '0.5.1-a4'
 EXIT_SUCCESS = 0
 EXIT_REJECTED = 2
 EXIT_UNKNOWN = 3
@@ -154,7 +154,12 @@ def validate_config(config):
     )
 
     helpers = require_mapping(config['remote_helpers'], 'remote_helpers')
-    helper_keys = {'grid_probe_job', 'grid_submit', 'lethe_preview'}
+    helper_keys = {
+        'grid_probe_job',
+        'grid_probe_wrapper',
+        'grid_submit',
+        'lethe_preview',
+    }
     require_exact_keys(helpers, helper_keys, 'remote_helpers')
     for key in sorted(helper_keys):
         validate_absolute_path(helpers[key], key)
@@ -191,6 +196,7 @@ def validate_config(config):
         'job_name_prefix',
         'max_request_bytes',
         'probe_job_sha256',
+        'probe_wrapper_sha256',
     }
     require_exact_keys(submission, submission_keys, 'submission')
     ids = submission['allowed_request_ids']
@@ -206,9 +212,10 @@ def validate_config(config):
         'max request bytes',
         maximum=131072,
     )
-    digest = submission['probe_job_sha256']
-    if not isinstance(digest, str) or SHA256_RE.fullmatch(digest) is None:
-        raise SubmitFailure('Invalid probe-job SHA256')
+    for key in ('probe_job_sha256', 'probe_wrapper_sha256'):
+        digest = submission[key]
+        if not isinstance(digest, str) or SHA256_RE.fullmatch(digest) is None:
+            raise SubmitFailure(f'Invalid {key}')
     return config
 
 
@@ -333,15 +340,51 @@ def load_receipt(receipt_path, request_id, request_sha256):
     return receipt
 
 
-def verify_probe_job(config):
-    """Verify the installed immutable probe-job script."""
-    fpath = Path(config['remote_helpers']['grid_probe_job'])
-    require_regular_file(fpath, 'Grid probe job')
-    actual = hash_bytes(fpath.read_bytes())
-    expected = config['submission']['probe_job_sha256']
-    if actual != expected:
+def get_expected_wrapper_directives(config):
+    """Return resource directives required in the immutable shell wrapper."""
+    scheduler = config['scheduler']
+    resources = scheduler['resources']
+    return {
+        f'#SBATCH --partition={scheduler["partition"]}',
+        f'#SBATCH --nodes={resources["nodes"]}',
+        '#SBATCH --ntasks=1',
+        f'#SBATCH --cpus-per-task={resources["cores"]}',
+        f'#SBATCH --mem={resources["memory_gb"]}G',
+        f'#SBATCH --time=00:{resources["wall_time_min"]:02d}:00',
+        '#SBATCH --export=NONE',
+    }
+
+
+def verify_probe_files(config):
+    """Verify the immutable shell wrapper, payload, and resource directives."""
+    helpers = config['remote_helpers']
+    submission = config['submission']
+    job_path = Path(helpers['grid_probe_job'])
+    wrapper_path = Path(helpers['grid_probe_wrapper'])
+    require_regular_file(job_path, 'Grid probe job')
+    require_regular_file(wrapper_path, 'Grid probe wrapper')
+    try:
+        job_data = job_path.read_bytes()
+        wrapper_data = wrapper_path.read_bytes()
+    except OSError as exc:
+        raise SubmitFailure(f'Cannot read protected probe files: {exc}') from exc
+    if hash_bytes(job_data) != submission['probe_job_sha256']:
         raise SubmitFailure('Grid probe-job SHA256 does not match configuration')
-    return fpath
+    if hash_bytes(wrapper_data) != submission['probe_wrapper_sha256']:
+        raise SubmitFailure(
+            'Grid probe-wrapper SHA256 does not match configuration'
+        )
+    try:
+        wrapper_text = wrapper_data.decode('utf-8')
+    except UnicodeDecodeError as exc:
+        raise SubmitFailure('Grid probe wrapper is not valid UTF-8') from exc
+    directives = {
+        line for line in wrapper_text.splitlines()
+        if line.startswith('#SBATCH ')
+    }
+    if directives != get_expected_wrapper_directives(config):
+        raise SubmitFailure('Grid probe-wrapper resources do not match policy')
+    return wrapper_path
 
 
 def decode_bounded(value, label):
@@ -354,29 +397,28 @@ def decode_bounded(value, label):
         raise SubmitFailure(f'{label} was not valid UTF-8') from exc
 
 
-def build_sbatch_command(config, paths, request_id, request_sha256, job_name):
+def build_sbatch_command(
+    config,
+    paths,
+    request_id,
+    request_sha256,
+    job_name,
+    wrapper_path,
+):
     """Build the one fixed minimal sbatch invocation."""
     scheduler = config['scheduler']
-    resources = scheduler['resources']
     command = [
         scheduler['sbatch_path'],
         '--parsable',
         f'--job-name={job_name}',
-        f'--partition={scheduler["partition"]}',
-        f'--nodes={resources["nodes"]}',
-        '--ntasks=1',
-        f'--cpus-per-task={resources["cores"]}',
-        f'--mem={resources["memory_gb"]}G',
-        f'--time=00:{resources["wall_time_min"]:02d}:00',
         f'--output={paths["stdout"]}',
         f'--error={paths["stderr"]}',
         f'--chdir={paths["run_dir"]}',
-        '--export=NONE',
     ]
     if scheduler['account']:
         command.append(f'--account={scheduler["account"]}')
     command.extend([
-        config['remote_helpers']['grid_probe_job'],
+        wrapper_path.as_posix(),
         request_id,
         request_sha256,
     ])
@@ -465,7 +507,7 @@ def submit_probe(config, request_id, request_sha256):
         if receipt is not None:
             return existing_result(config, receipt)
 
-        verify_probe_job(config)
+        wrapper_path = verify_probe_files(config)
         prefix = config['submission']['job_name_prefix']
         job_name = f'{prefix}-{request_sha256[:12]}'
         intent_time = datetime.now(timezone.utc).isoformat()
@@ -490,6 +532,7 @@ def submit_probe(config, request_id, request_sha256):
             request_id,
             request_sha256,
             job_name,
+            wrapper_path,
         )
         try:
             job_id, sbatch_result = run_sbatch(command)

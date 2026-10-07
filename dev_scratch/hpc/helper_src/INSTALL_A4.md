@@ -16,24 +16,26 @@ options, resources, environments, and request bodies are not accepted.
 The first promoted probe, request `a4-slurm-probe`, was safely submitted as
 job `117689` but failed before writing its marker. Slurm ran a spooled copy
 under `/var/spool`, so deriving the protected configuration from `__file__`
-produced the wrong path. The corrected compute script uses the reviewed fixed
-shared configuration path. Request `a4-slurm-probe-v2` preserves the failed
-run and receipt while providing a fresh idempotency key for the corrected
-test. Do not delete or alter the original run directory.
+produced the wrong path. The corrected design submits an immutable shell
+wrapper with fixed `#SBATCH` resources. That wrapper invokes the protected
+Python payload through its original shared path. Request
+`a4-slurm-probe-v2` preserves the failed run and receipt while providing a
+fresh idempotency key. Do not delete or alter the original run directory.
 
 Reviewed candidate SHA256 values:
 
 ```text
 93c535091808a7c5d7115916e8632f9140bbaf001c55245933a553a3ea1d7e78  hpc-submit
 84e2aaae3658a613ad47648641869df61ec1a4a2442ea0c94ba35ec52242215c  hpc_common.py
-fbd00314ea61dab8740cfade961892522ef30b47770c5f1e6813e83d64711708  hpc-lethe-submit
-1825dc659160afafa0bb50f9123ad850619bbfd4f434a33cab314177e9c87787  hpc-grid-submit
-174be04de6561b902f7d8a11ca516293ae35c05269847727181fd51a5f8dc2c8  hpc-grid-probe-job
-d0b1aa7dba56af3c65c0f431b06ce0c84d0de059b20321658dd704945cea9530  remote-hpc-submit.json.example
-a11062cb38dc28879d47595d0b317f59de50662a79b81b9a77cb3106bc9c22af  preview-requests.json.example
-661208e7bbabeecc2cbba17527c9cc3b1629c39ef9f833f7830b09baf3160aa7  remote-hpc-submit-config.schema.json
+fcd83892b12d6109025682cf2bfe1c6a05e0dd2b7b510efbbf62260e9539a494  hpc-lethe-submit
+f59c99925dcda79126c8d2e20faf10e9e3ad964f076931c13c1fc3fb7629c19f  hpc-grid-submit
+39c5b55c293cf90fe62a450dc116aa328a379cdf0e423a1258076b6bc0424d44  hpc-grid-probe-job
+fdf35982027b6f33ff09a423072cdbd901fd42bd80f2ca766b1c3138cfdda665  hpc-grid-probe-job.sh
+064e86b2d99734b6f0f88d1031811dc872c5d78f7a19889009b4af473671423f  remote-hpc-submit.json.example
+5b5beae245ee448093ea87aaadf9060260c43e7a7d9711b53194c3bd13fda711  preview-requests.json.example
+3fd2432071cc24ac1f615a1456fe018204c3b3438fc10438c7902790d248835a  remote-hpc-submit-config.schema.json
 08275824f920de7c500f2658091e4b42b8d8d0ec4b4c497a7e9bfb21671c1e9e  submission-record.schema.json
-6d35e2b514853770604eacc35899e4fe56644ae21e8c9a5a936590bc15e31876  a4_submit_cases.json
+978b191c0be7496600631f27732a26677229f3310aad6fcd2de0225241e4381a  a4_submit_cases.json
 ```
 
 The expected installed local bundle version is `0.5.0-a4`, with SHA256:
@@ -185,6 +187,7 @@ sha256sum \
     "$A4_SRC/remote_lethe/hpc-lethe-submit" \
     "$A4_SRC/remote_grid/hpc-grid-submit" \
     "$A4_SRC/remote_grid/hpc-grid-probe-job" \
+    "$A4_SRC/remote_grid/hpc-grid-probe-job.sh" \
     "$A4_SRC/config_examples/remote-hpc-submit.json.example"
 ```
 
@@ -230,6 +233,10 @@ install -g "$A4_REMOTE_GROUP" -m 0555 \
     "$A4_SRC/remote_grid/hpc-grid-probe-job" \
     "$A4_REMOTE_ROOT/helpers/grid/hpc-grid-probe-job"
 
+install -g "$A4_REMOTE_GROUP" -m 0555 \
+    "$A4_SRC/remote_grid/hpc-grid-probe-job.sh" \
+    "$A4_REMOTE_ROOT/helpers/grid/hpc-grid-probe-job.sh"
+
 install -g "$A4_REMOTE_GROUP" -m 0444 \
     "$A4_SRC/config_examples/remote-hpc-submit.json.example" \
     "$A4_REMOTE_ROOT/config/A1_OUinp-submit.json"
@@ -266,6 +273,7 @@ sha256sum \
     "$A4_REMOTE_ROOT/helpers/lethe/hpc-lethe-submit" \
     "$A4_REMOTE_ROOT/helpers/grid/hpc-grid-submit" \
     "$A4_REMOTE_ROOT/helpers/grid/hpc-grid-probe-job" \
+    "$A4_REMOTE_ROOT/helpers/grid/hpc-grid-probe-job.sh" \
     "$A4_REMOTE_ROOT/config/A1_OUinp-submit.json"
 
 stat -c '%A %a %U:%G %n' \
@@ -277,6 +285,7 @@ stat -c '%A %a %U:%G %n' \
     "$A4_REMOTE_ROOT/helpers/lethe/hpc-lethe-submit" \
     "$A4_REMOTE_ROOT/helpers/grid/hpc-grid-submit" \
     "$A4_REMOTE_ROOT/helpers/grid/hpc-grid-probe-job" \
+    "$A4_REMOTE_ROOT/helpers/grid/hpc-grid-probe-job.sh" \
     "$A4_REMOTE_ROOT/config/A1_OUinp-submit.json" \
     "$A4_REMOTE_ROOT/state/A1_OUinp/submit.lock"
 ```
@@ -286,7 +295,7 @@ stat -c '%A %a %U:%G %n' \
 Report:
 
 1. `A4_COMMIT` and a clean exact automation checkout.
-2. All four installed remote hashes, the installed local `hpc-submit` and
+2. All five installed remote hashes, the installed local `hpc-submit` and
    `hpc_common.py` hashes, the generated request-registry hash, and the local
    bundle identity.
 3. Confirmation of `0555` helper/configuration directories, `0555` helpers,

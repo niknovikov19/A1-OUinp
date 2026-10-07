@@ -45,7 +45,8 @@
       "required": [
         "lethe_preview",
         "grid_submit",
-        "grid_probe_job"
+        "grid_probe_job",
+        "grid_probe_wrapper"
       ],
       "properties": {
         "lethe_preview": {
@@ -55,6 +56,9 @@
           "$ref": "#/$defs/absolute_path"
         },
         "grid_probe_job": {
+          "$ref": "#/$defs/absolute_path"
+        },
+        "grid_probe_wrapper": {
           "$ref": "#/$defs/absolute_path"
         }
       }
@@ -127,7 +131,8 @@
         "allowed_output_kind",
         "job_name_prefix",
         "max_request_bytes",
-        "probe_job_sha256"
+        "probe_job_sha256",
+        "probe_wrapper_sha256"
       ],
       "properties": {
         "allowed_request_ids": {
@@ -153,6 +158,9 @@
           "maximum": 131072
         },
         "probe_job_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "probe_wrapper_sha256": {
           "$ref": "#/$defs/sha256"
         }
       }

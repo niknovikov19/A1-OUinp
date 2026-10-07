@@ -626,3 +626,52 @@ Corrected candidate SHA256 values:
 Gate conclusion: CORRECTION READY, NOT PROMOTED. Job `117689` remains the
 immutable failed first attempt. The corrected request must be committed,
 pushed, promoted, previewed, and separately approved before submission.
+
+### A4 shell-wrapper revision
+
+The fixed-path correction commit `b13e823` was not promoted. Review of the
+established launchers showed that repository Python files retain useful
+`__file__` paths because Slurm spools a shell batch script, which then invokes
+the original Python file from shared storage.
+
+The revised candidate follows that structure:
+
+- `hpc-grid-probe-job.sh` contains the seven fixed `#SBATCH` resource and
+  export directives;
+- `hpc-grid-submit` verifies the wrapper and Python payload hashes, requires
+  the wrapper directives to exactly match protected configuration, and submits
+  the wrapper with only protected job-name, log-path, working-directory, and
+  optional-account command-line settings;
+- the wrapper invokes the protected Python payload through its absolute shared
+  path, so the payload once again derives the helper root from its original
+  `__file__`;
+- the protected request declares both wrapper and payload as tracked
+  exact-commit dependencies;
+- the remote submit helpers report version `0.5.1-a4`; the unchanged local
+  bundle remains `0.5.0-a4`.
+
+Static verification confirmed exact wrapper directives, shell syntax, Python
+ASTs, JSON schemas, request/resource agreement, tracked-dependency declaration,
+both configured file hashes, and absence of resource-allocation flags from the
+constructed `sbatch` command. No candidate was executed or imported.
+
+Final wrapper-based candidate SHA256 values:
+
+- `hpc-lethe-submit`:
+  `fcd83892b12d6109025682cf2bfe1c6a05e0dd2b7b510efbbf62260e9539a494`;
+- `hpc-grid-submit`:
+  `f59c99925dcda79126c8d2e20faf10e9e3ad964f076931c13c1fc3fb7629c19f`;
+- `hpc-grid-probe-job`:
+  `39c5b55c293cf90fe62a450dc116aa328a379cdf0e423a1258076b6bc0424d44`;
+- `hpc-grid-probe-job.sh`:
+  `fdf35982027b6f33ff09a423072cdbd901fd42bd80f2ca766b1c3138cfdda665`;
+- `remote-hpc-submit.json.example`:
+  `064e86b2d99734b6f0f88d1031811dc872c5d78f7a19889009b4af473671423f`;
+- `preview-requests.json.example`:
+  `5b5beae245ee448093ea87aaadf9060260c43e7a7d9711b53194c3bd13fda711`;
+- `remote-hpc-submit-config.schema.json`:
+  `3fd2432071cc24ac1f615a1456fe018204c3b3438fc10438c7902790d248835a`;
+- `a4_submit_cases.json`:
+  `978b191c0be7496600631f27732a26677229f3310aad6fcd2de0225241e4381a`.
+
+Gate conclusion: WRAPPER CORRECTION READY, NOT PROMOTED OR EXECUTED.
