@@ -286,9 +286,13 @@ completion reconciliation, and log/result retrieval are separate later gates.
 
 The promoted A4 wrapper is specific to the repository-independent probe. In
 integrated experiment gates, single and batch launcher sources remain tracked
-in the exact repository commit. A protected helper creates and hashes a
-run-specific shell snapshot beneath the protected run directory; launcher
+in the exact repository commit. A protected run-preparation helper creates and
+hashes a run-specific shell snapshot at
+`exp_results/automation/<experiment>/<run-id>/controller/submit.sh`; launcher
 development does not require promoting a new infrastructure helper each time.
+A separate protected submission helper rechecks that snapshot's recorded hash
+before calling `sbatch`. The script and run records remain with the ignored
+scientific-result package, while global audit and lock state remain outside it.
 
 ## Exit codes
 

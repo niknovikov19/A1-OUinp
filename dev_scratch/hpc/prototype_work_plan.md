@@ -60,14 +60,34 @@ Slurm without executing repository code.
 Real-experiment launchers are different. Their source should remain tracked in
 the repository and travel with the exact approved commit. A protected helper
 will validate the clean commit, select an allowlisted launcher/template, render
-one run-specific `submit.sh` beneath the protected run directory, and record
-both its source and rendered SHA256 before calling `sbatch`. Experiment
-development therefore does not require manual helper promotion for every
-launcher edit.
+one run-specific `submit.sh` beneath the ignored result package at
+`exp_results/automation/<experiment>/<run-id>/controller/submit.sh`, and record
+both its source and rendered SHA256. Experiment development therefore does not
+require manual helper promotion for every launcher edit.
 
 Only typed request fields may be rendered: resources, safe identifiers, and
 paths derived beneath fixed roots. Arbitrary shell text is never accepted.
-The protected rendering/submission helper remains manually promoted.
+The protected run-preparation helper writes the script atomically and removes
+its write bits as an accidental-mutation guard. A separate protected submission
+helper verifies the recorded run ID and script SHA256 immediately before
+calling `sbatch`; the hash check, not the file mode alone, establishes the
+submitted identity. Both infrastructure helpers remain manually promoted.
+
+The generated script, run records, scheduler logs, job metadata, and scientific
+outputs stay together in the ignored run package:
+
+```text
+exp_results/automation/<experiment>/<run-id>/
+    meta/{request.json,run.json,submission.json,source-hashes.json}
+    controller/{submit.sh,slurm-<job-id>.out,slurm-<job-id>.err}
+    jobs/{index.jsonl,scripts/,logs/}
+    sim_results/
+    processed/
+```
+
+The protected audit log and cross-run locks remain outside this result tree.
+Run packages are retained until an explicit archive or deletion operation and
+must never be silently overwritten.
 
 The user will choose the protected paths. A representative arrangement is:
 
@@ -90,7 +110,8 @@ hpc-probe lethe|grid
 hpc-code-status
 hpc-code-update EXPECTED_40_CHAR_COMMIT
 hpc-run-preview RUN_REQUEST
-hpc-submit RUN_REQUEST
+hpc-run-prepare RUN_REQUEST
+hpc-submit RUN_ID EXPECTED_SCRIPT_SHA256
 hpc-status RUN_ID
 hpc-log RUN_ID controller
 hpc-log RUN_ID job JOB_LABEL
@@ -105,7 +126,7 @@ hpc-result-get RUN_ID JOB_LABEL ARTIFACT_TYPE
 Use three complementary records:
 
 - Protected-helper audit log: one JSON line for every invocation, including rejected calls. Do not log secrets or full environment variables.
-- Per-run remote record: authoritative run metadata, commit, request digest, controller ID, child IDs, paths, and last known state.
+- Per-run result-package record: authoritative run metadata, commit, request digest, controller ID, child IDs, paths, and last known state.
 - Prototype test log: a repository Markdown file updated after every gate with helper version, commands invoked, sanitized output, pass/fail, and conclusions.
 
 The helper should emit structured JSON for machine use and a short human-readable summary. State-changing operations should write their intent record before acting, then update it atomically after the result is known.
@@ -293,7 +314,10 @@ Repository work:
 - Replace hardcoded `/ddn/.../A1_OUinp` locations with script-relative paths or one controlled configuration value.
 - Stop selecting experiments by editing constants in submission scripts; accept a strictly validated experiment/request identifier.
 - Keep the single and batch launcher sources in Git, parameterize them, and
-  render immutable per-run shell snapshots through the protected helper.
+  render per-run shell snapshots through the protected run-preparation helper
+  into `exp_results/automation/<experiment>/<run-id>/controller/submit.sh`.
+- Have the separate protected submission helper revalidate the recorded
+  `submit.sh` SHA256 before passing that exact snapshot to `sbatch`.
 - Separate controller resources from per-child resources in batch requests;
   the outer controller allocation and each BatchTools child allocation are not
   the same resource request.

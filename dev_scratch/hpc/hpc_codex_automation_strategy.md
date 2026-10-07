@@ -120,10 +120,20 @@ are manually promoted outside the automated checkout.
 The single- and batch-experiment launcher sources should remain ordinary
 tracked repository files. They are reviewed and selected through the exact
 commit rather than copied into the protected helper installation after every
-experiment change. For each approved run, the protected helper renders or
-copies the selected launcher into the protected run directory as `submit.sh`,
-validates its fixed command structure and `#SBATCH` resources, records its
-source commit/hash and rendered hash, and submits that snapshot.
+experiment change. For each approved run, the protected run-preparation helper
+renders or copies the selected launcher to
+`exp_results/automation/<experiment>/<run-id>/controller/submit.sh`, validates
+its fixed command structure and `#SBATCH` resources, and records its source
+commit/hash and rendered hash. A separate protected submission helper verifies
+the run ID and expected script SHA256 immediately before passing that exact
+snapshot to `sbatch`.
+
+The generated script belongs to the ignored run package beside `run.json`,
+`submission.json`, controller logs, job metadata, and scientific results. Its
+write bits are removed to prevent accidental edits, while the recorded hash is
+the authoritative identity check. The package remains until explicit archival
+or deletion and is never silently overwritten. The global audit log and
+cross-run locks remain outside `exp_results`.
 
 The A4 probe wrapper is an intentional exception: it is promoted with the
 infrastructure because A4 must prove Slurm submission without trusting or
