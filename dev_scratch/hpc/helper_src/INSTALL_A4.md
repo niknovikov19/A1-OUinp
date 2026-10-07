@@ -5,13 +5,21 @@ These instructions are for the user. Codex must not execute candidates from
 
 ## Capability and boundary
 
-A4 submits only the protected `a4-slurm-probe` request. The resulting Slurm
+A4 submits only the protected `a4-slurm-probe-v2` request. The resulting Slurm
 job writes a fixed JSON marker and four known log lines. It does not import or
 execute repository simulation code.
 
 The submitted resources are fixed at one `cpu.q` node, one task, one core,
 1 GB, and two minutes. Caller-controlled commands, paths, hosts, scheduler
 options, resources, environments, and request bodies are not accepted.
+
+The first promoted probe, request `a4-slurm-probe`, was safely submitted as
+job `117689` but failed before writing its marker. Slurm ran a spooled copy
+under `/var/spool`, so deriving the protected configuration from `__file__`
+produced the wrong path. The corrected compute script uses the reviewed fixed
+shared configuration path. Request `a4-slurm-probe-v2` preserves the failed
+run and receipt while providing a fresh idempotency key for the corrected
+test. Do not delete or alter the original run directory.
 
 Reviewed candidate SHA256 values:
 
@@ -20,12 +28,12 @@ Reviewed candidate SHA256 values:
 84e2aaae3658a613ad47648641869df61ec1a4a2442ea0c94ba35ec52242215c  hpc_common.py
 fbd00314ea61dab8740cfade961892522ef30b47770c5f1e6813e83d64711708  hpc-lethe-submit
 1825dc659160afafa0bb50f9123ad850619bbfd4f434a33cab314177e9c87787  hpc-grid-submit
-39c5b55c293cf90fe62a450dc116aa328a379cdf0e423a1258076b6bc0424d44  hpc-grid-probe-job
-fcad5d8ae33165899c394e5b433a07842fe80973e5d72fa16e00af61068ecf2c  remote-hpc-submit.json.example
-8f1b41151940d9966f61e8ce5172accf9703391e7850d3389e0f15caab0c1d00  preview-requests.json.example
+174be04de6561b902f7d8a11ca516293ae35c05269847727181fd51a5f8dc2c8  hpc-grid-probe-job
+d0b1aa7dba56af3c65c0f431b06ce0c84d0de059b20321658dd704945cea9530  remote-hpc-submit.json.example
+a11062cb38dc28879d47595d0b317f59de50662a79b81b9a77cb3106bc9c22af  preview-requests.json.example
 661208e7bbabeecc2cbba17527c9cc3b1629c39ef9f833f7830b09baf3160aa7  remote-hpc-submit-config.schema.json
 08275824f920de7c500f2658091e4b42b8d8d0ec4b4c497a7e9bfb21671c1e9e  submission-record.schema.json
-35a3b53e9e4ae48f2c54147e10744604d3e852f6181fce5902d1cb7bbc0859b5  a4_submit_cases.json
+6d35e2b514853770604eacc35899e4fe56644ae21e8c9a5a936590bc15e31876  a4_submit_cases.json
 ```
 
 The expected installed local bundle version is `0.5.0-a4`, with SHA256:
@@ -226,9 +234,12 @@ install -g "$A4_REMOTE_GROUP" -m 0444 \
     "$A4_SRC/config_examples/remote-hpc-submit.json.example" \
     "$A4_REMOTE_ROOT/config/A1_OUinp-submit.json"
 
-test ! -e "$A4_REMOTE_ROOT/state/A1_OUinp/submit.lock"
-install -g "$A4_REMOTE_GROUP" -m 0600 /dev/null \
-    "$A4_REMOTE_ROOT/state/A1_OUinp/submit.lock"
+if test ! -e "$A4_REMOTE_ROOT/state/A1_OUinp/submit.lock"; then
+    install -g "$A4_REMOTE_GROUP" -m 0600 /dev/null \
+        "$A4_REMOTE_ROOT/state/A1_OUinp/submit.lock"
+fi
+test -f "$A4_REMOTE_ROOT/state/A1_OUinp/submit.lock"
+chmod 0600 "$A4_REMOTE_ROOT/state/A1_OUinp/submit.lock"
 
 chmod 0700 \
     "$A4_REMOTE_ROOT/runs/A1_OUinp" \
@@ -241,7 +252,7 @@ chmod 0555 \
 ```
 
 If an install fails, restore the helper and configuration directories to
-`0555` before stopping. Do not pre-create the `a4-slurm-probe` run directory;
+`0555` before stopping. Do not pre-create the `a4-slurm-probe-v2` run directory;
 the helper must prove that it can create the durable record before `sbatch`.
 
 Verify the protected remote copies:
@@ -294,11 +305,11 @@ Codex will:
 1. verify installed identities, modes, exact commit, and clean checkout;
 2. reject malformed, unknown, traversal, and extra-argument request IDs
    locally without SSH or Slurm;
-3. run the protected A3 preview of `a4-slurm-probe` and confirm the fixed
+3. run the protected A3 preview of `a4-slurm-probe-v2` and confirm the fixed
    one-job policy;
 4. stop and request explicit approval for the Slurm mutation;
 5. after approval, run exactly
-   `/opt/a1-hpc/bin/hpc-submit --json a4-slurm-probe`;
+   `/opt/a1-hpc/bin/hpc-submit --json a4-slurm-probe-v2`;
 6. repeat the same command and require the same job ID with result `existing`;
 7. use the existing protected grid probe for bounded `squeue`/`sacct`
    evidence and ask the user to report the protected run files if needed;

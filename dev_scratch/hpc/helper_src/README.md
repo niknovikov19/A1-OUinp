@@ -235,7 +235,7 @@ INSTALL_A4.md
 ```
 
 `hpc-submit` accepts only a request ID from the protected request registry.
-A4 permits only `a4-slurm-probe`: one fixed marker-producing Slurm job using
+A4 permits only `a4-slurm-probe-v2`: one fixed marker-producing Slurm job using
 `cpu.q`, one node, one core, 1 GB, and two minutes. It does not execute
 repository simulation code or accept a host, command, path, partition,
 resource, environment, or Slurm option from the caller.
@@ -251,18 +251,22 @@ the fixed `/usr/bin/sbatch --parsable` command. It changes the receipt to
 existing ID. A `pending` or `unknown` receipt fails closed because an earlier
 submission may have succeeded; A4 never guesses by submitting another job.
 
+Slurm executes a copied job script from its spool directory. The immutable
+compute script therefore uses the reviewed absolute shared configuration path
+instead of deriving that path from `__file__`.
+
 ### A4 call chain
 
 ```text
 Codex, after explicit submission approval
-  -> /opt/a1-hpc/bin/hpc-submit --json a4-slurm-probe
+  -> /opt/a1-hpc/bin/hpc-submit --json a4-slurm-probe-v2
   -> select and hash the request from the protected local registry
   -> append the mandatory local submit-intent audit event
   -> /usr/bin/ssh lethe
   -> hpc-lethe-submit submit ENCODED_REQUEST
   -> hpc-lethe-preview preview ENCODED_REQUEST
   -> require the exact clean commit and fixed A4 policy
-  -> create or validate runs/A1_OUinp/a4-slurm-probe/run.json
+  -> create or validate runs/A1_OUinp/a4-slurm-probe-v2/run.json
   -> /usr/bin/ssh lattice
   -> hpc-grid-submit submit REQUEST_ID REQUEST_SHA256
   -> create pending submission.json under an exclusive per-run lock

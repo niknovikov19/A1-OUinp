@@ -1,9 +1,9 @@
 {
   "schema_version": 1,
   "requests": {
-    "a4-slurm-probe": {
+    "a4-slurm-probe-v2": {
       "schema_version": 1,
-      "request_id": "a4-slurm-probe",
+      "request_id": "a4-slurm-probe-v2",
       "run_type": "probe",
       "experiment": "single_rxbkg_state1_mech1/net_newsec",
       "expected_commit": "0000000000000000000000000000000000000000",

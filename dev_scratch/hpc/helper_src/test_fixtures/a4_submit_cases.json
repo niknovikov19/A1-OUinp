@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "request_id": "a4-slurm-probe",
+  "request_id": "a4-slurm-probe-v2",
   "resources": {
     "partition": "cpu.q",
     "nodes": 1,

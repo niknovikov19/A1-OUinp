@@ -569,3 +569,60 @@ Gate conclusion: CANDIDATE READY, NOT YET PROMOTED OR TESTED. The next steps
 are a scoped commit and push, exact A2 checkout update, manual promotion from
 `INSTALL_A4.md`, protected read-only checks, and a separate explicit approval
 before the one real Slurm submission.
+
+### A4 first submission and correction
+
+Promotion and protected pre-submission checks 2026-10-07:
+
+- the local bundle reported exact version `0.5.0-a4` and SHA256
+  `cb1d52d6b5bcaac811cdf0c33e529f64d223549bf3044c43ef6cd13f27eb30ed`;
+- the automation checkout was clean at exact commit
+  `ac889c679fb027d38b2c744513176340fdb6b64e`;
+- all reported local and remote installed hashes matched the reviewed
+  candidates, and reported protected modes matched the installation policy;
+- malformed, unknown, traversal, and extra-argument submission forms all
+  returned exit code `2` locally;
+- the protected preview reported one fixed `cpu.q` job, one core, 1 GB, two
+  minutes, and request digest
+  `5b9f4ce1f54e4aa56a72088aa32d804fb9db875c5f613bd16df3d1b1b3dcfefa`;
+- scheduler snapshots before and after preview contained no jobs.
+
+The separately approved submission created exactly one Slurm job, `117689`.
+Both durable records captured the same job ID and request digest before the
+client received success. The job then ended `FAILED` with exit code `1:0` and
+did not create `probe-result.json`. Its stderr was:
+
+```text
+Probe failed: Cannot inspect Submission configuration: [Errno 2] No such file or directory: '/var/spool/config/A1_OUinp-submit.json'
+```
+
+Root cause: `sbatch` executed its copied script beneath `/var/spool`, so the
+compute script could not derive the shared helper root from `__file__`.
+Submission, job-ID parsing, durable records, audit, and the no-duplicate
+boundary behaved as designed. No retry or second job was attempted.
+
+Correction candidate:
+
+- the compute script now uses the fixed reviewed shared configuration path
+  `/ddn/niknovikov19/hpc_codex/config/A1_OUinp-submit.json`;
+- request `a4-slurm-probe-v2` supplies a fresh idempotency key while retaining
+  the failed run and its evidence unchanged;
+- the configuration allows only the corrected request ID and binds the new
+  compute-script SHA256;
+- AST, JSON-schema, installer-shell, fixed-path, request/resource, placeholder,
+  and hash-binding checks passed without executing candidate code.
+
+Corrected candidate SHA256 values:
+
+- `hpc-grid-probe-job`:
+  `174be04de6561b902f7d8a11ca516293ae35c05269847727181fd51a5f8dc2c8`;
+- `remote-hpc-submit.json.example`:
+  `d0b1aa7dba56af3c65c0f431b06ce0c84d0de059b20321658dd704945cea9530`;
+- `preview-requests.json.example`:
+  `a11062cb38dc28879d47595d0b317f59de50662a79b81b9a77cb3106bc9c22af`;
+- `a4_submit_cases.json`:
+  `6d35e2b514853770604eacc35899e4fe56644ae21e8c9a5a936590bc15e31876`.
+
+Gate conclusion: CORRECTION READY, NOT PROMOTED. Job `117689` remains the
+immutable failed first attempt. The corrected request must be committed,
+pushed, promoted, previewed, and separately approved before submission.
