@@ -993,3 +993,47 @@ ce7488da6de975fb22fa93cdc39dbe893cfefb3b4ecc67abfb022d1477c5fb2a  local bundle
 Gate conclusion: A6.1 CANDIDATE READY, NOT PROMOTED OR EXECUTED. First prove
 the protected fixtures and existing A5 first-read/no-new-output behavior. Then
 use a separately approved fixed append probe for A6.2.
+
+## A6.1 protected incremental-log verification
+
+Promoted commit:
+
+```text
+ea2739d304396ebbe9ed7b7884167e3855997b16
+```
+
+Promotion and identity checks:
+
+- local and lethe promotion scripts both reported `A6_RESULT=PASS`;
+- the automation checkout was clean and exact at the promoted commit;
+- installed bundle version `0.7.0-a6` and digest
+  `ce7488da6de975fb22fa93cdc39dbe893cfefb3b4ecc67abfb022d1477c5fb2a`
+  matched the reviewed candidate;
+- installed local helper, shared module, schemas, remote helper,
+  configuration, and fixture hashes matched their reviewed values;
+- protected code/configuration directories remained read-only, while the
+  existing local audit state retained mode `0600`.
+
+Protected behavior checks:
+
+- missing arguments, traversal, wildcard, unknown target, and an extra
+  argument were rejected locally with exit code `2`;
+- the installed fixed self-test passed all nine cursor, chunking, cap, and
+  symlink-rejection cases;
+- the first `a5-lifecycle-probe controller` read resolved controller Slurm ID
+  `117710`, returned exactly 107 stdout bytes in five known marker lines, and
+  returned the empty regular stderr log;
+- both initial stream reads reported `reset_reason=initial`, no cap, and no
+  remaining content;
+- the immediate repeated read preserved both file identities and offsets and
+  returned zero bytes and zero lines from both streams;
+- `log-cursors.json` and `log-cursors.lock` were created with mode `0600`;
+- cursor state stored only identity, offset, size, and modification time, with
+  no log content;
+- audit entries redacted the run ID and malformed values and recorded only
+  bounded summaries such as `bytes=107;lines=5` and `bytes=0;lines=0`.
+
+Gate conclusion: A6.1 PASS. Exact-path first read, durable cursor advancement,
+no-new-output behavior, bounds, symlink rejection, protected state, and audit
+redaction are proven without submitting or mutating a Slurm job. A6.2 remains
+the separately approved fixed append-over-time probe.
