@@ -898,3 +898,41 @@ Reviewed candidate SHA256 values:
 Gate conclusion: A5.2 CANDIDATE READY, NOT PROMOTED OR EXECUTED. Promotion is
 non-submitting; the later `hpc-submit --json a5-lifecycle-probe` call requires
 separate explicit approval.
+
+### A5.2 lifecycle-monitoring result
+
+Promotion of commit `31609c0cba05c3ad920f342bc9fcf25ee1166093`
+passed locally and on lethe. The protected preview bound the fixed request to
+that exact clean commit with one core, 1 GB, a two-minute wall limit, and
+request SHA256
+`e8d0a3b25a9737158e6c2d4b791dde5913f1ba9a2933b6377b165505ecae7b0d`.
+
+After explicit approval, the protected submit chain created exactly one Slurm
+job, `117710`. Protected status observations produced this sequence:
+
+| Observed UTC | Source | Raw state | Normalized state | Queries |
+|---|---|---|---|---|
+| `05:22:12.361745` | `squeue` | `RUNNING` | `running` | `squeue=1`, `sacct=0` |
+| `05:22:38.266556` | `squeue` | `RUNNING` | `running` | `squeue=1`, `sacct=0` |
+| `05:22:55.249893` | `squeue` | `RUNNING` | `running` | `squeue=1`, `sacct=0` |
+| `05:23:03.849256` | `sacct` | `COMPLETED` | `completed` | `squeue=1`, `sacct=1` |
+| `05:23:14.770219` | `sacct` | `COMPLETED` | `completed` | `squeue=1`, `sacct=1` |
+
+The terminal accounting result was exit code `0:0` with no failure reason.
+No accounting gap was observed between the last running and first completed
+samples, an interval of approximately 8.6 seconds. This single observation
+does not prove a zero gap, so the conservative 120-second unknown-state grace
+remains appropriate. The fixed missing-accounting fixture proves the helper
+returns `unknown`, records `accounting_gap=true`, recommends retry, and does
+not infer failure.
+
+`run.json.status` reconciled from `submitted` to `running` and finally
+`complete`. The terminal repeat remained `complete`. The bounded audit tail
+recorded the preview, submission intent, successful single submission, three
+running observations, and two completed observations while redacting request
+and run IDs.
+
+Gate conclusion: A5 PASS. Compact monitoring now proves active `squeue`
+classification, terminal `sacct` fallback, conservative accounting-gap
+handling, durable reconciliation, repeated terminal stability, one scheduler
+query of each required kind per observation, and no per-job SSH or log reads.
