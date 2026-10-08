@@ -124,3 +124,49 @@ Passing A5.1 proves completed-job accounting fallback and parser behavior.
 A5 remains incomplete until A5.2 observes a fixed probe while active, handles
 any measured `squeue`-to-`sacct` gap, and reaches terminal state without
 per-job SSH connections or log reads.
+
+## A5.2 lifecycle-probe promotion
+
+A5.2 adds the fixed request `a5-lifecycle-probe`. Its protected payload waits
+45 seconds before writing the normal probe marker, giving the status helper a
+bounded window in which to observe an active job. The delay is selected only
+by the fixed request ID and cannot be supplied or changed by the caller.
+
+Reviewed candidate SHA256 values:
+
+```text
+6f5c27643a3f2eb404ab0ed77ab5a3a54a2fa042230e19d5b5d7b63943177dea  preview-requests.json.example
+1b26896c7193475da71db8b39acc7934034b29deab924f9891f31c23d5244195  hpc-grid-probe-job
+4ae471d14d71e65af57008c1ceff84a42fc7c63e6388bbcfe29c2052ba55d414  remote-hpc-submit.json.example
+```
+
+After Codex reports the exact A5.2 commit and updates the automation checkout,
+run the local registry promotion under `sudo`:
+
+```bash
+A5_COMMIT='<full 40-character A5.2 commit>'
+sudo bash /home/nnovikov/repo/A1-OUinp/dev_scratch/hpc/helper_src/promotion/promote_a5_lifecycle_local.sh \
+    "$A5_COMMIT"
+```
+
+Run the remote lifecycle promotion on lethe without `sudo`:
+
+```bash
+A5_COMMIT='<same full 40-character A5.2 commit>'
+bash /ddn/niknovikov19/repo/A1_OUinp_codex/dev_scratch/hpc/helper_src/promotion/promote_a5_lifecycle_lethe.sh \
+    "$A5_COMMIT"
+```
+
+Copy both files printed as `A5_2_REPORT`. Promotion does not submit the probe.
+After both reports pass, Codex will preview the fixed request and ask for
+explicit approval immediately before this state-changing command:
+
+```bash
+/opt/a1-hpc/bin/hpc-submit --json a5-lifecycle-probe
+```
+
+After approval, Codex will record the returned job ID, poll only through
+`hpc-status --json a5-lifecycle-probe`, observe pending or running if the
+scheduler exposes it, continue across any accounting-gap `unknown`, and finish
+at `completed`. It will not use direct scheduler commands or read logs during
+the lifecycle observation.

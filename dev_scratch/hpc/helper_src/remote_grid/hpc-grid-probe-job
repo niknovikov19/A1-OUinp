@@ -7,11 +7,15 @@ import re
 import socket
 import stat
 import sys
+import time
 
 
 REQUEST_ID_RE = re.compile(r'[A-Za-z0-9][A-Za-z0-9_.-]{0,63}')
 SHA256_RE = re.compile(r'[0-9a-f]{64}')
 JOB_ID_RE = re.compile(r'[1-9][0-9]*')
+LIFECYCLE_DELAYS_SEC = {
+    'a5-lifecycle-probe': 45,
+}
 
 
 class ProbeJobFailure(RuntimeError):
@@ -141,6 +145,10 @@ def main():
         require_real_directory(run_root, 'Run root')
         run_dir = run_root / request_id
         require_real_directory(run_dir, 'Run directory')
+        delay_sec = LIFECYCLE_DELAYS_SEC.get(request_id, 0)
+        if delay_sec:
+            print(f'lifecycle_delay_sec={delay_sec}', flush=True)
+            time.sleep(delay_sec)
         marker = {
             'schema_version': 1,
             'status': 'complete',

@@ -347,6 +347,18 @@ Codex
   -> append the final local audit event
 ```
 
+## A5.2 lifecycle probe
+
+`a5-lifecycle-probe` reuses the protected A4 submission chain with one fixed
+difference: the hash-bound grid payload waits 45 seconds for this exact request
+ID before writing its marker. The caller cannot select a duration. This gives
+`hpc-status` time to observe the job through the normal `squeue` path, after
+which the same ID should move through any accounting gap and into `sacct`.
+
+Promotion changes only the protected request registry, submission
+configuration, and probe payload. Submission remains a separate explicitly
+approved operation.
+
 ## Exit codes
 
 - `0`: success;

@@ -31,13 +31,14 @@
   },
   "submission": {
     "allowed_request_ids": [
-      "a4-slurm-probe-v2"
+      "a4-slurm-probe-v2",
+      "a5-lifecycle-probe"
     ],
     "allowed_run_type": "probe",
     "allowed_output_kind": "marker",
     "job_name_prefix": "a1-a4-probe",
     "max_request_bytes": 65536,
-    "probe_job_sha256": "39c5b55c293cf90fe62a450dc116aa328a379cdf0e423a1258076b6bc0424d44",
+    "probe_job_sha256": "1b26896c7193475da71db8b39acc7934034b29deab924f9891f31c23d5244195",
     "probe_wrapper_sha256": "fdf35982027b6f33ff09a423072cdbd901fd42bd80f2ca766b1c3138cfdda665"
   }
 }

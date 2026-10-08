@@ -845,3 +845,56 @@ cd4a7282fcada0a04416322ac9b9319437648576af757d88ac9725007946f27c  a5_status_case
 
 The corrected grid component version is `0.6.2-a5`. The local bundle and
 lethe-status helper remain unchanged.
+
+### A5.1 completed-job monitoring result
+
+After promotion of commit `d5c9546ffff7a4f9098db7a994e6747abd79377a`:
+
+- the protected self-test passed all 17 fixed cases;
+- two consecutive observations of A4 job `117706` each made one `squeue` and
+  one `sacct` query;
+- both observations returned raw `COMPLETED`, exit code `0:0`, normalized
+  `completed`, and no accounting gap;
+- the first successful observation atomically wrote `status.json` and
+  reconciled `run.json.status` to `complete`;
+- the repeated observation returned the same classification and retained
+  `complete`, demonstrating idempotent terminal monitoring;
+- the local audit tail contained both successful `run-status` events and
+  redacted their run-ID arguments.
+
+Gate conclusion: A5.1 PASS. Completed-job `sacct` fallback, normalized status,
+durable reconciliation, repeat observation, bounded audit, and fail-closed
+error behavior are proven. Active and transition monitoring remain for A5.2.
+
+### A5.2 lifecycle-probe candidate
+
+The fixed `a5-lifecycle-probe` request uses one core, 1 GB, and a two-minute
+wall limit. The hash-bound protected probe payload waits exactly 45 seconds
+only for this request ID before writing the ordinary marker. The caller cannot
+provide or alter the delay.
+
+Static verification:
+
+- the modified payload passed `ast.parse` without import or execution;
+- all 26 helper JSON documents decoded;
+- the new request and submission configuration passed their Draft 2020-12
+  schemas;
+- an independent AST literal check confirmed the exact fixed mapping
+  `a5-lifecycle-probe -> 45`;
+- the protected submission configuration binds the modified payload SHA256;
+- independent registry generation replaced ten reviewed commit placeholders
+  and preserved the deliberate changed-commit rejection entry;
+- both lifecycle promotion scripts passed `bash -n` without execution;
+- no candidate helper, payload, or promotion script was invoked or sourced.
+
+Reviewed candidate SHA256 values:
+
+```text
+6f5c27643a3f2eb404ab0ed77ab5a3a54a2fa042230e19d5b5d7b63943177dea  preview-requests.json.example
+1b26896c7193475da71db8b39acc7934034b29deab924f9891f31c23d5244195  hpc-grid-probe-job
+4ae471d14d71e65af57008c1ceff84a42fc7c63e6388bbcfe29c2052ba55d414  remote-hpc-submit.json.example
+```
+
+Gate conclusion: A5.2 CANDIDATE READY, NOT PROMOTED OR EXECUTED. Promotion is
+non-submitting; the later `hpc-submit --json a5-lifecycle-probe` call requires
+separate explicit approval.
