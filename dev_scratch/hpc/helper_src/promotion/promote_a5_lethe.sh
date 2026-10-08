@@ -87,7 +87,7 @@ a5_check_sha256 \
     '5f5f7ed374d35f9dd1e7d8dc163b276a84d8b86544b3f603d917f977e7171f83' \
     "$A5_SRC/remote_lethe/hpc-lethe-status"
 a5_check_sha256 \
-    '12cc75cf5355d8544cfba35e54dcc45e95c8043a4c401c7f8fa58679dfd82c9d' \
+    'dfab56a100baab8d06432f024ee0b57d6da786ef9e598479c4c0cbe8a65685a6' \
     "$A5_SRC/remote_grid/hpc-grid-status"
 a5_check_sha256 \
     '3ccd72366ce7c3809edea0ed15b8acd87b5af8e1dcf856662798bacc76cac905' \
@@ -149,7 +149,7 @@ a5_check_sha256 \
     '5f5f7ed374d35f9dd1e7d8dc163b276a84d8b86544b3f603d917f977e7171f83' \
     "$A5_REMOTE_ROOT/helpers/lethe/hpc-lethe-status"
 a5_check_sha256 \
-    '12cc75cf5355d8544cfba35e54dcc45e95c8043a4c401c7f8fa58679dfd82c9d' \
+    'dfab56a100baab8d06432f024ee0b57d6da786ef9e598479c4c0cbe8a65685a6' \
     "$A5_REMOTE_ROOT/helpers/grid/hpc-grid-status"
 a5_check_sha256 \
     '3ccd72366ce7c3809edea0ed15b8acd87b5af8e1dcf856662798bacc76cac905' \

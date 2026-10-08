@@ -795,3 +795,25 @@ Gate conclusion: A5.1 CANDIDATE READY, NOT PROMOTED OR EXECUTED. First prove
 parser fixtures and `sacct` fallback against completed A4 job `117706`. Only
 then add and separately approve the A5.2 slow probe used to observe active and
 accounting-gap lifecycle states.
+
+### A5.1 first protected self-test and correction
+
+Promotion of commit `c1f4d33ec9b1cbf79d0f02d66bd9785d52d57f13`
+passed locally and on lethe. The first protected fixture call then failed with
+exit code `4` before any scheduler query. The grid helper rejected the valid
+shared status configuration because its runtime validator expected only the
+grid-used top-level keys and treated the lethe-used `ssh`, `remote_helpers`,
+and `runs` keys as unknown.
+
+The correction makes `hpc-grid-status` validate the complete shared
+configuration while continuing to use only its fixed scheduler, fixture, and
+identity fields. Its component version is now `0.6.1-a5`; the corrected SHA256
+is:
+
+```text
+dfab56a100baab8d06432f024ee0b57d6da786ef9e598479c4c0cbe8a65685a6  hpc-grid-status
+```
+
+The local `0.6.0-a5` bundle and other remote artifacts are unchanged. The
+corrected remote helper must be promoted from a new exact commit before the
+protected self-test is repeated.

@@ -12,7 +12,7 @@ import stat
 import subprocess
 
 
-HELPER_VERSION = '0.6.0-a5'
+HELPER_VERSION = '0.6.1-a5'
 EXIT_SUCCESS = 0
 EXIT_REJECTED = 2
 EXIT_UNKNOWN = 3
@@ -153,8 +153,11 @@ def validate_config(config):
         'deployment_id',
         'fixtures_path',
         'fixtures_sha256',
+        'remote_helpers',
+        'runs',
         'scheduler',
         'schema_version',
+        'ssh',
     }
     require_exact_keys(config, required, 'configuration')
     if config['schema_version'] != 1:
@@ -168,6 +171,19 @@ def validate_config(config):
     )
     if not valid_digest:
         raise StatusFailure('Invalid fixtures SHA256')
+
+    ssh = require_mapping(config['ssh'], 'ssh')
+    require_exact_keys(ssh, {'connect_timeout_sec', 'grid_host_alias'}, 'ssh')
+    validate_safe_name(ssh['grid_host_alias'], 'grid host alias')
+    validate_positive_int(ssh['connect_timeout_sec'], 'connection timeout', 120)
+
+    helpers = require_mapping(config['remote_helpers'], 'remote_helpers')
+    require_exact_keys(helpers, {'grid_status'}, 'remote_helpers')
+    validate_absolute_path(helpers['grid_status'], 'grid status helper')
+
+    runs = require_mapping(config['runs'], 'runs')
+    require_exact_keys(runs, {'root'}, 'runs')
+    validate_absolute_path(runs['root'], 'run root')
 
     scheduler = require_mapping(config['scheduler'], 'scheduler')
     required = {
