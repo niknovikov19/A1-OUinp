@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "deployment_id": "a1-ouinp-codex-hpc",
+  "ssh": {
+    "grid_host_alias": "lattice",
+    "connect_timeout_sec": 15
+  },
+  "remote_helpers": {
+    "grid_status": "/ddn/niknovikov19/hpc_codex/helpers/grid/hpc-grid-status"
+  },
+  "runs": {
+    "root": "/ddn/niknovikov19/hpc_codex/runs/A1_OUinp"
+  },
+  "fixtures_path": "/ddn/niknovikov19/hpc_codex/config/A1_OUinp-status-fixtures.json",
+  "fixtures_sha256": "d0d9b5b2ffaa36b779ba78c8b42f825c57cbef42299acaa9de552de37b0b6840",
+  "scheduler": {
+    "user": "niknovikov19",
+    "squeue_path": "/usr/bin/squeue",
+    "sacct_path": "/usr/bin/sacct",
+    "query_timeout_sec": 15,
+    "max_job_ids": 11,
+    "accounting_lookback_hours": 168,
+    "accounting_grace_sec": 120
+  }
+}

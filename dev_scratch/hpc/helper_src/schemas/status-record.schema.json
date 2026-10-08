@@ -1,0 +1,149 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/a1-hpc/status-record.schema.json",
+  "title": "A1 HPC normalized scheduler status record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "run_id",
+    "observed_at_utc",
+    "previous_run_record_status",
+    "run_status",
+    "jobs",
+    "query_count",
+    "accounting_grace_sec"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "run_id": {
+      "$ref": "#/$defs/runId"
+    },
+    "observed_at_utc": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "previous_run_record_status": {
+      "enum": [
+        "prepared",
+        "submitted",
+        "running",
+        "complete",
+        "failed",
+        "cancelled",
+        "unknown"
+      ]
+    },
+    "run_status": {
+      "$ref": "#/$defs/normalizedState"
+    },
+    "jobs": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 1000,
+      "items": {
+        "$ref": "#/$defs/job"
+      }
+    },
+    "query_count": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "squeue",
+        "sacct"
+      ],
+      "properties": {
+        "squeue": {
+          "const": 1
+        },
+        "sacct": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1
+        }
+      }
+    },
+    "accounting_grace_sec": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 3600
+    }
+  },
+  "$defs": {
+    "runId": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$"
+    },
+    "normalizedState": {
+      "enum": [
+        "pending",
+        "running",
+        "completed",
+        "failed",
+        "cancelled",
+        "timeout",
+        "out-of-memory",
+        "unknown"
+      ]
+    },
+    "job": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "job_id",
+        "source",
+        "raw_state",
+        "normalized_state",
+        "reason",
+        "exit_code",
+        "accounting_gap",
+        "retry_after_sec",
+        "role"
+      ],
+      "properties": {
+        "job_id": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "source": {
+          "enum": [
+            "squeue",
+            "sacct",
+            "missing"
+          ]
+        },
+        "raw_state": {
+          "type": "string"
+        },
+        "normalized_state": {
+          "$ref": "#/$defs/normalizedState"
+        },
+        "reason": {
+          "type": "string"
+        },
+        "exit_code": {
+          "type": "string"
+        },
+        "accounting_gap": {
+          "type": "boolean"
+        },
+        "retry_after_sec": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1,
+          "maximum": 3600
+        },
+        "role": {
+          "enum": [
+            "controller",
+            "child"
+          ]
+        }
+      }
+    }
+  }
+}

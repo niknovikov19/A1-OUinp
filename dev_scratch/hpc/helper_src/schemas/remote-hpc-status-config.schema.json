@@ -1,0 +1,131 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/a1-hpc/remote-hpc-status-config.schema.json",
+  "title": "A1 HPC remote status configuration",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "deployment_id",
+    "ssh",
+    "remote_helpers",
+    "runs",
+    "fixtures_path",
+    "fixtures_sha256",
+    "scheduler"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "deployment_id": {
+      "$ref": "#/$defs/safeName"
+    },
+    "ssh": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "grid_host_alias",
+        "connect_timeout_sec"
+      ],
+      "properties": {
+        "grid_host_alias": {
+          "$ref": "#/$defs/safeName"
+        },
+        "connect_timeout_sec": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 120
+        }
+      }
+    },
+    "remote_helpers": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "grid_status"
+      ],
+      "properties": {
+        "grid_status": {
+          "$ref": "#/$defs/absolutePath"
+        }
+      }
+    },
+    "runs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "root"
+      ],
+      "properties": {
+        "root": {
+          "$ref": "#/$defs/absolutePath"
+        }
+      }
+    },
+    "fixtures_path": {
+      "$ref": "#/$defs/absolutePath"
+    },
+    "fixtures_sha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "scheduler": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "user",
+        "squeue_path",
+        "sacct_path",
+        "query_timeout_sec",
+        "max_job_ids",
+        "accounting_lookback_hours",
+        "accounting_grace_sec"
+      ],
+      "properties": {
+        "user": {
+          "$ref": "#/$defs/safeName"
+        },
+        "squeue_path": {
+          "$ref": "#/$defs/absolutePath"
+        },
+        "sacct_path": {
+          "$ref": "#/$defs/absolutePath"
+        },
+        "query_timeout_sec": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 120
+        },
+        "max_job_ids": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000
+        },
+        "accounting_lookback_hours": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 720
+        },
+        "accounting_grace_sec": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 3600
+        }
+      }
+    }
+  },
+  "$defs": {
+    "safeName": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$"
+    },
+    "absolutePath": {
+      "type": "string",
+      "pattern": "^/[^\\u0000]*$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    }
+  }
+}

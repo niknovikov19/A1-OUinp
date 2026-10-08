@@ -7,7 +7,7 @@ import stat
 from datetime import datetime, timezone
 
 
-BUNDLE_VERSION = '0.5.0-a4'
+BUNDLE_VERSION = '0.6.0-a5'
 CONFIG_SCHEMA_VERSION = 1
 
 EXIT_SUCCESS = 0
@@ -21,6 +21,7 @@ RUNTIME_SOURCE_NAMES = (
     'hpc-helper-info',
     'hpc-probe',
     'hpc-run-preview',
+    'hpc-status',
     'hpc-submit',
     'hpc_common.py',
 )
@@ -45,6 +46,7 @@ SENSITIVE_KEY_PARTS = (
 PUBLIC_AUDIT_ARGS = {
     '--help',
     '--json',
+    '--self-test',
     'audit-tail',
     'experiment-id',
     'git-commit',

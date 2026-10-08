@@ -1,0 +1,566 @@
+#!/ddn/niknovikov19/miniconda3/bin/python3
+import argparse
+from datetime import datetime, timezone
+import hashlib
+import json
+import os
+from pathlib import Path
+import pwd
+import re
+import socket
+import stat
+import subprocess
+
+
+HELPER_VERSION = '0.6.0-a5'
+EXIT_SUCCESS = 0
+EXIT_REJECTED = 2
+EXIT_UNKNOWN = 3
+EXIT_FAILED = 4
+
+MAX_COMMAND_BYTES = 131072
+JOB_IDS_RE = re.compile(r'[1-9][0-9]*(?:,[1-9][0-9]*)*')
+SAFE_NAME_RE = re.compile(r'[A-Za-z0-9][A-Za-z0-9_.-]{0,63}')
+
+NORMALIZED_STATES = {
+    'pending',
+    'running',
+    'completed',
+    'failed',
+    'cancelled',
+    'timeout',
+    'out-of-memory',
+    'unknown',
+}
+
+STATE_MAP = {
+    'BOOT_FAIL': 'failed',
+    'CANCELLED': 'cancelled',
+    'COMPLETED': 'completed',
+    'COMPLETING': 'running',
+    'CONFIGURING': 'pending',
+    'DEADLINE': 'failed',
+    'FAILED': 'failed',
+    'NODE_FAIL': 'failed',
+    'OUT_OF_MEMORY': 'out-of-memory',
+    'PENDING': 'pending',
+    'PREEMPTED': 'failed',
+    'REQUEUED': 'pending',
+    'REQUEUE_FED': 'pending',
+    'REQUEUE_HOLD': 'pending',
+    'RESIZING': 'running',
+    'REVOKED': 'failed',
+    'RUNNING': 'running',
+    'SIGNALING': 'running',
+    'SPECIAL_EXIT': 'failed',
+    'STAGE_OUT': 'running',
+    'STOPPED': 'running',
+    'SUSPENDED': 'running',
+    'TIMEOUT': 'timeout',
+}
+
+
+class RejectedInput(ValueError):
+    """Represent a scheduler-status request rejected by policy."""
+
+
+class StatusFailure(RuntimeError):
+    """Represent a known grid status failure."""
+
+
+class StatusUnavailable(RuntimeError):
+    """Represent unavailable scheduler state."""
+
+
+def get_common_root():
+    """Return the fixed shared helper root derived from this script."""
+    return Path(__file__).resolve().parents[2]
+
+
+def get_config_path():
+    """Return the fixed remote status configuration path."""
+    return get_common_root() / 'config' / 'A1_OUinp-status.json'
+
+
+def canonical_json(value):
+    """Serialize JSON deterministically for hashing."""
+    return json.dumps(value, sort_keys=True, separators=(',', ':'))
+
+
+def hash_bytes(value):
+    """Return a SHA256 digest for bytes."""
+    return hashlib.sha256(value).hexdigest()
+
+
+def helper_identity():
+    """Return the installed grid-status helper identity."""
+    fpath = Path(__file__).resolve()
+    return {
+        'name': 'hpc-grid-status',
+        'version': HELPER_VERSION,
+        'source_sha256': hash_bytes(fpath.read_bytes()),
+    }
+
+
+def require_mapping(value, label):
+    """Return a mapping or reject it."""
+    if not isinstance(value, dict):
+        raise StatusFailure(f'{label} must be an object')
+    return value
+
+
+def require_exact_keys(value, required, label):
+    """Reject missing or unknown mapping keys."""
+    missing = sorted(set(required) - set(value))
+    unknown = sorted(set(value) - set(required))
+    if missing:
+        raise StatusFailure(f'{label} is missing keys: {missing}')
+    if unknown:
+        raise StatusFailure(f'{label} has unknown keys: {unknown}')
+
+
+def validate_safe_name(value, label):
+    """Validate one short shell-inert name."""
+    if not isinstance(value, str) or SAFE_NAME_RE.fullmatch(value) is None:
+        raise StatusFailure(f'Invalid {label}')
+    return value
+
+
+def validate_absolute_path(value, label):
+    """Validate one normalized absolute POSIX path."""
+    if not isinstance(value, str) or not value:
+        raise StatusFailure(f'{label} must be a non-empty string')
+    fpath = Path(value)
+    if not fpath.is_absolute() or '..' in fpath.parts:
+        raise StatusFailure(f'{label} must be an absolute normalized path')
+    if fpath.as_posix() != value:
+        raise StatusFailure(f'{label} must use normalized POSIX syntax')
+    return value
+
+
+def validate_positive_int(value, label, maximum):
+    """Validate one bounded positive integer."""
+    valid = not isinstance(value, bool) and isinstance(value, int)
+    if not valid or value < 1 or value > maximum:
+        raise StatusFailure(f'{label} must be between 1 and {maximum}')
+    return value
+
+
+def validate_config(config):
+    """Validate the fixed grid status configuration."""
+    config = require_mapping(config, 'configuration')
+    required = {
+        'deployment_id',
+        'fixtures_path',
+        'fixtures_sha256',
+        'scheduler',
+        'schema_version',
+    }
+    require_exact_keys(config, required, 'configuration')
+    if config['schema_version'] != 1:
+        raise StatusFailure('Unsupported status configuration schema')
+    validate_safe_name(config['deployment_id'], 'deployment ID')
+    validate_absolute_path(config['fixtures_path'], 'fixtures path')
+    fixtures_sha256 = config['fixtures_sha256']
+    valid_digest = (
+        isinstance(fixtures_sha256, str) and
+        re.fullmatch(r'[0-9a-f]{64}', fixtures_sha256) is not None
+    )
+    if not valid_digest:
+        raise StatusFailure('Invalid fixtures SHA256')
+
+    scheduler = require_mapping(config['scheduler'], 'scheduler')
+    required = {
+        'accounting_grace_sec',
+        'accounting_lookback_hours',
+        'max_job_ids',
+        'query_timeout_sec',
+        'sacct_path',
+        'squeue_path',
+        'user',
+    }
+    require_exact_keys(scheduler, required, 'scheduler')
+    validate_safe_name(scheduler['user'], 'scheduler user')
+    validate_absolute_path(scheduler['squeue_path'], 'squeue path')
+    validate_absolute_path(scheduler['sacct_path'], 'sacct path')
+    validate_positive_int(scheduler['query_timeout_sec'], 'query timeout', 120)
+    validate_positive_int(scheduler['max_job_ids'], 'maximum job IDs', 1000)
+    validate_positive_int(
+        scheduler['accounting_lookback_hours'],
+        'accounting lookback hours',
+        24 * 30,
+    )
+    validate_positive_int(
+        scheduler['accounting_grace_sec'],
+        'accounting grace seconds',
+        3600,
+    )
+    return config
+
+
+def require_regular_file(fpath, label):
+    """Require one non-symlink regular file."""
+    try:
+        file_stat = fpath.lstat()
+    except OSError as exc:
+        raise StatusFailure(f'Cannot inspect {label}: {exc}') from exc
+    if stat.S_ISLNK(file_stat.st_mode) or not stat.S_ISREG(file_stat.st_mode):
+        raise StatusFailure(f'{label} must be a regular file')
+
+
+def load_json_file(fpath, label):
+    """Load one fixed non-symlink JSON file."""
+    require_regular_file(fpath, label)
+    try:
+        with open(fpath, 'r') as fid:
+            return json.load(fid)
+    except (OSError, json.JSONDecodeError) as exc:
+        raise StatusFailure(f'Cannot load {label}: {exc}') from exc
+
+
+def load_config():
+    """Load and validate the fixed remote status configuration."""
+    return validate_config(load_json_file(get_config_path(), 'status configuration'))
+
+
+def config_identity(config):
+    """Return the validated remote configuration digest."""
+    return hash_bytes(canonical_json(config).encode())
+
+
+def validate_job_ids(value, maximum):
+    """Validate one bounded comma-separated list of unique job IDs."""
+    if not isinstance(value, str) or JOB_IDS_RE.fullmatch(value) is None:
+        raise RejectedInput('Job IDs must be comma-separated positive integers')
+    job_ids = [int(item) for item in value.split(',')]
+    if len(job_ids) > maximum:
+        raise RejectedInput(f'At most {maximum} job IDs are allowed')
+    if len(job_ids) != len(set(job_ids)):
+        raise RejectedInput('Duplicate job IDs are not allowed')
+    return job_ids
+
+
+def decode_bounded(value, label):
+    """Decode one bounded UTF-8 subprocess stream."""
+    if len(value) > MAX_COMMAND_BYTES:
+        raise StatusUnavailable(f'{label} exceeded {MAX_COMMAND_BYTES} bytes')
+    try:
+        return value.decode('utf-8')
+    except UnicodeDecodeError as exc:
+        raise StatusUnavailable(f'{label} was not valid UTF-8') from exc
+
+
+def run_fixed(command, timeout):
+    """Run one fixed scheduler query with bounded output."""
+    environment = os.environ.copy()
+    environment.update({'LANG': 'C', 'LC_ALL': 'C'})
+    try:
+        completed = subprocess.run(
+            command,
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            timeout=timeout,
+            check=False,
+            env=environment,
+        )
+    except subprocess.TimeoutExpired as exc:
+        raise StatusUnavailable(f'Command timed out: {command[0]}') from exc
+    except OSError as exc:
+        raise StatusUnavailable(f'Cannot run scheduler query: {exc}') from exc
+    stdout = decode_bounded(completed.stdout, 'Command stdout')
+    stderr = decode_bounded(completed.stderr, 'Command stderr')
+    if completed.returncode != 0:
+        details = stderr.replace('\r', ' ').replace('\n', ' ').strip()[:500]
+        raise StatusUnavailable(
+            f'Command exited {completed.returncode}: {details}'
+        )
+    return stdout
+
+
+def state_token(raw_state):
+    """Return the stable leading token from one raw Slurm state."""
+    return raw_state.strip().split(maxsplit=1)[0].rstrip('+').upper()
+
+
+def normalize_state(raw_state):
+    """Normalize one raw Slurm state into the A5 state vocabulary."""
+    if not isinstance(raw_state, str) or not raw_state.strip():
+        return 'unknown'
+    return STATE_MAP.get(state_token(raw_state), 'unknown')
+
+
+def parse_rows(output, fields, known_ids, label):
+    """Parse fixed pipe-delimited scheduler rows by known job ID."""
+    rows = {}
+    for line in output.splitlines():
+        if not line.strip():
+            continue
+        values = line.rstrip('\r').split('|')
+        if len(values) != len(fields):
+            raise StatusFailure(f'Malformed {label} row')
+        row = dict(zip(fields, values))
+        raw_job_id = row['job_id'].strip()
+        if not raw_job_id.isdigit() or int(raw_job_id) not in known_ids:
+            raise StatusFailure(f'Unexpected {label} job ID')
+        job_id = int(raw_job_id)
+        if job_id in rows:
+            raise StatusFailure(f'Duplicate {label} job ID')
+        rows[job_id] = row
+    return rows
+
+
+def parse_squeue(output, known_ids):
+    """Parse fixed squeue output."""
+    return parse_rows(
+        output,
+        ('job_id', 'raw_state', 'reason'),
+        known_ids,
+        'squeue',
+    )
+
+
+def parse_sacct(output, known_ids):
+    """Parse fixed allocation-only sacct output."""
+    return parse_rows(
+        output,
+        ('job_id', 'raw_state', 'exit_code', 'reason'),
+        known_ids,
+        'sacct',
+    )
+
+
+def job_result(job_id, source, row=None, grace_sec=None):
+    """Build one normalized per-job scheduler result."""
+    if row is None:
+        return {
+            'job_id': job_id,
+            'source': 'missing',
+            'raw_state': '',
+            'normalized_state': 'unknown',
+            'reason': 'accounting-delay-or-missing',
+            'exit_code': '',
+            'accounting_gap': True,
+            'retry_after_sec': grace_sec,
+        }
+    return {
+        'job_id': job_id,
+        'source': source,
+        'raw_state': row['raw_state'].strip(),
+        'normalized_state': normalize_state(row['raw_state']),
+        'reason': row.get('reason', '').strip(),
+        'exit_code': row.get('exit_code', '').strip(),
+        'accounting_gap': False,
+        'retry_after_sec': None,
+    }
+
+
+def query_scheduler(config, job_ids):
+    """Query all known jobs once through squeue and once through sacct."""
+    scheduler = config['scheduler']
+    timeout = scheduler['query_timeout_sec']
+    ids_text = ','.join(str(job_id) for job_id in job_ids)
+    squeue_command = [
+        scheduler['squeue_path'],
+        '--noheader',
+        '--user',
+        scheduler['user'],
+        '--jobs',
+        ids_text,
+        '--format',
+        '%i|%T|%r',
+    ]
+    squeue = parse_squeue(
+        run_fixed(squeue_command, timeout),
+        set(job_ids),
+    )
+
+    absent_ids = [job_id for job_id in job_ids if job_id not in squeue]
+    sacct = {}
+    sacct_queries = 0
+    if absent_ids:
+        absent_text = ','.join(str(job_id) for job_id in absent_ids)
+        sacct_command = [
+            scheduler['sacct_path'],
+            '--noheader',
+            '--parsable2',
+            '--allocations',
+            '--starttime',
+            f'now-{scheduler["accounting_lookback_hours"]}hours',
+            '--user',
+            scheduler['user'],
+            '--jobs',
+            absent_text,
+            '--format',
+            'JobIDRaw,State,ExitCode,Reason',
+        ]
+        sacct = parse_sacct(
+            run_fixed(sacct_command, timeout),
+            set(absent_ids),
+        )
+        sacct_queries = 1
+
+    jobs = []
+    grace_sec = scheduler['accounting_grace_sec']
+    for job_id in job_ids:
+        if job_id in squeue:
+            jobs.append(job_result(job_id, 'squeue', squeue[job_id]))
+        elif job_id in sacct:
+            jobs.append(job_result(job_id, 'sacct', sacct[job_id]))
+        else:
+            jobs.append(job_result(job_id, 'missing', grace_sec=grace_sec))
+    return jobs, {'squeue': 1, 'sacct': sacct_queries}
+
+
+def load_fixtures(config):
+    """Load the fixed protected parser fixture document."""
+    fpath = Path(config['fixtures_path'])
+    require_regular_file(fpath, 'status fixtures')
+    try:
+        fixture_data = fpath.read_bytes()
+    except OSError as exc:
+        raise StatusFailure(f'Cannot read status fixtures: {exc}') from exc
+    if hash_bytes(fixture_data) != config['fixtures_sha256']:
+        raise StatusFailure('Status fixture SHA256 does not match configuration')
+    fixtures = load_json_file(fpath, 'status fixtures')
+    if not isinstance(fixtures, dict) or fixtures.get('schema_version') != 1:
+        raise StatusFailure('Invalid status fixture document')
+    return fixtures
+
+
+def run_self_test(config):
+    """Exercise the fixed normalization and parser fixtures."""
+    fixtures = load_fixtures(config)
+    passed = 0
+    for case in fixtures.get('normalization_cases', []):
+        if normalize_state(case['raw_state']) != case['expected_state']:
+            raise StatusFailure(f'Normalization fixture failed: {case["name"]}')
+        passed += 1
+    for case in fixtures.get('squeue_cases', []):
+        parsed = parse_squeue(case['output'], set(case['known_job_ids']))
+        states = {
+            str(job_id): normalize_state(row['raw_state'])
+            for job_id, row in parsed.items()
+        }
+        if states != case['expected_states']:
+            raise StatusFailure(f'squeue fixture failed: {case["name"]}')
+        passed += 1
+    for case in fixtures.get('sacct_cases', []):
+        parsed = parse_sacct(case['output'], set(case['known_job_ids']))
+        states = {
+            str(job_id): normalize_state(row['raw_state'])
+            for job_id, row in parsed.items()
+        }
+        if states != case['expected_states']:
+            raise StatusFailure(f'sacct fixture failed: {case["name"]}')
+        passed += 1
+    for case in fixtures.get('malformed_cases', []):
+        parser = parse_squeue if case['parser'] == 'squeue' else parse_sacct
+        try:
+            parser(case['output'], set(case['known_job_ids']))
+        except StatusFailure:
+            passed += 1
+        else:
+            raise StatusFailure(f'Malformed fixture was accepted: {case["name"]}')
+    return {
+        'schema_version': 1,
+        'operation': 'grid-status-self-test',
+        'status': 'ok',
+        'cases_passed': passed,
+        'helper': helper_identity(),
+        'remote_config_sha256': config_identity(config),
+    }
+
+
+def status_result(config, job_ids):
+    """Build one compact normalized scheduler-status response."""
+    if pwd.getpwuid(os.getuid()).pw_name != config['scheduler']['user']:
+        raise StatusFailure('Current user does not match scheduler policy')
+    jobs, query_count = query_scheduler(config, job_ids)
+    return {
+        'schema_version': 1,
+        'operation': 'grid-status',
+        'status': 'ok',
+        'observed_at_utc': datetime.now(timezone.utc).isoformat(),
+        'remote_host': socket.gethostname(),
+        'job_ids': job_ids,
+        'jobs': jobs,
+        'query_count': query_count,
+        'accounting_grace_sec': config['scheduler']['accounting_grace_sec'],
+        'helper': helper_identity(),
+        'remote_config_sha256': config_identity(config),
+    }
+
+
+def error_result(operation, status, reason, details=None):
+    """Build one structured non-success grid-status result."""
+    result = {
+        'schema_version': 1,
+        'operation': operation,
+        'status': status,
+        'reason': reason,
+    }
+    if details:
+        result['details'] = str(details)[:500]
+    return result
+
+
+def build_parser():
+    """Build the fixed grid-status parser."""
+    parser = argparse.ArgumentParser(
+        description='Inspect a bounded list of recorded Slurm job IDs.',
+    )
+    commands = parser.add_subparsers(dest='operation', required=True)
+    commands.add_parser('version')
+    commands.add_parser('self-test')
+    status = commands.add_parser('status')
+    status.add_argument('job_ids')
+    return parser
+
+
+def main():
+    """Run one fixed grid-side status operation."""
+    parser = build_parser()
+    try:
+        args = parser.parse_args()
+    except SystemExit as exc:
+        return int(exc.code)
+
+    operation = (
+        'grid-status-self-test'
+        if args.operation == 'self-test'
+        else 'grid-status'
+    )
+    try:
+        if args.operation == 'version':
+            result = {'status': 'ok', 'helper': helper_identity()}
+        else:
+            config = load_config()
+            if args.operation == 'self-test':
+                result = run_self_test(config)
+            else:
+                maximum = config['scheduler']['max_job_ids']
+                job_ids = validate_job_ids(args.job_ids, maximum)
+                result = status_result(config, job_ids)
+        exit_code = EXIT_SUCCESS
+    except RejectedInput as exc:
+        result = error_result(operation, 'rejected', 'request-rejected', exc)
+        exit_code = EXIT_REJECTED
+    except StatusUnavailable as exc:
+        result = error_result(
+            operation,
+            'unknown',
+            'scheduler-unavailable',
+            exc,
+        )
+        exit_code = EXIT_UNKNOWN
+    except StatusFailure as exc:
+        result = error_result(operation, 'failed', 'status-failed', exc)
+        exit_code = EXIT_FAILED
+
+    print(json.dumps(result, sort_keys=True))
+    return exit_code
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())

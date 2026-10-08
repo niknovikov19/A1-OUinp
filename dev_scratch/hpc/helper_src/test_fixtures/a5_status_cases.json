@@ -1,0 +1,106 @@
+{
+  "schema_version": 1,
+  "normalization_cases": [
+    {
+      "name": "pending",
+      "raw_state": "PENDING",
+      "expected_state": "pending"
+    },
+    {
+      "name": "running",
+      "raw_state": "RUNNING",
+      "expected_state": "running"
+    },
+    {
+      "name": "completed",
+      "raw_state": "COMPLETED",
+      "expected_state": "completed"
+    },
+    {
+      "name": "failed",
+      "raw_state": "FAILED",
+      "expected_state": "failed"
+    },
+    {
+      "name": "cancelled-with-actor",
+      "raw_state": "CANCELLED by 1001",
+      "expected_state": "cancelled"
+    },
+    {
+      "name": "timeout",
+      "raw_state": "TIMEOUT",
+      "expected_state": "timeout"
+    },
+    {
+      "name": "out-of-memory",
+      "raw_state": "OUT_OF_MEMORY",
+      "expected_state": "out-of-memory"
+    },
+    {
+      "name": "state-suffix",
+      "raw_state": "COMPLETED+",
+      "expected_state": "completed"
+    },
+    {
+      "name": "unknown",
+      "raw_state": "FUTURE_STATE",
+      "expected_state": "unknown"
+    },
+    {
+      "name": "empty",
+      "raw_state": "",
+      "expected_state": "unknown"
+    }
+  ],
+  "squeue_cases": [
+    {
+      "name": "pending-and-running",
+      "known_job_ids": [101, 102],
+      "output": "101|PENDING|Resources\n102|RUNNING|None\n",
+      "expected_states": {
+        "101": "pending",
+        "102": "running"
+      }
+    }
+  ],
+  "sacct_cases": [
+    {
+      "name": "terminal-states",
+      "known_job_ids": [201, 202, 203, 204, 205],
+      "output": "201|COMPLETED|0:0|None\n202|FAILED|1:0|NonZeroExitCode\n203|CANCELLED by 1001|0:15|None\n204|TIMEOUT|0:0|TimeLimit\n205|OUT_OF_MEMORY|0:125|OutOfMemory\n",
+      "expected_states": {
+        "201": "completed",
+        "202": "failed",
+        "203": "cancelled",
+        "204": "timeout",
+        "205": "out-of-memory"
+      }
+    }
+  ],
+  "malformed_cases": [
+    {
+      "name": "squeue-short-row",
+      "parser": "squeue",
+      "known_job_ids": [301],
+      "output": "301|RUNNING\n"
+    },
+    {
+      "name": "squeue-unknown-id",
+      "parser": "squeue",
+      "known_job_ids": [301],
+      "output": "999|RUNNING|None\n"
+    },
+    {
+      "name": "sacct-duplicate-id",
+      "parser": "sacct",
+      "known_job_ids": [401],
+      "output": "401|FAILED|1:0|Failure\n401|FAILED|1:0|Failure\n"
+    },
+    {
+      "name": "sacct-extra-field",
+      "parser": "sacct",
+      "known_job_ids": [402],
+      "output": "402|COMPLETED|0:0|None|extra\n"
+    }
+  ]
+}

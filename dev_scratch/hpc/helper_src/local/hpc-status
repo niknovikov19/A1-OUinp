@@ -1,0 +1,301 @@
+#!/usr/bin/env python3
+import argparse
+import json
+from pathlib import Path
+import shlex
+import subprocess
+import sys
+
+sys.dont_write_bytecode = True
+
+from hpc_common import (
+    EXIT_FAILED,
+    EXIT_REJECTED,
+    EXIT_SUCCESS,
+    EXIT_UNKNOWN,
+    HelperFailure,
+    RejectedInput,
+    append_audit_event,
+    get_config_identity,
+    load_config,
+    validate_run_id,
+)
+
+
+SSH_PATH = '/usr/bin/ssh'
+MAX_REMOTE_BYTES = 131072
+REMOTE_OPERATION_TIMEOUT_SEC = 60
+
+
+class RemoteUnavailable(RuntimeError):
+    """Represent unavailable or invalid remote status output."""
+
+
+def build_parser():
+    """Build the fixed run-status parser."""
+    parser = argparse.ArgumentParser(
+        description='Inspect one protected HPC run by its recorded ID.',
+    )
+    parser.add_argument(
+        '--json',
+        action='store_true',
+        help='Print structured JSON instead of a concise summary.',
+    )
+    parser.add_argument(
+        '--self-test',
+        action='store_true',
+        help='Run the fixed protected scheduler-parser fixtures.',
+    )
+    parser.add_argument('run_id', nargs='?')
+    return parser
+
+
+def validate_args(args):
+    """Validate the run selection or fixed self-test mode."""
+    if args.self_test:
+        if args.run_id is not None:
+            raise RejectedInput('Self-test does not accept a run ID')
+        return None
+    if args.run_id is None:
+        raise RejectedInput('A run ID is required')
+    return validate_run_id(args.run_id)
+
+
+def build_ssh_command(config, operation, run_id=None):
+    """Build one allowlisted lethe status-helper invocation."""
+    helper = Path(config['remote_helpers']['lethe_dir']) / 'hpc-lethe-status'
+    parts = [shlex.quote(helper.as_posix()), operation]
+    if run_id is not None:
+        parts.append(shlex.quote(run_id))
+    timeout = config['ssh']['connect_timeout_sec']
+    return [
+        SSH_PATH,
+        '-o',
+        'BatchMode=yes',
+        '-o',
+        f'ConnectTimeout={timeout}',
+        '-o',
+        'ConnectionAttempts=1',
+        '--',
+        config['ssh']['lethe_host_alias'],
+        ' '.join(parts),
+    ]
+
+
+def decode_bounded(value, label):
+    """Decode one bounded UTF-8 subprocess stream."""
+    if len(value) > MAX_REMOTE_BYTES:
+        raise RemoteUnavailable(f'{label} exceeded {MAX_REMOTE_BYTES} bytes')
+    try:
+        return value.decode('utf-8')
+    except UnicodeDecodeError as exc:
+        raise RemoteUnavailable(f'{label} was not valid UTF-8') from exc
+
+
+def summarize_stderr(value):
+    """Return one bounded single-line SSH error summary."""
+    summary = value.replace('\r', ' ').replace('\n', ' ').strip()
+    return summary[:500] if summary else 'no error details'
+
+
+def error_result(operation, status, reason, details=None):
+    """Build one structured non-success status result."""
+    result = {
+        'schema_version': 1,
+        'operation': operation,
+        'status': status,
+        'reason': reason,
+    }
+    if details:
+        result['details'] = str(details)[:500]
+    return result
+
+
+def parse_remote_result(stdout, operation, run_id):
+    """Parse and minimally bind one remote status response."""
+    try:
+        result = json.loads(stdout)
+    except json.JSONDecodeError as exc:
+        raise RemoteUnavailable('Remote status was not valid JSON') from exc
+    expected_operation = (
+        'status-self-test' if operation == 'self-test' else 'run-status'
+    )
+    valid = (
+        isinstance(result, dict) and
+        result.get('operation') == expected_operation and
+        result.get('status') in {'ok', 'rejected', 'unknown', 'failed'}
+    )
+    if not valid:
+        raise RemoteUnavailable('Remote status object was invalid')
+    if result['status'] == 'ok' and run_id is not None:
+        valid_success = (
+            result.get('run_id') == run_id and
+            result.get('run_status') in {
+                'pending',
+                'running',
+                'completed',
+                'failed',
+                'cancelled',
+                'timeout',
+                'out-of-memory',
+                'unknown',
+            } and
+            isinstance(result.get('jobs'), list) and
+            bool(result['jobs'])
+        )
+        if not valid_success:
+            raise RemoteUnavailable('Remote status success was incomplete')
+    if result['status'] == 'ok' and operation == 'self-test':
+        cases_passed = result.get('cases_passed')
+        valid_count = (
+            isinstance(cases_passed, int) and
+            not isinstance(cases_passed, bool) and
+            cases_passed > 0
+        )
+        if not valid_count:
+            raise RemoteUnavailable('Remote self-test success was incomplete')
+    return result
+
+
+def run_status(config, operation, run_id):
+    """Run the fixed remote status operation and normalize its exit state."""
+    result_operation = (
+        'status-self-test' if operation == 'self-test' else 'run-status'
+    )
+    command = build_ssh_command(config, operation, run_id)
+    try:
+        completed = subprocess.run(
+            command,
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            timeout=REMOTE_OPERATION_TIMEOUT_SEC,
+            check=False,
+        )
+    except subprocess.TimeoutExpired:
+        return error_result(
+            result_operation,
+            'unknown',
+            'operation-timeout',
+        ), EXIT_UNKNOWN
+    except OSError as exc:
+        return error_result(
+            result_operation,
+            'unknown',
+            'ssh-unavailable',
+            exc,
+        ), EXIT_UNKNOWN
+
+    try:
+        stdout = decode_bounded(completed.stdout, 'Remote stdout')
+        stderr = decode_bounded(completed.stderr, 'Remote stderr')
+        result = parse_remote_result(stdout, operation, run_id)
+    except RemoteUnavailable as exc:
+        details = completed.stderr.decode('utf-8', errors='replace')
+        return error_result(
+            result_operation,
+            'unknown',
+            str(exc),
+            summarize_stderr(details),
+        ), EXIT_UNKNOWN
+
+    expected = {
+        EXIT_SUCCESS: 'ok',
+        EXIT_REJECTED: 'rejected',
+        EXIT_UNKNOWN: 'unknown',
+        EXIT_FAILED: 'failed',
+    }
+    if expected.get(completed.returncode) != result['status']:
+        return error_result(
+            result_operation,
+            'unknown',
+            'inconsistent-remote-result',
+            summarize_stderr(stderr),
+        ), EXIT_UNKNOWN
+    result['local_config_sha256'] = get_config_identity(config)
+    return result, completed.returncode
+
+
+def audit_or_fail(status, exit_code, raw_args, details=None):
+    """Write one mandatory local status audit event."""
+    try:
+        append_audit_event(
+            'run-status',
+            status,
+            exit_code,
+            raw_args,
+            details=details,
+            helper='hpc-status',
+        )
+    except HelperFailure as exc:
+        print(f'Audit failure: {exc}', file=sys.stderr)
+        return False
+    return True
+
+
+def print_result(result, as_json):
+    """Print one structured or concise run-status result."""
+    if as_json:
+        print(json.dumps(result, indent=2, sort_keys=True))
+        return
+    print(f'Status: {result["status"]}')
+    if result['status'] != 'ok':
+        print(f'Reason: {result["reason"]}')
+        return
+    if result['operation'] == 'status-self-test':
+        print(f'Cases passed: {result["cases_passed"]}')
+        return
+    print(f'Run: {result["run_id"]}')
+    print(f'Run state: {result["run_status"]}')
+    for job in result['jobs']:
+        print(
+            f'{job["role"]} {job["job_id"]}: '
+            f'{job["normalized_state"]} '
+            f'({job["source"]}:{job["raw_state"]})'
+        )
+
+
+def reject_input(raw_args, details):
+    """Audit and report one locally rejected status request."""
+    if not audit_or_fail('rejected', EXIT_REJECTED, raw_args, details):
+        return EXIT_FAILED
+    print(f'Rejected: {details}', file=sys.stderr)
+    return EXIT_REJECTED
+
+
+def main():
+    """Run the protected A5 compact status command."""
+    raw_args = sys.argv[1:]
+    parser = build_parser()
+    try:
+        args = parser.parse_args(raw_args)
+    except SystemExit as exc:
+        exit_code = int(exc.code)
+        status = 'success' if exit_code == 0 else 'rejected'
+        if not audit_or_fail(status, exit_code, raw_args):
+            return EXIT_FAILED
+        return exit_code
+
+    try:
+        run_id = validate_args(args)
+        config = load_config()
+        operation = 'self-test' if args.self_test else 'status'
+        result, exit_code = run_status(config, operation, run_id)
+    except RejectedInput as exc:
+        return reject_input(raw_args, exc)
+    except HelperFailure as exc:
+        if not audit_or_fail('failed', EXIT_FAILED, raw_args, type(exc).__name__):
+            return EXIT_FAILED
+        print(f'Failed: {exc}', file=sys.stderr)
+        return EXIT_FAILED
+
+    audit_status = 'success' if result['status'] == 'ok' else result['status']
+    details = result.get('reason') or result.get('run_status') or 'self-test'
+    if not audit_or_fail(audit_status, exit_code, raw_args, details):
+        return EXIT_FAILED
+    print_result(result, args.json)
+    return exit_code
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())

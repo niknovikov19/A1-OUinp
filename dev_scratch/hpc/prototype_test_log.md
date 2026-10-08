@@ -732,3 +732,66 @@ parsable job-ID capture, successful shell-wrapper execution on a compute node,
 atomic result marking, fail-closed retry handling, and idempotent replay without
 duplicate Slurm submission. Job `117689` remains the preserved failed first
 attempt, and job `117706` is the successful wrapper-based completion.
+
+## A5.1 completed-job monitoring candidate
+
+Candidate scope 2026-10-08:
+
+- local `hpc-status` accepts only a validated run ID or the fixed
+  `--self-test` operation and appends a mandatory audit event;
+- `hpc-lethe-status` resolves that ID beneath the fixed run root, rejects
+  symlinked paths, and loads scheduler IDs only from `run.json`;
+- `hpc-grid-status` accepts the bounded integer IDs from the lethe helper and
+  performs one user-scoped `squeue` query for all IDs;
+- IDs absent from `squeue` are passed together to at most one allocation-only
+  `sacct` query with a fixed seven-day lookback;
+- raw state, reason, and exit code are preserved beside normalized pending,
+  running, completed, failed, cancelled, timeout, out-of-memory, or unknown
+  state;
+- absence from both scheduler responses is an accounting-gap `unknown` with a
+  fixed 120-second retry recommendation, never an inferred failure;
+- successful known observations atomically write `status.json` and reconcile
+  `run.json.status`; unknown or unavailable state does not overwrite the run
+  record;
+- the protected fixture document is bound into configuration by SHA256 and the
+  fixed self-test covers normalization, active/terminal parser output, and
+  malformed rows without calling Slurm.
+
+Static verification:
+
+- all candidate Python files passed `ast.parse` without import or execution;
+- all 26 JSON documents decoded, and the A5 configuration and representative
+  status record passed their Draft 2020-12 schemas;
+- an independent AST/literal fixture check confirmed all ten normalization
+  cases and the eight-state vocabulary;
+- both promotion scripts passed `bash -n` without execution;
+- source review confirmed one `squeue` call for all recorded IDs, at most one
+  `sacct` call for absent IDs, bounded output, fixed absolute scheduler paths,
+  no log reads, no caller-provided paths, and no shell execution interface;
+- no candidate helper was invoked, imported, sourced, or promoted.
+
+Reviewed candidate SHA256 values:
+
+- `hpc-status`:
+  `dde49bb7b565adb96fb38b559e0cbbaa5eb8abbf5fc7353e5f72634871543cd0`;
+- `hpc_common.py`:
+  `e4b894a3b7e92585974d48ab6c4de87b77b3646665c20f6b9b730fa713432423`;
+- `hpc-lethe-status`:
+  `5f5f7ed374d35f9dd1e7d8dc163b276a84d8b86544b3f603d917f977e7171f83`;
+- `hpc-grid-status`:
+  `12cc75cf5355d8544cfba35e54dcc45e95c8043a4c401c7f8fa58679dfd82c9d`;
+- `remote-hpc-status.json.example`:
+  `3ccd72366ce7c3809edea0ed15b8acd87b5af8e1dcf856662798bacc76cac905`;
+- `a5_status_cases.json`:
+  `d0d9b5b2ffaa36b779ba78c8b42f825c57cbef42299acaa9de552de37b0b6840`;
+- `remote-hpc-status-config.schema.json`:
+  `fff824437f4b755b8fad896346c9ad53eae101add4b87a82031389551a189c75`;
+- `status-record.schema.json`:
+  `e29da82aa81c9cb62d9bb5f52f4b9201c3aae40c60eb9abe3672086e6a2e7ade`;
+- expected installed local bundle:
+  `ed3200ad97205464f86120ed0daf116cb73bb669b7d7c0c9615ce83c55f55d76`.
+
+Gate conclusion: A5.1 CANDIDATE READY, NOT PROMOTED OR EXECUTED. First prove
+parser fixtures and `sacct` fallback against completed A4 job `117706`. Only
+then add and separately approve the A5.2 slow probe used to observe active and
+accounting-gap lifecycle states.

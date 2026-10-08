@@ -1,0 +1,631 @@
+#!/ddn/niknovikov19/miniconda3/bin/python3
+import argparse
+import fcntl
+import hashlib
+import json
+import os
+from pathlib import Path
+import re
+import shlex
+import socket
+import stat
+import subprocess
+
+
+HELPER_VERSION = '0.6.0-a5'
+EXIT_SUCCESS = 0
+EXIT_REJECTED = 2
+EXIT_UNKNOWN = 3
+EXIT_FAILED = 4
+
+REMOTE_TIMEOUT_SEC = 45
+MAX_COMMAND_BYTES = 131072
+RUN_ID_RE = re.compile(r'[A-Za-z0-9][A-Za-z0-9._-]{0,79}')
+SAFE_NAME_RE = re.compile(r'[A-Za-z0-9][A-Za-z0-9_.-]{0,63}')
+
+NORMALIZED_STATES = {
+    'pending',
+    'running',
+    'completed',
+    'failed',
+    'cancelled',
+    'timeout',
+    'out-of-memory',
+    'unknown',
+}
+
+
+class RejectedInput(ValueError):
+    """Represent a run-status request rejected by policy."""
+
+
+class StatusFailure(RuntimeError):
+    """Represent a known lethe status failure."""
+
+
+class StatusUnavailable(RuntimeError):
+    """Represent unavailable scheduler state."""
+
+
+def get_common_root():
+    """Return the fixed shared helper root derived from this script."""
+    return Path(__file__).resolve().parents[2]
+
+
+def get_config_path():
+    """Return the fixed remote status configuration path."""
+    return get_common_root() / 'config' / 'A1_OUinp-status.json'
+
+
+def canonical_json(value):
+    """Serialize JSON deterministically for hashing and records."""
+    return json.dumps(value, sort_keys=True, separators=(',', ':'))
+
+
+def hash_bytes(value):
+    """Return a SHA256 digest for bytes."""
+    return hashlib.sha256(value).hexdigest()
+
+
+def helper_identity():
+    """Return the installed lethe-status helper identity."""
+    fpath = Path(__file__).resolve()
+    return {
+        'name': 'hpc-lethe-status',
+        'version': HELPER_VERSION,
+        'source_sha256': hash_bytes(fpath.read_bytes()),
+    }
+
+
+def require_mapping(value, label):
+    """Return a mapping or reject it."""
+    if not isinstance(value, dict):
+        raise StatusFailure(f'{label} must be an object')
+    return value
+
+
+def require_exact_keys(value, required, label):
+    """Reject missing or unknown mapping keys."""
+    missing = sorted(set(required) - set(value))
+    unknown = sorted(set(value) - set(required))
+    if missing:
+        raise StatusFailure(f'{label} is missing keys: {missing}')
+    if unknown:
+        raise StatusFailure(f'{label} has unknown keys: {unknown}')
+
+
+def validate_safe_name(value, label):
+    """Validate one short shell-inert name."""
+    if not isinstance(value, str) or SAFE_NAME_RE.fullmatch(value) is None:
+        raise StatusFailure(f'Invalid {label}')
+    return value
+
+
+def validate_absolute_path(value, label):
+    """Validate one normalized absolute POSIX path."""
+    if not isinstance(value, str) or not value:
+        raise StatusFailure(f'{label} must be a non-empty string')
+    fpath = Path(value)
+    if not fpath.is_absolute() or '..' in fpath.parts:
+        raise StatusFailure(f'{label} must be an absolute normalized path')
+    if fpath.as_posix() != value:
+        raise StatusFailure(f'{label} must use normalized POSIX syntax')
+    return value
+
+
+def validate_positive_int(value, label, maximum):
+    """Validate one bounded positive integer."""
+    valid = not isinstance(value, bool) and isinstance(value, int)
+    if not valid or value < 1 or value > maximum:
+        raise StatusFailure(f'{label} must be between 1 and {maximum}')
+    return value
+
+
+def validate_config(config):
+    """Validate the fixed lethe status configuration."""
+    config = require_mapping(config, 'configuration')
+    required = {
+        'deployment_id',
+        'fixtures_path',
+        'fixtures_sha256',
+        'remote_helpers',
+        'runs',
+        'scheduler',
+        'schema_version',
+        'ssh',
+    }
+    require_exact_keys(config, required, 'configuration')
+    if config['schema_version'] != 1:
+        raise StatusFailure('Unsupported status configuration schema')
+    validate_safe_name(config['deployment_id'], 'deployment ID')
+    validate_absolute_path(config['fixtures_path'], 'fixtures path')
+    fixtures_sha256 = config['fixtures_sha256']
+    valid_digest = (
+        isinstance(fixtures_sha256, str) and
+        re.fullmatch(r'[0-9a-f]{64}', fixtures_sha256) is not None
+    )
+    if not valid_digest:
+        raise StatusFailure('Invalid fixtures SHA256')
+
+    ssh = require_mapping(config['ssh'], 'ssh')
+    require_exact_keys(ssh, {'connect_timeout_sec', 'grid_host_alias'}, 'ssh')
+    validate_safe_name(ssh['grid_host_alias'], 'grid host alias')
+    validate_positive_int(ssh['connect_timeout_sec'], 'connection timeout', 120)
+
+    helpers = require_mapping(config['remote_helpers'], 'remote_helpers')
+    require_exact_keys(helpers, {'grid_status'}, 'remote_helpers')
+    validate_absolute_path(helpers['grid_status'], 'grid status helper')
+
+    runs = require_mapping(config['runs'], 'runs')
+    require_exact_keys(runs, {'root'}, 'runs')
+    validate_absolute_path(runs['root'], 'run root')
+
+    scheduler = require_mapping(config['scheduler'], 'scheduler')
+    required = {
+        'accounting_grace_sec',
+        'accounting_lookback_hours',
+        'max_job_ids',
+        'query_timeout_sec',
+        'sacct_path',
+        'squeue_path',
+        'user',
+    }
+    require_exact_keys(scheduler, required, 'scheduler')
+    validate_safe_name(scheduler['user'], 'scheduler user')
+    validate_absolute_path(scheduler['squeue_path'], 'squeue path')
+    validate_absolute_path(scheduler['sacct_path'], 'sacct path')
+    validate_positive_int(scheduler['query_timeout_sec'], 'query timeout', 120)
+    validate_positive_int(scheduler['max_job_ids'], 'maximum job IDs', 1000)
+    validate_positive_int(
+        scheduler['accounting_lookback_hours'],
+        'accounting lookback hours',
+        24 * 30,
+    )
+    validate_positive_int(
+        scheduler['accounting_grace_sec'],
+        'accounting grace seconds',
+        3600,
+    )
+    return config
+
+
+def require_regular_file(fpath, label):
+    """Require one non-symlink regular file."""
+    try:
+        file_stat = fpath.lstat()
+    except OSError as exc:
+        raise StatusFailure(f'Cannot inspect {label}: {exc}') from exc
+    if stat.S_ISLNK(file_stat.st_mode) or not stat.S_ISREG(file_stat.st_mode):
+        raise StatusFailure(f'{label} must be a regular file')
+
+
+def require_real_directory(dirpath, label):
+    """Require one non-symlink directory."""
+    try:
+        file_stat = dirpath.lstat()
+    except OSError as exc:
+        raise StatusFailure(f'Cannot inspect {label}: {exc}') from exc
+    if stat.S_ISLNK(file_stat.st_mode) or not stat.S_ISDIR(file_stat.st_mode):
+        raise StatusFailure(f'{label} must be a real directory')
+
+
+def load_json_file(fpath, label):
+    """Load one fixed non-symlink JSON file."""
+    require_regular_file(fpath, label)
+    try:
+        with open(fpath, 'r') as fid:
+            return json.load(fid)
+    except (OSError, json.JSONDecodeError) as exc:
+        raise StatusFailure(f'Cannot load {label}: {exc}') from exc
+
+
+def load_config():
+    """Load and validate the fixed remote status configuration."""
+    return validate_config(load_json_file(get_config_path(), 'status configuration'))
+
+
+def config_identity(config):
+    """Return the validated remote configuration digest."""
+    return hash_bytes(canonical_json(config).encode())
+
+
+def validate_run_id(value):
+    """Validate one path-safe known run ID."""
+    if not isinstance(value, str) or RUN_ID_RE.fullmatch(value) is None:
+        raise RejectedInput('Invalid run ID')
+    return value
+
+
+def validate_job_id(value, label):
+    """Validate one positive integer Slurm job ID."""
+    valid = not isinstance(value, bool) and isinstance(value, int) and value > 0
+    if not valid:
+        raise StatusFailure(f'Invalid {label}')
+    return value
+
+
+def load_run(config, run_id):
+    """Load one exact run record and its recorded Slurm IDs."""
+    run_root = Path(config['runs']['root'])
+    require_real_directory(run_root, 'run root')
+    run_dir = run_root / run_id
+    require_real_directory(run_dir, 'run directory')
+    record_path = run_dir / 'run.json'
+    record = load_json_file(record_path, 'run record')
+    if record.get('run_id') != run_id or record.get('request_id') != run_id:
+        raise RejectedInput('Run record identity does not match requested run')
+    if record.get('status') not in {
+        'prepared',
+        'submitted',
+        'running',
+        'complete',
+        'failed',
+        'cancelled',
+        'unknown',
+    }:
+        raise StatusFailure('Run record has an invalid status')
+    controller_id = validate_job_id(
+        record.get('controller_slurm_id'),
+        'controller Slurm ID',
+    )
+    child_ids = record.get('child_slurm_ids', [])
+    if not isinstance(child_ids, list):
+        raise StatusFailure('Child Slurm IDs must be a list')
+    child_ids = [
+        validate_job_id(value, 'child Slurm ID')
+        for value in child_ids
+    ]
+    job_ids = [controller_id, *child_ids]
+    maximum = config['scheduler']['max_job_ids']
+    if len(job_ids) > maximum:
+        raise StatusFailure(f'Run exceeds the {maximum}-job status limit')
+    if len(job_ids) != len(set(job_ids)):
+        raise StatusFailure('Run record contains duplicate Slurm job IDs')
+    return run_dir, record_path, record, job_ids
+
+
+def decode_bounded(value, label):
+    """Decode one bounded UTF-8 subprocess stream."""
+    if len(value) > MAX_COMMAND_BYTES:
+        raise StatusUnavailable(f'{label} exceeded {MAX_COMMAND_BYTES} bytes')
+    try:
+        return value.decode('utf-8')
+    except UnicodeDecodeError as exc:
+        raise StatusUnavailable(f'{label} was not valid UTF-8') from exc
+
+
+def run_command(command, timeout):
+    """Run one fixed remote helper invocation."""
+    try:
+        return subprocess.run(
+            command,
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            timeout=timeout,
+            check=False,
+        )
+    except subprocess.TimeoutExpired as exc:
+        raise StatusUnavailable('Remote status operation timed out') from exc
+    except OSError as exc:
+        raise StatusUnavailable(f'Cannot execute remote status: {exc}') from exc
+
+
+def build_grid_command(config, operation, job_ids=None):
+    """Build one fixed grid-status SSH invocation."""
+    helper = config['remote_helpers']['grid_status']
+    parts = [shlex.quote(helper), operation]
+    if job_ids is not None:
+        parts.append(','.join(str(job_id) for job_id in job_ids))
+    timeout = config['ssh']['connect_timeout_sec']
+    return [
+        '/usr/bin/ssh',
+        '-o',
+        'BatchMode=yes',
+        '-o',
+        f'ConnectTimeout={timeout}',
+        '-o',
+        'ConnectionAttempts=1',
+        '--',
+        config['ssh']['grid_host_alias'],
+        ' '.join(parts),
+    ]
+
+
+def run_grid(config, operation, job_ids=None):
+    """Run and validate one installed grid-status operation."""
+    command = build_grid_command(config, operation, job_ids)
+    completed = run_command(command, REMOTE_TIMEOUT_SEC)
+    stdout = decode_bounded(completed.stdout, 'Grid stdout')
+    stderr = decode_bounded(completed.stderr, 'Grid stderr')
+    try:
+        result = json.loads(stdout)
+    except json.JSONDecodeError as exc:
+        raise StatusUnavailable('Grid status was not valid JSON') from exc
+    expected = {
+        EXIT_SUCCESS: 'ok',
+        EXIT_REJECTED: 'rejected',
+        EXIT_UNKNOWN: 'unknown',
+        EXIT_FAILED: 'failed',
+    }
+    expected_operation = (
+        'grid-status-self-test' if operation == 'self-test' else 'grid-status'
+    )
+    valid = (
+        isinstance(result, dict) and
+        result.get('operation') == expected_operation and
+        expected.get(completed.returncode) == result.get('status')
+    )
+    if not valid:
+        details = stderr.replace('\r', ' ').replace('\n', ' ').strip()[:500]
+        raise StatusUnavailable(
+            f'Grid status response was inconsistent: {details or "no details"}'
+        )
+    if result['status'] != 'ok':
+        return result, completed.returncode
+    if job_ids is not None:
+        result_jobs = result.get('jobs')
+        query_count = result.get('query_count')
+        grace_sec = result.get('accounting_grace_sec')
+        valid_metadata = (
+            isinstance(result.get('observed_at_utc'), str) and
+            bool(result['observed_at_utc']) and
+            isinstance(result.get('helper'), dict) and
+            isinstance(query_count, dict) and
+            query_count.get('squeue') == 1 and
+            query_count.get('sacct') in {0, 1} and
+            isinstance(grace_sec, int) and
+            not isinstance(grace_sec, bool) and
+            1 <= grace_sec <= 3600
+        )
+        valid_jobs = (
+            valid_metadata and
+            result.get('job_ids') == job_ids and
+            isinstance(result_jobs, list) and
+            len(result_jobs) == len(job_ids) and
+            [item.get('job_id') for item in result_jobs] == job_ids
+        )
+        if not valid_jobs:
+            raise StatusUnavailable('Grid status jobs did not match the run record')
+        for item in result_jobs:
+            valid_item = (
+                isinstance(item, dict) and
+                item.get('normalized_state') in NORMALIZED_STATES and
+                item.get('source') in {'squeue', 'sacct', 'missing'} and
+                isinstance(item.get('raw_state'), str) and
+                isinstance(item.get('reason'), str) and
+                isinstance(item.get('exit_code'), str) and
+                isinstance(item.get('accounting_gap'), bool)
+            )
+            if not valid_item:
+                raise StatusUnavailable('Grid returned an invalid job status')
+    else:
+        cases_passed = result.get('cases_passed')
+        valid_count = (
+            isinstance(cases_passed, int) and
+            not isinstance(cases_passed, bool) and
+            cases_passed > 0
+        )
+        if not valid_count:
+            raise StatusUnavailable('Grid self-test result was invalid')
+    return result, completed.returncode
+
+
+def aggregate_state(jobs):
+    """Aggregate normalized per-job states conservatively."""
+    states = {job['normalized_state'] for job in jobs}
+    if not states <= NORMALIZED_STATES:
+        raise StatusUnavailable('Grid returned an invalid normalized state')
+    if 'running' in states:
+        return 'running'
+    if 'pending' in states:
+        return 'pending'
+    if 'unknown' in states:
+        return 'unknown'
+    for state in ('out-of-memory', 'timeout', 'failed', 'cancelled'):
+        if state in states:
+            return state
+    if states == {'completed'}:
+        return 'completed'
+    return 'unknown'
+
+
+def run_record_status(run_status):
+    """Map the A5 scheduler state to the existing run-record vocabulary."""
+    return {
+        'pending': 'submitted',
+        'running': 'running',
+        'completed': 'complete',
+        'failed': 'failed',
+        'cancelled': 'cancelled',
+        'timeout': 'failed',
+        'out-of-memory': 'failed',
+        'unknown': 'unknown',
+    }[run_status]
+
+
+def write_json_atomic(fpath, value):
+    """Atomically replace one fixed JSON record."""
+    temp_path = fpath.with_name(f'.{fpath.name}.{os.getpid()}.tmp')
+    data = (canonical_json(value) + '\n').encode()
+    flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
+    flags |= getattr(os, 'O_CLOEXEC', 0)
+    flags |= getattr(os, 'O_NOFOLLOW', 0)
+    try:
+        file_id = os.open(temp_path, flags, 0o600)
+        try:
+            os.write(file_id, data)
+            os.fsync(file_id)
+        finally:
+            os.close(file_id)
+        os.replace(temp_path, fpath)
+    except OSError as exc:
+        raise StatusFailure(f'Cannot write status record: {exc}') from exc
+
+
+def acquire_status_lock(run_dir):
+    """Create if needed and exclusively lock one per-run status lock."""
+    lock_path = run_dir / 'status.lock'
+    flags = os.O_RDWR | os.O_CREAT | getattr(os, 'O_CLOEXEC', 0)
+    flags |= getattr(os, 'O_NOFOLLOW', 0)
+    try:
+        file_id = os.open(lock_path, flags, 0o600)
+        os.fchmod(file_id, 0o600)
+        fcntl.flock(file_id, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError as exc:
+        os.close(file_id)
+        raise StatusFailure('Run status lock is active') from exc
+    except OSError as exc:
+        raise StatusFailure(f'Cannot acquire run status lock: {exc}') from exc
+    return file_id
+
+
+def reconcile_status(config, run_id):
+    """Query recorded IDs, persist status, and reconcile the run record."""
+    run_dir, record_path, record, job_ids = load_run(config, run_id)
+    grid_result, exit_code = run_grid(config, 'status', job_ids)
+    if exit_code != EXIT_SUCCESS:
+        return {
+            'schema_version': 1,
+            'operation': 'run-status',
+            'status': grid_result['status'],
+            'reason': grid_result.get('reason', 'grid-status-unavailable'),
+            'details': grid_result.get('details'),
+            'run_id': run_id,
+        }, exit_code
+
+    jobs = []
+    for index, job in enumerate(grid_result['jobs']):
+        job = dict(job)
+        job['role'] = 'controller' if index == 0 else 'child'
+        jobs.append(job)
+    run_status = aggregate_state(jobs)
+    previous_status = record.get('status')
+    status_record = {
+        'schema_version': 1,
+        'run_id': run_id,
+        'observed_at_utc': grid_result['observed_at_utc'],
+        'previous_run_record_status': previous_status,
+        'run_status': run_status,
+        'jobs': jobs,
+        'query_count': grid_result['query_count'],
+        'accounting_grace_sec': grid_result['accounting_grace_sec'],
+    }
+
+    lock_id = acquire_status_lock(run_dir)
+    try:
+        write_json_atomic(run_dir / 'status.json', status_record)
+        if run_status != 'unknown':
+            record['status'] = run_record_status(run_status)
+            write_json_atomic(record_path, record)
+    finally:
+        fcntl.flock(lock_id, fcntl.LOCK_UN)
+        os.close(lock_id)
+
+    return {
+        'schema_version': 1,
+        'operation': 'run-status',
+        'status': 'ok',
+        'run_id': run_id,
+        'run_status': run_status,
+        'run_record_status': record.get('status'),
+        'observed_at_utc': grid_result['observed_at_utc'],
+        'jobs': jobs,
+        'query_count': grid_result['query_count'],
+        'accounting_grace_sec': grid_result['accounting_grace_sec'],
+        'status_record': (run_dir / 'status.json').as_posix(),
+        'run_record': record_path.as_posix(),
+        'remote_host': socket.gethostname(),
+        'helper': helper_identity(),
+        'grid_helper': grid_result['helper'],
+        'remote_config_sha256': config_identity(config),
+    }, EXIT_SUCCESS
+
+
+def self_test(config):
+    """Run the fixed protected grid parser fixtures."""
+    result, exit_code = run_grid(config, 'self-test')
+    if exit_code != EXIT_SUCCESS:
+        return {
+            'schema_version': 1,
+            'operation': 'status-self-test',
+            'status': result['status'],
+            'reason': result.get('reason', 'grid-self-test-failed'),
+            'details': result.get('details'),
+        }, exit_code
+    return {
+        'schema_version': 1,
+        'operation': 'status-self-test',
+        'status': 'ok',
+        'cases_passed': result['cases_passed'],
+        'remote_host': socket.gethostname(),
+        'helper': helper_identity(),
+        'grid_helper': result['helper'],
+        'remote_config_sha256': config_identity(config),
+    }, EXIT_SUCCESS
+
+
+def error_result(operation, status, reason, details=None):
+    """Build one structured non-success lethe-status result."""
+    result = {
+        'schema_version': 1,
+        'operation': operation,
+        'status': status,
+        'reason': reason,
+    }
+    if details:
+        result['details'] = str(details)[:500]
+    return result
+
+
+def build_parser():
+    """Build the fixed lethe-status parser."""
+    parser = argparse.ArgumentParser(
+        description='Inspect one recorded run through bounded Slurm queries.',
+    )
+    commands = parser.add_subparsers(dest='operation', required=True)
+    commands.add_parser('version')
+    commands.add_parser('self-test')
+    status = commands.add_parser('status')
+    status.add_argument('run_id')
+    return parser
+
+
+def main():
+    """Run one fixed lethe-side status operation."""
+    parser = build_parser()
+    try:
+        args = parser.parse_args()
+    except SystemExit as exc:
+        return int(exc.code)
+
+    operation = (
+        'status-self-test' if args.operation == 'self-test' else 'run-status'
+    )
+    try:
+        if args.operation == 'version':
+            result = {'status': 'ok', 'helper': helper_identity()}
+            exit_code = EXIT_SUCCESS
+        else:
+            config = load_config()
+            if args.operation == 'self-test':
+                result, exit_code = self_test(config)
+            else:
+                run_id = validate_run_id(args.run_id)
+                result, exit_code = reconcile_status(config, run_id)
+    except RejectedInput as exc:
+        result = error_result(operation, 'rejected', 'request-rejected', exc)
+        exit_code = EXIT_REJECTED
+    except StatusUnavailable as exc:
+        result = error_result(operation, 'unknown', 'status-unavailable', exc)
+        exit_code = EXIT_UNKNOWN
+    except StatusFailure as exc:
+        result = error_result(operation, 'failed', 'status-failed', exc)
+        exit_code = EXIT_FAILED
+
+    print(json.dumps(result, sort_keys=True))
+    return exit_code
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())
