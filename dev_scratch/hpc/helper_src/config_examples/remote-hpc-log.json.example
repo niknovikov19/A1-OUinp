@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "deployment_id": "a1-ouinp-codex-hpc",
+  "runs": {
+    "root": "/ddn/niknovikov19/hpc_codex/runs/A1_OUinp"
+  },
+  "fixtures_path": "/ddn/niknovikov19/hpc_codex/config/A1_OUinp-log-fixtures.json",
+  "fixtures_sha256": "c753d732b59f335cd4b322af5673ef528673232f228a10cc18756d779e30b929",
+  "limits": {
+    "max_lines_per_stream": 200,
+    "max_bytes_per_stream": 65536,
+    "max_cursor_payload_bytes": 16384
+  }
+}

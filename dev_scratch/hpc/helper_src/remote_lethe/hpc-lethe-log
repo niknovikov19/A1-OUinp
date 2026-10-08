@@ -1,0 +1,579 @@
+#!/ddn/niknovikov19/miniconda3/bin/python3
+import argparse
+import base64
+import binascii
+import hashlib
+import json
+import os
+from pathlib import Path
+import re
+import socket
+import stat
+
+
+HELPER_VERSION = '0.7.0-a6'
+EXIT_SUCCESS = 0
+EXIT_REJECTED = 2
+EXIT_UNKNOWN = 3
+EXIT_FAILED = 4
+
+RUN_ID_RE = re.compile(r'[A-Za-z0-9][A-Za-z0-9._-]{0,79}')
+SAFE_NAME_RE = re.compile(r'[A-Za-z0-9][A-Za-z0-9_.-]{0,63}')
+SHA256_RE = re.compile(r'[0-9a-f]{64}')
+IDENTITY_RE = re.compile(r'[0-9]+:[0-9]+')
+
+
+class RejectedInput(ValueError):
+    """Represent an incremental-log request rejected by policy."""
+
+
+class LogFailure(RuntimeError):
+    """Represent a known incremental-log failure."""
+
+
+def get_common_root():
+    """Return the fixed shared helper root derived from this script."""
+    return Path(__file__).resolve().parents[2]
+
+
+def get_config_path():
+    """Return the fixed remote log configuration path."""
+    return get_common_root() / 'config' / 'A1_OUinp-log.json'
+
+
+def canonical_json(value):
+    """Serialize JSON deterministically for hashing."""
+    return json.dumps(value, sort_keys=True, separators=(',', ':'))
+
+
+def hash_bytes(value):
+    """Return a SHA256 digest for bytes."""
+    return hashlib.sha256(value).hexdigest()
+
+
+def helper_identity():
+    """Return the installed lethe-log helper identity."""
+    fpath = Path(__file__).resolve()
+    return {
+        'name': 'hpc-lethe-log',
+        'version': HELPER_VERSION,
+        'source_sha256': hash_bytes(fpath.read_bytes()),
+    }
+
+
+def require_mapping(value, label):
+    """Return a mapping or reject it."""
+    if not isinstance(value, dict):
+        raise LogFailure(f'{label} must be an object')
+    return value
+
+
+def require_exact_keys(value, required, label):
+    """Reject missing or unknown mapping keys."""
+    missing = sorted(set(required) - set(value))
+    unknown = sorted(set(value) - set(required))
+    if missing:
+        raise LogFailure(f'{label} is missing keys: {missing}')
+    if unknown:
+        raise LogFailure(f'{label} has unknown keys: {unknown}')
+
+
+def require_request_mapping(value, label):
+    """Return a caller mapping or reject it."""
+    if not isinstance(value, dict):
+        raise RejectedInput(f'{label} must be an object')
+    return value
+
+
+def require_request_exact_keys(value, required, label):
+    """Reject missing or unknown caller mapping keys."""
+    missing = sorted(set(required) - set(value))
+    unknown = sorted(set(value) - set(required))
+    if missing:
+        raise RejectedInput(f'{label} is missing keys: {missing}')
+    if unknown:
+        raise RejectedInput(f'{label} has unknown keys: {unknown}')
+
+
+def validate_safe_name(value, label):
+    """Validate one short shell-inert name."""
+    if not isinstance(value, str) or SAFE_NAME_RE.fullmatch(value) is None:
+        raise LogFailure(f'Invalid {label}')
+    return value
+
+
+def validate_absolute_path(value, label):
+    """Validate one normalized absolute POSIX path."""
+    if not isinstance(value, str) or not value:
+        raise LogFailure(f'{label} must be a non-empty string')
+    fpath = Path(value)
+    if not fpath.is_absolute() or '..' in fpath.parts:
+        raise LogFailure(f'{label} must be an absolute normalized path')
+    if fpath.as_posix() != value:
+        raise LogFailure(f'{label} must use normalized POSIX syntax')
+    return value
+
+
+def validate_positive_int(value, label, maximum):
+    """Validate one bounded positive integer."""
+    valid = not isinstance(value, bool) and isinstance(value, int)
+    if not valid or value < 1 or value > maximum:
+        raise LogFailure(f'{label} must be between 1 and {maximum}')
+    return value
+
+
+def validate_config(config):
+    """Validate the fixed remote incremental-log configuration."""
+    config = require_mapping(config, 'configuration')
+    required = {
+        'deployment_id',
+        'fixtures_path',
+        'fixtures_sha256',
+        'limits',
+        'runs',
+        'schema_version',
+    }
+    require_exact_keys(config, required, 'configuration')
+    if config['schema_version'] != 1:
+        raise LogFailure('Unsupported log configuration schema')
+    validate_safe_name(config['deployment_id'], 'deployment ID')
+    validate_absolute_path(config['fixtures_path'], 'fixtures path')
+    if (
+        not isinstance(config['fixtures_sha256'], str) or
+        SHA256_RE.fullmatch(config['fixtures_sha256']) is None
+    ):
+        raise LogFailure('Invalid fixtures SHA256')
+
+    runs = require_mapping(config['runs'], 'runs')
+    require_exact_keys(runs, {'root'}, 'runs')
+    validate_absolute_path(runs['root'], 'run root')
+
+    limits = require_mapping(config['limits'], 'limits')
+    required = {
+        'max_bytes_per_stream',
+        'max_cursor_payload_bytes',
+        'max_lines_per_stream',
+    }
+    require_exact_keys(limits, required, 'limits')
+    validate_positive_int(limits['max_lines_per_stream'], 'line limit', 1000)
+    validate_positive_int(limits['max_bytes_per_stream'], 'byte limit', 131072)
+    validate_positive_int(
+        limits['max_cursor_payload_bytes'],
+        'cursor payload limit',
+        65536,
+    )
+    if limits['max_cursor_payload_bytes'] < 1024:
+        raise LogFailure('Cursor payload limit must be at least 1024')
+    return config
+
+
+def require_regular_file(fpath, label):
+    """Require one non-symlink regular file."""
+    try:
+        file_stat = fpath.lstat()
+    except OSError as exc:
+        raise LogFailure(f'Cannot inspect {label}: {exc}') from exc
+    if stat.S_ISLNK(file_stat.st_mode) or not stat.S_ISREG(file_stat.st_mode):
+        raise LogFailure(f'{label} must be a regular file')
+
+
+def require_real_directory(dirpath, label):
+    """Require one non-symlink directory."""
+    try:
+        file_stat = dirpath.lstat()
+    except OSError as exc:
+        raise LogFailure(f'Cannot inspect {label}: {exc}') from exc
+    if stat.S_ISLNK(file_stat.st_mode) or not stat.S_ISDIR(file_stat.st_mode):
+        raise LogFailure(f'{label} must be a real directory')
+
+
+def load_json_file(fpath, label):
+    """Load one fixed non-symlink JSON file."""
+    require_regular_file(fpath, label)
+    try:
+        with open(fpath, 'r') as fid:
+            return json.load(fid)
+    except (OSError, json.JSONDecodeError) as exc:
+        raise LogFailure(f'Cannot load {label}: {exc}') from exc
+
+
+def load_config():
+    """Load and validate the fixed remote log configuration."""
+    return validate_config(load_json_file(get_config_path(), 'log configuration'))
+
+
+def config_identity(config):
+    """Return the validated remote configuration digest."""
+    return hash_bytes(canonical_json(config).encode())
+
+
+def validate_run_id(value):
+    """Validate one path-safe run ID."""
+    if not isinstance(value, str) or RUN_ID_RE.fullmatch(value) is None:
+        raise RejectedInput('Invalid run ID')
+    return value
+
+
+def validate_nonnegative_int(value, label):
+    """Validate one nonnegative integer."""
+    valid = not isinstance(value, bool) and isinstance(value, int) and value >= 0
+    if not valid:
+        raise RejectedInput(f'{label} must be a nonnegative integer')
+    return value
+
+
+def validate_cursor(value, label):
+    """Validate one caller-generated local cursor."""
+    if value is None:
+        return None
+    value = require_request_mapping(value, label)
+    require_request_exact_keys(value, {'identity', 'offset'}, label)
+    identity = value['identity']
+    if not isinstance(identity, str) or IDENTITY_RE.fullmatch(identity) is None:
+        raise RejectedInput(f'Invalid {label} identity')
+    validate_nonnegative_int(value['offset'], f'{label} offset')
+    return {'identity': identity, 'offset': value['offset']}
+
+
+def decode_cursors(payload, maximum):
+    """Decode and validate one bounded URL-safe cursor payload."""
+    if not isinstance(payload, str) or len(payload) > maximum * 2:
+        raise RejectedInput('Invalid cursor payload size')
+    try:
+        data = base64.b64decode(
+            payload.encode('ascii'),
+            altchars=b'-_',
+            validate=True,
+        )
+    except (UnicodeEncodeError, ValueError, binascii.Error) as exc:
+        raise RejectedInput('Cursor payload is not valid base64') from exc
+    if len(data) > maximum:
+        raise RejectedInput('Decoded cursor payload is too large')
+    try:
+        value = json.loads(data.decode('utf-8'))
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise RejectedInput('Cursor payload is not valid JSON') from exc
+    value = require_request_mapping(value, 'cursor payload')
+    require_request_exact_keys(
+        value,
+        {'schema_version', 'streams'},
+        'cursor payload',
+    )
+    if value['schema_version'] != 1:
+        raise RejectedInput('Unsupported cursor payload schema')
+    streams = require_request_mapping(value['streams'], 'cursor streams')
+    require_request_exact_keys(
+        streams,
+        {'stderr', 'stdout'},
+        'cursor streams',
+    )
+    return {
+        name: validate_cursor(streams[name], f'{name} cursor')
+        for name in ('stdout', 'stderr')
+    }
+
+
+def validate_job_id(value, label):
+    """Validate one positive integer Slurm job ID."""
+    valid = not isinstance(value, bool) and isinstance(value, int) and value > 0
+    if not valid:
+        raise LogFailure(f'Invalid {label}')
+    return value
+
+
+def load_controller_paths(config, run_id):
+    """Derive exact controller-log paths from protected run records."""
+    run_root = Path(config['runs']['root'])
+    require_real_directory(run_root, 'run root')
+    run_dir = run_root / run_id
+    require_real_directory(run_dir, 'run directory')
+    controller_dir = run_dir / 'controller'
+    require_real_directory(controller_dir, 'controller directory')
+    run_record = load_json_file(run_dir / 'run.json', 'run record')
+    submission = load_json_file(run_dir / 'submission.json', 'submission record')
+    if run_record.get('run_id') != run_id or run_record.get('request_id') != run_id:
+        raise RejectedInput('Run record identity does not match requested run')
+    if submission.get('request_id') != run_id:
+        raise RejectedInput('Submission record identity does not match run')
+    job_id = validate_job_id(
+        run_record.get('controller_slurm_id'),
+        'controller Slurm ID',
+    )
+    if submission.get('slurm_job_id') != job_id:
+        raise LogFailure('Submission and run records have different job IDs')
+    expected_patterns = {
+        'stdout': (controller_dir / 'slurm-%j.out').as_posix(),
+        'stderr': (controller_dir / 'slurm-%j.err').as_posix(),
+    }
+    for name in ('stdout', 'stderr'):
+        if submission.get(f'{name}_path') != expected_patterns[name]:
+            raise LogFailure(f'Recorded {name} path does not match policy')
+    return {
+        'stdout': controller_dir / f'slurm-{job_id}.out',
+        'stderr': controller_dir / f'slurm-{job_id}.err',
+    }, job_id
+
+
+def plan_start(cursor, identity, file_size):
+    """Choose a safe read offset and reset reason."""
+    if cursor is None:
+        return 0, 'initial'
+    if cursor['identity'] != identity:
+        return 0, 'replaced'
+    if cursor['offset'] > file_size:
+        return 0, 'truncated'
+    return cursor['offset'], None
+
+
+def limit_chunk(data, start, file_size, max_lines):
+    """Apply a line cap to one already byte-capped chunk."""
+    newline_count = 0
+    line_end = None
+    for index, value in enumerate(data):
+        if value != 10:
+            continue
+        newline_count += 1
+        if newline_count == max_lines:
+            line_end = index + 1
+            break
+    if line_end is not None and line_end < len(data):
+        data = data[:line_end]
+        limit_reason = 'lines'
+    else:
+        limit_reason = None
+    end = start + len(data)
+    more_available = end < file_size
+    if more_available and limit_reason is None:
+        limit_reason = 'bytes'
+    return data, end, more_available, limit_reason
+
+
+def missing_stream():
+    """Build one missing-log stream result."""
+    return {
+        'status': 'missing',
+        'identity': None,
+        'size': 0,
+        'mtime_ns': None,
+        'start_offset': 0,
+        'end_offset': 0,
+        'byte_count': 0,
+        'content': '',
+        'line_count': 0,
+        'more_available': False,
+        'limit_reason': None,
+        'reset_reason': None,
+    }
+
+
+def read_stream(fpath, cursor, limits):
+    """Read one bounded incremental chunk from an exact controller log."""
+    flags = os.O_RDONLY | getattr(os, 'O_CLOEXEC', 0)
+    flags |= getattr(os, 'O_NOFOLLOW', 0)
+    try:
+        file_id = os.open(fpath, flags)
+    except FileNotFoundError:
+        return missing_stream()
+    except OSError as exc:
+        raise LogFailure(f'Cannot open controller log: {exc}') from exc
+    try:
+        file_stat = os.fstat(file_id)
+        if not stat.S_ISREG(file_stat.st_mode):
+            raise LogFailure('Controller log must be a regular file')
+        identity = f'{file_stat.st_dev}:{file_stat.st_ino}'
+        start, reset_reason = plan_start(cursor, identity, file_stat.st_size)
+        try:
+            data = os.pread(file_id, limits['max_bytes_per_stream'], start)
+        except OSError as exc:
+            raise LogFailure(f'Cannot read controller log: {exc}') from exc
+        file_stat = os.fstat(file_id)
+        if file_stat.st_size < start:
+            start = 0
+            reset_reason = 'truncated'
+            try:
+                data = os.pread(file_id, limits['max_bytes_per_stream'], start)
+            except OSError as exc:
+                raise LogFailure(f'Cannot reread truncated log: {exc}') from exc
+            file_stat = os.fstat(file_id)
+    finally:
+        os.close(file_id)
+    data, end, more_available, limit_reason = limit_chunk(
+        data,
+        start,
+        file_stat.st_size,
+        limits['max_lines_per_stream'],
+    )
+    content = data.decode('utf-8', errors='replace')
+    line_count = data.count(b'\n')
+    if data and not data.endswith(b'\n'):
+        line_count += 1
+    return {
+        'status': 'ok',
+        'identity': identity,
+        'size': file_stat.st_size,
+        'mtime_ns': file_stat.st_mtime_ns,
+        'start_offset': start,
+        'end_offset': end,
+        'byte_count': len(data),
+        'content': content,
+        'line_count': line_count,
+        'more_available': more_available,
+        'limit_reason': limit_reason,
+        'reset_reason': reset_reason,
+    }
+
+
+def read_controller(config, run_id, cursors):
+    """Read bounded incremental stdout and stderr for one known controller."""
+    paths, job_id = load_controller_paths(config, run_id)
+    limits = config['limits']
+    streams = {
+        name: read_stream(paths[name], cursors[name], limits)
+        for name in ('stdout', 'stderr')
+    }
+    return {
+        'schema_version': 1,
+        'operation': 'controller-log',
+        'status': 'ok',
+        'run_id': run_id,
+        'controller_slurm_id': job_id,
+        'streams': streams,
+        'remote_host': socket.gethostname(),
+        'helper': helper_identity(),
+        'remote_config_sha256': config_identity(config),
+    }
+
+
+def load_fixtures(config):
+    """Load the fixed hash-bound log fixture document."""
+    fpath = Path(config['fixtures_path'])
+    require_regular_file(fpath, 'log fixtures')
+    try:
+        data = fpath.read_bytes()
+    except OSError as exc:
+        raise LogFailure(f'Cannot read log fixtures: {exc}') from exc
+    if hash_bytes(data) != config['fixtures_sha256']:
+        raise LogFailure('Log fixture SHA256 does not match configuration')
+    fixtures = load_json_file(fpath, 'log fixtures')
+    if not isinstance(fixtures, dict) or fixtures.get('schema_version') != 1:
+        raise LogFailure('Invalid log fixture document')
+    return fixtures
+
+
+def run_self_test(config):
+    """Exercise fixed cursor, chunking, and symlink-rejection cases."""
+    fixtures = load_fixtures(config)
+    passed = 0
+    for case in fixtures.get('cursor_cases', []):
+        cursor = None
+        if case['cursor_identity'] is not None:
+            cursor = {
+                'identity': case['cursor_identity'],
+                'offset': case['cursor_offset'],
+            }
+        start, reset = plan_start(
+            cursor,
+            case['file_identity'],
+            case['file_size'],
+        )
+        if start != case['expected_start'] or reset != case['expected_reset']:
+            raise LogFailure(f'Cursor fixture failed: {case["name"]}')
+        passed += 1
+    for case in fixtures.get('chunk_cases', []):
+        full_data = case['text'].encode()
+        start = case['start']
+        window = full_data[start:start + case['max_bytes']]
+        data, end, more, reason = limit_chunk(
+            window,
+            start,
+            len(full_data),
+            case['max_lines'],
+        )
+        actual = (data.decode(), end, more, reason)
+        expected = (
+            case['expected_text'],
+            case['expected_end'],
+            case['expected_more'],
+            case['expected_limit'],
+        )
+        if actual != expected:
+            raise LogFailure(f'Chunk fixture failed: {case["name"]}')
+        passed += 1
+    try:
+        require_regular_file(Path('/proc/self/exe'), 'symlink fixture')
+    except LogFailure:
+        passed += 1
+    else:
+        raise LogFailure('Symlink fixture was accepted')
+    return {
+        'schema_version': 1,
+        'operation': 'log-self-test',
+        'status': 'ok',
+        'cases_passed': passed,
+        'helper': helper_identity(),
+        'remote_config_sha256': config_identity(config),
+    }
+
+
+def error_result(operation, status, reason, details=None):
+    """Build one structured non-success log result."""
+    result = {
+        'schema_version': 1,
+        'operation': operation,
+        'status': status,
+        'reason': reason,
+    }
+    if details:
+        result['details'] = str(details)[:500]
+    return result
+
+
+def build_parser():
+    """Build the fixed lethe-log parser."""
+    parser = argparse.ArgumentParser(
+        description='Read bounded incremental logs for one recorded controller.',
+    )
+    commands = parser.add_subparsers(dest='operation', required=True)
+    commands.add_parser('version')
+    commands.add_parser('self-test')
+    controller = commands.add_parser('controller')
+    controller.add_argument('run_id')
+    controller.add_argument('cursor_payload')
+    return parser
+
+
+def main():
+    """Run one fixed lethe-side incremental-log operation."""
+    parser = build_parser()
+    try:
+        args = parser.parse_args()
+    except SystemExit as exc:
+        return int(exc.code)
+
+    operation = 'log-self-test' if args.operation == 'self-test' else 'controller-log'
+    try:
+        if args.operation == 'version':
+            result = {'status': 'ok', 'helper': helper_identity()}
+        else:
+            config = load_config()
+            if args.operation == 'self-test':
+                result = run_self_test(config)
+            else:
+                run_id = validate_run_id(args.run_id)
+                maximum = config['limits']['max_cursor_payload_bytes']
+                cursors = decode_cursors(args.cursor_payload, maximum)
+                result = read_controller(config, run_id, cursors)
+        exit_code = EXIT_SUCCESS
+    except RejectedInput as exc:
+        result = error_result(operation, 'rejected', 'request-rejected', exc)
+        exit_code = EXIT_REJECTED
+    except LogFailure as exc:
+        result = error_result(operation, 'failed', 'log-read-failed', exc)
+        exit_code = EXIT_FAILED
+
+    print(json.dumps(result, sort_keys=True))
+    return exit_code
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())

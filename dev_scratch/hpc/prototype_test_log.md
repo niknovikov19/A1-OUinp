@@ -936,3 +936,60 @@ Gate conclusion: A5 PASS. Compact monitoring now proves active `squeue`
 classification, terminal `sacct` fallback, conservative accounting-gap
 handling, durable reconciliation, repeated terminal stability, one scheduler
 query of each required kind per observation, and no per-job SSH or log reads.
+
+## A6.1 incremental controller-log candidate
+
+Candidate scope:
+
+- local `hpc-log RUN_ID controller` accepts only a validated run ID and the
+  literal controller target;
+- the lethe helper derives the controller ID from `run.json`, verifies the same
+  ID in `submission.json`, and requires the recorded log patterns to match the
+  fixed `controller/slurm-%j.{out,err}` policy;
+- no caller can supply a path, job ID, offset, line limit, byte limit, host, or
+  shell command;
+- each stdout/stderr read returns at most 64 KiB and 200 lines, with explicit
+  byte/line limit notices and no skipped remainder;
+- local state records file device/inode identity, byte offset, size, and
+  nanosecond modification time, protected by one nonblocking lock and atomic
+  `0600` replacement;
+- unchanged files return no new output, while replacement or truncation resets
+  the affected cursor to zero with an explicit reason;
+- remote paths and files are checked with `lstat` or `O_NOFOLLOW`, and no
+  directory scan or recursive search is performed;
+- missing logs are reported as missing rather than interpreted as empty files.
+
+Static verification:
+
+- local, lethe, and shared Python sources passed `ast.parse` without import or
+  execution;
+- all 31 helper JSON documents decoded;
+- remote configuration, cursor state, and representative log-result documents
+  passed their Draft 2020-12 schemas;
+- configuration SHA256 binding to the fixed fixture document passed;
+- an independent implementation confirmed all eight cursor/chunk fixtures;
+- the protected self-test adds a ninth real symlink rejection using
+  `/proc/self/exe` without creating mutable fixtures;
+- both promotion scripts passed `bash -n` without execution;
+- source review found no `shell=True`, `os.system`, `Popen`, `eval`, `exec`,
+  path argument, glob, recursive walk, or log-directory scan;
+- the independent nine-file bundle calculation matched the promotion digest;
+- no candidate helper was invoked, imported, sourced, or promoted.
+
+Reviewed candidate SHA256 values:
+
+```text
+58840c04606f72071184688aedc6c12449851da9d1235768b910466ef7b7fee1  hpc-log
+3a530d2642c802c56a1f87ed621e2a022a87d976183a1f2ec51d14476557cdc3  hpc_common.py
+fe5cb43eb133fcf1749620e2a9e421b36e1b0bdabc278d7ab5fa7dc90169bff3  hpc-lethe-log
+66ddc07b2ee57a6063bc6c9e6bf0e562fbc760092998fd6c95d573053e8ec034  remote-hpc-log.json.example
+c753d732b59f335cd4b322af5673ef528673232f228a10cc18756d779e30b929  a6_log_cases.json
+a8ba0c96003c974370c139e9b340dcf8f4a5802638f5c25b63a4b6d319c380b4  remote-hpc-log-config.schema.json
+e347a74947d70c64c6422c25b343bac3e11cdfc5e421d69761c73989dc18997a  log-cursor-state.schema.json
+10e02d67326b32d1fa331138ec6058a7f71672f8de459069d6e6efbb7127d7b2  log-read-result.schema.json
+ce7488da6de975fb22fa93cdc39dbe893cfefb3b4ecc67abfb022d1477c5fb2a  local bundle
+```
+
+Gate conclusion: A6.1 CANDIDATE READY, NOT PROMOTED OR EXECUTED. First prove
+the protected fixtures and existing A5 first-read/no-new-output behavior. Then
+use a separately approved fixed append probe for A6.2.

@@ -1,0 +1,558 @@
+#!/usr/bin/env python3
+import argparse
+import base64
+import fcntl
+import json
+import os
+from pathlib import Path
+import re
+import shlex
+import stat
+import subprocess
+import sys
+
+sys.dont_write_bytecode = True
+
+from hpc_common import (
+    EXIT_FAILED,
+    EXIT_REJECTED,
+    EXIT_SUCCESS,
+    EXIT_UNKNOWN,
+    HelperFailure,
+    RejectedInput,
+    append_audit_event,
+    canonical_json,
+    get_config_identity,
+    load_config,
+    validate_run_id,
+)
+
+
+SSH_PATH = '/usr/bin/ssh'
+MAX_REMOTE_BYTES = 1048576
+MAX_CURSOR_STATE_BYTES = 1048576
+MAX_CURSOR_RUNS = 1000
+MAX_STREAM_BYTES = 65536
+MAX_STREAM_LINES = 200
+REMOTE_OPERATION_TIMEOUT_SEC = 60
+IDENTITY_RE = re.compile(r'[0-9]+:[0-9]+')
+
+
+class RemoteUnavailable(RuntimeError):
+    """Represent unavailable or invalid remote log output."""
+
+
+def build_parser():
+    """Build the fixed incremental-log parser."""
+    parser = argparse.ArgumentParser(
+        description='Read new bounded controller output for one protected run.',
+    )
+    parser.add_argument(
+        '--json',
+        action='store_true',
+        help='Print structured JSON instead of controller text.',
+    )
+    parser.add_argument(
+        '--self-test',
+        action='store_true',
+        help='Run fixed protected cursor and chunking fixtures.',
+    )
+    parser.add_argument('run_id', nargs='?')
+    parser.add_argument('target', nargs='?', choices=('controller',))
+    return parser
+
+
+def validate_args(args):
+    """Validate fixed self-test or controller-log arguments."""
+    if args.self_test:
+        if args.run_id is not None or args.target is not None:
+            raise RejectedInput('Self-test does not accept run arguments')
+        return None
+    if args.run_id is None or args.target != 'controller':
+        raise RejectedInput('Expected RUN_ID controller')
+    return validate_run_id(args.run_id)
+
+
+def get_state_paths():
+    """Return fixed local cursor-state paths beneath the protected root."""
+    state_dir = Path(__file__).resolve().parents[1] / 'state'
+    return state_dir, state_dir / 'log-cursors.json', state_dir / 'log-cursors.lock'
+
+
+def require_state_directory(state_dir):
+    """Require the fixed non-symlink local state directory."""
+    try:
+        file_stat = state_dir.lstat()
+    except OSError as exc:
+        raise HelperFailure(f'Cannot inspect log state directory: {exc}') from exc
+    if stat.S_ISLNK(file_stat.st_mode) or not stat.S_ISDIR(file_stat.st_mode):
+        raise HelperFailure('Log state directory must be a real directory')
+
+
+def acquire_state_lock(state_dir, lock_path):
+    """Create and exclusively lock the fixed local cursor lock."""
+    require_state_directory(state_dir)
+    flags = os.O_RDWR | os.O_CREAT | getattr(os, 'O_CLOEXEC', 0)
+    flags |= getattr(os, 'O_NOFOLLOW', 0)
+    try:
+        file_id = os.open(lock_path, flags, 0o600)
+        os.fchmod(file_id, 0o600)
+        fcntl.flock(file_id, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError as exc:
+        os.close(file_id)
+        raise HelperFailure('Log cursor lock is active') from exc
+    except OSError as exc:
+        raise HelperFailure(f'Cannot acquire log cursor lock: {exc}') from exc
+    return file_id
+
+
+def validate_nonnegative_int(value, label):
+    """Validate one nonnegative integer from cursor state."""
+    valid = not isinstance(value, bool) and isinstance(value, int) and value >= 0
+    if not valid:
+        raise HelperFailure(f'Invalid {label}')
+    return value
+
+
+def validate_cursor(cursor, label):
+    """Validate one stored local cursor."""
+    if not isinstance(cursor, dict) or set(cursor) != {
+        'identity',
+        'mtime_ns',
+        'offset',
+        'size',
+    }:
+        raise HelperFailure(f'Invalid {label}')
+    identity = cursor['identity']
+    if not isinstance(identity, str) or IDENTITY_RE.fullmatch(identity) is None:
+        raise HelperFailure(f'Invalid {label} identity')
+    for name in ('mtime_ns', 'offset', 'size'):
+        validate_nonnegative_int(cursor[name], f'{label} {name}')
+    if cursor['offset'] > cursor['size']:
+        raise HelperFailure(f'{label} offset exceeds size')
+    return cursor
+
+
+def validate_state(state):
+    """Validate the complete bounded cursor-state document."""
+    if not isinstance(state, dict) or set(state) != {'runs', 'schema_version'}:
+        raise HelperFailure('Invalid log cursor state')
+    if state['schema_version'] != 1 or not isinstance(state['runs'], dict):
+        raise HelperFailure('Invalid log cursor state schema')
+    if len(state['runs']) > MAX_CURSOR_RUNS:
+        raise HelperFailure('Log cursor state contains too many runs')
+    for run_id, streams in state['runs'].items():
+        try:
+            validate_run_id(run_id)
+        except RejectedInput as exc:
+            raise HelperFailure('Invalid run ID in log cursor state') from exc
+        if not isinstance(streams, dict) or not set(streams) <= {'stdout', 'stderr'}:
+            raise HelperFailure('Invalid stream mapping in log cursor state')
+        for name, cursor in streams.items():
+            validate_cursor(cursor, f'{run_id} {name} cursor')
+    return state
+
+
+def load_state(state_path):
+    """Load the fixed bounded cursor state or return an empty document."""
+    try:
+        file_stat = state_path.lstat()
+    except FileNotFoundError:
+        return {'schema_version': 1, 'runs': {}}
+    except OSError as exc:
+        raise HelperFailure(f'Cannot inspect log cursor state: {exc}') from exc
+    if stat.S_ISLNK(file_stat.st_mode) or not stat.S_ISREG(file_stat.st_mode):
+        raise HelperFailure('Log cursor state must be a regular file')
+    if file_stat.st_size > MAX_CURSOR_STATE_BYTES:
+        raise HelperFailure('Log cursor state exceeds its size limit')
+    try:
+        with open(state_path, 'r') as fid:
+            state = json.load(fid)
+    except (OSError, json.JSONDecodeError) as exc:
+        raise HelperFailure(f'Cannot load log cursor state: {exc}') from exc
+    return validate_state(state)
+
+
+def write_state(state_path, state):
+    """Atomically replace the fixed local cursor-state file."""
+    data = (canonical_json(validate_state(state)) + '\n').encode()
+    if len(data) > MAX_CURSOR_STATE_BYTES:
+        raise HelperFailure('Log cursor state exceeds its size limit')
+    temp_path = state_path.with_name(f'.{state_path.name}.{os.getpid()}.tmp')
+    flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
+    flags |= getattr(os, 'O_CLOEXEC', 0)
+    flags |= getattr(os, 'O_NOFOLLOW', 0)
+    try:
+        file_id = os.open(temp_path, flags, 0o600)
+        try:
+            os.write(file_id, data)
+            os.fsync(file_id)
+        finally:
+            os.close(file_id)
+        os.replace(temp_path, state_path)
+    except OSError as exc:
+        raise HelperFailure(f'Cannot write log cursor state: {exc}') from exc
+
+
+def cursor_payload(state, run_id):
+    """Encode only the selected run's offsets for the remote helper."""
+    stored = state['runs'].get(run_id, {})
+    streams = {}
+    for name in ('stdout', 'stderr'):
+        cursor = stored.get(name)
+        streams[name] = None if cursor is None else {
+            'identity': cursor['identity'],
+            'offset': cursor['offset'],
+        }
+    value = {'schema_version': 1, 'streams': streams}
+    return base64.urlsafe_b64encode(canonical_json(value).encode()).decode()
+
+
+def build_ssh_command(config, operation, run_id=None, payload=None):
+    """Build one allowlisted lethe incremental-log invocation."""
+    helper = Path(config['remote_helpers']['lethe_dir']) / 'hpc-lethe-log'
+    parts = [shlex.quote(helper.as_posix()), operation]
+    if run_id is not None:
+        parts.extend((shlex.quote(run_id), shlex.quote(payload)))
+    timeout = config['ssh']['connect_timeout_sec']
+    return [
+        SSH_PATH,
+        '-o',
+        'BatchMode=yes',
+        '-o',
+        f'ConnectTimeout={timeout}',
+        '-o',
+        'ConnectionAttempts=1',
+        '--',
+        config['ssh']['lethe_host_alias'],
+        ' '.join(parts),
+    ]
+
+
+def decode_bounded(value, label):
+    """Decode one bounded UTF-8 subprocess stream."""
+    if len(value) > MAX_REMOTE_BYTES:
+        raise RemoteUnavailable(f'{label} exceeded {MAX_REMOTE_BYTES} bytes')
+    try:
+        return value.decode('utf-8')
+    except UnicodeDecodeError as exc:
+        raise RemoteUnavailable(f'{label} was not valid UTF-8') from exc
+
+
+def summarize_stderr(value):
+    """Return one bounded single-line SSH error summary."""
+    summary = value.replace('\r', ' ').replace('\n', ' ').strip()
+    return summary[:500] if summary else 'no error details'
+
+
+def validate_stream(value, name):
+    """Validate one bounded remote stream result."""
+    required = {
+        'byte_count',
+        'content',
+        'end_offset',
+        'identity',
+        'limit_reason',
+        'line_count',
+        'more_available',
+        'mtime_ns',
+        'reset_reason',
+        'size',
+        'start_offset',
+        'status',
+    }
+    if not isinstance(value, dict) or set(value) != required:
+        raise RemoteUnavailable(f'Remote {name} result has invalid keys')
+    if value['status'] == 'missing':
+        valid_missing = (
+            value['identity'] is None and
+            value['mtime_ns'] is None and
+            value['content'] == '' and
+            value['byte_count'] == 0 and
+            value['start_offset'] == 0 and
+            value['end_offset'] == 0 and
+            value['size'] == 0 and
+            value['line_count'] == 0 and
+            value['more_available'] is False and
+            value['limit_reason'] is None and
+            value['reset_reason'] is None
+        )
+        if not valid_missing:
+            raise RemoteUnavailable(f'Remote {name} missing result is invalid')
+        return value
+    identity = value['identity']
+    integers = (
+        'byte_count',
+        'end_offset',
+        'line_count',
+        'mtime_ns',
+        'size',
+        'start_offset',
+    )
+    valid = (
+        value['status'] == 'ok' and
+        isinstance(identity, str) and
+        IDENTITY_RE.fullmatch(identity) is not None and
+        all(
+            isinstance(value[key], int) and
+            not isinstance(value[key], bool) and
+            value[key] >= 0
+            for key in integers
+        ) and
+        0 <= value['start_offset'] <= value['end_offset'] <= value['size'] and
+        value['byte_count'] == value['end_offset'] - value['start_offset'] and
+        value['byte_count'] <= MAX_STREAM_BYTES and
+        value['line_count'] <= MAX_STREAM_LINES and
+        isinstance(value['content'], str) and
+        isinstance(value['more_available'], bool) and
+        value['limit_reason'] in {None, 'bytes', 'lines'} and
+        value['reset_reason'] in {None, 'initial', 'replaced', 'truncated'}
+    )
+    if not valid:
+        raise RemoteUnavailable(f'Remote {name} result is invalid')
+    return value
+
+
+def parse_remote_result(stdout, operation, run_id):
+    """Parse and bind one remote incremental-log response."""
+    try:
+        result = json.loads(stdout)
+    except json.JSONDecodeError as exc:
+        raise RemoteUnavailable('Remote log response was not valid JSON') from exc
+    expected_operation = (
+        'log-self-test' if operation == 'self-test' else 'controller-log'
+    )
+    valid = (
+        isinstance(result, dict) and
+        result.get('operation') == expected_operation and
+        result.get('status') in {'ok', 'rejected', 'unknown', 'failed'}
+    )
+    if not valid:
+        raise RemoteUnavailable('Remote log response was invalid')
+    if result['status'] == 'ok' and operation == 'self-test':
+        cases = result.get('cases_passed')
+        if isinstance(cases, bool) or not isinstance(cases, int) or cases < 1:
+            raise RemoteUnavailable('Remote log self-test result was incomplete')
+    if result['status'] == 'ok' and run_id is not None:
+        streams = result.get('streams')
+        valid_success = (
+            result.get('run_id') == run_id and
+            isinstance(result.get('controller_slurm_id'), int) and
+            not isinstance(result.get('controller_slurm_id'), bool) and
+            isinstance(streams, dict) and
+            set(streams) == {'stdout', 'stderr'}
+        )
+        if not valid_success:
+            raise RemoteUnavailable('Remote controller-log result was incomplete')
+        for name in ('stdout', 'stderr'):
+            validate_stream(streams[name], name)
+    return result
+
+
+def run_remote(config, operation, run_id=None, payload=None):
+    """Run one fixed remote log operation and validate its exit state."""
+    result_operation = 'log-self-test' if operation == 'self-test' else 'controller-log'
+    command = build_ssh_command(config, operation, run_id, payload)
+    try:
+        completed = subprocess.run(
+            command,
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            timeout=REMOTE_OPERATION_TIMEOUT_SEC,
+            check=False,
+        )
+    except subprocess.TimeoutExpired:
+        result = error_result(result_operation, 'unknown', 'operation-timeout')
+        return result, EXIT_UNKNOWN
+    except OSError as exc:
+        return error_result(
+            result_operation,
+            'unknown',
+            'ssh-unavailable',
+            exc,
+        ), EXIT_UNKNOWN
+    try:
+        stdout = decode_bounded(completed.stdout, 'Remote stdout')
+        stderr = decode_bounded(completed.stderr, 'Remote stderr')
+        result = parse_remote_result(stdout, operation, run_id)
+    except RemoteUnavailable as exc:
+        details = completed.stderr.decode('utf-8', errors='replace')
+        return error_result(
+            result_operation,
+            'unknown',
+            str(exc),
+            summarize_stderr(details),
+        ), EXIT_UNKNOWN
+    expected = {
+        EXIT_SUCCESS: 'ok',
+        EXIT_REJECTED: 'rejected',
+        EXIT_UNKNOWN: 'unknown',
+        EXIT_FAILED: 'failed',
+    }
+    if expected.get(completed.returncode) != result['status']:
+        return error_result(
+            result_operation,
+            'unknown',
+            'inconsistent-remote-result',
+            summarize_stderr(stderr),
+        ), EXIT_UNKNOWN
+    result['local_config_sha256'] = get_config_identity(config)
+    return result, completed.returncode
+
+
+def error_result(operation, status, reason, details=None):
+    """Build one structured non-success local log result."""
+    result = {
+        'schema_version': 1,
+        'operation': operation,
+        'status': status,
+        'reason': reason,
+    }
+    if details:
+        result['details'] = str(details)[:500]
+    return result
+
+
+def update_state(state, run_id, streams):
+    """Advance local cursors only for successfully read remote streams."""
+    run_state = state['runs'].setdefault(run_id, {})
+    for name in ('stdout', 'stderr'):
+        stream = streams[name]
+        if stream['status'] != 'ok':
+            continue
+        run_state[name] = {
+            'identity': stream['identity'],
+            'offset': stream['end_offset'],
+            'size': stream['size'],
+            'mtime_ns': stream['mtime_ns'],
+        }
+
+
+def audit_or_fail(status, exit_code, raw_args, details=None):
+    """Write one mandatory local incremental-log audit event."""
+    try:
+        append_audit_event(
+            'controller-log',
+            status,
+            exit_code,
+            raw_args,
+            details=details,
+            helper='hpc-log',
+        )
+    except HelperFailure as exc:
+        print(f'Audit failure: {exc}', file=sys.stderr)
+        return False
+    return True
+
+
+def result_details(result):
+    """Build one short audit summary without log content."""
+    if result['status'] != 'ok':
+        return result.get('reason')
+    if result['operation'] == 'log-self-test':
+        return f'cases={result["cases_passed"]}'
+    total_bytes = sum(
+        stream['end_offset'] - stream['start_offset']
+        for stream in result['streams'].values()
+    )
+    total_lines = sum(
+        stream['line_count']
+        for stream in result['streams'].values()
+    )
+    return f'bytes={total_bytes};lines={total_lines}'
+
+
+def print_result(result, as_json):
+    """Print one structured or concise incremental-log result."""
+    if as_json:
+        print(json.dumps(result, indent=2, sort_keys=True))
+        return
+    print(f'Status: {result["status"]}')
+    if result['status'] != 'ok':
+        print(f'Reason: {result["reason"]}')
+        return
+    if result['operation'] == 'log-self-test':
+        print(f'Cases passed: {result["cases_passed"]}')
+        return
+    print(f'Run: {result["run_id"]}')
+    for name in ('stdout', 'stderr'):
+        stream = result['streams'][name]
+        print(f'--- controller {name} ({stream["status"]}) ---')
+        if stream['content']:
+            print(stream['content'], end='')
+            if not stream['content'].endswith('\n'):
+                print()
+        else:
+            print('No new output')
+        if stream['more_available']:
+            print(f'More output available; limited by {stream["limit_reason"]}')
+
+
+def reject_input(raw_args, details):
+    """Audit and report one locally rejected log request."""
+    if not audit_or_fail('rejected', EXIT_REJECTED, raw_args, details):
+        return EXIT_FAILED
+    print(f'Rejected: {details}', file=sys.stderr)
+    return EXIT_REJECTED
+
+
+def main():
+    """Run the protected A6 incremental controller-log command."""
+    raw_args = sys.argv[1:]
+    parser = build_parser()
+    try:
+        args = parser.parse_args(raw_args)
+    except SystemExit as exc:
+        exit_code = int(exc.code)
+        status = 'success' if exit_code == 0 else 'rejected'
+        if not audit_or_fail(status, exit_code, raw_args):
+            return EXIT_FAILED
+        return exit_code
+
+    lock_id = None
+    try:
+        run_id = validate_args(args)
+        config = load_config()
+        if args.self_test:
+            result, exit_code = run_remote(config, 'self-test')
+        else:
+            state_dir, state_path, lock_path = get_state_paths()
+            lock_id = acquire_state_lock(state_dir, lock_path)
+            state = load_state(state_path)
+            payload = cursor_payload(state, run_id)
+            result, exit_code = run_remote(
+                config,
+                'controller',
+                run_id,
+                payload,
+            )
+            if exit_code == EXIT_SUCCESS:
+                update_state(state, run_id, result['streams'])
+                write_state(state_path, state)
+    except RejectedInput as exc:
+        return reject_input(raw_args, exc)
+    except HelperFailure as exc:
+        if not audit_or_fail('failed', EXIT_FAILED, raw_args, type(exc).__name__):
+            return EXIT_FAILED
+        print(f'Failed: {exc}', file=sys.stderr)
+        return EXIT_FAILED
+    finally:
+        if lock_id is not None:
+            fcntl.flock(lock_id, fcntl.LOCK_UN)
+            os.close(lock_id)
+
+    audit_status = 'success' if result['status'] == 'ok' else result['status']
+    if not audit_or_fail(
+        audit_status,
+        exit_code,
+        raw_args,
+        result_details(result),
+    ):
+        return EXIT_FAILED
+    print_result(result, args.json)
+    return exit_code
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())

@@ -1,0 +1,87 @@
+{
+  "schema_version": 1,
+  "cursor_cases": [
+    {
+      "name": "initial",
+      "cursor_identity": null,
+      "cursor_offset": 0,
+      "file_identity": "10:20",
+      "file_size": 12,
+      "expected_start": 0,
+      "expected_reset": "initial"
+    },
+    {
+      "name": "append",
+      "cursor_identity": "10:20",
+      "cursor_offset": 5,
+      "file_identity": "10:20",
+      "file_size": 12,
+      "expected_start": 5,
+      "expected_reset": null
+    },
+    {
+      "name": "truncated",
+      "cursor_identity": "10:20",
+      "cursor_offset": 15,
+      "file_identity": "10:20",
+      "file_size": 4,
+      "expected_start": 0,
+      "expected_reset": "truncated"
+    },
+    {
+      "name": "replaced",
+      "cursor_identity": "10:20",
+      "cursor_offset": 5,
+      "file_identity": "11:21",
+      "file_size": 12,
+      "expected_start": 0,
+      "expected_reset": "replaced"
+    }
+  ],
+  "chunk_cases": [
+    {
+      "name": "complete",
+      "text": "alpha\nbeta\n",
+      "start": 0,
+      "max_bytes": 64,
+      "max_lines": 200,
+      "expected_text": "alpha\nbeta\n",
+      "expected_end": 11,
+      "expected_more": false,
+      "expected_limit": null
+    },
+    {
+      "name": "no-new-output",
+      "text": "alpha\n",
+      "start": 6,
+      "max_bytes": 64,
+      "max_lines": 200,
+      "expected_text": "",
+      "expected_end": 6,
+      "expected_more": false,
+      "expected_limit": null
+    },
+    {
+      "name": "byte-limit",
+      "text": "abcdefgh",
+      "start": 0,
+      "max_bytes": 4,
+      "max_lines": 200,
+      "expected_text": "abcd",
+      "expected_end": 4,
+      "expected_more": true,
+      "expected_limit": "bytes"
+    },
+    {
+      "name": "line-limit",
+      "text": "one\ntwo\nthree\n",
+      "start": 0,
+      "max_bytes": 64,
+      "max_lines": 2,
+      "expected_text": "one\ntwo\n",
+      "expected_end": 8,
+      "expected_more": true,
+      "expected_limit": "lines"
+    }
+  ]
+}

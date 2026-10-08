@@ -155,7 +155,7 @@ The runtime validator is authoritative. `schemas/hpc-helper-config.schema.json` 
 `_require_regular_file()` uses `lstat()` and rejects symlinks and non-regular files. It is used for:
 
 - the protected configuration;
-- all eight installed runtime source files;
+- all nine installed runtime source files;
 - the audit log when it already exists.
 
 The audit file may be absent before its first append, but its parent directory must already exist and must be a real directory rather than a symlink.
@@ -165,17 +165,19 @@ The audit file may be absent before its first append, but its parent directory m
 ### Installed source identity
 
 `get_bundle_identity()` hashes the installed `hpc-code-status`,
-`hpc-code-update`, `hpc-helper-info`, `hpc-probe`, `hpc-run-preview`,
-`hpc-status`, `hpc-submit`, and `hpc_common.py` files. It returns:
+`hpc-code-update`, `hpc-helper-info`, `hpc-log`, `hpc-probe`,
+`hpc-run-preview`, `hpc-status`, `hpc-submit`, and `hpc_common.py` files. It
+returns:
 
 ```json
 {
-  "bundle_version": "0.6.0-a5",
+  "bundle_version": "0.7.0-a6",
   "bundle_sha256": "...",
   "source_sha256": {
     "hpc-code-status": "...",
     "hpc-code-update": "...",
     "hpc-helper-info": "...",
+    "hpc-log": "...",
     "hpc-probe": "...",
     "hpc-run-preview": "...",
     "hpc-status": "...",

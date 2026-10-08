@@ -1,0 +1,192 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/a1-hpc/log-read-result.schema.json",
+  "title": "A1 HPC bounded incremental controller-log result",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "schema_version",
+    "operation",
+    "status",
+    "run_id",
+    "controller_slurm_id",
+    "streams"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "operation": {
+      "const": "controller-log"
+    },
+    "status": {
+      "const": "ok"
+    },
+    "run_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$"
+    },
+    "controller_slurm_id": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "streams": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "stdout",
+        "stderr"
+      ],
+      "properties": {
+        "stdout": {
+          "$ref": "#/$defs/stream"
+        },
+        "stderr": {
+          "$ref": "#/$defs/stream"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "stream": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/presentStream"
+        },
+        {
+          "$ref": "#/$defs/missingStream"
+        }
+      ]
+    },
+    "presentStream": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "identity",
+        "size",
+        "mtime_ns",
+        "start_offset",
+        "end_offset",
+        "byte_count",
+        "content",
+        "line_count",
+        "more_available",
+        "limit_reason",
+        "reset_reason"
+      ],
+      "properties": {
+        "status": {
+          "const": "ok"
+        },
+        "identity": {
+          "type": "string",
+          "pattern": "^[0-9]+:[0-9]+$"
+        },
+        "size": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "mtime_ns": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "start_offset": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "end_offset": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "byte_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 65536
+        },
+        "content": {
+          "type": "string"
+        },
+        "line_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 200
+        },
+        "more_available": {
+          "type": "boolean"
+        },
+        "limit_reason": {
+          "enum": [
+            "bytes",
+            "lines",
+            null
+          ]
+        },
+        "reset_reason": {
+          "enum": [
+            "initial",
+            "replaced",
+            "truncated",
+            null
+          ]
+        }
+      }
+    },
+    "missingStream": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "identity",
+        "size",
+        "mtime_ns",
+        "start_offset",
+        "end_offset",
+        "byte_count",
+        "content",
+        "line_count",
+        "more_available",
+        "limit_reason",
+        "reset_reason"
+      ],
+      "properties": {
+        "status": {
+          "const": "missing"
+        },
+        "identity": {
+          "type": "null"
+        },
+        "size": {
+          "const": 0
+        },
+        "mtime_ns": {
+          "type": "null"
+        },
+        "start_offset": {
+          "const": 0
+        },
+        "end_offset": {
+          "const": 0
+        },
+        "byte_count": {
+          "const": 0
+        },
+        "content": {
+          "const": ""
+        },
+        "line_count": {
+          "const": 0
+        },
+        "more_available": {
+          "const": false
+        },
+        "limit_reason": {
+          "type": "null"
+        },
+        "reset_reason": {
+          "type": "null"
+        }
+      }
+    }
+  }
+}

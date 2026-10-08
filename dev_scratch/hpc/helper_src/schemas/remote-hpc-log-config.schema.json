@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/a1-hpc/remote-hpc-log-config.schema.json",
+  "title": "A1 HPC remote incremental-log configuration",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "deployment_id",
+    "runs",
+    "fixtures_path",
+    "fixtures_sha256",
+    "limits"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "deployment_id": {
+      "$ref": "#/$defs/safeName"
+    },
+    "runs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "root"
+      ],
+      "properties": {
+        "root": {
+          "$ref": "#/$defs/absolutePath"
+        }
+      }
+    },
+    "fixtures_path": {
+      "$ref": "#/$defs/absolutePath"
+    },
+    "fixtures_sha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "limits": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "max_lines_per_stream",
+        "max_bytes_per_stream",
+        "max_cursor_payload_bytes"
+      ],
+      "properties": {
+        "max_lines_per_stream": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000
+        },
+        "max_bytes_per_stream": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 131072
+        },
+        "max_cursor_payload_bytes": {
+          "type": "integer",
+          "minimum": 1024,
+          "maximum": 65536
+        }
+      }
+    }
+  },
+  "$defs": {
+    "safeName": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$"
+    },
+    "absolutePath": {
+      "type": "string",
+      "pattern": "^/[^\\u0000]*$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    }
+  }
+}

@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://local.invalid/a1-hpc/log-cursor-state.schema.json",
+  "title": "A1 HPC local incremental-log cursor state",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "runs"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "runs": {
+      "type": "object",
+      "maxProperties": 1000,
+      "propertyNames": {
+        "$ref": "#/$defs/runId"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/runCursors"
+      }
+    }
+  },
+  "$defs": {
+    "runId": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,79}$"
+    },
+    "cursor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "identity",
+        "offset",
+        "size",
+        "mtime_ns"
+      ],
+      "properties": {
+        "identity": {
+          "type": "string",
+          "pattern": "^[0-9]+:[0-9]+$"
+        },
+        "offset": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "size": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "mtime_ns": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "runCursors": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "stdout": {
+          "$ref": "#/$defs/cursor"
+        },
+        "stderr": {
+          "$ref": "#/$defs/cursor"
+        }
+      }
+    }
+  }
+}

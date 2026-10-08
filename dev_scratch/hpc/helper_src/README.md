@@ -359,6 +359,44 @@ Promotion changes only the protected request registry, submission
 configuration, and probe payload. Submission remains a separate explicitly
 approved operation.
 
+## A6.1 incremental controller logs
+
+```text
+local/hpc-log
+remote_lethe/hpc-lethe-log
+config_examples/remote-hpc-log.json.example
+schemas/remote-hpc-log-config.schema.json
+schemas/log-cursor-state.schema.json
+schemas/log-read-result.schema.json
+test_fixtures/a6_log_cases.json
+promotion/promote_a6_local.sh
+promotion/promote_a6_lethe.sh
+INSTALL_A6.md
+```
+
+`hpc-log RUN_ID controller` reads both controller stdout and stderr. The lethe
+helper derives exact `slurm-JOB_ID.out` and `.err` paths from protected run and
+submission records; it does not scan directories or accept paths from the
+caller. The local helper stores per-stream byte cursors beneath protected local
+state and advances them only through bytes actually returned.
+
+### A6.1 call chain
+
+```text
+Codex
+  -> /opt/a1-hpc/bin/hpc-log --json RUN_ID controller
+  -> validate RUN_ID and acquire the fixed local cursor lock
+  -> load only RUN_ID stdout/stderr cursors
+  -> /usr/bin/ssh lethe
+  -> hpc-lethe-log controller RUN_ID CURSOR_PAYLOAD
+  -> load runs/A1_OUinp/RUN_ID/{run.json,submission.json}
+  -> derive controller/slurm-CONTROLLER_ID.{out,err}
+  -> reject symlinks and non-regular files
+  -> read only new content, at most 64 KiB and 200 lines per stream
+  -> return identity, size, mtime, offsets, reset and limit notices
+  -> atomically advance local cursors and append the local audit event
+```
+
 ## Exit codes
 
 - `0`: success;
