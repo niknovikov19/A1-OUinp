@@ -16,6 +16,10 @@ JOB_ID_RE = re.compile(r'[1-9][0-9]*')
 LIFECYCLE_DELAYS_SEC = {
     'a5-lifecycle-probe': 45,
 }
+LOG_PROBE_REQUEST_ID = 'a6-incremental-log-probe'
+LOG_PROBE_DELAY_SEC = 35
+LOG_PROBE_LINE_COUNT = 205
+LOG_PROBE_BYTE_COUNT = 70000
 
 
 class ProbeJobFailure(RuntimeError):
@@ -133,6 +137,31 @@ def write_marker(run_dir, marker):
     return 'created'
 
 
+def emit_fixed_probe_output(request_id):
+    """Emit fixed lifecycle or bounded-log probe output."""
+    delay_sec = LIFECYCLE_DELAYS_SEC.get(request_id, 0)
+    if delay_sec:
+        print(f'lifecycle_delay_sec={delay_sec}', flush=True)
+        time.sleep(delay_sec)
+        return
+    if request_id != LOG_PROBE_REQUEST_ID:
+        return
+
+    # Emit one immediately readable line
+    print('log_probe_phase=initial', flush=True)
+    time.sleep(LOG_PROBE_DELAY_SEC)
+
+    # Emit more than the protected 200-line read limit
+    for index in range(LOG_PROBE_LINE_COUNT):
+        print(f'log_probe_line={index:03d}')
+    sys.stdout.flush()
+    time.sleep(LOG_PROBE_DELAY_SEC)
+
+    # Emit more than the protected 64 KiB read limit
+    prefix = 'log_probe_bytes='
+    print(prefix + 'x' * (LOG_PROBE_BYTE_COUNT - len(prefix)), flush=True)
+
+
 def main():
     """Write one known marker from a minimal immutable Slurm probe."""
     if len(sys.argv) != 3:
@@ -145,10 +174,7 @@ def main():
         require_real_directory(run_root, 'Run root')
         run_dir = run_root / request_id
         require_real_directory(run_dir, 'Run directory')
-        delay_sec = LIFECYCLE_DELAYS_SEC.get(request_id, 0)
-        if delay_sec:
-            print(f'lifecycle_delay_sec={delay_sec}', flush=True)
-            time.sleep(delay_sec)
+        emit_fixed_probe_output(request_id)
         marker = {
             'schema_version': 1,
             'status': 'complete',

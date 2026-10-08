@@ -1,6 +1,28 @@
 {
   "schema_version": 1,
   "requests": {
+    "a6-incremental-log-probe": {
+      "schema_version": 1,
+      "request_id": "a6-incremental-log-probe",
+      "run_type": "probe",
+      "experiment": "single_rxbkg_state1_mech1/net_newsec",
+      "expected_commit": "0000000000000000000000000000000000000000",
+      "resources": {
+        "partition": "cpu.q",
+        "nodes": 1,
+        "cores": 1,
+        "memory_gb": 1,
+        "wall_time_min": 2
+      },
+      "max_concurrent_jobs": 1,
+      "expected_output_kind": "marker",
+      "parameter_axes": {},
+      "required_repo_paths": [
+        "dev_scratch/hpc/helper_src/remote_grid/hpc-grid-probe-job",
+        "dev_scratch/hpc/helper_src/remote_grid/hpc-grid-probe-job.sh",
+        "exp_configs/single_rxbkg_state1_mech1/net_newsec/exp_cfg.py"
+      ]
+    },
     "a5-lifecycle-probe": {
       "schema_version": 1,
       "request_id": "a5-lifecycle-probe",

@@ -1037,3 +1037,38 @@ Gate conclusion: A6.1 PASS. Exact-path first read, durable cursor advancement,
 no-new-output behavior, bounds, symlink rejection, protected state, and audit
 redaction are proven without submitting or mutating a Slurm job. A6.2 remains
 the separately approved fixed append-over-time probe.
+
+## A6.2 fixed append-probe candidate
+
+Candidate scope:
+
+- add only the fixed `a6-incremental-log-probe` request to the protected local
+  registry and remote submission allowlist;
+- retain the reviewed probe wrapper and one-node, one-core, 1 GB, two-minute
+  resource envelope;
+- emit one immediate line, 205 delayed short lines, and one delayed
+  70,000-byte line, each flushed before the next wait or completion;
+- use the existing protected submission, status, and incremental-log helpers;
+- require a fresh run directory and one separately approved submission;
+- never automatically retry the submission.
+
+Static verification:
+
+- the changed probe payload passed `ast.parse` without import or execution;
+- both changed JSON documents decoded;
+- source review confirmed fixed output sizes, two fixed 35-second waits, and no
+  new path, shell, host, resource, or scheduler input;
+- local and lethe promotion scripts passed `bash -n` without execution;
+- no candidate helper was invoked, imported, sourced, promoted, or submitted.
+
+Reviewed candidate SHA256 values:
+
+```text
+9628ae9fdf027107bd4371ee1a6c969932a92097ee9dcc5065689d16300b2722  preview-requests.json.example
+df473859c40126158e6c0a569bd21dc41e634de7a845f6ed85c3a337d3e43610  hpc-grid-probe-job
+fdf35982027b6f33ff09a423072cdbd901fd42bd80f2ca766b1c3138cfdda665  hpc-grid-probe-job.sh
+14330c9e7af7d061aaef434b6e8eb14a328af86fc399e913ed1bab14e936e270  remote-hpc-submit.json.example
+```
+
+Gate conclusion: A6.2 CANDIDATE READY, NOT PROMOTED OR SUBMITTED. Promotion is
+manual; one fixed submission requires explicit approval after preview.

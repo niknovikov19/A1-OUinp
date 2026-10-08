@@ -397,6 +397,21 @@ Codex
   -> atomically advance local cursors and append the local audit event
 ```
 
+## A6.2 fixed append-over-time probe
+
+```text
+promotion/promote_a6_log_probe_local.sh
+promotion/promote_a6_log_probe_lethe.sh
+INSTALL_A6_2.md
+```
+
+The fixed `a6-incremental-log-probe` request emits one immediate line, then 205
+short lines, then one 70,000-byte line at protected intervals. It lets the
+installed A6 reader prove appended-content-only transfer, line-cap
+continuation, and byte-cap continuation against a real Slurm log. Promotion
+only allowlists and installs the payload; submission still requires separate
+explicit approval.
+
 ## Exit codes
 
 - `0`: success;
