@@ -3,12 +3,15 @@
 set -Eeuo pipefail
 
 # Capture the complete promotion transcript
-A4_REPORT=$(mktemp "$HOME/a4-remote-promotion.XXXXXX.txt")
+A4_REMOTE_ROOT=/ddn/niknovikov19/hpc_codex
+A4_REPORT_DIR="$A4_REMOTE_ROOT/state/A1_OUinp/reports/promotion"
+mkdir -p "$A4_REPORT_DIR"
+chmod 0700 "$A4_REPORT_DIR"
+A4_REPORT=$(mktemp "$A4_REPORT_DIR/a4-remote-promotion.XXXXXX.txt")
 chmod 0600 "$A4_REPORT"
 exec > >(tee "$A4_REPORT") 2>&1
 
 A4_REMOTE_DIRS_OPEN=0
-A4_REMOTE_ROOT=/ddn/niknovikov19/hpc_codex
 
 a4_cleanup() {
     local a4_rc=$?

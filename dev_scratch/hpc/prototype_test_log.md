@@ -675,3 +675,60 @@ Final wrapper-based candidate SHA256 values:
   `978b191c0be7496600631f27732a26677229f3310aad6fcd2de0225241e4381a`.
 
 Gate conclusion: WRAPPER CORRECTION READY, NOT PROMOTED OR EXECUTED.
+
+### A4 final wrapper promotion and protected test
+
+Promotion and pre-submission checks 2026-10-08:
+
+- local and remote promotion used exact commit
+  `5b53fad6e8828bbef95026a4386cb7ad8cd5b5a3`;
+- the local bundle reported version `0.5.0-a4` and SHA256
+  `cb1d52d6b5bcaac811cdf0c33e529f64d223549bf3044c43ef6cd13f27eb30ed`;
+- the generated protected request registry had SHA256
+  `7ef2d02e126d5a40472a8d32113269178e9475c087a86816dff095ec18c5355d`;
+- every installed local and remote artifact matched its reviewed candidate
+  hash, and all helper, configuration, schema, run-root, state-root, and lock
+  modes matched policy;
+- the automation checkout was clean on `codex-hpc` at the exact commit, with
+  no active run or update lock before submission;
+- missing, unknown, traversal, and extra-argument submission forms were all
+  rejected locally with exit code `2`;
+- the protected preview reported one `cpu.q` job, one node, one core, 1 GB,
+  two minutes, and request SHA256
+  `01f5c42b28846f1ae243f45ff2cb1a32903ae28d54d49e45b3a2b4bdd14868ed`;
+- bounded scheduler preflight reported empty `squeue` and recent `sacct`
+  samples.
+
+After separate explicit approval, the protected submit command created exactly
+one Slurm job, `117706`. A second invocation returned `existing` with the same
+job ID. The bounded scheduler probe then reported an empty `squeue` and
+`117706|COMPLETED|0:0` from `sacct`.
+
+The final exact-file report confirmed:
+
+- `run.json`, `submission.json`, and `probe-result.json` agree on request ID,
+  request SHA256, and job ID `117706`;
+- `run.json` records the exact commit, fixed resources, and result directory;
+- `submission.json` records parsable `sbatch` output `117706` and status
+  `submitted`;
+- `probe-result.json` records status `complete`, compute host `node02`, and the
+  same request and job identities;
+- stdout contains exactly the four expected probe lines and reports
+  `marker=created`;
+- stderr is empty, with the standard empty-file SHA256
+  `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`;
+- the run and controller directories are mode `0700`; JSON records are mode
+  `0600`; Slurm logs are mode `0644` inside the inaccessible `0700` controller
+  directory.
+
+The protected audit tail contains one `submit-intent` event for each client
+invocation, followed respectively by `submitted` and `existing`. The second
+intent names an idempotent protected invocation, not a second scheduler call;
+the durable receipt and scheduler evidence confirm that only one job existed.
+
+Gate conclusion: PASS. A4 proved exact-commit preview binding, protected
+resource and wrapper validation, durable intent-before-submit recording,
+parsable job-ID capture, successful shell-wrapper execution on a compute node,
+atomic result marking, fail-closed retry handling, and idempotent replay without
+duplicate Slurm submission. Job `117689` remains the preserved failed first
+attempt, and job `117706` is the successful wrapper-based completion.

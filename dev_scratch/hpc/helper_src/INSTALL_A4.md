@@ -176,7 +176,8 @@ Log in to lethe as `niknovikov19`. Remote promotion uses the owning account;
 `sudo` is neither needed nor expected.
 
 The reviewed promotion script performs this section, restores protected
-directory modes on failure, and writes a copy-pasteable report in `$HOME`:
+directory modes on failure, and writes a copy-pasteable report under
+`hpc_codex/state/A1_OUinp/reports/promotion`:
 
 ```bash
 A4_COMMIT='<same full 40-character commit>'
@@ -345,5 +346,5 @@ Codex will:
 6. repeat the same command and require the same job ID with result `existing`;
 7. use the existing protected grid probe for bounded `squeue`/`sacct`
    evidence and ask the user to report the protected run files if needed;
-8. inspect the local audit tail and confirm one submission intent plus the
-   submitted and idempotent results.
+8. inspect the local audit tail and confirm one invocation intent per call,
+   followed by the submitted and idempotent results.
