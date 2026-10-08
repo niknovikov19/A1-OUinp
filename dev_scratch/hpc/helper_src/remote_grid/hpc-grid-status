@@ -12,7 +12,7 @@ import stat
 import subprocess
 
 
-HELPER_VERSION = '0.6.1-a5'
+HELPER_VERSION = '0.6.2-a5'
 EXIT_SUCCESS = 0
 EXIT_REJECTED = 2
 EXIT_UNKNOWN = 3
@@ -306,7 +306,7 @@ def normalize_state(raw_state):
     return STATE_MAP.get(state_token(raw_state), 'unknown')
 
 
-def parse_rows(output, fields, known_ids, label):
+def parse_rows(output, fields, known_ids, label, allow_unrelated=False):
     """Parse fixed pipe-delimited scheduler rows by known job ID."""
     rows = {}
     for line in output.splitlines():
@@ -317,22 +317,29 @@ def parse_rows(output, fields, known_ids, label):
             raise StatusFailure(f'Malformed {label} row')
         row = dict(zip(fields, values))
         raw_job_id = row['job_id'].strip()
-        if not raw_job_id.isdigit() or int(raw_job_id) not in known_ids:
+        if not raw_job_id.isdigit():
+            if allow_unrelated:
+                continue
             raise StatusFailure(f'Unexpected {label} job ID')
         job_id = int(raw_job_id)
+        if job_id not in known_ids:
+            if allow_unrelated:
+                continue
+            raise StatusFailure(f'Unexpected {label} job ID')
         if job_id in rows:
             raise StatusFailure(f'Duplicate {label} job ID')
         rows[job_id] = row
     return rows
 
 
-def parse_squeue(output, known_ids):
+def parse_squeue(output, known_ids, allow_unrelated=False):
     """Parse fixed squeue output."""
     return parse_rows(
         output,
         ('job_id', 'raw_state', 'reason'),
         known_ids,
         'squeue',
+        allow_unrelated,
     )
 
 
@@ -375,20 +382,18 @@ def query_scheduler(config, job_ids):
     """Query all known jobs once through squeue and once through sacct."""
     scheduler = config['scheduler']
     timeout = scheduler['query_timeout_sec']
-    ids_text = ','.join(str(job_id) for job_id in job_ids)
     squeue_command = [
         scheduler['squeue_path'],
         '--noheader',
         '--user',
         scheduler['user'],
-        '--jobs',
-        ids_text,
         '--format',
         '%i|%T|%r',
     ]
     squeue = parse_squeue(
         run_fixed(squeue_command, timeout),
         set(job_ids),
+        allow_unrelated=True,
     )
 
     absent_ids = [job_id for job_id in job_ids if job_id not in squeue]
@@ -453,7 +458,11 @@ def run_self_test(config):
             raise StatusFailure(f'Normalization fixture failed: {case["name"]}')
         passed += 1
     for case in fixtures.get('squeue_cases', []):
-        parsed = parse_squeue(case['output'], set(case['known_job_ids']))
+        parsed = parse_squeue(
+            case['output'],
+            set(case['known_job_ids']),
+            allow_unrelated=case.get('allow_unrelated', False),
+        )
         states = {
             str(job_id): normalize_state(row['raw_state'])
             for job_id, row in parsed.items()

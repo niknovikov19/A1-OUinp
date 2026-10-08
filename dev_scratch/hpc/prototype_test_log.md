@@ -817,3 +817,31 @@ dfab56a100baab8d06432f024ee0b57d6da786ef9e598479c4c0cbe8a65685a6  hpc-grid-statu
 The local `0.6.0-a5` bundle and other remote artifacts are unchanged. The
 corrected remote helper must be promoted from a new exact commit before the
 protected self-test is repeated.
+
+### A5.1 completed-job `squeue` behavior and correction
+
+After promotion of commit `b917d23312a0850ec41999c0e783e0172a2b2ef1`,
+the protected self-test passed all 16 original cases. The first real status
+observation for completed A4 job `117706` then returned `unknown` with exit
+code `3`. On Slurm `25.11.4`, querying an expired completed ID through
+`squeue --jobs 117706` exits `1` with `Invalid job id specified` instead of
+returning an empty successful result. The helper did not write `status.json`
+or reconcile `run.json` after this unavailable observation.
+
+The correction keeps one bounded user-scoped `squeue` call but no longer
+passes expired recorded IDs as the query selector. It filters the returned
+active queue to the recorded IDs, ignores unrelated normal and array entries,
+and sends only absent recorded IDs to the single `sacct` fallback. A new fixed
+fixture covers that filtering behavior, increasing the protected case count to
+17.
+
+Corrected remote SHA256 values:
+
+```text
+37c76569edd655692cbfad02250f4941d94dc89696e897a172d279678e29290c  hpc-grid-status
+251a37ff7b3c933489d6c2206593a982f95e831173972f45b617957edf910b4e  remote-hpc-status.json.example
+cd4a7282fcada0a04416322ac9b9319437648576af757d88ac9725007946f27c  a5_status_cases.json
+```
+
+The corrected grid component version is `0.6.2-a5`. The local bundle and
+lethe-status helper remain unchanged.

@@ -12,7 +12,7 @@
     "root": "/ddn/niknovikov19/hpc_codex/runs/A1_OUinp"
   },
   "fixtures_path": "/ddn/niknovikov19/hpc_codex/config/A1_OUinp-status-fixtures.json",
-  "fixtures_sha256": "d0d9b5b2ffaa36b779ba78c8b42f825c57cbef42299acaa9de552de37b0b6840",
+  "fixtures_sha256": "cd4a7282fcada0a04416322ac9b9319437648576af757d88ac9725007946f27c",
   "scheduler": {
     "user": "niknovikov19",
     "squeue_path": "/usr/bin/squeue",

@@ -317,9 +317,10 @@ INSTALL_A5.md
 
 `hpc-status RUN_ID` accepts only a validated run ID. The lethe helper resolves
 that ID beneath the fixed run root and reads Slurm IDs only from `run.json`.
-The grid helper makes one user-scoped `squeue` query for all recorded IDs and,
-when any are absent, one allocation-only `sacct` query for those IDs. It never
-reads logs or accepts scheduler IDs and options from the local caller.
+The grid helper makes one bounded user-scoped `squeue` query, retains only the
+recorded IDs, and makes one allocation-only `sacct` query when recorded IDs
+are absent. It never reads logs or accepts scheduler IDs and options from the
+local caller.
 
 Raw scheduler state, reason, and exit code are preserved beside a normalized
 state. Missing accounting is `unknown`, not failure. A successful observation
@@ -339,7 +340,7 @@ Codex
   -> extract the recorded controller and child Slurm IDs
   -> /usr/bin/ssh lattice
   -> hpc-grid-status status RECORDED_IDS
-  -> one bounded squeue query for all IDs
+  -> one bounded user squeue query, filtered to the recorded IDs
   -> at most one bounded sacct query for IDs absent from squeue
   -> normalize states and return one compact response
   -> atomically write status.json and reconcile known run state

@@ -61,6 +61,15 @@
         "101": "pending",
         "102": "running"
       }
+    },
+    {
+      "name": "filter-unrelated-user-jobs",
+      "known_job_ids": [103],
+      "allow_unrelated": true,
+      "output": "999|RUNNING|None\n123_1|RUNNING|None\n103|PENDING|Resources\n",
+      "expected_states": {
+        "103": "pending"
+      }
     }
   ],
   "sacct_cases": [

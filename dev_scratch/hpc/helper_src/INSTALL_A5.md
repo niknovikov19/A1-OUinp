@@ -29,14 +29,14 @@ Reviewed candidate SHA256 values:
 dde49bb7b565adb96fb38b559e0cbbaa5eb8abbf5fc7353e5f72634871543cd0  hpc-status
 e4b894a3b7e92585974d48ab6c4de87b77b3646665c20f6b9b730fa713432423  hpc_common.py
 5f5f7ed374d35f9dd1e7d8dc163b276a84d8b86544b3f603d917f977e7171f83  hpc-lethe-status
-dfab56a100baab8d06432f024ee0b57d6da786ef9e598479c4c0cbe8a65685a6  hpc-grid-status
-3ccd72366ce7c3809edea0ed15b8acd87b5af8e1dcf856662798bacc76cac905  remote-hpc-status.json.example
-d0d9b5b2ffaa36b779ba78c8b42f825c57cbef42299acaa9de552de37b0b6840  a5_status_cases.json
+37c76569edd655692cbfad02250f4941d94dc89696e897a172d279678e29290c  hpc-grid-status
+251a37ff7b3c933489d6c2206593a982f95e831173972f45b617957edf910b4e  remote-hpc-status.json.example
+cd4a7282fcada0a04416322ac9b9319437648576af757d88ac9725007946f27c  a5_status_cases.json
 fff824437f4b755b8fad896346c9ad53eae101add4b87a82031389551a189c75  remote-hpc-status-config.schema.json
 e29da82aa81c9cb62d9bb5f52f4b9201c3aae40c60eb9abe3672086e6a2e7ade  status-record.schema.json
 ```
 
-The corrected grid-status component version is `0.6.1-a5`. The unchanged
+The corrected grid-status component version is `0.6.2-a5`. The unchanged
 local bundle and lethe-status component remain `0.6.0-a5`.
 
 The expected installed local bundle version is `0.6.0-a5`, with SHA256:
@@ -111,7 +111,7 @@ Codex will:
 1. verify installed identities, modes, exact commit, and clean checkout;
 2. reject missing, unknown, traversal, and extra-argument run selections
    locally or on lethe before querying Slurm;
-3. run `hpc-status --json --self-test` and require all 16 fixed normalization,
+3. run `hpc-status --json --self-test` and require all 17 fixed normalization,
    parser, and malformed-output cases to pass;
 4. run `hpc-status --json a4-slurm-probe-v2` and require one `squeue` plus one
    `sacct` query, raw `COMPLETED`, normalized `completed`, and job `117706`;

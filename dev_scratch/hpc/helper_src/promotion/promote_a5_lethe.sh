@@ -87,13 +87,13 @@ a5_check_sha256 \
     '5f5f7ed374d35f9dd1e7d8dc163b276a84d8b86544b3f603d917f977e7171f83' \
     "$A5_SRC/remote_lethe/hpc-lethe-status"
 a5_check_sha256 \
-    'dfab56a100baab8d06432f024ee0b57d6da786ef9e598479c4c0cbe8a65685a6' \
+    '37c76569edd655692cbfad02250f4941d94dc89696e897a172d279678e29290c' \
     "$A5_SRC/remote_grid/hpc-grid-status"
 a5_check_sha256 \
-    '3ccd72366ce7c3809edea0ed15b8acd87b5af8e1dcf856662798bacc76cac905' \
+    '251a37ff7b3c933489d6c2206593a982f95e831173972f45b617957edf910b4e' \
     "$A5_SRC/config_examples/remote-hpc-status.json.example"
 a5_check_sha256 \
-    'd0d9b5b2ffaa36b779ba78c8b42f825c57cbef42299acaa9de552de37b0b6840' \
+    'cd4a7282fcada0a04416322ac9b9319437648576af757d88ac9725007946f27c' \
     "$A5_SRC/test_fixtures/a5_status_cases.json"
 
 # Confirm existing shared-path ownership before changing modes
@@ -149,13 +149,13 @@ a5_check_sha256 \
     '5f5f7ed374d35f9dd1e7d8dc163b276a84d8b86544b3f603d917f977e7171f83' \
     "$A5_REMOTE_ROOT/helpers/lethe/hpc-lethe-status"
 a5_check_sha256 \
-    'dfab56a100baab8d06432f024ee0b57d6da786ef9e598479c4c0cbe8a65685a6' \
+    '37c76569edd655692cbfad02250f4941d94dc89696e897a172d279678e29290c' \
     "$A5_REMOTE_ROOT/helpers/grid/hpc-grid-status"
 a5_check_sha256 \
-    '3ccd72366ce7c3809edea0ed15b8acd87b5af8e1dcf856662798bacc76cac905' \
+    '251a37ff7b3c933489d6c2206593a982f95e831173972f45b617957edf910b4e' \
     "$A5_REMOTE_ROOT/config/A1_OUinp-status.json"
 a5_check_sha256 \
-    'd0d9b5b2ffaa36b779ba78c8b42f825c57cbef42299acaa9de552de37b0b6840' \
+    'cd4a7282fcada0a04416322ac9b9319437648576af757d88ac9725007946f27c' \
     "$A5_REMOTE_ROOT/config/A1_OUinp-status-fixtures.json"
 
 printf '\n== Installed permissions ==\n'
