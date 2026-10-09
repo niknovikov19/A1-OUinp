@@ -1150,3 +1150,43 @@ All milestone-A conditions are demonstrated:
 
 Milestone A conclusion: PASS. Stop for review before starting integrated
 simulation development at Gate B0.
+
+## B0.1 repository architecture audit
+
+The audit covered the tracked single and batch Slurm launchers,
+`grid_search_slurm_local.py`, `run_exp.py`, `run_workflow.py`,
+`workflow_utils.py`, relevant tests, ignored result roots, and the protected
+preview/submission/update boundary.
+
+Main findings:
+
+- legacy launchers hardcode the manual checkout, experiments, controller logs,
+  resources, and an obsolete `netpyne_batch_slurm` environment name;
+- `grid_search_slurm_local.py` selects experiments, child resources,
+  concurrency, and output paths through edited module constants;
+- batch `run_exp.py` discovers the experiment by trimming `simLabel`, while
+  single mode accepts an unchecked experiment string;
+- current fixed-probe helpers equate request and run IDs and submit one fixed
+  wrapper, so real runs need a separate unique run ID and hash-bound rendered
+  launcher;
+- `run_workflow.py` and `workflow_utils.py` already provide reusable patterns
+  for script-relative roots, immutable parameters, source hashes, job records,
+  output validation, polling, and attempt-specific BatchTools artifacts;
+- `exp_results/automation/` is already ignored by Git and is the selected
+  location for integrated run directories;
+- the approved HPC runtime environment is `netpyne`; exact absolute runtime
+  paths remain a read-only lattice handoff before launcher finalization.
+
+Test baseline:
+
+- `tests.test_workflow` plus `tests.test_workflow_dummy`: 52 tests passed;
+- `tests.test_workflow_fullsim`: three pre-existing failures were recorded,
+  consisting of two stale configuration expectations and one incomplete
+  `sim_data_analyzer` mock.
+
+The detailed staged design, security boundaries, target directory layout,
+environment handoff, and B0.2-B0.5 pass conditions are recorded in
+`dev_scratch/hpc/B0_IMPLEMENTATION_PLAN.md`.
+
+Gate conclusion: B0.1 PASS. No simulation code, candidate helper, protected
+installation, or scheduler state was changed.
