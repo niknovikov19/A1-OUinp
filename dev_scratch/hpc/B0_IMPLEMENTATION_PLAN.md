@@ -1,7 +1,7 @@
 # B0 integrated simulation implementation plan
 
-Status: B0.1 architecture audit complete. No runtime code or protected helper
-has been changed, promoted, or executed for B0.
+Status: B0.1 architecture audit complete; B0.2 repository work is in progress.
+No protected helper has been changed, promoted, or executed for B0.
 
 ## Goal
 
@@ -23,14 +23,17 @@ simulation; that is Gate B1 and requires separate explicit approval.
 | `workflow_utils.py` | Provides stable JSON hashing, atomic writes, parameter-grid expansion, job validation, polling, and artifact collection. | Extract or reuse the pure pieces for automation run preparation and tests. |
 | Protected A-stage helpers | Prove exact commit, preview, submission idempotency, lifecycle status, and bounded incremental logs, but assume one fixed probe wrapper and `run_id == request_id`. | Extend the model to separate request ID from unique run ID and to submit a hash-bound rendered launcher. Preserve the proven rejection, audit, and uncertainty behavior. |
 | Result storage | `.gitignore` already ignores `exp_results/automation/`. | Store real automation run directories there; Git updates remain clean while results stay beside the repository. |
-| Runtime environment | Legacy launchers source `~/.bashrc` and activate `netpyne_batch_slurm`, but the approved integrated runtime is the `netpyne` environment. The exact Python, `nrniv`, environment prefix, and supporting variables are not yet recorded. | Remove the legacy environment name and interactive activation. Use reviewed absolute `netpyne` runtime paths and fixed environment values after one read-only lattice probe. |
+| Runtime environment | Local development and tests use `netpyne`. HPC Slurm jobs use the existing `netpyne_batch_slurm` environment, but the launchers select it through interactive shell setup. Its exact Python, `nrniv`, environment prefix, and supporting variables are not yet recorded. | Keep the two environments distinct. Replace interactive HPC activation with reviewed absolute paths and fixed environment values from `netpyne_batch_slurm` after one read-only lattice probe. |
 
 ## Reusable baseline
 
-The focused workflow baseline passes in the local `pytorch2` environment:
+The focused workflow baseline is verified in the local `netpyne` environment:
 
 ```text
-python -m unittest tests.test_workflow tests.test_workflow_dummy
+/home/nnovikov/conda_env/netpyne/bin/python -m unittest discover \
+  -s tests -p 'test_workflow.py'
+/home/nnovikov/conda_env/netpyne/bin/python -m unittest discover \
+  -s tests -p 'test_workflow_dummy.py'
 Ran 52 tests: OK
 ```
 
@@ -215,7 +218,7 @@ controller script, while no simulation has been submitted.
 ## Required lattice environment handoff
 
 Before finalizing rendered launchers, record these values after activating the
-approved `netpyne` environment on lattice:
+approved `netpyne_batch_slurm` environment on lattice:
 
 ```bash
 printf 'CONDA_PREFIX=%s\n' "$CONDA_PREFIX"

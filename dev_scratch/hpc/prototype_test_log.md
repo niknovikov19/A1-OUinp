@@ -1161,7 +1161,7 @@ preview/submission/update boundary.
 Main findings:
 
 - legacy launchers hardcode the manual checkout, experiments, controller logs,
-  resources, and an obsolete `netpyne_batch_slurm` environment name;
+  resources, and interactive activation of the HPC environment;
 - `grid_search_slurm_local.py` selects experiments, child resources,
   concurrency, and output paths through edited module constants;
 - batch `run_exp.py` discovers the experiment by trimming `simLabel`, while
@@ -1174,8 +1174,9 @@ Main findings:
   output validation, polling, and attempt-specific BatchTools artifacts;
 - `exp_results/automation/` is already ignored by Git and is the selected
   location for integrated run directories;
-- the approved HPC runtime environment is `netpyne`; exact absolute runtime
-  paths remain a read-only lattice handoff before launcher finalization.
+- local development and tests use `netpyne`, while HPC Slurm jobs use
+  `netpyne_batch_slurm`; exact absolute HPC runtime paths remain a read-only
+  lattice handoff before launcher finalization.
 
 Test baseline:
 
@@ -1190,3 +1191,19 @@ environment handoff, and B0.2-B0.5 pass conditions are recorded in
 
 Gate conclusion: B0.1 PASS. No simulation code, candidate helper, protected
 installation, or scheduler state was changed.
+
+## B0.2a pure run validation baseline
+
+The first B0.2 slice adds standard-library-only validation for request and run
+identities, experiment and tracked paths, exact commits, separate controller
+and child resources, expanded child-job limits, unique result layouts,
+canonical run contexts, and fixed-token launcher rendering.
+
+Local `netpyne` test evidence:
+
+- `tests/test_automation_run.py`: 17 tests passed;
+- `tests/test_workflow.py`: 36 tests passed;
+- `tests/test_workflow_dummy.py`: 16 tests passed.
+
+No NEURON, BatchTools, protected helper, remote host, or scheduler operation
+was invoked by the new B0.2 tests.
