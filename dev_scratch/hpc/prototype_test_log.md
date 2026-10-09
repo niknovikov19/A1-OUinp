@@ -1072,3 +1072,81 @@ fdf35982027b6f33ff09a423072cdbd901fd42bd80f2ca766b1c3138cfdda665  hpc-grid-probe
 
 Gate conclusion: A6.2 CANDIDATE READY, NOT PROMOTED OR SUBMITTED. Promotion is
 manual; one fixed submission requires explicit approval after preview.
+
+## A6.2 protected append-over-time verification
+
+Promoted commit and request identity:
+
+```text
+commit: 667bc35ad524a583789d7e8b653fe7e23f833ac6
+request: a6-incremental-log-probe
+request SHA256: fe6f18a41341d772ffb3bd509bc61f89712130645efb33a31107d106344d5d4e
+Slurm controller ID: 117756
+```
+
+Promotion and submission checks:
+
+- local and lethe promotion scripts both reported `A6_2_RESULT=PASS`;
+- the local generated request registry matched an independent exact-commit
+  rendering byte for byte;
+- the automation checkout was clean and exact at the promoted commit;
+- protected preview reported one child, `cpu.q`, one node, one core, 1 GB,
+  two minutes, and the expected fresh result directory;
+- one submission was explicitly approved and executed exactly once;
+- submission returned `result=submitted` and Slurm ID `117756`;
+- the controller was observed `RUNNING` through `squeue`, then `COMPLETED`
+  with exit code `0:0` through `sacct`.
+
+Incremental-read observations:
+
+1. The initial read returned only `log_probe_phase=initial`, 24 bytes and one
+   line, at offsets `0..24`, with `reset_reason=initial`.
+2. The delayed short-line read returned only lines `000..199`, 3,800 bytes and
+   exactly 200 lines, at offsets `24..3824`, with `limit_reason=lines` and
+   `more_available=true`.
+3. The immediate continuation returned only lines `200..204`, 95 bytes and
+   five lines, at offsets `3824..3919`, with no limit and no remaining data.
+4. After completion, the large-line read returned exactly 65,536 bytes at
+   offsets `3919..69455`, with `limit_reason=bytes` and
+   `more_available=true`. Its content began with the fixed
+   `log_probe_bytes=` prefix.
+5. The immediate continuation started at offset `69455`, returned 4,555 bytes,
+   and ended at the full size `74010`. It contained exactly 4,464 remaining
+   `x` bytes before the newline and the four fixed completion lines, including
+   `marker=created`.
+6. The final repeated read used offsets `74010..74010` and returned zero bytes
+   and zero lines. Stderr remained the same empty regular file throughout.
+
+State and audit checks:
+
+- stdout retained one file identity through every read and the cursor ended at
+  offset and size `74010`;
+- `log-cursors.json` and `log-cursors.lock` remained mode `0600`;
+- the audit contained one intent, one successful submission, bounded status
+  events, and summaries for `24`, `3800`, `95`, `65536`, `4555`, and `0`
+  returned bytes;
+- request values remained redacted and no log content or large payload entered
+  the audit.
+
+Gate conclusion: A6.2 PASS and Gate A6 PASS. Real Slurm output was transferred
+incrementally without duplication or loss, both limits produced explicit
+continuations, arbitrary paths remained unavailable, and the final repeat
+transferred no content.
+
+## Capability-spike review after A6
+
+All milestone-A conditions are demonstrated:
+
+- protected two-hop invocation works for fixed probe, code, preview,
+  submission, status, and log operations;
+- a local push plus clean protected fast-forward reproduces an exact commit;
+- Slurm submission returns a stable parsed controller ID without duplication;
+- submission intent and result records support idempotency and audit;
+- one bounded `squeue` query with `sacct` fallback classifies the lifecycle;
+- known logs are resolved from run records and read incrementally without
+  directory scans;
+- protected audit, run, submission, status, cursor, and marker evidence is
+  sufficient to reconstruct the tested lifecycle.
+
+Milestone A conclusion: PASS. Stop for review before starting integrated
+simulation development at Gate B0.
