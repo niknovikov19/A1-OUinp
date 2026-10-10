@@ -3,7 +3,8 @@
 Status: revised design approved. B0.1 and B0.2 pass locally, B0.3 passed
 promotion and installed-command tests at commit
 `c6a60561a0cba178edaf8b673d6f25c618ce248a`, and B0.4 passes its local
-fixture gate. B0.5 is next.
+fixture gate. The B0.5 candidate passes locally and awaits exact-commit
+protected preparation.
 
 The earlier B0.2a `exp_results/automation/...` prototype has been removed. The
 replacement keeps scientific results in their established locations and puts
@@ -319,6 +320,15 @@ limits, terminal evidence, and explicit active-marker release.
 Pass condition: one fresh purpose-built single experiment previews from an
 exact clean commit with its existing descriptive result path, expected files,
 top-level resources, and prepared-script hash. No simulation has run.
+
+Status: local candidate PASS. `single_hpc_prototype/b1_smoke` defines one
+unconnected `IT2` cell, a 1000 ms fixed-seed background-input simulation, and
+one compact completion JSON. Its tracked request asserts the descriptive
+result directory, one completion file, and a 1-node, 1-core, 2-GB, 10-minute
+top-level job. Local tests bind the intended rendering for run ID
+`b1-single-smoke-001` to SHA256
+`1988abfe912bc5f4ba517a7245491ff2e583b721ced7e423575ed04432d9441d`.
+Exact-commit protected preparation remains before the B0.5 gate passes.
 
 ## Required HPC environment handoff
 

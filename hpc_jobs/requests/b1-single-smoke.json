@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "request_id": "b1-single-smoke",
+  "job_kind": "single",
+  "target": "single_hpc_prototype/b1_smoke",
+  "template_path": "hpc_jobs/templates/single.sh",
+  "expected_result_path": "exp_results/single_hpc_prototype/b1_smoke/exp_hpc_b1_smoke_seed_1201_t_0.5_1.0_rx_10000_100_wx_0.1_0.05_n_1",
+  "completion_files": [
+    "results/result_00000_seed_1201.json"
+  ],
+  "top_level_resources": {
+    "partition": "cpu.q",
+    "nodes": 1,
+    "cores": 1,
+    "memory_gb": 2,
+    "wall_time_min": 10
+  }
+}

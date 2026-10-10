@@ -1414,3 +1414,29 @@ Local `netpyne` verification:
 No protected candidate was executed or installed, and no SSH, Git remote,
 Slurm, or simulation command was called. Gate conclusion: B0.4 PASS locally.
 B0.5 purpose-built B1 request and local preflight are next.
+
+## B0.5 purpose-built B1 candidate
+
+The candidate adds `single_hpc_prototype/b1_smoke`, a fresh tracked single-job
+request, and focused tests. The experiment contains one unconnected `IT2`
+cell, runs for 1000 ms with fixed-seed excitatory and inhibitory background
+inputs, disables plots and pickle output, preserves the descriptive
+`exp_configs` to `exp_results` correspondence, and writes one compact
+completion JSON.
+
+Local evidence before the exact-commit preparation:
+
+- 47 request, preflight, rendering, lifecycle, and B1 tests passed;
+- the actual local `netpyne` base configuration resolved one planned job and
+  the exact request-declared descriptive result path;
+- actual network-parameter construction produced only population `IT2`, one
+  cell, no recurrent connections, and the two intended background sources;
+- the reviewed template passed `bash -n` and rendered for run ID
+  `b1-single-smoke-001` with SHA256
+  `1988abfe912bc5f4ba517a7245491ff2e583b721ced7e423575ed04432d9441d`;
+- `git diff --check` passed.
+
+The local NetPyNE import printed the known missing-local-MPI warning, but both
+scientific preflight and network-parameter construction returned successfully.
+No simulation, protected preparation, SSH operation, or Slurm command was
+invoked. Exact-commit protected preparation is the remaining B0.5 check.
