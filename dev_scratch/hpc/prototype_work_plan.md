@@ -513,7 +513,9 @@ Do not add these until the prototype has been used successfully on several real 
 
 ## Immediate next action
 
-Begin B0.5: add one purpose-built B1 single-experiment request and run its
-local scientific preflight, request validation, template rendering, and result
-collision checks. B0.4 passed locally with fixture-only lifecycle tests; it did
-not invoke a scheduler or install another helper.
+Begin B1 protected submission integration for the prepared
+`b1-single-smoke-001` contract. First connect the B0.4 lifecycle records to a
+fixed prepared-run `sbatch` operation and bounded status/log operations, test
+them without a scheduler, and promote them manually. Obtain separate explicit
+approval before the first real `sbatch` call. B0 passed without running a
+simulation.

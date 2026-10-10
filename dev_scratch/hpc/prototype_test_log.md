@@ -1438,5 +1438,24 @@ Local evidence before the exact-commit preparation:
 
 The local NetPyNE import printed the known missing-local-MPI warning, but both
 scientific preflight and network-parameter construction returned successfully.
-No simulation, protected preparation, SSH operation, or Slurm command was
-invoked. Exact-commit protected preparation is the remaining B0.5 check.
+No simulation or Slurm command was invoked during local testing.
+
+Exact-commit preparation evidence:
+
+- commit `04eb9b3cdda9b837a7e3b8e52928a165f6dc61e5` was pushed to
+  `origin/codex-hpc`;
+- the approved A2 updater fast-forwarded the automation checkout from
+  `62a2f69d06cb48fe0286f5971484526b87a25cba` to that commit;
+- status reported branch `codex-hpc`, a clean checkout, no active run, no
+  update lock, and matching local and remote commits;
+- protected preparation created run `b1-single-smoke-001` for request
+  `b1-single-smoke` and the exact descriptive result path;
+- the protected rendered-script SHA256 was
+  `1988abfe912bc5f4ba517a7245491ff2e583b721ced7e423575ed04432d9441d`,
+  exactly matching local review;
+- repeating the protected operation returned `already-prepared` with the same
+  commit, path, and hash.
+
+Preparation did not call `sbatch`, create a Slurm ID, or run a simulation.
+Gate conclusion: B0.5 PASS and B0 PASS. B1 protected submission integration,
+separate submission approval, and one short simulation are next.
