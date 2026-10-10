@@ -1,0 +1,425 @@
+#!/ddn/niknovikov19/miniconda3/bin/python3
+import argparse
+from datetime import datetime, timezone
+import fcntl
+import hashlib
+import json
+import os
+from pathlib import Path
+import pwd
+import socket
+import stat
+import subprocess
+import sys
+
+sys.dont_write_bytecode = True
+
+from hpc_job import canonical_json, validate_git_commit, validate_run_id
+from hpc_job_control import parse_sbatch_result
+from hpc_job_lifecycle import (
+    HpcJobLifecycleError,
+    build_submission_receipt,
+    build_unknown_submission,
+    read_state_record,
+    replace_state_record,
+    validate_prepared_record,
+    validate_submission_record,
+)
+
+
+HELPER_VERSION = '0.9.0-b1'
+EXIT_SUCCESS = 0
+EXIT_REJECTED = 2
+EXIT_UNKNOWN = 3
+EXIT_FAILED = 4
+MAX_COMMAND_BYTES = 65536
+
+
+class RejectedInput(ValueError):
+    """Represent a grid submission rejected before `sbatch`."""
+
+
+class SubmitUnknown(RuntimeError):
+    """Represent a scheduler call whose safe retry status is unknown."""
+
+
+class SubmitFailure(RuntimeError):
+    """Represent a known grid-side operational failure."""
+
+
+def get_common_root():
+    """Return the shared protected helper root."""
+    return Path(__file__).resolve().parents[2]
+
+
+def get_config_path():
+    """Return the fixed B1 job configuration path."""
+    return get_common_root() / 'config' / 'A1_OUinp-job.json'
+
+
+def hash_file(fpath):
+    """Return one regular file's SHA256 digest."""
+    return hashlib.sha256(Path(fpath).read_bytes()).hexdigest()
+
+
+def helper_identity():
+    """Return the installed grid job-helper identity."""
+    fpath = Path(__file__).resolve()
+    return {
+        'name': 'hpc-grid-job',
+        'version': HELPER_VERSION,
+        'source_sha256': hash_file(fpath),
+    }
+
+
+def require_regular_file(fpath, label, mode=None):
+    """Require one non-symlink regular file with an optional exact mode."""
+    try:
+        file_stat = Path(fpath).lstat()
+    except OSError as exc:
+        raise SubmitFailure(f'Cannot inspect {label}: {exc}') from exc
+    if stat.S_ISLNK(file_stat.st_mode) or not stat.S_ISREG(file_stat.st_mode):
+        raise SubmitFailure(f'{label} must be a regular file')
+    if mode is not None and stat.S_IMODE(file_stat.st_mode) != mode:
+        raise SubmitFailure(f'{label} must have mode {mode:04o}')
+
+
+def require_real_directory(fpath, label):
+    """Require one non-symlink directory."""
+    try:
+        file_stat = Path(fpath).lstat()
+    except OSError as exc:
+        raise SubmitFailure(f'Cannot inspect {label}: {exc}') from exc
+    if stat.S_ISLNK(file_stat.st_mode) or not stat.S_ISDIR(file_stat.st_mode):
+        raise SubmitFailure(f'{label} must be a real directory')
+
+
+def validate_absolute_path(value, label):
+    """Validate one normalized absolute path."""
+    if not isinstance(value, str) or not value:
+        raise SubmitFailure(f'Invalid {label}')
+    fpath = Path(value)
+    if not fpath.is_absolute() or '..' in fpath.parts or fpath.as_posix() != value:
+        raise SubmitFailure(f'Invalid {label}')
+    return value
+
+
+def validate_config(config):
+    """Validate the grid-side subset of fixed B1 configuration."""
+    required = {
+        'deployment_id',
+        'git',
+        'logs',
+        'remote_helpers',
+        'runs',
+        'scheduler',
+        'schema_version',
+        'ssh',
+        'state',
+    }
+    if not isinstance(config, dict) or set(config) != required:
+        raise SubmitFailure('Invalid job configuration keys')
+    if config['schema_version'] != 1:
+        raise SubmitFailure('Unsupported job configuration schema')
+    git = config['git']
+    if not isinstance(git, dict) or set(git) != {'automation_checkout', 'branch', 'path'}:
+        raise SubmitFailure('Invalid Git configuration')
+    validate_absolute_path(git['automation_checkout'], 'automation checkout')
+    validate_absolute_path(git['path'], 'Git path')
+    runs = config['runs']
+    if not isinstance(runs, dict) or set(runs) != {'root'}:
+        raise SubmitFailure('Invalid run configuration')
+    validate_absolute_path(runs['root'], 'job-run root')
+    state_config = config['state']
+    required_state = {
+        'active_run',
+        'code_update_lock',
+        'grid_submit_lock',
+        'job_lock',
+        'root',
+    }
+    if not isinstance(state_config, dict) or set(state_config) != required_state:
+        raise SubmitFailure('Invalid state configuration')
+    for key, value in state_config.items():
+        validate_absolute_path(value, f'state {key}')
+    scheduler = config['scheduler']
+    required_scheduler = {
+        'command_timeout_sec',
+        'sbatch_path',
+        'status_helper',
+        'user',
+    }
+    if not isinstance(scheduler, dict) or set(scheduler) != required_scheduler:
+        raise SubmitFailure('Invalid scheduler configuration')
+    validate_absolute_path(scheduler['sbatch_path'], 'sbatch path')
+    validate_absolute_path(scheduler['status_helper'], 'status helper')
+    timeout = scheduler['command_timeout_sec']
+    if isinstance(timeout, bool) or not isinstance(timeout, int) or not 1 <= timeout <= 120:
+        raise SubmitFailure('Invalid scheduler command timeout')
+    if not isinstance(scheduler['user'], str) or not scheduler['user']:
+        raise SubmitFailure('Invalid scheduler user')
+    return config
+
+
+def load_config():
+    """Load the fixed non-secret B1 job configuration."""
+    fpath = get_config_path()
+    require_regular_file(fpath, 'job configuration', mode=0o444)
+    try:
+        with open(fpath, 'r') as fid:
+            return validate_config(json.load(fid))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise SubmitFailure(f'Cannot load job configuration: {exc}') from exc
+
+
+def load_prepared(config, run_id):
+    """Load one exact prepared single-job record from the fixed run root."""
+    run_id = validate_run_id(run_id)
+    run_root = Path(config['runs']['root'])
+    require_real_directory(run_root, 'job-run root')
+    run_dir = run_root / run_id
+    require_real_directory(run_dir, 'job-run directory')
+    prepared = validate_prepared_record(
+        read_state_record(run_dir / 'run.json', 'prepared run record')
+    )
+    protected_path = (
+        Path(config['state']['root']) /
+        'runs' /
+        f'{run_id}.json'
+    )
+    protected = validate_prepared_record(
+        read_state_record(protected_path, 'protected prepared record')
+    )
+    if canonical_json(prepared) != canonical_json(protected):
+        raise SubmitFailure('Repository and protected prepared records differ')
+    if prepared['run_id'] != run_id or Path(prepared['job_run_dir']) != run_dir:
+        raise RejectedInput('Prepared record does not match run ID')
+    if prepared['job_kind'] != 'single':
+        raise RejectedInput('B1 submission accepts only a single job')
+    return prepared
+
+
+def acquire_submit_lock(config):
+    """Acquire the grid-only lock that serializes the one `sbatch` call."""
+    fpath = Path(config['state']['grid_submit_lock'])
+    require_regular_file(fpath, 'grid-submit lock', mode=0o600)
+    flags = os.O_RDWR | getattr(os, 'O_CLOEXEC', 0)
+    flags |= getattr(os, 'O_NOFOLLOW', 0)
+    try:
+        file_id = os.open(fpath, flags)
+        fcntl.flock(file_id, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError as exc:
+        os.close(file_id)
+        raise SubmitFailure('Grid-submit lock is active') from exc
+    except OSError as exc:
+        raise SubmitFailure(f'Cannot acquire grid-submit lock: {exc}') from exc
+    return file_id
+
+
+def require_active_binding(config, prepared):
+    """Require the shared active-run marker to match the prepared job."""
+    marker = read_state_record(
+        config['state']['active_run'],
+        'active-run marker',
+    )
+    expected = {
+        'schema_version': 1,
+        'status': 'active',
+        'run_id': prepared['run_id'],
+        'request_sha256': prepared['request_sha256'],
+        'git_commit': prepared['git_commit'],
+        'rendered_script_sha256': prepared['rendered_script_sha256'],
+    }
+    if any(marker.get(key) != value for key, value in expected.items()):
+        raise RejectedInput('Active-run marker does not match prepared job')
+
+
+def run_sbatch(config, submit_script):
+    """Call `sbatch` once with the exact prepared script path."""
+    command = [config['scheduler']['sbatch_path'], '--parsable', submit_script]
+    environment = os.environ.copy()
+    environment.update({'LANG': 'C', 'LC_ALL': 'C'})
+    try:
+        completed = subprocess.run(
+            command,
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            timeout=config['scheduler']['command_timeout_sec'],
+            check=False,
+            env=environment,
+        )
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        raise SubmitUnknown(f'Cannot determine sbatch result: {exc}') from exc
+    if len(completed.stdout) > MAX_COMMAND_BYTES or len(completed.stderr) > MAX_COMMAND_BYTES:
+        raise SubmitUnknown('sbatch output exceeded its bound')
+    try:
+        stdout = completed.stdout.decode('utf-8')
+        stderr = completed.stderr.decode('utf-8')
+    except UnicodeDecodeError as exc:
+        raise SubmitUnknown('sbatch output was not UTF-8') from exc
+    if completed.returncode != 0:
+        details = stderr.replace('\r', ' ').replace('\n', ' ').strip()[:500]
+        raise SubmitUnknown(f'sbatch exited {completed.returncode}: {details}')
+    try:
+        return parse_sbatch_result(stdout)
+    except HpcJobLifecycleError as exc:
+        raise SubmitUnknown(str(exc)) from exc
+
+
+def submit(config, run_id, expected_commit, request_sha256, script_sha256):
+    """Submit one exact prepared script and durably record its receipt."""
+    if pwd.getpwuid(os.getuid()).pw_name != config['scheduler']['user']:
+        raise SubmitFailure('Current user does not match scheduler policy')
+    lock_id = acquire_submit_lock(config)
+    try:
+        return submit_locked(
+            config,
+            run_id,
+            expected_commit,
+            request_sha256,
+            script_sha256,
+        )
+    finally:
+        fcntl.flock(lock_id, fcntl.LOCK_UN)
+        os.close(lock_id)
+
+
+def submit_locked(config, run_id, expected_commit, request_sha256, script_sha256):
+    """Perform one serialized exact prepared-script submission."""
+    expected_commit = validate_git_commit(expected_commit)
+    prepared = load_prepared(config, run_id)
+    expected = {
+        'git_commit': expected_commit,
+        'request_sha256': request_sha256,
+        'rendered_script_sha256': script_sha256,
+    }
+    if any(prepared[key] != value for key, value in expected.items()):
+        raise RejectedInput('Submission binding differs from prepared job')
+    require_active_binding(config, prepared)
+    submit_script = Path(prepared['submit_script'])
+    require_regular_file(submit_script, 'prepared submit script', mode=0o444)
+    if hash_file(submit_script) != prepared['rendered_script_sha256']:
+        raise SubmitFailure('Prepared submit-script hash differs')
+    submission_path = Path(prepared['job_run_dir']) / 'submission.json'
+    submission = validate_submission_record(
+        read_state_record(submission_path, 'submission record'),
+        prepared,
+    )
+    protected_submission = validate_submission_record(
+        read_state_record(
+            Path(config['state']['root']) /
+            'submissions' /
+            f'{prepared["run_id"]}.json',
+            'protected submission record',
+        ),
+        prepared,
+    )
+    if submission['status'] == 'submitted':
+        if protected_submission['status'] not in {'pending', 'submitted'}:
+            raise SubmitFailure('Protected submission state differs')
+        result = 'existing'
+    elif submission['status'] != 'pending':
+        raise RejectedInput('Submission is unsafe to retry')
+    else:
+        if canonical_json(submission) != canonical_json(protected_submission):
+            raise SubmitFailure('Pending submission records differ')
+        try:
+            slurm_job_id = run_sbatch(config, submit_script.as_posix())
+        except SubmitUnknown as exc:
+            unknown = build_unknown_submission(
+                submission,
+                prepared,
+                str(exc)[:500],
+                datetime.now(timezone.utc).isoformat(),
+            )
+            replace_state_record(submission_path, submission, unknown)
+            raise
+        receipt = build_submission_receipt(
+            submission,
+            prepared,
+            slurm_job_id,
+            datetime.now(timezone.utc).isoformat(),
+        )
+        try:
+            replace_state_record(submission_path, submission, receipt)
+        except HpcJobLifecycleError as exc:
+            raise SubmitUnknown(
+                f'sbatch succeeded but receipt could not be recorded: {exc}'
+            ) from exc
+        submission = receipt
+        result = 'submitted'
+    return {
+        'schema_version': 1,
+        'operation': 'grid-job-submit',
+        'status': 'ok',
+        'result': result,
+        'run_id': prepared['run_id'],
+        'slurm_job_id': submission['slurm_job_id'],
+        'submitted_at_utc': submission['submitted_at_utc'],
+        'remote_host': socket.gethostname(),
+        'helper': helper_identity(),
+    }
+
+
+def error_result(status, reason, details=None):
+    """Build one bounded grid submission error result."""
+    result = {
+        'schema_version': 1,
+        'operation': 'grid-job-submit',
+        'status': status,
+        'reason': reason,
+    }
+    if details:
+        result['details'] = str(details)[:500]
+    return result
+
+
+def build_parser():
+    """Build the fixed grid prepared-job parser."""
+    parser = argparse.ArgumentParser(description='Submit one prepared B1 job.')
+    commands = parser.add_subparsers(dest='operation', required=True)
+    commands.add_parser('version')
+    submit_parser = commands.add_parser('submit')
+    submit_parser.add_argument('run_id')
+    submit_parser.add_argument('expected_commit')
+    submit_parser.add_argument('request_sha256')
+    submit_parser.add_argument('script_sha256')
+    return parser
+
+
+def main():
+    """Run one fixed grid-side B1 operation."""
+    parser = build_parser()
+    try:
+        args = parser.parse_args()
+    except SystemExit as exc:
+        return int(exc.code)
+    try:
+        if args.operation == 'version':
+            result = {'status': 'ok', 'helper': helper_identity()}
+        else:
+            config = load_config()
+            result = submit(
+                config,
+                args.run_id,
+                args.expected_commit,
+                args.request_sha256,
+                args.script_sha256,
+            )
+        exit_code = EXIT_SUCCESS
+    except (RejectedInput, HpcJobLifecycleError, ValueError) as exc:
+        result = error_result('rejected', 'request-rejected', exc)
+        exit_code = EXIT_REJECTED
+    except SubmitUnknown as exc:
+        result = error_result('unknown', 'submission-unknown', exc)
+        exit_code = EXIT_UNKNOWN
+    except SubmitFailure as exc:
+        result = error_result('failed', 'submission-failed', exc)
+        exit_code = EXIT_FAILED
+    print(json.dumps(result, sort_keys=True))
+    return exit_code
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())

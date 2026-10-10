@@ -7,7 +7,7 @@ import stat
 from datetime import datetime, timezone
 
 
-BUNDLE_VERSION = '0.8.0-b0'
+BUNDLE_VERSION = '0.9.0-b1'
 CONFIG_SCHEMA_VERSION = 1
 
 EXIT_SUCCESS = 0
@@ -19,6 +19,7 @@ RUNTIME_SOURCE_NAMES = (
     'hpc-code-status',
     'hpc-code-update',
     'hpc-helper-info',
+    'hpc-job',
     'hpc-job-prepare',
     'hpc-log',
     'hpc-probe',
@@ -57,7 +58,12 @@ PUBLIC_AUDIT_ARGS = {
     'info',
     'job-label',
     'lethe',
+    'log',
+    'finalize',
+    'release',
     'run-id',
+    'status',
+    'submit',
     'validate',
     'version',
 }

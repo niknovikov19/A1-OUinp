@@ -1,0 +1,413 @@
+#!/usr/bin/env python3
+import argparse
+import base64
+import fcntl
+import json
+import os
+from pathlib import Path
+import re
+import shlex
+import stat
+import subprocess
+import sys
+
+sys.dont_write_bytecode = True
+
+from hpc_common import (
+    EXIT_FAILED,
+    EXIT_REJECTED,
+    EXIT_SUCCESS,
+    EXIT_UNKNOWN,
+    HelperFailure,
+    RejectedInput,
+    append_audit_event,
+    canonical_json,
+    get_config_identity,
+    load_config,
+    validate_git_commit,
+    validate_run_id,
+)
+
+
+SSH_PATH = '/usr/bin/ssh'
+MAX_REMOTE_BYTES = 1048576
+MAX_CURSOR_STATE_BYTES = 1048576
+MAX_CURSOR_RUNS = 1000
+REMOTE_OPERATION_TIMEOUT_SEC = 120
+IDENTITY_RE = re.compile(r'[0-9]+:[0-9]+')
+
+
+class RemoteUnavailable(RuntimeError):
+    """Represent an unavailable or invalid remote B1 job response."""
+
+
+def build_parser():
+    """Build the fixed local B1 job-operation parser."""
+    parser = argparse.ArgumentParser(description='Control one prepared HPC job.')
+    parser.add_argument(
+        '--json',
+        action='store_true',
+        help='Print structured JSON instead of a concise summary.',
+    )
+    commands = parser.add_subparsers(dest='operation', required=True)
+    submit = commands.add_parser('submit')
+    submit.add_argument('run_id')
+    submit.add_argument('expected_commit')
+    for operation in ('status', 'log', 'finalize', 'release'):
+        command = commands.add_parser(operation)
+        command.add_argument('run_id')
+    return parser
+
+
+def validate_args(args):
+    """Validate public run and exact-commit arguments."""
+    args.run_id = validate_run_id(args.run_id)
+    if args.operation == 'submit':
+        args.expected_commit = validate_git_commit(args.expected_commit)
+    return args
+
+
+def get_cursor_paths():
+    """Return fixed local B1 log-cursor paths."""
+    state_dir = Path(__file__).resolve().parents[1] / 'state'
+    return (
+        state_dir,
+        state_dir / 'job-log-cursors.json',
+        state_dir / 'job-log-cursors.lock',
+    )
+
+
+def require_state_directory(fpath):
+    """Require the protected local state directory."""
+    try:
+        file_stat = Path(fpath).lstat()
+    except OSError as exc:
+        raise HelperFailure(f'Cannot inspect local state: {exc}') from exc
+    if stat.S_ISLNK(file_stat.st_mode) or not stat.S_ISDIR(file_stat.st_mode):
+        raise HelperFailure('Local state must be a real directory')
+
+
+def acquire_cursor_lock(state_dir, lock_path):
+    """Acquire the fixed local cursor-state lock."""
+    require_state_directory(state_dir)
+    flags = os.O_RDWR | os.O_CREAT | getattr(os, 'O_CLOEXEC', 0)
+    flags |= getattr(os, 'O_NOFOLLOW', 0)
+    try:
+        file_id = os.open(lock_path, flags, 0o600)
+        os.fchmod(file_id, 0o600)
+        fcntl.flock(file_id, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError as exc:
+        os.close(file_id)
+        raise HelperFailure('Job-log cursor lock is active') from exc
+    except OSError as exc:
+        raise HelperFailure(f'Cannot acquire job-log cursor lock: {exc}') from exc
+    return file_id
+
+
+def validate_cursor(value, label):
+    """Validate one local incremental-log cursor."""
+    if not isinstance(value, dict) or set(value) != {'identity', 'offset'}:
+        raise HelperFailure(f'Invalid {label} cursor')
+    identity = value['identity']
+    offset = value['offset']
+    valid_identity = (
+        isinstance(identity, str) and
+        IDENTITY_RE.fullmatch(identity) is not None
+    )
+    valid_offset = isinstance(offset, int) and not isinstance(offset, bool)
+    if not valid_identity or not valid_offset or offset < 0:
+        raise HelperFailure(f'Invalid {label} cursor')
+    return value
+
+
+def validate_cursor_state(value):
+    """Validate the complete bounded local cursor document."""
+    if not isinstance(value, dict) or set(value) != {'runs', 'schema_version'}:
+        raise HelperFailure('Invalid job-log cursor state')
+    if value['schema_version'] != 1 or not isinstance(value['runs'], dict):
+        raise HelperFailure('Invalid job-log cursor state')
+    if len(value['runs']) > MAX_CURSOR_RUNS:
+        raise HelperFailure('Job-log cursor state contains too many runs')
+    for run_id, streams in value['runs'].items():
+        try:
+            validate_run_id(run_id)
+        except RejectedInput as exc:
+            raise HelperFailure('Invalid run ID in cursor state') from exc
+        if not isinstance(streams, dict) or not set(streams) <= {'stdout', 'stderr'}:
+            raise HelperFailure('Invalid cursor streams')
+        for name, cursor in streams.items():
+            validate_cursor(cursor, f'{run_id} {name}')
+    return value
+
+
+def load_cursor_state(fpath):
+    """Load the local cursor state or return an empty document."""
+    try:
+        file_stat = Path(fpath).lstat()
+    except FileNotFoundError:
+        return {'schema_version': 1, 'runs': {}}
+    except OSError as exc:
+        raise HelperFailure(f'Cannot inspect cursor state: {exc}') from exc
+    if stat.S_ISLNK(file_stat.st_mode) or not stat.S_ISREG(file_stat.st_mode):
+        raise HelperFailure('Cursor state must be a regular file')
+    if file_stat.st_size > MAX_CURSOR_STATE_BYTES:
+        raise HelperFailure('Cursor state exceeds its size bound')
+    try:
+        with open(fpath, 'r') as fid:
+            return validate_cursor_state(json.load(fid))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise HelperFailure(f'Cannot load cursor state: {exc}') from exc
+
+
+def write_cursor_state(fpath, state):
+    """Atomically replace the protected local cursor document."""
+    data = (canonical_json(validate_cursor_state(state)) + '\n').encode()
+    if len(data) > MAX_CURSOR_STATE_BYTES:
+        raise HelperFailure('Cursor state exceeds its size bound')
+    temp = Path(fpath).with_name(f'.{Path(fpath).name}.{os.getpid()}.tmp')
+    flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
+    flags |= getattr(os, 'O_CLOEXEC', 0) | getattr(os, 'O_NOFOLLOW', 0)
+    try:
+        file_id = os.open(temp, flags, 0o600)
+        try:
+            os.write(file_id, data)
+            os.fsync(file_id)
+        finally:
+            os.close(file_id)
+        os.replace(temp, fpath)
+    except OSError as exc:
+        raise HelperFailure(f'Cannot write cursor state: {exc}') from exc
+
+
+def encode_cursors(state, run_id):
+    """Encode only one run's stdout and stderr cursor values."""
+    stored = state['runs'].get(run_id, {})
+    value = {
+        'schema_version': 1,
+        'streams': {
+            name: stored.get(name)
+            for name in ('stdout', 'stderr')
+        },
+    }
+    return base64.urlsafe_b64encode(canonical_json(value).encode()).decode()
+
+
+def update_cursors(state, run_id, result):
+    """Advance local cursors only to validated successful remote offsets."""
+    streams = result.get('streams')
+    if not isinstance(streams, dict) or set(streams) != {'stdout', 'stderr'}:
+        raise RemoteUnavailable('Remote log streams are invalid')
+    current = dict(state['runs'].get(run_id, {}))
+    for name, stream in streams.items():
+        if not isinstance(stream, dict) or stream.get('status') not in {'ok', 'missing'}:
+            raise RemoteUnavailable(f'Remote {name} stream is invalid')
+        if stream['status'] == 'ok':
+            identity = stream.get('identity')
+            offset = stream.get('end_offset')
+            valid_offset = isinstance(offset, int) and not isinstance(offset, bool)
+            valid_identity = (
+                isinstance(identity, str) and
+                IDENTITY_RE.fullmatch(identity) is not None
+            )
+            if not valid_identity or not valid_offset or offset < 0:
+                raise RemoteUnavailable(f'Remote {name} cursor is invalid')
+            current[name] = {'identity': identity, 'offset': offset}
+    state['runs'][run_id] = current
+    return state
+
+
+def build_ssh_command(config, args, cursor_payload=None):
+    """Build one allowlisted lethe B1 job invocation."""
+    helper = Path(config['remote_helpers']['lethe_dir']) / 'hpc-lethe-job'
+    parts = [helper.as_posix(), args.operation, args.run_id]
+    if args.operation == 'submit':
+        parts.append(args.expected_commit)
+    elif args.operation == 'log':
+        parts.append(cursor_payload)
+    remote = ' '.join(shlex.quote(item) for item in parts)
+    timeout = config['ssh']['connect_timeout_sec']
+    return [
+        SSH_PATH,
+        '-o',
+        'BatchMode=yes',
+        '-o',
+        f'ConnectTimeout={timeout}',
+        '-o',
+        'ConnectionAttempts=1',
+        '--',
+        config['ssh']['lethe_host_alias'],
+        remote,
+    ]
+
+
+def parse_remote_result(completed, operation, run_id):
+    """Parse and bind one bounded remote B1 job response."""
+    if len(completed.stdout) > MAX_REMOTE_BYTES or len(completed.stderr) > 65536:
+        raise RemoteUnavailable('Remote response exceeded its bound')
+    try:
+        stdout = completed.stdout.decode('utf-8')
+        stderr = completed.stderr.decode('utf-8')
+    except UnicodeDecodeError as exc:
+        raise RemoteUnavailable('Remote response was not UTF-8') from exc
+    try:
+        result = json.loads(stdout)
+    except json.JSONDecodeError as exc:
+        details = stderr.replace('\r', ' ').replace('\n', ' ').strip()[:500]
+        raise RemoteUnavailable(f'Remote response was not JSON: {details}') from exc
+    valid = (
+        isinstance(result, dict) and
+        result.get('operation') == f'job-{operation}' and
+        result.get('status') in {'ok', 'rejected', 'unknown', 'failed'}
+    )
+    if not valid:
+        raise RemoteUnavailable('Remote job response was invalid')
+    if result['status'] == 'ok' and result.get('run_id') != run_id:
+        raise RemoteUnavailable('Remote job response has another run ID')
+    return result
+
+
+def run_remote(config, args, cursor_payload=None):
+    """Run one fixed remote operation and validate its exit state."""
+    command = build_ssh_command(config, args, cursor_payload)
+    try:
+        completed = subprocess.run(
+            command,
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            timeout=REMOTE_OPERATION_TIMEOUT_SEC,
+            check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        raise RemoteUnavailable(f'Remote operation unavailable: {exc}') from exc
+    result = parse_remote_result(completed, args.operation, args.run_id)
+    expected = {
+        EXIT_SUCCESS: 'ok',
+        EXIT_REJECTED: 'rejected',
+        EXIT_UNKNOWN: 'unknown',
+        EXIT_FAILED: 'failed',
+    }
+    if expected.get(completed.returncode) != result['status']:
+        raise RemoteUnavailable('Remote exit status was inconsistent')
+    result['local_config_sha256'] = get_config_identity(config)
+    return result, completed.returncode
+
+
+def run_log(config, args):
+    """Run incremental log retrieval under the local cursor lock."""
+    state_dir, state_path, lock_path = get_cursor_paths()
+    lock_id = acquire_cursor_lock(state_dir, lock_path)
+    try:
+        state = load_cursor_state(state_path)
+        payload = encode_cursors(state, args.run_id)
+        result, exit_code = run_remote(config, args, payload)
+        if exit_code == EXIT_SUCCESS:
+            update_cursors(state, args.run_id, result)
+            write_cursor_state(state_path, state)
+        return result, exit_code
+    finally:
+        fcntl.flock(lock_id, fcntl.LOCK_UN)
+        os.close(lock_id)
+
+
+def concise_output(result):
+    """Print one compact human-readable B1 operation result."""
+    if result['status'] != 'ok':
+        print(f'Status: {result["status"]}')
+        print(f'Reason: {result.get("reason", "unknown")}')
+        if result.get('details'):
+            print(f'Details: {result["details"]}')
+        return
+    operation = result['operation']
+    print('Status: ok')
+    print(f'Run: {result["run_id"]}')
+    if operation == 'job-submit':
+        print(f'Result: {result["result"]}')
+        print(f'Slurm job: {result["slurm_job_id"]}')
+        print(f'Commit: {result["git_commit"]}')
+    elif operation == 'job-status':
+        job = result['scheduler']
+        print(f'Slurm job: {result["slurm_job_id"]}')
+        print(f'Scheduler: {job["normalized_state"]} ({job["raw_state"]})')
+    elif operation == 'job-log':
+        for name in ('stdout', 'stderr'):
+            stream = result['streams'][name]
+            print(f'--- {name} [{stream["start_offset"]}:{stream["end_offset"]}] ---')
+            if stream['content']:
+                print(stream['content'], end='' if stream['content'].endswith('\n') else '\n')
+    elif operation == 'job-finalize':
+        print(f'Result: {result["result"]}')
+        print(f'Scheduler: {result["scheduler_state"]}')
+        print(f'Completion files: {len(result["completion_files_verified"])}')
+    else:
+        print(f'Result: {result["result"]}')
+        print(f'Commit: {result["git_commit"]}')
+
+
+def audit_or_fail(action, status, exit_code, raw_args, details=None):
+    """Write one mandatory local B1 job audit event."""
+    try:
+        append_audit_event(
+            action,
+            status,
+            exit_code,
+            raw_args,
+            details=details,
+            helper='hpc-job',
+        )
+        return True
+    except HelperFailure as exc:
+        print(f'Audit failure: {exc}', file=sys.stderr)
+        return False
+
+
+def main():
+    """Validate, audit, and run one fixed prepared-job operation."""
+    raw_args = sys.argv[1:]
+    parser = build_parser()
+    try:
+        args = validate_args(parser.parse_args())
+        config = load_config()
+    except (RejectedInput, HelperFailure) as exc:
+        if not audit_or_fail('job', 'rejected', EXIT_REJECTED, raw_args, exc):
+            return EXIT_FAILED
+        print(f'Rejected: {exc}', file=sys.stderr)
+        return EXIT_REJECTED
+    if not audit_or_fail(
+        f'job-{args.operation}-intent',
+        'accepted',
+        EXIT_SUCCESS,
+        raw_args,
+    ):
+        return EXIT_FAILED
+    try:
+        if args.operation == 'log':
+            result, exit_code = run_log(config, args)
+        else:
+            result, exit_code = run_remote(config, args)
+    except (RemoteUnavailable, HelperFailure) as exc:
+        result = {
+            'schema_version': 1,
+            'operation': f'job-{args.operation}',
+            'status': 'unknown',
+            'reason': 'remote-unavailable',
+            'details': str(exc)[:500],
+        }
+        exit_code = EXIT_UNKNOWN
+    if not audit_or_fail(
+        f'job-{args.operation}',
+        result['status'],
+        exit_code,
+        raw_args,
+        result.get('reason'),
+    ):
+        return EXIT_FAILED
+    if args.json:
+        print(json.dumps(result, indent=2, sort_keys=True))
+    else:
+        concise_output(result)
+    return exit_code
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())

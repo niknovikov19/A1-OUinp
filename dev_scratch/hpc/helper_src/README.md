@@ -460,6 +460,73 @@ Codex
   -> return bounded JSON and append the local audit event
 ```
 
+## B1 prepared single-job lifecycle
+
+```text
+local/hpc-job
+remote_lethe/hpc-lethe-job
+remote_grid/hpc-grid-job
+config_examples/remote-hpc-job.json.example
+schemas/remote-hpc-job-config.schema.json
+test_fixtures/b1_job_cases.json
+promotion/promote_b1_job_local.sh
+promotion/promote_b1_job_lethe.sh
+INSTALL_B1.md
+```
+
+`hpc-job` accepts only five operations over a prepared run ID: `submit`,
+`status`, `log`, `finalize`, and `release`. Submission additionally requires
+the full prepared Git commit. The caller cannot supply a script path, Slurm
+option, job ID, result path, log path, or retry instruction.
+
+Before submission, the lethe helper holds the existing code-update lock,
+requires the exact clean checkout, rechecks the request and rendered-script
+hashes, rejects a non-empty result destination, creates the active-run marker,
+and persists a pending intent. The grid helper serializes the sole scheduler
+mutation and calls only:
+
+```text
+/usr/bin/sbatch --parsable <exact prepared submit.sh>
+```
+
+The grid helper replaces the pending repository record with the receipt before
+returning. An unavailable or malformed scheduler response becomes `unknown`;
+pending and unknown submissions are never retried automatically.
+
+Status queries only the recorded Slurm ID through the established A5 status
+helper. Log retrieval derives stdout and stderr from that receipt and returns
+only new bounded content. Finalization requires a terminal scheduler state and,
+for `COMPLETED`, every declared completion file. It does not release the code
+checkout. `release` is a separate operation that verifies matching terminal
+records before removing the active-run marker.
+
+### B1 call chains
+
+```text
+Codex
+  -> /opt/a1-hpc/bin/hpc-job submit RUN_ID EXPECTED_COMMIT
+  -> /usr/bin/ssh lethe
+  -> hpc-lethe-job submit RUN_ID EXPECTED_COMMIT
+  -> lock code update and job lifecycle
+  -> verify prepared records, exact checkout, hashes, and result collision
+  -> write active-run marker and pending submission intent
+  -> /usr/bin/ssh lattice
+  -> hpc-grid-job submit FIXED_BINDING
+  -> /usr/bin/sbatch --parsable EXACT_PREPARED_SCRIPT
+  -> replace pending record with one Slurm receipt
+  -> reconcile the protected state copy and return the recorded job ID
+```
+
+```text
+Codex
+  -> /opt/a1-hpc/bin/hpc-job status|log|finalize|release RUN_ID
+  -> derive every ID and path from protected records
+  -> status: query the one recorded ID through hpc-grid-status
+  -> log: read bounded incremental top-level stdout and stderr
+  -> finalize: bind terminal scheduler and declared-file evidence
+  -> release: verify final evidence and remove the active-run marker
+```
+
 ## Exit codes
 
 - `0`: success;

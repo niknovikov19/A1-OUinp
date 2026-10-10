@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "deployment_id": "a1-ouinp-codex-hpc",
+  "git": {
+    "path": "/usr/bin/git",
+    "automation_checkout": "/ddn/niknovikov19/repo/A1_OUinp_codex",
+    "branch": "codex-hpc"
+  },
+  "ssh": {
+    "grid_host_alias": "lattice",
+    "connect_timeout_sec": 15
+  },
+  "remote_helpers": {
+    "grid_job": "/ddn/niknovikov19/hpc_codex/helpers/grid/hpc-grid-job"
+  },
+  "runs": {
+    "root": "/ddn/niknovikov19/repo/A1_OUinp_codex/hpc_jobs/runs"
+  },
+  "state": {
+    "root": "/ddn/niknovikov19/hpc_codex/state/A1_OUinp",
+    "code_update_lock": "/ddn/niknovikov19/hpc_codex/state/A1_OUinp/code-update.lock",
+    "grid_submit_lock": "/ddn/niknovikov19/hpc_codex/state/A1_OUinp/grid-submit.lock",
+    "job_lock": "/ddn/niknovikov19/hpc_codex/state/A1_OUinp/job.lock",
+    "active_run": "/ddn/niknovikov19/hpc_codex/state/A1_OUinp/active-run.json"
+  },
+  "scheduler": {
+    "user": "niknovikov19",
+    "sbatch_path": "/usr/bin/sbatch",
+    "status_helper": "/ddn/niknovikov19/hpc_codex/helpers/grid/hpc-grid-status",
+    "command_timeout_sec": 90
+  },
+  "logs": {
+    "max_lines_per_stream": 200,
+    "max_bytes_per_stream": 65536,
+    "max_cursor_payload_bytes": 16384
+  }
+}

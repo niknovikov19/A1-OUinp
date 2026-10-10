@@ -381,6 +381,12 @@ leaving the manual checkout unchanged, and overwriting no result or log.
 
 Purpose: prove the complete path with the smallest meaningful NetPyNE run.
 
+Implementation status: the scheduler-free B1 candidate connects prepared-run
+submission, status, incremental top-level logs, terminal evidence, and
+explicit checkout release to the B0 record contract. It must be manually
+promoted and the lattice runtime paths must be checked before a fresh run is
+prepared. No real submission is authorized by implementation or promotion.
+
 Sequence:
 
 1. Preview a one-simulation request and review commit, experiment, duration, resources, output path, and expected artifacts.
@@ -513,9 +519,8 @@ Do not add these until the prototype has been used successfully on several real 
 
 ## Immediate next action
 
-Begin B1 protected submission integration for the prepared
-`b1-single-smoke-001` contract. First connect the B0.4 lifecycle records to a
-fixed prepared-run `sbatch` operation and bounded status/log operations, test
-them without a scheduler, and promote them manually. Obtain separate explicit
-approval before the first real `sbatch` call. B0 passed without running a
-simulation.
+Review, commit, push, and manually promote the scheduler-free B1 candidate
+using `helper_src/INSTALL_B1.md`. Verify the established lattice
+`netpyne_batch_slurm` runtime paths, then prepare a fresh B1 run at that exact
+commit. Obtain separate explicit approval before the first real `sbatch` call.
+The B0 evidence run `b1-single-smoke-001` must not be submitted.

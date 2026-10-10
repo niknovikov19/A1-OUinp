@@ -1,0 +1,884 @@
+#!/ddn/niknovikov19/miniconda3/bin/python3
+import argparse
+import base64
+import binascii
+from datetime import datetime, timezone
+import fcntl
+import hashlib
+import json
+import os
+from pathlib import Path
+import shlex
+import socket
+import stat
+import subprocess
+import sys
+
+sys.dont_write_bytecode = True
+
+from hpc_job import (
+    canonical_json,
+    hash_data,
+    validate_git_commit,
+    validate_result_destination,
+    validate_run_id,
+)
+from hpc_job_control import (
+    find_completion_files,
+    get_terminal_scheduler_state,
+    read_log_stream,
+    validate_cursor,
+    validate_scheduler_job,
+)
+from hpc_job_lifecycle import (
+    HpcJobLifecycleError,
+    build_active_run_marker,
+    build_final_record,
+    decide_submission,
+    read_state_record,
+    record_sha256,
+    release_active_run,
+    remove_state_record,
+    replace_state_record,
+    resolve_top_level_log_path,
+    validate_final_record,
+    validate_prepared_record,
+    validate_submission_record,
+    create_state_record,
+)
+
+
+HELPER_VERSION = '0.9.0-b1'
+EXIT_SUCCESS = 0
+EXIT_REJECTED = 2
+EXIT_UNKNOWN = 3
+EXIT_FAILED = 4
+MAX_COMMAND_BYTES = 1048576
+
+
+class RejectedInput(ValueError):
+    """Represent a B1 job operation rejected by protected policy."""
+
+
+class JobUnavailable(RuntimeError):
+    """Represent an unavailable SSH or scheduler result."""
+
+
+class JobFailure(RuntimeError):
+    """Represent a known lethe-side B1 job failure."""
+
+
+def get_common_root():
+    """Return the shared protected helper root."""
+    return Path(__file__).resolve().parents[2]
+
+
+def get_config_path():
+    """Return the fixed B1 job configuration path."""
+    return get_common_root() / 'config' / 'A1_OUinp-job.json'
+
+
+def hash_file(fpath):
+    """Return one regular file's SHA256 digest."""
+    return hashlib.sha256(Path(fpath).read_bytes()).hexdigest()
+
+
+def helper_identity():
+    """Return the installed lethe job-helper identity."""
+    fpath = Path(__file__).resolve()
+    return {
+        'name': 'hpc-lethe-job',
+        'version': HELPER_VERSION,
+        'source_sha256': hash_file(fpath),
+    }
+
+
+def validate_absolute_path(value, label):
+    """Validate one normalized absolute path."""
+    if not isinstance(value, str) or not value:
+        raise JobFailure(f'Invalid {label}')
+    fpath = Path(value)
+    if not fpath.is_absolute() or '..' in fpath.parts or fpath.as_posix() != value:
+        raise JobFailure(f'Invalid {label}')
+    return value
+
+
+def validate_positive_int(value, label, maximum):
+    """Validate one bounded positive integer."""
+    valid = isinstance(value, int) and not isinstance(value, bool)
+    if not valid or not 1 <= value <= maximum:
+        raise JobFailure(f'Invalid {label}')
+    return value
+
+
+def validate_config(config):
+    """Validate the complete fixed B1 job configuration."""
+    required = {
+        'deployment_id',
+        'git',
+        'logs',
+        'remote_helpers',
+        'runs',
+        'scheduler',
+        'schema_version',
+        'ssh',
+        'state',
+    }
+    if not isinstance(config, dict) or set(config) != required:
+        raise JobFailure('Invalid job configuration keys')
+    if config['schema_version'] != 1:
+        raise JobFailure('Unsupported job configuration schema')
+    git = config['git']
+    if not isinstance(git, dict) or set(git) != {'automation_checkout', 'branch', 'path'}:
+        raise JobFailure('Invalid Git configuration')
+    for key in ('automation_checkout', 'path'):
+        validate_absolute_path(git[key], f'Git {key}')
+    if git['branch'] != 'codex-hpc':
+        raise JobFailure('Unexpected automation branch')
+    runs = config['runs']
+    if not isinstance(runs, dict) or set(runs) != {'root'}:
+        raise JobFailure('Invalid run configuration')
+    validate_absolute_path(runs['root'], 'job-run root')
+    state_config = config['state']
+    required_state = {
+        'active_run',
+        'code_update_lock',
+        'grid_submit_lock',
+        'job_lock',
+        'root',
+    }
+    if not isinstance(state_config, dict) or set(state_config) != required_state:
+        raise JobFailure('Invalid state configuration')
+    for key, value in state_config.items():
+        validate_absolute_path(value, f'state {key}')
+    scheduler = config['scheduler']
+    required_scheduler = {
+        'command_timeout_sec',
+        'sbatch_path',
+        'status_helper',
+        'user',
+    }
+    if not isinstance(scheduler, dict) or set(scheduler) != required_scheduler:
+        raise JobFailure('Invalid scheduler configuration')
+    for key in ('sbatch_path', 'status_helper'):
+        validate_absolute_path(scheduler[key], f'scheduler {key}')
+    validate_positive_int(
+        scheduler['command_timeout_sec'],
+        'scheduler timeout',
+        120,
+    )
+    ssh = config['ssh']
+    if not isinstance(ssh, dict) or set(ssh) != {'connect_timeout_sec', 'grid_host_alias'}:
+        raise JobFailure('Invalid SSH configuration')
+    validate_positive_int(ssh['connect_timeout_sec'], 'SSH timeout', 120)
+    helpers = config['remote_helpers']
+    if not isinstance(helpers, dict) or set(helpers) != {'grid_job'}:
+        raise JobFailure('Invalid remote-helper configuration')
+    validate_absolute_path(helpers['grid_job'], 'grid job helper')
+    logs = config['logs']
+    if not isinstance(logs, dict) or set(logs) != {
+        'max_bytes_per_stream',
+        'max_cursor_payload_bytes',
+        'max_lines_per_stream',
+    }:
+        raise JobFailure('Invalid log configuration')
+    validate_positive_int(logs['max_bytes_per_stream'], 'log byte limit', 131072)
+    validate_positive_int(logs['max_lines_per_stream'], 'log line limit', 1000)
+    validate_positive_int(logs['max_cursor_payload_bytes'], 'cursor limit', 65536)
+    return config
+
+
+def require_regular_file(fpath, label, mode=None):
+    """Require one non-symlink regular file with an optional exact mode."""
+    try:
+        file_stat = Path(fpath).lstat()
+    except OSError as exc:
+        raise JobFailure(f'Cannot inspect {label}: {exc}') from exc
+    if stat.S_ISLNK(file_stat.st_mode) or not stat.S_ISREG(file_stat.st_mode):
+        raise JobFailure(f'{label} must be a regular file')
+    if mode is not None and stat.S_IMODE(file_stat.st_mode) != mode:
+        raise JobFailure(f'{label} must have mode {mode:04o}')
+
+
+def require_real_directory(fpath, label):
+    """Require one non-symlink directory."""
+    try:
+        file_stat = Path(fpath).lstat()
+    except OSError as exc:
+        raise JobFailure(f'Cannot inspect {label}: {exc}') from exc
+    if stat.S_ISLNK(file_stat.st_mode) or not stat.S_ISDIR(file_stat.st_mode):
+        raise JobFailure(f'{label} must be a real directory')
+
+
+def load_json(fpath, label):
+    """Load one bounded regular JSON file."""
+    require_regular_file(fpath, label)
+    try:
+        data = Path(fpath).read_bytes()
+    except OSError as exc:
+        raise JobFailure(f'Cannot read {label}: {exc}') from exc
+    if len(data) > 65536:
+        raise JobFailure(f'{label} is too large')
+    try:
+        return json.loads(data.decode('utf-8'))
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise JobFailure(f'{label} is invalid JSON') from exc
+
+
+def load_config():
+    """Load the fixed non-secret B1 job configuration."""
+    fpath = get_config_path()
+    require_regular_file(fpath, 'job configuration', mode=0o444)
+    return validate_config(load_json(fpath, 'job configuration'))
+
+
+def state_paths(config, run_id):
+    """Return all fixed external state paths for one run ID."""
+    run_id = validate_run_id(run_id)
+    root = Path(config['state']['root'])
+    return {
+        'prepared': root / 'runs' / f'{run_id}.json',
+        'submission': root / 'submissions' / f'{run_id}.json',
+        'final': root / 'finals' / f'{run_id}.json',
+        'release': root / 'releases' / f'{run_id}.json',
+        'active': Path(config['state']['active_run']),
+    }
+
+
+def run_paths(config, run_id):
+    """Return all fixed repository run paths for one run ID."""
+    run_id = validate_run_id(run_id)
+    run_dir = Path(config['runs']['root']) / run_id
+    return {
+        'dir': run_dir,
+        'prepared': run_dir / 'run.json',
+        'request': run_dir / 'request.json',
+        'script': run_dir / 'submit.sh',
+        'submission': run_dir / 'submission.json',
+        'final': run_dir / 'final.json',
+        'release': run_dir / 'release.json',
+    }
+
+
+def load_prepared(config, run_id):
+    """Load matching repository and protected prepared records."""
+    paths = run_paths(config, run_id)
+    state = state_paths(config, run_id)
+    require_real_directory(paths['dir'], 'job-run directory')
+    prepared = validate_prepared_record(
+        read_state_record(paths['prepared'], 'repository prepared record')
+    )
+    protected = validate_prepared_record(
+        read_state_record(state['prepared'], 'protected prepared record')
+    )
+    if canonical_json(prepared) != canonical_json(protected):
+        raise JobFailure('Repository and protected prepared records differ')
+    if prepared['run_id'] != run_id or Path(prepared['job_run_dir']) != paths['dir']:
+        raise RejectedInput('Prepared record does not match run ID')
+    if prepared['job_kind'] != 'single':
+        raise RejectedInput('B1 accepts only a prepared single job')
+    return prepared
+
+
+def acquire_lock(fpath, label):
+    """Acquire one pre-created nonblocking operation lock."""
+    require_regular_file(fpath, label, mode=0o600)
+    flags = os.O_RDWR | getattr(os, 'O_CLOEXEC', 0)
+    flags |= getattr(os, 'O_NOFOLLOW', 0)
+    try:
+        file_id = os.open(fpath, flags)
+        fcntl.flock(file_id, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError as exc:
+        os.close(file_id)
+        raise JobFailure(f'{label} is active') from exc
+    except OSError as exc:
+        raise JobFailure(f'Cannot acquire {label}: {exc}') from exc
+    return file_id
+
+
+def release_lock(file_id):
+    """Release and close one operation-lock descriptor."""
+    fcntl.flock(file_id, fcntl.LOCK_UN)
+    os.close(file_id)
+
+
+def run_git(config, arguments):
+    """Run one bounded read-only Git inspection command."""
+    command = [
+        config['git']['path'],
+        '-C',
+        config['git']['automation_checkout'],
+        *arguments,
+    ]
+    environment = os.environ.copy()
+    environment.update({'LANG': 'C', 'LC_ALL': 'C'})
+    try:
+        completed = subprocess.run(
+            command,
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            timeout=30,
+            check=False,
+            env=environment,
+        )
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        raise JobFailure(f'Cannot inspect Git checkout: {exc}') from exc
+    if len(completed.stdout) > 65536 or len(completed.stderr) > 65536:
+        raise JobFailure('Git inspection output exceeded its bound')
+    if completed.returncode != 0:
+        details = completed.stderr.decode('utf-8', errors='replace')
+        details = details.replace('\r', ' ').replace('\n', ' ').strip()[:500]
+        raise JobFailure(f'Git inspection failed: {details}')
+    try:
+        return completed.stdout.decode('utf-8').strip()
+    except UnicodeDecodeError as exc:
+        raise JobFailure('Git output was not UTF-8') from exc
+
+
+def require_exact_checkout(config, prepared, expected_commit):
+    """Require the clean configured branch at the prepared exact commit."""
+    expected_commit = validate_git_commit(expected_commit)
+    if expected_commit != prepared['git_commit']:
+        raise RejectedInput('Expected commit differs from prepared commit')
+    if run_git(config, ['branch', '--show-current']) != config['git']['branch']:
+        raise JobFailure('Automation checkout is on the wrong branch')
+    if run_git(config, ['rev-parse', 'HEAD']) != expected_commit:
+        raise RejectedInput('Automation checkout is not at the prepared commit')
+    if run_git(config, ['status', '--porcelain=v1']):
+        raise JobFailure('Automation checkout is not clean')
+
+
+def validate_prepared_files(config, prepared):
+    """Recheck immutable prepared inputs immediately before submission."""
+    paths = run_paths(config, prepared['run_id'])
+    require_regular_file(paths['request'], 'request snapshot', mode=0o444)
+    require_regular_file(paths['script'], 'prepared submit script', mode=0o444)
+    require_regular_file(paths['prepared'], 'prepared run record', mode=0o444)
+    if hash_data(load_json(paths['request'], 'request snapshot')) != prepared['request_sha256']:
+        raise JobFailure('Request snapshot hash differs')
+    if hash_file(paths['script']) != prepared['rendered_script_sha256']:
+        raise JobFailure('Prepared submit-script hash differs')
+    checkout = Path(config['git']['automation_checkout'])
+    validate_result_destination(checkout, prepared['expected_result_path'])
+
+
+def decode_remote(completed, label):
+    """Decode one bounded remote JSON result."""
+    if len(completed.stdout) > MAX_COMMAND_BYTES or len(completed.stderr) > 65536:
+        raise JobUnavailable(f'{label} output exceeded its bound')
+    try:
+        stdout = completed.stdout.decode('utf-8')
+        stderr = completed.stderr.decode('utf-8')
+    except UnicodeDecodeError as exc:
+        raise JobUnavailable(f'{label} output was not UTF-8') from exc
+    try:
+        result = json.loads(stdout)
+    except json.JSONDecodeError as exc:
+        details = stderr.replace('\r', ' ').replace('\n', ' ').strip()[:500]
+        raise JobUnavailable(f'{label} was not JSON: {details}') from exc
+    if not isinstance(result, dict):
+        raise JobUnavailable(f'{label} was not an object')
+    return result
+
+
+def run_grid_command(config, helper, arguments):
+    """Run one allowlisted lattice helper through fixed SSH settings."""
+    remote = ' '.join(shlex.quote(item) for item in (helper, *arguments))
+    timeout = config['ssh']['connect_timeout_sec']
+    command = [
+        '/usr/bin/ssh',
+        '-o',
+        'BatchMode=yes',
+        '-o',
+        f'ConnectTimeout={timeout}',
+        '-o',
+        'ConnectionAttempts=1',
+        '--',
+        config['ssh']['grid_host_alias'],
+        remote,
+    ]
+    try:
+        completed = subprocess.run(
+            command,
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            timeout=config['scheduler']['command_timeout_sec'] + timeout,
+            check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        raise JobUnavailable(f'Lattice helper unavailable: {exc}') from exc
+    result = decode_remote(completed, 'Lattice helper response')
+    expected = {
+        EXIT_SUCCESS: 'ok',
+        EXIT_REJECTED: 'rejected',
+        EXIT_UNKNOWN: 'unknown',
+        EXIT_FAILED: 'failed',
+    }
+    if expected.get(completed.returncode) != result.get('status'):
+        raise JobUnavailable('Lattice helper exit status was inconsistent')
+    return result, completed.returncode
+
+
+def reconcile_submission(config, prepared):
+    """Reconcile a grid-written receipt into protected external state."""
+    paths = run_paths(config, prepared['run_id'])
+    state = state_paths(config, prepared['run_id'])
+    repository = validate_submission_record(
+        read_state_record(paths['submission'], 'repository submission'),
+        prepared,
+    )
+    protected = validate_submission_record(
+        read_state_record(state['submission'], 'protected submission'),
+        prepared,
+    )
+    if canonical_json(repository) == canonical_json(protected):
+        return repository
+    if protected['status'] == 'pending' and repository['status'] in {
+        'submitted',
+        'unknown',
+    }:
+        replace_state_record(state['submission'], protected, repository)
+        return repository
+    raise JobFailure('Repository and protected submission records differ')
+
+
+def load_submission(config, prepared):
+    """Load one synchronized submission record."""
+    try:
+        return reconcile_submission(config, prepared)
+    except HpcJobLifecycleError as exc:
+        raise JobFailure(str(exc)) from exc
+
+
+def create_submission_intent(config, prepared):
+    """Create the active marker and both durable pre-sbatch intent records."""
+    state = state_paths(config, prepared['run_id'])
+    paths = run_paths(config, prepared['run_id'])
+    if state['active'].exists():
+        raise RejectedInput('Another automation run is active')
+    timestamp = datetime.now(timezone.utc).isoformat()
+    marker = build_active_run_marker(prepared, timestamp)
+    intent, decision = decide_submission(None, prepared, timestamp)
+    if decision != 'intent':
+        raise JobFailure('Cannot create submission intent')
+    create_state_record(state['active'], marker)
+    try:
+        create_state_record(state['submission'], intent)
+        create_state_record(paths['submission'], intent)
+    except Exception:
+        try:
+            if state['submission'].exists():
+                remove_state_record(state['submission'], intent)
+        except Exception:
+            pass
+        try:
+            remove_state_record(state['active'], marker)
+        except Exception:
+            pass
+        raise
+    return intent
+
+
+def submit_job(config, run_id, expected_commit):
+    """Submit one exact prepared run through one fixed lattice operation."""
+    code_lock = acquire_lock(config['state']['code_update_lock'], 'code-update lock')
+    job_lock = None
+    try:
+        job_lock = acquire_lock(config['state']['job_lock'], 'job-operation lock')
+        prepared = load_prepared(config, run_id)
+        paths = run_paths(config, run_id)
+        state = state_paths(config, run_id)
+        if paths['submission'].exists() or state['submission'].exists():
+            submission = load_submission(config, prepared)
+            if submission['status'] == 'submitted':
+                return submission_result(config, prepared, submission, 'existing')
+            raise RejectedInput(
+                f'Submission is {submission["status"]}; automatic retry is unsafe'
+            )
+        require_exact_checkout(config, prepared, expected_commit)
+        validate_prepared_files(config, prepared)
+        create_submission_intent(config, prepared)
+        grid_helper = config['remote_helpers']['grid_job']
+        result, exit_code = run_grid_command(config, grid_helper, (
+            'submit',
+            prepared['run_id'],
+            prepared['git_commit'],
+            prepared['request_sha256'],
+            prepared['rendered_script_sha256'],
+        ))
+        try:
+            submission = load_submission(config, prepared)
+        except JobFailure:
+            if exit_code == EXIT_UNKNOWN:
+                raise JobUnavailable('Submission outcome is unknown')
+            raise
+        if submission['status'] == 'submitted' and exit_code == EXIT_SUCCESS:
+            return submission_result(
+                config,
+                prepared,
+                submission,
+                result.get('result', 'submitted'),
+            )
+        if submission['status'] == 'unknown':
+            raise JobUnavailable(submission['reason'])
+        raise JobFailure('Lattice submission did not produce a receipt')
+    finally:
+        if job_lock is not None:
+            release_lock(job_lock)
+        release_lock(code_lock)
+
+
+def submission_result(config, prepared, submission, result_value):
+    """Build one successful lethe submission result."""
+    return {
+        'schema_version': 1,
+        'operation': 'job-submit',
+        'status': 'ok',
+        'result': result_value,
+        'run_id': prepared['run_id'],
+        'request_id': prepared['request_id'],
+        'git_commit': prepared['git_commit'],
+        'request_sha256': prepared['request_sha256'],
+        'rendered_script_sha256': prepared['rendered_script_sha256'],
+        'slurm_job_id': submission['slurm_job_id'],
+        'submitted_at_utc': submission['submitted_at_utc'],
+        'remote_host': socket.gethostname(),
+        'helper': helper_identity(),
+    }
+
+
+def scheduler_status(config, prepared, submission):
+    """Query one recorded Slurm ID through the established A5 status helper."""
+    if submission['status'] != 'submitted':
+        raise RejectedInput('Scheduler status requires a submitted receipt')
+    helper = config['scheduler']['status_helper']
+    result, exit_code = run_grid_command(
+        config,
+        helper,
+        ('status', str(submission['slurm_job_id'])),
+    )
+    if exit_code != EXIT_SUCCESS or result.get('operation') != 'grid-status':
+        raise JobUnavailable('Scheduler status is unavailable')
+    jobs = result.get('jobs')
+    if not isinstance(jobs, list) or len(jobs) != 1:
+        raise JobUnavailable('Scheduler status returned an invalid job list')
+    try:
+        job = validate_scheduler_job(jobs[0], submission['slurm_job_id'])
+    except HpcJobLifecycleError as exc:
+        raise JobUnavailable(str(exc)) from exc
+    return job, result.get('observed_at_utc')
+
+
+def status_job(config, run_id):
+    """Return submission and scheduler state for one known prepared run."""
+    prepared = load_prepared(config, run_id)
+    submission = load_submission(config, prepared)
+    job, observed = scheduler_status(config, prepared, submission)
+    return {
+        'schema_version': 1,
+        'operation': 'job-status',
+        'status': 'ok',
+        'run_id': prepared['run_id'],
+        'git_commit': prepared['git_commit'],
+        'slurm_job_id': submission['slurm_job_id'],
+        'scheduler': job,
+        'observed_at_utc': observed,
+        'remote_host': socket.gethostname(),
+        'helper': helper_identity(),
+    }
+
+
+def decode_cursors(payload, maximum):
+    """Decode one bounded local stdout/stderr cursor document."""
+    if not isinstance(payload, str) or len(payload) > maximum * 2:
+        raise RejectedInput('Invalid cursor payload size')
+    try:
+        data = base64.b64decode(payload.encode('ascii'), altchars=b'-_', validate=True)
+    except (UnicodeEncodeError, ValueError, binascii.Error) as exc:
+        raise RejectedInput('Cursor payload is not valid base64') from exc
+    if len(data) > maximum:
+        raise RejectedInput('Decoded cursor payload is too large')
+    try:
+        value = json.loads(data.decode('utf-8'))
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise RejectedInput('Cursor payload is not valid JSON') from exc
+    if not isinstance(value, dict) or set(value) != {'schema_version', 'streams'}:
+        raise RejectedInput('Invalid cursor payload')
+    streams = value['streams']
+    if value['schema_version'] != 1 or not isinstance(streams, dict):
+        raise RejectedInput('Invalid cursor payload')
+    if set(streams) != {'stderr', 'stdout'}:
+        raise RejectedInput('Invalid cursor streams')
+    try:
+        return {
+            name: validate_cursor(streams[name], name)
+            for name in ('stdout', 'stderr')
+        }
+    except HpcJobLifecycleError as exc:
+        raise RejectedInput(str(exc)) from exc
+
+
+def log_job(config, run_id, payload):
+    """Read new bounded stdout and stderr for one submitted top-level job."""
+    prepared = load_prepared(config, run_id)
+    submission = load_submission(config, prepared)
+    cursors = decode_cursors(payload, config['logs']['max_cursor_payload_bytes'])
+    streams = {}
+    for name in ('stdout', 'stderr'):
+        fpath = resolve_top_level_log_path(prepared, submission, name)
+        streams[name] = read_log_stream(
+            fpath,
+            cursors[name],
+            config['logs']['max_bytes_per_stream'],
+            config['logs']['max_lines_per_stream'],
+        )
+    return {
+        'schema_version': 1,
+        'operation': 'job-log',
+        'status': 'ok',
+        'run_id': prepared['run_id'],
+        'slurm_job_id': submission['slurm_job_id'],
+        'streams': streams,
+        'remote_host': socket.gethostname(),
+        'helper': helper_identity(),
+    }
+
+
+def write_dual_record(state_path, run_path, record, label):
+    """Create matching protected and repository lifecycle records."""
+    if state_path.exists() or run_path.exists():
+        if not state_path.exists() or not run_path.exists():
+            raise JobFailure(f'{label} records are incomplete')
+        state = read_state_record(state_path, f'protected {label}')
+        repository = read_state_record(run_path, f'repository {label}')
+        if canonical_json(state) != canonical_json(repository):
+            raise JobFailure(f'{label} records differ')
+        if canonical_json(state) != canonical_json(record):
+            raise JobFailure(f'Existing {label} record differs')
+        return 'existing'
+    create_state_record(state_path, record)
+    try:
+        create_state_record(run_path, record)
+    except Exception:
+        try:
+            remove_state_record(state_path, record)
+        except Exception:
+            pass
+        raise
+    return 'created'
+
+
+def finalize_job(config, run_id):
+    """Record one terminal scheduler state and declared-file evidence."""
+    lock_id = acquire_lock(config['state']['job_lock'], 'job-operation lock')
+    try:
+        prepared = load_prepared(config, run_id)
+        submission = load_submission(config, prepared)
+        state = state_paths(config, run_id)
+        paths = run_paths(config, run_id)
+        if state['final'].exists() or paths['final'].exists():
+            if not state['final'].exists() or not paths['final'].exists():
+                raise JobFailure('Final records are incomplete')
+            final = validate_final_record(
+                read_state_record(state['final'], 'protected final record'),
+                prepared,
+            )
+            repository = validate_final_record(
+                read_state_record(paths['final'], 'repository final record'),
+                prepared,
+            )
+            if canonical_json(final) != canonical_json(repository):
+                raise JobFailure('Final records differ')
+            return final_result(
+                prepared,
+                final,
+                'existing',
+                final['finalized_at_utc'],
+            )
+        job, observed = scheduler_status(config, prepared, submission)
+        try:
+            terminal = get_terminal_scheduler_state(job)
+            present = find_completion_files(
+                config['git']['automation_checkout'],
+                prepared,
+            )
+            final = build_final_record(
+                prepared,
+                submission,
+                terminal,
+                present,
+                [],
+                datetime.now(timezone.utc).isoformat(),
+            )
+        except HpcJobLifecycleError as exc:
+            raise RejectedInput(str(exc)) from exc
+        result_value = write_dual_record(
+            state['final'],
+            paths['final'],
+            final,
+            'final',
+        )
+        return final_result(prepared, final, result_value, observed)
+    finally:
+        release_lock(lock_id)
+
+
+def final_result(prepared, final, result_value, observed):
+    """Build one successful terminal-record result."""
+    return {
+        'schema_version': 1,
+        'operation': 'job-finalize',
+        'status': 'ok',
+        'result': result_value,
+        'run_id': prepared['run_id'],
+        'slurm_job_id': final['slurm_job_id'],
+        'scheduler_state': final['scheduler_state'],
+        'completion_files_verified': final['completion_files_verified'],
+        'observed_at_utc': observed,
+        'helper': helper_identity(),
+    }
+
+
+def release_job(config, run_id):
+    """Release the checkout lock only after a matching terminal record."""
+    code_lock = acquire_lock(config['state']['code_update_lock'], 'code-update lock')
+    job_lock = None
+    try:
+        job_lock = acquire_lock(config['state']['job_lock'], 'job-operation lock')
+        prepared = load_prepared(config, run_id)
+        state = state_paths(config, run_id)
+        paths = run_paths(config, run_id)
+        if state['release'].exists() or paths['release'].exists():
+            if not state['release'].exists() or not paths['release'].exists():
+                raise JobFailure('Release records are incomplete')
+            if state['active'].exists():
+                raise JobFailure('Released run still has an active marker')
+            release = read_state_record(state['release'], 'release record')
+            repository = read_state_record(paths['release'], 'release record')
+            if canonical_json(release) != canonical_json(repository):
+                raise JobFailure('Release records differ')
+            expected = {
+                'schema_version': 1,
+                'status': 'released',
+                'run_id': prepared['run_id'],
+                'git_commit': prepared['git_commit'],
+            }
+            if any(release.get(key) != value for key, value in expected.items()):
+                raise JobFailure('Release record differs from prepared job')
+            return release_result(prepared, release, 'existing')
+        final = validate_final_record(
+            read_state_record(state['final'], 'protected final record'),
+            prepared,
+        )
+        repository_final = validate_final_record(
+            read_state_record(paths['final'], 'repository final record'),
+            prepared,
+        )
+        if canonical_json(final) != canonical_json(repository_final):
+            raise JobFailure('Final records differ')
+        marker = read_state_record(state['active'], 'active-run marker')
+        release = release_active_run(
+            marker,
+            final,
+            prepared,
+            datetime.now(timezone.utc).isoformat(),
+        )
+        write_dual_record(
+            state['release'],
+            paths['release'],
+            release,
+            'release',
+        )
+        remove_state_record(state['active'], marker)
+        return release_result(prepared, release, 'released')
+    finally:
+        if job_lock is not None:
+            release_lock(job_lock)
+        release_lock(code_lock)
+
+
+def release_result(prepared, release, result_value):
+    """Build one successful explicit-release result."""
+    return {
+        'schema_version': 1,
+        'operation': 'job-release',
+        'status': 'ok',
+        'result': result_value,
+        'run_id': prepared['run_id'],
+        'git_commit': prepared['git_commit'],
+        'released_at_utc': release['released_at_utc'],
+        'helper': helper_identity(),
+    }
+
+
+def error_result(operation, status, reason, details=None):
+    """Build one bounded lethe job-operation error result."""
+    result = {
+        'schema_version': 1,
+        'operation': f'job-{operation}',
+        'status': status,
+        'reason': reason,
+    }
+    if details:
+        result['details'] = str(details)[:500]
+    return result
+
+
+def build_parser():
+    """Build the fixed lethe B1 job-operation parser."""
+    parser = argparse.ArgumentParser(description='Control one prepared B1 job.')
+    commands = parser.add_subparsers(dest='operation', required=True)
+    commands.add_parser('version')
+    submit = commands.add_parser('submit')
+    submit.add_argument('run_id')
+    submit.add_argument('expected_commit')
+    for operation in ('status', 'finalize', 'release'):
+        command = commands.add_parser(operation)
+        command.add_argument('run_id')
+    log = commands.add_parser('log')
+    log.add_argument('run_id')
+    log.add_argument('cursor_payload')
+    return parser
+
+
+def main():
+    """Run one fixed lethe-side B1 job operation."""
+    parser = build_parser()
+    try:
+        args = parser.parse_args()
+    except SystemExit as exc:
+        return int(exc.code)
+    operation = args.operation
+    try:
+        if operation == 'version':
+            result = {'status': 'ok', 'helper': helper_identity()}
+        else:
+            config = load_config()
+            if operation == 'submit':
+                result = submit_job(config, args.run_id, args.expected_commit)
+            elif operation == 'status':
+                result = status_job(config, args.run_id)
+            elif operation == 'log':
+                result = log_job(config, args.run_id, args.cursor_payload)
+            elif operation == 'finalize':
+                result = finalize_job(config, args.run_id)
+            else:
+                result = release_job(config, args.run_id)
+        exit_code = EXIT_SUCCESS
+    except (RejectedInput, HpcJobLifecycleError, ValueError) as exc:
+        result = error_result(operation, 'rejected', 'request-rejected', exc)
+        exit_code = EXIT_REJECTED
+    except JobUnavailable as exc:
+        result = error_result(operation, 'unknown', 'operation-unavailable', exc)
+        exit_code = EXIT_UNKNOWN
+    except JobFailure as exc:
+        result = error_result(operation, 'failed', 'operation-failed', exc)
+        exit_code = EXIT_FAILED
+    print(json.dumps(result, sort_keys=True))
+    return exit_code
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())

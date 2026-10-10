@@ -1459,3 +1459,39 @@ Exact-commit preparation evidence:
 Preparation did not call `sbatch`, create a Slurm ID, or run a simulation.
 Gate conclusion: B0.5 PASS and B0 PASS. B1 protected submission integration,
 separate submission approval, and one short simulation are next.
+
+## B1 prepared single-job lifecycle candidate
+
+The candidate adds one local `hpc-job` command with fixed `submit`, `status`,
+`log`, `finalize`, and `release` operations. The lethe helper accepts only a
+prepared run ID and, for submission, its exact commit. It rechecks the clean
+checkout, immutable request and script hashes, result collision, active-run
+policy, and pending intent before contacting lattice. The lattice helper calls
+only `sbatch --parsable` with the recorded prepared script and writes the
+receipt before returning.
+
+The same record chain then supplies the only Slurm ID accepted by status and
+the only stdout/stderr paths accepted by log retrieval. Finalization combines
+a terminal A5 scheduler result with the request-declared completion files.
+Checkout release is a separate explicit operation after matching repository
+and protected final records exist.
+
+Scheduler-free local evidence:
+
+- 55 request, preflight, rendering, lifecycle, control, and B1 tests passed;
+- an isolated full lifecycle created the active marker and pending intent,
+  reconciled one fake Slurm receipt, read bounded incremental logs, required
+  the completion file for `COMPLETED`, finalized idempotently, and released
+  the checkout explicitly and idempotently;
+- strict fixtures accepted only parsable positive `sbatch` IDs and the known
+  terminal Slurm state vocabulary;
+- a command-construction test proved the only scheduler mutation is
+  `/usr/bin/sbatch --parsable <exact prepared submit.sh>`;
+- the remote configuration passed its Draft 2020-12 schema and both lethe and
+  lattice runtime validators;
+- Python AST parsing, JSON parsing, promotion-script `bash -n`, and
+  `git diff --check` passed.
+
+No candidate helper, promotion script, SSH command, scheduler command, or
+simulation was executed. The candidate awaits commit, exact-checkout update,
+and manual local/lethe promotion. Real submission remains a separate approval.

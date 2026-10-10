@@ -1,0 +1,134 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://a1-ouinp.local/schemas/remote-hpc-job-config.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "deployment_id",
+    "git",
+    "ssh",
+    "remote_helpers",
+    "runs",
+    "state",
+    "scheduler",
+    "logs"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "deployment_id": {"$ref": "#/$defs/safeName"},
+    "git": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "automation_checkout", "branch"],
+      "properties": {
+        "path": {"$ref": "#/$defs/absolutePath"},
+        "automation_checkout": {"$ref": "#/$defs/absolutePath"},
+        "branch": {"const": "codex-hpc"}
+      }
+    },
+    "ssh": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["grid_host_alias", "connect_timeout_sec"],
+      "properties": {
+        "grid_host_alias": {"$ref": "#/$defs/safeName"},
+        "connect_timeout_sec": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 120
+        }
+      }
+    },
+    "remote_helpers": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["grid_job"],
+      "properties": {
+        "grid_job": {"$ref": "#/$defs/absolutePath"}
+      }
+    },
+    "runs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["root"],
+      "properties": {
+        "root": {"$ref": "#/$defs/absolutePath"}
+      }
+    },
+    "state": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "root",
+        "code_update_lock",
+        "grid_submit_lock",
+        "job_lock",
+        "active_run"
+      ],
+      "properties": {
+        "root": {"$ref": "#/$defs/absolutePath"},
+        "code_update_lock": {"$ref": "#/$defs/absolutePath"},
+        "grid_submit_lock": {"$ref": "#/$defs/absolutePath"},
+        "job_lock": {"$ref": "#/$defs/absolutePath"},
+        "active_run": {"$ref": "#/$defs/absolutePath"}
+      }
+    },
+    "scheduler": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "user",
+        "sbatch_path",
+        "status_helper",
+        "command_timeout_sec"
+      ],
+      "properties": {
+        "user": {"$ref": "#/$defs/safeName"},
+        "sbatch_path": {"$ref": "#/$defs/absolutePath"},
+        "status_helper": {"$ref": "#/$defs/absolutePath"},
+        "command_timeout_sec": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 120
+        }
+      }
+    },
+    "logs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "max_lines_per_stream",
+        "max_bytes_per_stream",
+        "max_cursor_payload_bytes"
+      ],
+      "properties": {
+        "max_lines_per_stream": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000
+        },
+        "max_bytes_per_stream": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 131072
+        },
+        "max_cursor_payload_bytes": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65536
+        }
+      }
+    }
+  },
+  "$defs": {
+    "safeName": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$"
+    },
+    "absolutePath": {
+      "type": "string",
+      "pattern": "^/[^\\u0000]*$"
+    }
+  }
+}
