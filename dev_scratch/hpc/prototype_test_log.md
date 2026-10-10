@@ -1495,3 +1495,32 @@ Scheduler-free local evidence:
 No candidate helper, promotion script, SSH command, scheduler command, or
 simulation was executed. The candidate awaits commit, exact-checkout update,
 and manual local/lethe promotion. Real submission remains a separate approval.
+
+## B1 first real single-job attempt
+
+The local and remote B1 promotions passed for commit
+`79ee2ca05e3dccda2a2bb285b3cbf4475231258e`, including exact source hashes,
+bundle identity, protected modes, and fresh-run checks. The lattice runtime
+handoff found the intended `netpyne_batch_slurm` environment, `/usr/bin/srun`,
+its environment-specific `nrniv` and Python, Slurm `25.11.4`, and Python
+`3.10.16`.
+
+After explicit approval, prepared run `b1-single-smoke-002` was submitted once
+as Slurm job `117827`. Slurm accounting recorded terminal state `FAILED` and
+exit code `1:0`. The bounded stderr contained only:
+
+```text
+/ddn/niknovikov19/.bashrc: line 2: SSH_AUTH_SOCK: unbound variable
+```
+
+The template had enabled `set -u` before sourcing the user's HPC shell setup,
+so the job stopped before Conda activation, NetPyNE, or scientific result
+creation. The failed attempt was finalized with no completion files and its
+active-run marker was explicitly released.
+
+The follow-up candidate moves strict shell mode after `.bashrc` and Conda
+activation in all three tracked job templates. It also constructs
+`LD_LIBRARY_PATH` safely when the variable was initially unset. The template
+ordering has a regression assertion, all three templates pass `bash -n`, and
+all 55 focused HPC tests pass. A fresh run ID and explicit approval are
+required for the retry; job `117827` will not be reused or resubmitted.

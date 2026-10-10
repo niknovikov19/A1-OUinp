@@ -347,6 +347,18 @@ class HpcJobRenderTests(unittest.TestCase):
                 )
                 self.assertNotIn('@@', rendered)
                 self.assertIn('sbatch', template.lower())
+                self.assertLess(
+                    template.index('source ~/.bashrc'),
+                    template.index('set -euo pipefail'),
+                )
+                self.assertLess(
+                    template.index('conda activate netpyne_batch_slurm'),
+                    template.index('set -euo pipefail'),
+                )
+                self.assertIn(
+                    '${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}',
+                    template,
+                )
 
 
 if __name__ == '__main__':

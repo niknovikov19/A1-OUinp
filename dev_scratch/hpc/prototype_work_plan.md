@@ -387,6 +387,12 @@ explicit checkout release to the B0 record contract. It must be manually
 promoted and the lattice runtime paths must be checked before a fresh run is
 prepared. No real submission is authorized by implementation or promotion.
 
+The first real job reached Slurm but stopped in shell setup because nounset
+mode preceded `.bashrc`. That attempt was finalized and released. The tracked
+single, batch, and workflow templates now activate the HPC environment before
+strict shell mode; B1 must retry with a new immutable run ID and separate
+submission approval.
+
 Sequence:
 
 1. Preview a one-simulation request and review commit, experiment, duration, resources, output path, and expected artifacts.
@@ -519,8 +525,8 @@ Do not add these until the prototype has been used successfully on several real 
 
 ## Immediate next action
 
-Review, commit, push, and manually promote the scheduler-free B1 candidate
-using `helper_src/INSTALL_B1.md`. Verify the established lattice
-`netpyne_batch_slurm` runtime paths, then prepare a fresh B1 run at that exact
-commit. Obtain separate explicit approval before the first real `sbatch` call.
-The B0 evidence run `b1-single-smoke-001` must not be submitted.
+Commit and push the tracked shell-setup correction, update the clean automation
+checkout, and prepare a fresh B1 run at that exact commit. Review its newly
+rendered script and obtain separate explicit approval before the second real
+`sbatch` call. The B0 evidence run `b1-single-smoke-001` and failed B1 run
+`b1-single-smoke-002` must not be submitted again.
