@@ -88,7 +88,7 @@ b0_check_sha256 '4534cf3ef47f53d89319afafbce9f67206b6df315d5135cf98c7558cdfa37e2
     "$B0_SRC/remote_lethe/hpc-lethe-prepare"
 b0_check_sha256 '029745924df05dfdc5431f3c74001fbc458c2949dd0c10f1cf5222742fb24893' \
     "$B0_REMOTE_REPO/hpc_job.py"
-b0_check_sha256 'a9c0d8bd62025272e256a0022ce535c9bce28405591f4d7f8294c41b8ab39939' \
+b0_check_sha256 'b90ecb9ea30fee7ba73f520f7ca14e4d6b834289fc7238e27d461b470b3a4484' \
     "$B0_SRC/config_examples/remote-hpc-prepare.json.example"
 b0_check_sha256 'a4b048d54db100915eb4eefb347588fe4c92096fc625c69a1a07f28008318eb9' \
     "$B0_SRC/test_fixtures/b0_prepare_cases.json"
@@ -147,7 +147,7 @@ b0_check_sha256 '4534cf3ef47f53d89319afafbce9f67206b6df315d5135cf98c7558cdfa37e2
     "$B0_REMOTE_ROOT/helpers/lethe/hpc-lethe-prepare"
 b0_check_sha256 '029745924df05dfdc5431f3c74001fbc458c2949dd0c10f1cf5222742fb24893' \
     "$B0_REMOTE_ROOT/helpers/lethe/hpc_job.py"
-b0_check_sha256 'a9c0d8bd62025272e256a0022ce535c9bce28405591f4d7f8294c41b8ab39939' \
+b0_check_sha256 'b90ecb9ea30fee7ba73f520f7ca14e4d6b834289fc7238e27d461b470b3a4484' \
     "$B0_REMOTE_ROOT/config/A1_OUinp-prepare.json"
 b0_check_sha256 'a4b048d54db100915eb4eefb347588fe4c92096fc625c69a1a07f28008318eb9' \
     "$B0_REMOTE_ROOT/config/A1_OUinp-prepare-fixtures.json"

@@ -36,6 +36,7 @@ simulation command.
 ede38c3b8534e5c3c535b33263379dcc5804228be809e24c133a3163079b2d19  hpc_job_lifecycle.py
 95a58889e3a7622282a95556e5e7aad44d9e4b1b5456b07398da73618f98de8d  hpc_job_control.py
 b39c9a26daf5edf7b5833ce59e2001a0f844f662093ea156fe562d503a89b94c  config_examples/remote-hpc-job.json.example
+b90ecb9ea30fee7ba73f520f7ca14e4d6b834289fc7238e27d461b470b3a4484  config_examples/remote-hpc-prepare.json.example
 67d7131c8be99d4933702e08b9b9a8d29371a0d0fe47560b856939139ff40ec9  schemas/remote-hpc-job-config.schema.json
 f096e453957cc94c25660093757b86ef536f1786e471cef1b36af0d43666506f  test_fixtures/b1_job_cases.json
 ```
@@ -88,8 +89,9 @@ bash /ddn/niknovikov19/repo/A1_OUinp_codex/dev_scratch/hpc/helper_src/promotion/
 
 The script installs the lethe and lattice commands, protected copies of the
 three repository contract modules, one read-only non-secret configuration,
-and the reviewed fixture. It also creates mode-`0700` submission, final, and
-release record directories plus mode-`0600` job and grid-submission locks.
+the reviewed tracked-template policy, and the reviewed fixture. It also
+creates mode-`0700` submission, final, and release record directories plus
+mode-`0600` job and grid-submission locks.
 It must finish with:
 
 ```text

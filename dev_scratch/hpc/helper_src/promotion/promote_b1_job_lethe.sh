@@ -95,6 +95,8 @@ b1_check_sha256 '95a58889e3a7622282a95556e5e7aad44d9e4b1b5456b07398da73618f98de8
     "$B1_REMOTE_REPO/hpc_job_control.py"
 b1_check_sha256 'b39c9a26daf5edf7b5833ce59e2001a0f844f662093ea156fe562d503a89b94c' \
     "$B1_SRC/config_examples/remote-hpc-job.json.example"
+b1_check_sha256 'b90ecb9ea30fee7ba73f520f7ca14e4d6b834289fc7238e27d461b470b3a4484' \
+    "$B1_SRC/config_examples/remote-hpc-prepare.json.example"
 b1_check_sha256 'f096e453957cc94c25660093757b86ef536f1786e471cef1b36af0d43666506f' \
     "$B1_SRC/test_fixtures/b1_job_cases.json"
 b1_check_sha256 '37c76569edd655692cbfad02250f4941d94dc89696e897a172d279678e29290c' \
@@ -157,6 +159,9 @@ install -g "$B1_REMOTE_GROUP" -m 0444 \
     "$B1_SRC/config_examples/remote-hpc-job.json.example" \
     "$B1_REMOTE_ROOT/config/A1_OUinp-job.json"
 install -g "$B1_REMOTE_GROUP" -m 0444 \
+    "$B1_SRC/config_examples/remote-hpc-prepare.json.example" \
+    "$B1_REMOTE_ROOT/config/A1_OUinp-prepare.json"
+install -g "$B1_REMOTE_GROUP" -m 0444 \
     "$B1_SRC/test_fixtures/b1_job_cases.json" \
     "$B1_REMOTE_ROOT/config/A1_OUinp-job-fixtures.json"
 chmod 0555 \
@@ -168,6 +173,7 @@ B1_REMOTE_DIRS_OPEN=0
 # Verify installed identities and permissions without any job operation
 printf '\n== Installed hashes ==\n'
 python3 -m json.tool "$B1_REMOTE_ROOT/config/A1_OUinp-job.json" >/dev/null
+python3 -m json.tool "$B1_REMOTE_ROOT/config/A1_OUinp-prepare.json" >/dev/null
 python3 -m json.tool "$B1_REMOTE_ROOT/config/A1_OUinp-job-fixtures.json" >/dev/null
 b1_check_sha256 '2556cd22f3591189f63b21bbb6a46b3722ee7ca2045cd079110a314d76ef70d3' \
     "$B1_REMOTE_ROOT/helpers/lethe/hpc-lethe-job"
@@ -186,6 +192,8 @@ do
 done
 b1_check_sha256 'b39c9a26daf5edf7b5833ce59e2001a0f844f662093ea156fe562d503a89b94c' \
     "$B1_REMOTE_ROOT/config/A1_OUinp-job.json"
+b1_check_sha256 'b90ecb9ea30fee7ba73f520f7ca14e4d6b834289fc7238e27d461b470b3a4484' \
+    "$B1_REMOTE_ROOT/config/A1_OUinp-prepare.json"
 b1_check_sha256 'f096e453957cc94c25660093757b86ef536f1786e471cef1b36af0d43666506f' \
     "$B1_REMOTE_ROOT/config/A1_OUinp-job-fixtures.json"
 
@@ -203,14 +211,15 @@ stat -c '%A %a %U:%G %n' \
     "$B1_REMOTE_ROOT/helpers/grid/hpc_job_lifecycle.py" \
     "$B1_REMOTE_ROOT/helpers/grid/hpc_job_control.py" \
     "$B1_REMOTE_ROOT/config/A1_OUinp-job.json" \
+    "$B1_REMOTE_ROOT/config/A1_OUinp-prepare.json" \
     "$B1_STATE_ROOT/submissions" \
     "$B1_STATE_ROOT/finals" \
     "$B1_STATE_ROOT/releases" \
     "$B1_STATE_ROOT/job.lock" \
     "$B1_STATE_ROOT/grid-submit.lock" \
     "$B1_STATE_ROOT/code-update.lock"
-test ! -e "$B1_RUN_ROOT/b1-single-smoke-002"
-test ! -e "$B1_STATE_ROOT/runs/b1-single-smoke-002.json"
+test ! -e "$B1_RUN_ROOT/b1-single-smoke-003"
+test ! -e "$B1_STATE_ROOT/runs/b1-single-smoke-003.json"
 printf 'Fresh B1 run ID: absent as expected\n'
 
 printf '\nCompleted UTC: %s\n' "$(date -u +'%Y-%m-%dT%H:%M:%SZ')"

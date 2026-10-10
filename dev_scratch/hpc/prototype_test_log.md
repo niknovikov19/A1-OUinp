@@ -1524,3 +1524,10 @@ activation in all three tracked job templates. It also constructs
 ordering has a regression assertion, all three templates pass `bash -n`, and
 all 55 focused HPC tests pass. A fresh run ID and explicit approval are
 required for the retry; job `117827` will not be reused or resubmitted.
+
+The first attempt to prepare retry ID `b1-single-smoke-003` was rejected before
+any scheduler action because the protected B0 policy still pinned the previous
+template hashes. This is the intended boundary for generic launch-script
+changes: scientific experiment commits do not need promotion, while a change
+to shared executable templates does. The B1 remote promotion now reviews and
+installs the updated preparation policy before the retry is prepared.

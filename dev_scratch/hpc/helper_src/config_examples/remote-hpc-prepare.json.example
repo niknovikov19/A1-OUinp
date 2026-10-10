@@ -19,15 +19,15 @@
     "allowed_templates": {
       "single": {
         "path": "hpc_jobs/templates/single.sh",
-        "sha256": "ea2374c842a1b01006162a4b6424608b12d4f39ef74f31042e6a3fb8beca01a5"
+        "sha256": "3dc8f5daad2d1a409f1213e167d438a068e85d72bbb46825f272920a914ec0f9"
       },
       "batch": {
         "path": "hpc_jobs/templates/batch.sh",
-        "sha256": "f4751bdf2b870400dd0129f72cfc862e4abd4ef64ca882b7e2957ad3fb448fc2"
+        "sha256": "67fa0609c1a47d1e1a46d3354a1f8ec0584e7cb236ada720b88b4c262912b36c"
       },
       "workflow": {
         "path": "hpc_jobs/templates/workflow.sh",
-        "sha256": "437d3068ba8d31aaf7869401edb67dca70e73cf340169ab9aed680d57f0ea5c4"
+        "sha256": "4f308401a4ba72e8b429e16ce260c4395b10e970c51983147179477cf615c047"
       }
     }
   },

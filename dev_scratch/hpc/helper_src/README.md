@@ -489,6 +489,12 @@ mutation and calls only:
 /usr/bin/sbatch --parsable <exact prepared submit.sh>
 ```
 
+The tracked single, batch, and workflow templates remain repository files,
+but their hashes are also pinned in the protected preparation policy. Ordinary
+experiment changes require only an exact reviewed commit. A change to generic
+job-launch behavior requires a manual policy promotion before a new script can
+be prepared.
+
 The grid helper replaces the pending repository record with the receipt before
 returning. An unavailable or malformed scheduler response becomes `unknown`;
 pending and unknown submissions are never retried automatically.
