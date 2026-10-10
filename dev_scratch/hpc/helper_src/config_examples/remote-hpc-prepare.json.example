@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "deployment_id": "a1-ouinp-codex-hpc",
+  "git": {
+    "path": "/usr/bin/git",
+    "automation_checkout": "/ddn/niknovikov19/repo/A1_OUinp_codex",
+    "branch": "codex-hpc"
+  },
+  "runs": {
+    "root": "/ddn/niknovikov19/repo/A1_OUinp_codex/hpc_jobs/runs"
+  },
+  "state": {
+    "prepare_lock": "/ddn/niknovikov19/hpc_codex/state/A1_OUinp/prepare.lock",
+    "run_records": "/ddn/niknovikov19/hpc_codex/state/A1_OUinp/runs"
+  },
+  "preparation": {
+    "max_request_bytes": 65536,
+    "max_template_bytes": 65536,
+    "allowed_templates": {
+      "single": {
+        "path": "hpc_jobs/templates/single.sh",
+        "sha256": "ea2374c842a1b01006162a4b6424608b12d4f39ef74f31042e6a3fb8beca01a5"
+      },
+      "batch": {
+        "path": "hpc_jobs/templates/batch.sh",
+        "sha256": "f4751bdf2b870400dd0129f72cfc862e4abd4ef64ca882b7e2957ad3fb448fc2"
+      },
+      "workflow": {
+        "path": "hpc_jobs/templates/workflow.sh",
+        "sha256": "437d3068ba8d31aaf7869401edb67dca70e73cf340169ab9aed680d57f0ea5c4"
+      }
+    }
+  },
+  "scheduler": {
+    "allowed_partitions": [
+      "cpu.q"
+    ],
+    "limits": {
+      "max_child_jobs": 10,
+      "max_concurrent_jobs": 4,
+      "max_cores_per_job": 1,
+      "max_memory_gb_per_job": 2,
+      "max_nodes_per_job": 1,
+      "max_wall_time_min": 10
+    }
+  }
+}

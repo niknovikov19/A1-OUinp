@@ -1,0 +1,783 @@
+#!/ddn/niknovikov19/miniconda3/bin/python3
+import argparse
+from datetime import datetime, timezone
+import fcntl
+import hashlib
+import json
+import os
+from pathlib import Path
+import re
+import socket
+import stat
+import subprocess
+import sys
+
+sys.dont_write_bytecode = True
+
+from hpc_job import (
+    HpcJobValidationError,
+    TEMPLATE_TOKENS,
+    build_prepared_job_context,
+    build_template_values,
+    canonical_json,
+    hash_data,
+    render_template,
+    validate_git_commit,
+    validate_request,
+    validate_run_id,
+    validate_safe_name,
+)
+
+
+HELPER_VERSION = '0.8.0-b0'
+EXIT_SUCCESS = 0
+EXIT_REJECTED = 2
+EXIT_FAILED = 4
+MAX_COMMAND_BYTES = 65536
+GIT_TIMEOUT_SEC = 30
+SHA256_RE = re.compile(r'[0-9a-f]{64}')
+SAFE_BRANCH_RE = re.compile(r'[A-Za-z0-9][A-Za-z0-9._/-]{0,127}')
+
+
+class RejectedInput(ValueError):
+    """Represent a request rejected by protected preparation policy."""
+
+
+class PrepareFailure(RuntimeError):
+    """Represent an operational protected-preparation failure."""
+
+
+def get_common_root():
+    """Return the fixed shared helper root derived from this script."""
+    return Path(__file__).resolve().parents[2]
+
+
+def get_config_path():
+    """Return the fixed remote preparation configuration path."""
+    return get_common_root() / 'config' / 'A1_OUinp-prepare.json'
+
+
+def hash_bytes(value):
+    """Return a SHA256 digest for bytes."""
+    return hashlib.sha256(value).hexdigest()
+
+
+def hash_file(fpath):
+    """Return a SHA256 digest for one regular file."""
+    return hash_bytes(Path(fpath).read_bytes())
+
+
+def helper_identity():
+    """Return preparation-helper and protected-contract identities."""
+    fpath = Path(__file__).resolve()
+    fpath_contract = fpath.with_name('hpc_job.py')
+    require_regular_file(fpath_contract, 'Protected HPC job contract')
+    return {
+        'name': 'hpc-lethe-prepare',
+        'version': HELPER_VERSION,
+        'source_sha256': hash_file(fpath),
+        'contract_sha256': hash_file(fpath_contract),
+    }
+
+
+def require_mapping(value, label):
+    """Return a mapping or reject it."""
+    if not isinstance(value, dict):
+        raise PrepareFailure(f'{label} must be an object')
+    return value
+
+
+def require_exact_keys(value, required, label):
+    """Reject missing or unknown mapping keys."""
+    missing = sorted(set(required) - set(value))
+    unknown = sorted(set(value) - set(required))
+    if missing:
+        raise PrepareFailure(f'{label} is missing keys: {missing}')
+    if unknown:
+        raise PrepareFailure(f'{label} has unknown keys: {unknown}')
+
+
+def validate_absolute_path(value, label):
+    """Validate one normalized absolute POSIX path."""
+    if not isinstance(value, str) or not value:
+        raise PrepareFailure(f'{label} must be a non-empty string')
+    fpath = Path(value)
+    if not fpath.is_absolute() or '..' in fpath.parts:
+        raise PrepareFailure(f'{label} must be an absolute normalized path')
+    if value != fpath.as_posix():
+        raise PrepareFailure(f'{label} must use normalized POSIX syntax')
+    return value
+
+
+def validate_positive_int(value, label, maximum=None):
+    """Validate one positive optionally bounded integer."""
+    if isinstance(value, bool) or not isinstance(value, int) or value < 1:
+        raise PrepareFailure(f'{label} must be a positive integer')
+    if maximum is not None and value > maximum:
+        raise PrepareFailure(f'{label} must be <= {maximum}')
+    return value
+
+
+def validate_branch(value):
+    """Validate the configured Git branch."""
+    invalid = (
+        not isinstance(value, str) or
+        SAFE_BRANCH_RE.fullmatch(value) is None or
+        value.startswith('/') or
+        value.endswith('/') or
+        '..' in value or
+        '//' in value
+    )
+    if invalid:
+        raise PrepareFailure('Invalid Git branch')
+    return value
+
+
+def validate_digest(value, label):
+    """Validate one lowercase SHA256 digest."""
+    if not isinstance(value, str) or SHA256_RE.fullmatch(value) is None:
+        raise PrepareFailure(f'Invalid {label}')
+    return value
+
+
+def validate_config(config):
+    """Validate the fixed remote preparation configuration."""
+    config = require_mapping(config, 'configuration')
+    required = {
+        'deployment_id',
+        'git',
+        'preparation',
+        'runs',
+        'scheduler',
+        'schema_version',
+        'state',
+    }
+    require_exact_keys(config, required, 'configuration')
+    if config['schema_version'] != 1:
+        raise PrepareFailure('Unsupported preparation configuration schema')
+    try:
+        validate_safe_name(config['deployment_id'], 'deployment ID')
+    except HpcJobValidationError as exc:
+        raise PrepareFailure(str(exc)) from exc
+
+    git = require_mapping(config['git'], 'git')
+    require_exact_keys(
+        git,
+        {'automation_checkout', 'branch', 'path'},
+        'git',
+    )
+    validate_absolute_path(git['path'], 'Git executable')
+    validate_absolute_path(git['automation_checkout'], 'automation checkout')
+    validate_branch(git['branch'])
+
+    runs = require_mapping(config['runs'], 'runs')
+    require_exact_keys(runs, {'root'}, 'runs')
+    validate_absolute_path(runs['root'], 'job-run root')
+    expected_runs = (
+        Path(git['automation_checkout']) / 'hpc_jobs' / 'runs'
+    ).as_posix()
+    if runs['root'] != expected_runs:
+        raise PrepareFailure('Job-run root differs from the checkout layout')
+
+    state_config = require_mapping(config['state'], 'state')
+    require_exact_keys(
+        state_config,
+        {'prepare_lock', 'run_records'},
+        'state',
+    )
+    validate_absolute_path(state_config['prepare_lock'], 'prepare lock')
+    validate_absolute_path(state_config['run_records'], 'run-record root')
+
+    preparation = require_mapping(config['preparation'], 'preparation')
+    require_exact_keys(
+        preparation,
+        {'allowed_templates', 'max_request_bytes', 'max_template_bytes'},
+        'preparation',
+    )
+    validate_positive_int(
+        preparation['max_request_bytes'],
+        'max request bytes',
+        maximum=131072,
+    )
+    validate_positive_int(
+        preparation['max_template_bytes'],
+        'max template bytes',
+        maximum=131072,
+    )
+    templates = require_mapping(
+        preparation['allowed_templates'],
+        'allowed templates',
+    )
+    require_exact_keys(templates, {'batch', 'single', 'workflow'}, 'templates')
+    for job_kind, template in templates.items():
+        template = require_mapping(template, f'{job_kind} template')
+        require_exact_keys(template, {'path', 'sha256'}, f'{job_kind} template')
+        expected_path = f'hpc_jobs/templates/{job_kind}.sh'
+        if template['path'] != expected_path:
+            raise PrepareFailure(f'Invalid {job_kind} template path')
+        validate_digest(template['sha256'], f'{job_kind} template SHA256')
+
+    scheduler = require_mapping(config['scheduler'], 'scheduler')
+    require_exact_keys(
+        scheduler,
+        {'allowed_partitions', 'limits'},
+        'scheduler',
+    )
+    partitions = scheduler['allowed_partitions']
+    if not isinstance(partitions, list) or not partitions:
+        raise PrepareFailure('allowed_partitions must be a non-empty list')
+    if len(partitions) != len(set(partitions)):
+        raise PrepareFailure('allowed_partitions contains duplicates')
+    for partition in partitions:
+        try:
+            validate_safe_name(partition, 'allowed partition')
+        except HpcJobValidationError as exc:
+            raise PrepareFailure(str(exc)) from exc
+    limits = require_mapping(scheduler['limits'], 'scheduler limits')
+    limit_keys = {
+        'max_child_jobs',
+        'max_concurrent_jobs',
+        'max_cores_per_job',
+        'max_memory_gb_per_job',
+        'max_nodes_per_job',
+        'max_wall_time_min',
+    }
+    require_exact_keys(limits, limit_keys, 'scheduler limits')
+    for key in sorted(limit_keys):
+        validate_positive_int(limits[key], key)
+    if limits['max_concurrent_jobs'] > limits['max_child_jobs']:
+        raise PrepareFailure('Concurrency ceiling exceeds child-job ceiling')
+    return config
+
+
+def require_regular_file(fpath, label):
+    """Require a non-symlink regular file."""
+    try:
+        file_stat = Path(fpath).lstat()
+    except OSError as exc:
+        raise PrepareFailure(f'Cannot inspect {label}: {exc}') from exc
+    if stat.S_ISLNK(file_stat.st_mode) or not stat.S_ISREG(file_stat.st_mode):
+        raise PrepareFailure(f'{label} must be a regular file')
+
+
+def require_real_directory(dirpath, label):
+    """Require a non-symlink directory."""
+    try:
+        file_stat = Path(dirpath).lstat()
+    except OSError as exc:
+        raise PrepareFailure(f'Cannot inspect {label}: {exc}') from exc
+    if stat.S_ISLNK(file_stat.st_mode) or not stat.S_ISDIR(file_stat.st_mode):
+        raise PrepareFailure(f'{label} must be a real directory')
+
+
+def require_mode(fpath, expected, label):
+    """Require one exact permission mode without following symlinks."""
+    try:
+        actual = stat.S_IMODE(Path(fpath).lstat().st_mode)
+    except OSError as exc:
+        raise PrepareFailure(f'Cannot inspect {label} permissions: {exc}') from exc
+    if actual != expected:
+        raise PrepareFailure(
+            f'{label} permissions must be {expected:04o}, found {actual:04o}'
+        )
+
+
+def load_config():
+    """Load and validate the fixed remote preparation configuration."""
+    fpath = get_config_path()
+    require_regular_file(fpath, 'Preparation configuration')
+    try:
+        with open(fpath, 'r') as fid:
+            config = json.load(fid)
+    except (OSError, json.JSONDecodeError) as exc:
+        raise PrepareFailure(f'Cannot load preparation configuration: {exc}')
+    return validate_config(config)
+
+
+def config_identity(config):
+    """Return the validated configuration digest."""
+    return hash_bytes(canonical_json(config).encode())
+
+
+def decode_bounded(value, label):
+    """Decode one bounded subprocess stream."""
+    if len(value) > MAX_COMMAND_BYTES:
+        raise PrepareFailure(f'{label} exceeded {MAX_COMMAND_BYTES} bytes')
+    try:
+        return value.decode('utf-8')
+    except UnicodeDecodeError as exc:
+        raise PrepareFailure(f'{label} was not valid UTF-8') from exc
+
+
+def run_git(config, arguments):
+    """Run one fixed bounded Git inspection command."""
+    git = config['git']
+    command = [git['path'], '-C', git['automation_checkout'], *arguments]
+    environment = os.environ.copy()
+    environment.update({'LANG': 'C', 'LC_ALL': 'C'})
+    try:
+        completed = subprocess.run(
+            command,
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            timeout=GIT_TIMEOUT_SEC,
+            check=False,
+            env=environment,
+        )
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        raise PrepareFailure(f'Cannot inspect Git checkout: {exc}') from exc
+    stdout = decode_bounded(completed.stdout, 'Git stdout').strip()
+    stderr = decode_bounded(completed.stderr, 'Git stderr').strip()
+    if completed.returncode != 0:
+        details = stderr.replace('\r', ' ').replace('\n', ' ')[:500]
+        raise PrepareFailure(f'Git {arguments[0]} failed: {details}')
+    return stdout
+
+
+def inspect_checkout(config, expected_commit):
+    """Require the exact clean configured automation checkout."""
+    checkout = Path(config['git']['automation_checkout'])
+    require_real_directory(checkout, 'Automation checkout')
+    branch = run_git(config, ['branch', '--show-current'])
+    commit = run_git(config, ['rev-parse', 'HEAD'])
+    changes = run_git(config, ['status', '--porcelain=v1'])
+    if branch != config['git']['branch']:
+        raise RejectedInput('Automation checkout is on the wrong branch')
+    if commit != expected_commit:
+        raise RejectedInput('Automation checkout is not at the expected commit')
+    if changes:
+        raise RejectedInput('Automation checkout is not clean')
+    return checkout
+
+
+def require_tracked(config, relpaths):
+    """Require exact repository paths to be tracked by Git."""
+    run_git(config, ['ls-files', '--error-unmatch', '--', *relpaths])
+
+
+def read_bounded_json(fpath, maximum, label):
+    """Read one bounded regular JSON file."""
+    require_regular_file(fpath, label)
+    try:
+        data = Path(fpath).read_bytes()
+    except OSError as exc:
+        raise PrepareFailure(f'Cannot read {label}: {exc}') from exc
+    if len(data) > maximum:
+        raise RejectedInput(f'{label} exceeds {maximum} bytes')
+    try:
+        return json.loads(data.decode('utf-8'))
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise RejectedInput(f'{label} is not valid UTF-8 JSON') from exc
+
+
+def read_bounded_text(fpath, maximum, label):
+    """Read one bounded regular UTF-8 text file."""
+    require_regular_file(fpath, label)
+    try:
+        data = Path(fpath).read_bytes()
+    except OSError as exc:
+        raise PrepareFailure(f'Cannot read {label}: {exc}') from exc
+    if len(data) > maximum:
+        raise RejectedInput(f'{label} exceeds {maximum} bytes')
+    try:
+        return data.decode('utf-8')
+    except UnicodeDecodeError as exc:
+        raise RejectedInput(f'{label} is not UTF-8 text') from exc
+
+
+def validate_resource_policy(resources, scheduler, label):
+    """Enforce protected partition and per-job resource ceilings."""
+    if resources['partition'] not in scheduler['allowed_partitions']:
+        raise RejectedInput(f'{label} uses an unapproved partition')
+    limits = scheduler['limits']
+    checks = {
+        'nodes': 'max_nodes_per_job',
+        'cores': 'max_cores_per_job',
+        'memory_gb': 'max_memory_gb_per_job',
+        'wall_time_min': 'max_wall_time_min',
+    }
+    for key, limit_key in checks.items():
+        if resources[key] > limits[limit_key]:
+            raise RejectedInput(f'{label} {key} exceeds protected limit')
+
+
+def validate_request_policy(request, config):
+    """Enforce protected limits for one normalized tracked request."""
+    scheduler = config['scheduler']
+    limits = scheduler['limits']
+    validate_resource_policy(
+        request['top_level_resources'],
+        scheduler,
+        'top-level job',
+    )
+    if request['job_kind'] == 'batch':
+        validate_resource_policy(
+            request['simulation_job_resources'],
+            scheduler,
+            'simulation job',
+        )
+        if request['max_concurrent_simulation_jobs'] > limits['max_concurrent_jobs']:
+            raise RejectedInput('Batch concurrency exceeds protected limit')
+        if request['max_simulation_jobs'] > limits['max_child_jobs']:
+            raise RejectedInput('Batch job count exceeds protected limit')
+    elif request['job_kind'] == 'workflow':
+        if request['max_simulation_jobs'] > limits['max_child_jobs']:
+            raise RejectedInput('Workflow job count exceeds protected limit')
+        for stage, settings in request['stage_jobs'].items():
+            validate_resource_policy(
+                settings['resources'],
+                scheduler,
+                f'{stage} simulation job',
+            )
+            concurrency = settings['max_concurrent_simulation_jobs']
+            if concurrency > limits['max_concurrent_jobs']:
+                raise RejectedInput(
+                    f'{stage} concurrency exceeds protected limit'
+                )
+
+
+def validate_target_files(config, checkout, request):
+    """Require the selected target's defining Python files to be tracked."""
+    target = request['target']
+    if request['job_kind'] == 'workflow':
+        relpaths = [f'workflow_configs/{target}/workflow_cfg.py']
+    else:
+        relpaths = [f'exp_configs/{target}/exp_cfg.py']
+        if request['job_kind'] == 'batch':
+            relpaths.append(f'exp_configs/{target}/batch_params.py')
+    for relpath in relpaths:
+        require_regular_file(checkout / relpath, 'Target configuration')
+    require_tracked(config, relpaths)
+
+
+def acquire_prepare_lock(config):
+    """Acquire the pre-created global preparation lock."""
+    fpath = Path(config['state']['prepare_lock'])
+    require_regular_file(fpath, 'Preparation lock')
+    flags = os.O_RDWR | getattr(os, 'O_CLOEXEC', 0)
+    flags |= getattr(os, 'O_NOFOLLOW', 0)
+    try:
+        file_id = os.open(fpath, flags, 0o600)
+        fcntl.flock(file_id, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError as exc:
+        os.close(file_id)
+        raise PrepareFailure('Preparation lock is active') from exc
+    except OSError as exc:
+        raise PrepareFailure(f'Cannot acquire preparation lock: {exc}') from exc
+    return file_id
+
+
+def write_new_file(fpath, data, mode):
+    """Write one new non-symlink file with fixed content and mode."""
+    flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
+    flags |= getattr(os, 'O_CLOEXEC', 0)
+    flags |= getattr(os, 'O_NOFOLLOW', 0)
+    try:
+        file_id = os.open(fpath, flags, mode)
+        try:
+            offset = 0
+            while offset < len(data):
+                written = os.write(file_id, data[offset:])
+                if written < 1:
+                    raise OSError('short write while preparing file')
+                offset += written
+            os.fsync(file_id)
+        finally:
+            os.close(file_id)
+        os.chmod(fpath, mode)
+    except OSError as exc:
+        raise PrepareFailure(f'Cannot write prepared file {fpath.name}: {exc}')
+
+
+def write_state_record(fpath, record):
+    """Atomically write one external authoritative prepared-run record."""
+    dirpath = fpath.parent
+    require_real_directory(dirpath, 'Prepared-run state root')
+    fpath_tmp = dirpath / f'.{fpath.name}.{os.getpid()}.tmp'
+    data = (canonical_json(record) + '\n').encode()
+    write_new_file(fpath_tmp, data, 0o600)
+    try:
+        os.replace(fpath_tmp, fpath)
+    except OSError as exc:
+        try:
+            fpath_tmp.unlink()
+        except OSError:
+            pass
+        raise PrepareFailure(f'Cannot publish prepared-run state: {exc}')
+
+
+def read_existing_record(fpath, label):
+    """Read one existing regular JSON preparation record."""
+    require_regular_file(fpath, label)
+    try:
+        with open(fpath, 'r') as fid:
+            value = json.load(fid)
+    except (OSError, json.JSONDecodeError) as exc:
+        raise PrepareFailure(f'Cannot read {label}: {exc}') from exc
+    if not isinstance(value, dict):
+        raise PrepareFailure(f'{label} must be an object')
+    return value
+
+
+def path_exists_lstat(fpath):
+    """Return whether one path exists without following symlinks."""
+    try:
+        Path(fpath).lstat()
+    except FileNotFoundError:
+        return False
+    except OSError as exc:
+        raise PrepareFailure(f'Cannot inspect path {fpath}: {exc}') from exc
+    return True
+
+
+def record_matches(record, expected):
+    """Return whether an existing record matches immutable preparation keys."""
+    keys = {
+        'completion_files',
+        'expected_result_path',
+        'git_commit',
+        'job_kind',
+        'job_run_dir',
+        'request_id',
+        'request_sha256',
+        'rendered_script_sha256',
+        'run_id',
+        'simulation_job_limit',
+        'status',
+        'source_template_sha256',
+        'stderr_path',
+        'stdout_path',
+        'submit_script',
+        'template_path',
+        'top_level_resources',
+        'target',
+    }
+    return all(record.get(key) == expected.get(key) for key in keys)
+
+
+def publish_run(config, request, context, template_text, rendered):
+    """Create or validate one immutable repository job-run directory."""
+    run_root = Path(config['runs']['root'])
+    require_real_directory(run_root, 'Job-run root')
+    run_dir = Path(context['job_run_dir'])
+    state_path = Path(config['state']['run_records']) / f'{context["run_id"]}.json'
+    source_hash = hash_bytes(template_text.encode())
+    rendered_hash = hash_bytes(rendered.encode())
+    record = {
+        **context,
+        'prepared_at_utc': datetime.now(timezone.utc).isoformat(),
+        'prepared_host': socket.gethostname(),
+        'status': 'prepared',
+        'source_template_sha256': source_hash,
+        'rendered_script_sha256': rendered_hash,
+        'remote_config_sha256': config_identity(config),
+        'helper': helper_identity(),
+    }
+
+    # Repeated preparation is a no-op only for identical immutable inputs
+    if path_exists_lstat(run_dir):
+        require_real_directory(run_dir, 'Existing job-run directory')
+        require_mode(run_dir, 0o700, 'Existing job-run directory')
+        existing = read_existing_record(run_dir / 'run.json', 'Existing run record')
+        if not record_matches(existing, record):
+            raise RejectedInput('Run ID already belongs to different inputs')
+        require_regular_file(run_dir / 'request.json', 'Existing request copy')
+        require_regular_file(run_dir / 'submit.sh', 'Existing submit script')
+        for name in ('request.json', 'run.json', 'submit.sh'):
+            require_mode(run_dir / name, 0o444, f'Existing {name}')
+        if hash_file(run_dir / 'submit.sh') != rendered_hash:
+            raise PrepareFailure('Existing submit script hash differs')
+        if hash_data(read_existing_record(
+            run_dir / 'request.json',
+            'Existing request copy',
+        )) != context['request_sha256']:
+            raise PrepareFailure('Existing request copy hash differs')
+        if path_exists_lstat(state_path):
+            require_mode(state_path, 0o600, 'Existing protected run record')
+            state_record = read_existing_record(
+                state_path,
+                'Existing protected run record',
+            )
+            if not record_matches(state_record, record):
+                raise PrepareFailure('Protected run record differs')
+            if canonical_json(state_record) != canonical_json(existing):
+                raise PrepareFailure('Repository and protected run records differ')
+        else:
+            write_state_record(state_path, existing)
+        return existing, 'already-prepared'
+
+    if path_exists_lstat(state_path):
+        raise RejectedInput('Protected run record already exists for run ID')
+
+    staging = run_root / f'.prepare-{context["run_id"]}-{os.getpid()}'
+    if path_exists_lstat(staging):
+        raise PrepareFailure('Preparation staging path already exists')
+    try:
+        staging.mkdir(mode=0o700)
+        write_new_file(
+            staging / 'request.json',
+            (canonical_json(request) + '\n').encode(),
+            0o444,
+        )
+        write_new_file(staging / 'submit.sh', rendered.encode(), 0o444)
+        write_new_file(
+            staging / 'run.json',
+            (canonical_json(record) + '\n').encode(),
+            0o444,
+        )
+        staging.rename(run_dir)
+    except Exception:
+        if path_exists_lstat(staging):
+            for name in ('request.json', 'submit.sh', 'run.json'):
+                try:
+                    (staging / name).chmod(0o600)
+                    (staging / name).unlink()
+                except OSError:
+                    pass
+            try:
+                staging.rmdir()
+            except OSError:
+                pass
+        raise
+    write_state_record(state_path, record)
+    return record, 'prepared'
+
+
+def prepare(config, request_id, run_id, expected_commit):
+    """Prepare one exact tracked request and template without submission."""
+    try:
+        request_id = validate_safe_name(request_id, 'request ID')
+        run_id = validate_run_id(run_id)
+        expected_commit = validate_git_commit(expected_commit)
+    except HpcJobValidationError as exc:
+        raise RejectedInput(str(exc)) from exc
+    lock_id = acquire_prepare_lock(config)
+    try:
+        checkout = inspect_checkout(config, expected_commit)
+        request_relpath = f'hpc_jobs/requests/{request_id}.json'
+        require_tracked(config, [request_relpath])
+        request = read_bounded_json(
+            checkout / request_relpath,
+            config['preparation']['max_request_bytes'],
+            'Tracked job request',
+        )
+        try:
+            request = validate_request(request)
+        except HpcJobValidationError as exc:
+            raise RejectedInput(str(exc)) from exc
+        if request['request_id'] != request_id:
+            raise RejectedInput('Request ID differs from request filename')
+        validate_request_policy(request, config)
+        validate_target_files(config, checkout, request)
+
+        template_relpath = request['template_path']
+        require_tracked(config, [template_relpath])
+        template_text = read_bounded_text(
+            checkout / template_relpath,
+            config['preparation']['max_template_bytes'],
+            'Tracked shell template',
+        )
+        allowed = config['preparation']['allowed_templates'][request['job_kind']]
+        template_hash = hash_bytes(template_text.encode())
+        if template_relpath != allowed['path']:
+            raise RejectedInput('Request selects an unapproved template path')
+        if template_hash != allowed['sha256']:
+            raise RejectedInput('Tracked template hash is not approved')
+
+        try:
+            context = build_prepared_job_context(
+                request,
+                run_id,
+                checkout,
+                expected_commit,
+            )
+            values = build_template_values(context, checkout)
+            rendered = render_template(
+                template_text,
+                values,
+                TEMPLATE_TOKENS[request['job_kind']],
+            )
+        except HpcJobValidationError as exc:
+            raise RejectedInput(str(exc)) from exc
+        record, result = publish_run(
+            config,
+            request,
+            context,
+            template_text,
+            rendered,
+        )
+        return {
+            'result': result,
+            'request_id': record['request_id'],
+            'request_sha256': record['request_sha256'],
+            'run_id': record['run_id'],
+            'git_commit': record['git_commit'],
+            'job_kind': record['job_kind'],
+            'expected_result_path': record['expected_result_path'],
+            'submit_script': record['submit_script'],
+            'source_template_sha256': record['source_template_sha256'],
+            'rendered_script_sha256': record['rendered_script_sha256'],
+            'simulation_job_limit': record['simulation_job_limit'],
+        }
+    finally:
+        fcntl.flock(lock_id, fcntl.LOCK_UN)
+        os.close(lock_id)
+
+
+def build_parser():
+    """Build the fixed remote preparation parser."""
+    parser = argparse.ArgumentParser(description='Protected job preparation.')
+    subparsers = parser.add_subparsers(dest='operation', required=True)
+    prepare_parser = subparsers.add_parser('prepare')
+    prepare_parser.add_argument('request_id')
+    prepare_parser.add_argument('run_id')
+    prepare_parser.add_argument('expected_commit')
+    subparsers.add_parser('version')
+    return parser
+
+
+def print_result(status, prepared=None, reason=None):
+    """Print one machine-readable remote preparation result."""
+    result = {
+        'schema_version': 1,
+        'operation': 'job-prepare',
+        'status': status,
+    }
+    if prepared is not None:
+        result['prepared'] = prepared
+    if reason is not None:
+        result['reason'] = str(reason)[:500]
+    print(json.dumps(result, sort_keys=True))
+
+
+def main():
+    """Run the fixed remote preparation operation."""
+    parser = build_parser()
+    args = parser.parse_args()
+    if args.operation == 'version':
+        print(json.dumps(helper_identity(), sort_keys=True))
+        return EXIT_SUCCESS
+    try:
+        config = load_config()
+        prepared = prepare(
+            config,
+            args.request_id,
+            args.run_id,
+            args.expected_commit,
+        )
+    except (RejectedInput, HpcJobValidationError) as exc:
+        print_result('rejected', reason=exc)
+        return EXIT_REJECTED
+    except PrepareFailure as exc:
+        print_result('failed', reason=exc)
+        return EXIT_FAILED
+    except OSError as exc:
+        print_result('failed', reason=f'Filesystem operation failed: {exc}')
+        return EXIT_FAILED
+    print_result('ok', prepared=prepared)
+    return EXIT_SUCCESS
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())

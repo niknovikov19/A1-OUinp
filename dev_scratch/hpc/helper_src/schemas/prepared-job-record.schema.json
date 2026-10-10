@@ -1,0 +1,114 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://a1-ouinp.local/schemas/prepared-job-record.schema.json",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "request_id",
+    "request_sha256",
+    "run_id",
+    "job_kind",
+    "target",
+    "git_commit",
+    "template_path",
+    "top_level_resources",
+    "simulation_job_limit",
+    "expected_result_path",
+    "completion_files",
+    "job_run_dir",
+    "submit_script",
+    "stdout_path",
+    "stderr_path",
+    "prepared_at_utc",
+    "prepared_host",
+    "status",
+    "source_template_sha256",
+    "rendered_script_sha256",
+    "remote_config_sha256",
+    "helper"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "request_id": {
+      "type": "string"
+    },
+    "request_sha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "run_id": {
+      "type": "string"
+    },
+    "job_kind": {
+      "enum": [
+        "single",
+        "batch",
+        "workflow"
+      ]
+    },
+    "target": {
+      "type": "string"
+    },
+    "git_commit": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "template_path": {
+      "type": "string"
+    },
+    "top_level_resources": {
+      "type": "object"
+    },
+    "simulation_job_limit": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "expected_result_path": {
+      "type": "string"
+    },
+    "completion_files": {
+      "type": "array"
+    },
+    "job_run_dir": {
+      "type": "string"
+    },
+    "submit_script": {
+      "type": "string"
+    },
+    "stdout_path": {
+      "type": "string"
+    },
+    "stderr_path": {
+      "type": "string"
+    },
+    "prepared_at_utc": {
+      "type": "string"
+    },
+    "prepared_host": {
+      "type": "string"
+    },
+    "status": {
+      "const": "prepared"
+    },
+    "source_template_sha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "rendered_script_sha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "remote_config_sha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "helper": {
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    }
+  }
+}

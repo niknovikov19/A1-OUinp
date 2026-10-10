@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "request_id": "b0-prepare-single",
+  "job_kind": "single",
+  "target": "single_rxbkg_state1_mech1/net_newsec",
+  "template_path": "hpc_jobs/templates/single.sh",
+  "expected_result_path": "exp_results/single_rxbkg_state1_mech1/net_newsec/exp_a1_ee_fade_pulses_seed_1111_t_7.0_10.0_ictrl_wmult_0.25_ee_0.5_pulse_TCM_d_150_T_500_c_25_w_0.1_r_100.0_544.0_t0_5000_jit_0",
+  "completion_files": [
+    "results/result_00000_seed_1111.json"
+  ],
+  "top_level_resources": {
+    "partition": "cpu.q",
+    "nodes": 1,
+    "cores": 1,
+    "memory_gb": 2,
+    "wall_time_min": 10
+  }
+}

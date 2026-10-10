@@ -5,6 +5,8 @@ from pathlib import Path
 import shlex
 import shutil
 
+from hpc_job import get_batchtools_resource_config, validate_request
+from hpc_preflight import preflight_request, read_tracked_request
 from load_module import load_module
 from workflow_utils import (
     collect_batchtools_artifacts,
@@ -191,7 +193,7 @@ def _get_stage_configs(workflow_params):
 
 
 def _resolve_stage_spec(workflow_params, stage_cfg, iteration, run_id,
-                        dynamic_overrides):
+                        dynamic_overrides, stage_jobs=None):
     """Resolve one stage into a compact immutable specification."""
     exp_paths = _resolve_experiment_cfg_paths(stage_cfg['experiment'])
     batch_mod = load_module(exp_paths['batch_params'])
@@ -209,6 +211,26 @@ def _resolve_stage_spec(workflow_params, stage_cfg, iteration, run_id,
     )
     batch_run = dict(workflow_params['batch_run_defaults'])
     batch_run.update(stage_cfg.get('batch_run', {}))
+
+    # Let the reviewed request override only operational Slurm settings
+    if stage_jobs is not None and stage_cfg.get('executor') is None:
+        if stage_cfg['name'] not in stage_jobs:
+            raise ValueError(
+                f'Missing HPC settings for stage {stage_cfg["name"]!r}'
+            )
+        job_settings = stage_jobs[stage_cfg['name']]
+        resources = job_settings['resources']
+        resource_config = get_batchtools_resource_config(resources)
+        batch_run.update({
+            'partition': resource_config['partition'],
+            'realtime': resource_config['realtime'],
+            'nodes': resource_config['nodes'],
+            'cores_per_node': resource_config['coresPerNode'],
+            'mem_gb': resources['memory_gb'],
+            'max_concurrent': (
+                job_settings['max_concurrent_simulation_jobs']
+            ),
+        })
 
     spec = {
         'workflow_name': workflow_params['workflow_name'],
@@ -229,6 +251,21 @@ def _resolve_stage_spec(workflow_params, stage_cfg, iteration, run_id,
     }
     spec['stage_spec_hash'] = hash_data(spec)
     return spec, exp_paths
+
+
+def _consume_hpc_job_budget(stage_spec, job_budget):
+    """Count one resolved simulation stage against its request ceiling."""
+    if job_budget is None or stage_spec.get('executor') is not None:
+        return
+    stage_jobs = len(expand_param_grid(stage_spec['batch_params']))
+    max_concurrent = stage_spec['batch_run']['max_concurrent']
+    if max_concurrent > stage_jobs:
+        raise ValueError(
+            f'Stage {stage_spec["stage"]!r} concurrency exceeds job count'
+        )
+    if stage_jobs > job_budget['remaining']:
+        raise ValueError('Workflow simulation-job budget is exhausted')
+    job_budget['remaining'] -= stage_jobs
 
 
 def _prepare_stage_dirs(dirpath_stage):
@@ -618,11 +655,26 @@ def _handle_stage_failure(cfg_mod, stage_name, iteration, iteration_context,
     return outcome
 
 
-def run_workflow(workflow_name, run_id=None):
+def run_workflow(workflow_name, run_id=None, hpc_request=None):
     """Run or resume one configured iterative workflow."""
     dirpath_workflow = DIR_WORKFLOW_CONFIGS / workflow_name
     cfg_mod = load_module(dirpath_workflow / 'workflow_cfg.py')
     workflow_params = cfg_mod.get_workflow_params()
+    stage_jobs = None
+    job_budget = None
+    if hpc_request is not None:
+        hpc_request = validate_request(hpc_request)
+        if hpc_request['job_kind'] != 'workflow':
+            raise ValueError('run_workflow.py requires a workflow request')
+        if hpc_request['target'] != workflow_name:
+            raise ValueError('Workflow name differs from the HPC request')
+        plan = preflight_request(DIR_REPO, hpc_request)
+        expected_run_id = Path(plan['resolved_result_path']).name
+        if run_id is not None and run_id != expected_run_id:
+            raise ValueError('Workflow run ID differs from the HPC request')
+        run_id = expected_run_id
+        stage_jobs = hpc_request['stage_jobs']
+        job_budget = {'remaining': hpc_request['max_simulation_jobs']}
     run_id = _resolve_run_id(
         cfg_mod,
         workflow_params,
@@ -683,13 +735,24 @@ def run_workflow(workflow_name, run_id=None):
                 stage_results,
                 history,
             )
-            stage_spec, exp_paths = _resolve_stage_spec(
-                params,
-                stage_cfg,
-                iteration,
-                run_id,
-                dynamic_overrides,
-            )
+            if stage_jobs is None:
+                stage_spec, exp_paths = _resolve_stage_spec(
+                    params,
+                    stage_cfg,
+                    iteration,
+                    run_id,
+                    dynamic_overrides,
+                )
+            else:
+                stage_spec, exp_paths = _resolve_stage_spec(
+                    params,
+                    stage_cfg,
+                    iteration,
+                    run_id,
+                    dynamic_overrides,
+                    stage_jobs=stage_jobs,
+                )
+            _consume_hpc_job_budget(stage_spec, job_budget)
             dirpath_stage = dirpath_iter / stage_name
             stage_spec_hashes[stage_name] = stage_spec['stage_spec_hash']
 
@@ -795,14 +858,27 @@ def main_cli():
     parser = argparse.ArgumentParser(description='Run iterative workflow.')
     parser.add_argument(
         '--workflow',
-        default=os.environ.get('A1_WORKFLOW_NAME', 'wmat_transfer'),
+        default=None,
     )
     parser.add_argument(
         '--run-id',
         default=None,
     )
+    parser.add_argument(
+        '--hpc-request',
+        default=None,
+    )
     args = parser.parse_args()
-    run_workflow(args.workflow, args.run_id)
+    hpc_request = None
+    workflow_name = args.workflow
+    if args.hpc_request is not None:
+        hpc_request = read_tracked_request(DIR_REPO, args.hpc_request)
+        if workflow_name is not None and workflow_name != hpc_request['target']:
+            raise ValueError('Workflow name differs from the HPC request')
+        workflow_name = hpc_request['target']
+    if workflow_name is None:
+        workflow_name = os.environ.get('A1_WORKFLOW_NAME', 'wmat_transfer')
+    run_workflow(workflow_name, args.run_id, hpc_request=hpc_request)
 
 
 def main():
@@ -811,4 +887,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    main_cli()

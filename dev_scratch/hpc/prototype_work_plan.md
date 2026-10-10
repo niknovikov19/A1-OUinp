@@ -58,12 +58,13 @@ boundary. The A4 shell wrapper is also promoted because the A4 probe must test
 Slurm without executing repository code.
 
 Real-experiment launchers are different. Their source should remain tracked in
-the repository and travel with the exact approved commit. A protected helper
-will validate the clean commit, select an allowlisted launcher/template, render
-one run-specific `submit.sh` beneath the ignored result package at
-`exp_results/automation/<experiment>/<run-id>/controller/submit.sh`, and record
-both its source and rendered SHA256. Experiment development therefore does not
-require manual helper promotion for every launcher edit.
+the repository and travel with the exact approved commit. Tracked job requests
+and shell templates live beneath `hpc_jobs/requests/` and
+`hpc_jobs/templates/`. A protected helper validates the clean commit, selects
+one reviewed request and template, and renders one run-specific `submit.sh`
+beneath the ignored `hpc_jobs/runs/<run-id>/` directory. Experiment development
+therefore does not require manual helper promotion for every request or
+template edit.
 
 Only typed request fields may be rendered: resources, safe identifiers, and
 paths derived beneath fixed roots. Arbitrary shell text is never accepted.
@@ -73,21 +74,37 @@ helper verifies the recorded run ID and script SHA256 immediately before
 calling `sbatch`; the hash check, not the file mode alone, establishes the
 submitted identity. Both infrastructure helpers remain manually promoted.
 
-The generated script, run records, scheduler logs, job metadata, and scientific
-outputs stay together in the ignored run package:
+The generated script and top-level Slurm logs stay together beneath the
+ignored job-run directory:
 
 ```text
-exp_results/automation/<experiment>/<run-id>/
-    meta/{request.json,run.json,submission.json,source-hashes.json}
-    controller/{submit.sh,slurm-<job-id>.out,slurm-<job-id>.err}
-    jobs/{index.jsonl,scripts/,logs/}
-    sim_results/
-    processed/
+hpc_jobs/
+    requests/                         # tracked
+    templates/                        # tracked
+    runs/                             # ignored
+        <run-id>/
+            request.json
+            run.json
+            submission.json
+            submit.sh
+            slurm-<job-id>.out
+            slurm-<job-id>.err
 ```
 
-The protected audit log and cross-run locks remain outside this result tree.
-Run packages are retained until an explicit archive or deletion operation and
-must never be silently overwritten.
+Scientific results keep their existing repository layouts:
+
+```text
+exp_configs/<experiment>/
+exp_results/<experiment>/<exp_name_sub>/
+
+workflow_configs/<workflow>/
+exp_results/workflows/<workflow>/<run-id>/
+```
+
+The protected state root stores only small authoritative audit, index,
+submission, hash, path, lock, and cursor records. Large Slurm and simulation
+logs are not copied there. Job-run directories are retained until an explicit
+archive or deletion operation and must never be silently overwritten.
 
 The user will choose the protected paths. A representative arrangement is:
 
@@ -110,10 +127,10 @@ hpc-probe lethe|grid
 hpc-code-status
 hpc-code-update EXPECTED_40_CHAR_COMMIT
 hpc-run-preview RUN_REQUEST
-hpc-run-prepare RUN_REQUEST
+hpc-run-prepare RUN_REQUEST RUN_ID
 hpc-submit RUN_ID EXPECTED_SCRIPT_SHA256
 hpc-status RUN_ID
-hpc-log RUN_ID controller
+hpc-log RUN_ID top
 hpc-log RUN_ID job JOB_LABEL
 hpc-result-list RUN_ID ARTIFACT_TYPE
 hpc-result-get RUN_ID JOB_LABEL ARTIFACT_TYPE
@@ -126,7 +143,8 @@ hpc-result-get RUN_ID JOB_LABEL ARTIFACT_TYPE
 Use three complementary records:
 
 - Protected-helper audit log: one JSON line for every invocation, including rejected calls. Do not log secrets or full environment variables.
-- Per-run result-package record: authoritative run metadata, commit, request digest, controller ID, child IDs, paths, and last known state.
+- Small protected per-run record: authoritative commit, request digest,
+  top-level and child Slurm IDs, repository paths, hashes, and last known state.
 - Prototype test log: a repository Markdown file updated after every gate with helper version, commands invoked, sanitized output, pass/fail, and conclusions.
 
 The helper should emit structured JSON for machine use and a short human-readable summary. State-changing operations should write their intent record before acting, then update it atomically after the result is known.
@@ -239,7 +257,7 @@ Helper behavior:
 Tests after promotion and explicit submission approval:
 
 - Submit a fixed job that writes a few known lines and one tiny result marker.
-- Verify the returned controller/job ID is present in `run.json`.
+- Verify the returned top-level Slurm job ID is present in `run.json`.
 - Invoke the same request again and verify there is still only one scheduler job ID.
 - Simulate a lost client response by retrying the same request after submission; confirm recovery from the run record/scheduler instead of duplication.
 - Verify unique stdout/stderr names containing the run ID and/or job ID.
@@ -273,7 +291,7 @@ Purpose: validate log access without rereading large files or walking result tre
 
 Helper behavior:
 
-- Resolve controller/job log paths only from the known run record.
+- Resolve top-level job log paths only from the known run record.
 - Track size, byte offset, modification time, and a file identity marker locally.
 - Return only appended content, with a default cap of 200 lines and a byte cap.
 - Detect truncation or replacement and reset safely.
@@ -307,33 +325,57 @@ If a condition fails, revise only that mechanism and repeat its gate. Do not com
 
 ### Gate B0: adapt repository entry points
 
-Purpose: remove assumptions that prevent a separate automated checkout and unique runs.
+Purpose: add the smallest repository interface needed for approved real jobs
+without redesigning experiment management.
 
 Repository work:
 
-- Replace hardcoded `/ddn/.../A1_OUinp` locations with script-relative paths or one controlled configuration value.
-- Stop selecting experiments by editing constants in submission scripts; accept a strictly validated experiment/request identifier.
-- Keep the single and batch launcher sources in Git, parameterize them, and
-  render per-run shell snapshots through the protected run-preparation helper
-  into `exp_results/automation/<experiment>/<run-id>/controller/submit.sh`.
-- Have the separate protected submission helper revalidate the recorded
-  `submit.sh` SHA256 before passing that exact snapshot to `sbatch`.
-- Separate controller resources from per-child resources in batch requests;
-  the outer controller allocation and each BatchTools child allocation are not
-  the same resource request.
-- Give every run unique controller stdout/stderr and result paths.
-- Add immutable `run.json` metadata containing commit, request digest, experiment, job count, resources, timestamps, and IDs.
-- Reuse `run_workflow.py`/`workflow_utils.py` patterns for resolved parameters, stage directories, job metadata, durable-output validation, and attempt-specific BatchTools artifacts.
-- Add an active-run lock that blocks checkout updates while submitted jobs may still read it.
-- Create a purpose-built, short prototype experiment rather than shrinking a production request ad hoc.
+- Preserve `exp_configs/<experiment>` to
+  `exp_results/<experiment>/<exp_name_sub>` and the existing workflow result
+  layout. Do not insert an automation-run hierarchy into `exp_results`.
+- Add tracked `hpc_jobs/requests/` and `hpc_jobs/templates/`; ignore
+  `hpc_jobs/runs/`.
+- Replace hardcoded manual-checkout paths with script-relative paths or
+  protected configuration.
+- Stop selecting experiments by editing submission-script constants. Select a
+  validated tracked request from the exact commit.
+- Keep scientific parameters in `exp_cfg.py`, `batch_params.py`, and
+  `workflow_cfg.py`. Treat an expected result path in a request as an
+  assertion, not a second source of scientific parameters.
+- Make local preflight resolve and display the established scientific result
+  directory. Reject mismatches and existing non-empty destinations.
+- Render a reviewed tracked template to
+  `hpc_jobs/runs/<run-id>/submit.sh`, record its source/rendered hashes, and
+  have the protected submission helper revalidate both before calling
+  `sbatch`.
+- Store top-level Slurm logs beneath the same ignored job-run directory. Keep
+  large logs out of the external HPC-Codex state root.
+- Separate top-level resources from BatchTools child-job resources and workflow
+  stage-job resources.
+- Preserve manual `run_exp.py` behavior. Give `grid_search_slurm_local.py`
+  strict inputs for operational settings while retaining `batch_params.py` as
+  the parameter-axis source.
+- Make the existing `run_workflow.py` command-line parser the actual script
+  entry point and validate prepared per-stage resource settings.
+- Reuse workflow patterns for resolved parameters, durable job records, output
+  validation, and BatchTools artifacts without routing B1 through a workflow.
+- Add an active-run lock that blocks checkout updates while submitted jobs may
+  still read the checkout.
+- Create one purpose-built, short B1 experiment with a fresh result location.
 
 Local verification:
 
-- Unit-test path resolution, validators, request canonicalization, job-count expansion, run metadata, lock handling, and state normalization.
-- Smoke-test repository code locally without running a real simulation.
+- Unit-test request canonicalization, result-path resolution and collision
+  rejection, resource propagation, script rendering, run metadata, lock
+  handling, and state normalization.
+- Verify that manual entry points remain compatible.
+- Smoke-test repository planning locally under `netpyne` without running a real
+  simulation.
 - Review the diff, commit it, push it, preview it, and update the automation checkout through the proven A2 path.
 
-Pass condition: the automation checkout can host unique runs without changing the manual checkout or overwriting prior logs.
+Pass condition: the automation checkout can prepare one hash-bound job beneath
+`hpc_jobs/runs/` while preserving the established scientific result layout,
+leaving the manual checkout unchanged, and overwriting no result or log.
 
 ### Gate B1: one short simulation
 
@@ -344,7 +386,7 @@ Sequence:
 1. Preview a one-simulation request and review commit, experiment, duration, resources, output path, and expected artifacts.
 2. Obtain explicit approval to update and submit.
 3. Update to the exact previewed commit and submit once.
-4. Monitor scheduler state and incremental controller/job logs.
+4. Monitor scheduler state and incremental top-level job logs.
 5. Validate the durable completion record and exact expected result files.
 6. Confirm the run record ends in a state supported by both scheduler and output evidence.
 
@@ -354,12 +396,14 @@ Pass condition: one simulation completes from an exact commit, all records agree
 
 Purpose: resolve the largest application-specific uncertainty before building general batch monitoring.
 
-Start with a successful two-child batch. Inspect only its bounded controller output and known BatchTools artifact locations to determine:
+Start with a successful two-child batch. Inspect only bounded output from the
+BatchTools main job and known BatchTools artifact locations to determine:
 
 - whether the current `LocalSlurmSubmit` exposes the child Slurm ID directly;
 - the exact `sbatch` response available to BatchTools;
 - when job labels, scripts, stdout/stderr, `.sgl` files, and completion records appear;
-- whether controller termination can occur before every child completion record is visible.
+- whether the BatchTools main job can terminate before every child completion
+  record is visible.
 
 If IDs and paths are not available reliably, make the smallest change to `LocalSlurmSubmit` so it records one JSONL entry atomically at each child submission. Do not rediscover child jobs by recursively searching logs on every status check.
 
@@ -373,9 +417,11 @@ Sequence:
 
 - Preview a 4-job batch with concurrency at most 2.
 - Obtain explicit approval and submit it once.
-- Monitor the controller and all known IDs using one compact status operation per cycle.
+- Monitor the BatchTools main job and all known IDs using one compact status
+  operation per cycle.
 - Inspect child logs only for a selected scientific sanity check or an abnormal/missing-output state.
-- Compare Slurm terminal states, BatchTools controller state, job completion records, and expected result existence.
+- Compare Slurm terminal states, BatchTools main-job state, job completion
+  records, and expected result existence.
 
 Pass condition: all four jobs and outputs are accounted for without opening every log or scanning the result tree.
 
@@ -388,9 +434,9 @@ Use fixtures whenever the behavior can be tested without consuming cluster resou
 Test cases:
 
 - one child fails while others complete;
-- controller exits while a child remains known to Slurm;
+- the BatchTools main job exits while a child remains known to Slurm;
 - Slurm says complete but an expected output is missing;
-- controller reports a BatchTools/socket error but all durable outputs exist;
+- the BatchTools main job reports a socket error but all durable outputs exist;
 - BatchTools waits after all outputs are valid;
 - monitoring connection is unavailable;
 - the submission response is lost after Slurm accepted the job.
@@ -398,7 +444,7 @@ Test cases:
 Expected behavior:
 
 - show exact affected parameters and bounded log tails;
-- keep scheduler state, controller state, and output validity separate;
+- keep scheduler state, BatchTools state, and output validity separate;
 - classify unreachable state as `unknown`;
 - never cancel, resubmit, or duplicate automatically;
 - request user direction before any recovery action.
@@ -411,10 +457,15 @@ Purpose: inspect a useful artifact without broad remote I/O.
 
 Implementation target:
 
-- Generate one inventory from known outputs when the run completes, or incrementally from completion records.
+- Generate one inventory from known outputs when the run completes, or
+  incrementally from completion records. Do not require scientific results to
+  move out of their established experiment or workflow locations.
 - Store relative path, job label/parameters, artifact type, size, modification time, and an optional checksum for small files.
 - Resolve retrieval only by run ID, job label, and allowlisted artifact type.
 - Cap files and bytes, default to one file, and cache by fingerprint locally.
+- Store selected local copies beneath the existing ignored
+  `exp_results_local/` area. Run large analysis as a separately approved Slurm
+  job and retrieve only its compact outputs.
 
 Tests after promotion:
 
@@ -435,8 +486,8 @@ The prototype is complete when Codex can, using only protected helpers:
 - push a dedicated branch and update only the clean automated checkout to an exact commit;
 - preview actual job count/resources and reject requests over protected limits;
 - submit one approved request idempotently;
-- report controller and child scheduler states compactly;
-- read only new bounded controller output and selected child-log tails;
+- report top-level and child scheduler states compactly;
+- read only new bounded top-level output and selected child-log tails;
 - validate durable completion records and expected outputs;
 - retrieve one selected cached artifact;
 - report outages and contradictory evidence without cancellation or resubmission;
@@ -453,9 +504,16 @@ Do not add these until the prototype has been used successfully on several real 
 - automatic bulk transfer;
 - automatic modification of the manual checkout;
 - concurrent runs using different source revisions;
+- multiple retained executions of one non-workflow scientific result identity;
+- replacement of edited Python scientific constants with a declarative
+  experiment system;
+- automatic attempt/resume/archive semantics for existing result directories;
 - MCP server, daemon, database, or permanent broker;
 - automatic HPC-to-WSL code push. Manual HPC fixes continue through the existing reviewed Git workflow.
 
 ## Immediate next action
 
-Begin only Gate A0. Create the helper-source skeleton, configuration/schema examples, and `hpc-helper-info` candidate. Do not implement or deploy submission, monitoring, or result-transfer helpers yet.
+Commit and push the reviewed B0.2 interface and B0.3 preparation candidates,
+then update the automation checkout through A2. The user manually runs the two
+promotion scripts in `INSTALL_B0_3.md`; Codex then tests only the installed
+command. B0.3 prepares one script and records hashes but does not submit a job.

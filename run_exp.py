@@ -26,6 +26,8 @@ from subnet_tuner import SubnetDesc, SubnetParamBuilder2
 
 from collect_cell_gids import _collect_cell_gids
 from workflow_utils import make_job_record
+from hpc_job import validate_result_destination
+from hpc_preflight import read_tracked_request, resolve_result_subdir
 
 #import analysis.ou_tuning.data_proc_utils as proc_utils
 #import analysis.ou_tuning.netpyne_res_parse_utils as parse_utils
@@ -205,6 +207,7 @@ def _write_workflow_job_meta(cfg, runtime_overrides, outputs):
 # Folder names for experiment configs and results (relative to this script)
 DIRNAME_EXP_CONFIGS = 'exp_configs'
 DIRNAME_EXP_RESULTS = 'exp_results'    # without batchtools
+dirpath_self = Path(__file__).resolve().parent
 
 # Take batch flag from command line arguments, default to False
 parser = argparse.ArgumentParser(description="Run experiment script.")
@@ -224,9 +227,25 @@ parser.add_argument(
     dest='runtime_overrides',
     help='Workflow runtime override JSON',
 )
+parser.add_argument(
+    '--hpc-request',
+    help='Tracked single-simulation request below hpc_jobs/requests',
+)
 args, _ = parser.parse_known_args()
 is_batch = args.batch
 runtime_overrides = _read_runtime_overrides(args.runtime_overrides)
+hpc_request = None
+
+# Let a reviewed request select the single experiment without shell text
+if args.hpc_request is not None:
+    hpc_request = read_tracked_request(dirpath_self, args.hpc_request)
+    if hpc_request['job_kind'] != 'single':
+        raise ValueError('run_exp.py requires a single-simulation request')
+    if args.batch or args.subdir is not None or args.par is not None:
+        raise ValueError('HPC single requests cannot use batch, subdir, or par')
+    if args.name is not None and args.name != hpc_request['target']:
+        raise ValueError('Experiment name differs from the HPC request')
+    args.name = hpc_request['target']
 
 if not args.batch and args.name is None:
     raise ValueError("Either --name or --batch is requred")
@@ -234,8 +253,6 @@ if not args.batch and args.name is None:
 # Experiment name (define the folder name in exp_configs and exp_results)
 if not is_batch:
     exp_name = args.name
-
-dirpath_self = Path(__file__).resolve().parent
 
 if is_batch:
     # Get simLabel from batchtools to identify exp_name,
@@ -295,6 +312,19 @@ if not is_batch:
     if hasattr(cfg, 'exp_name_sub'):
         cfg.saveFolder /= cfg.exp_name_sub
     cfg.saveFolder = str(cfg.saveFolder)
+
+# Assert the established scientific result path before expensive work
+if hpc_request is not None:
+    result_subdir = resolve_result_subdir(cfg_mod, cfg)
+    resolved_result_path = (
+        Path(DIRNAME_EXP_RESULTS) /
+        exp_name /
+        result_subdir
+    ).as_posix()
+    if resolved_result_path != hpc_request['expected_result_path']:
+        raise ValueError('Resolved result path differs from the HPC request')
+    validate_result_destination(dirpath_self, resolved_result_path)
+    print(f'HPC result path: {resolved_result_path}', flush=True)
 
 # Update config by batchtools (if applicable)
 cfg.update()

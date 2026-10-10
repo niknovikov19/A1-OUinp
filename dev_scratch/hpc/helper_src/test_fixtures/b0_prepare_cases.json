@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "valid": {
+    "request_id": "b0-prepare-single",
+    "run_id": "b0-prepare-single-001",
+    "expected_result": "prepared"
+  },
+  "idempotent": {
+    "request_id": "b0-prepare-single",
+    "run_id": "b0-prepare-single-001",
+    "expected_result": "already-prepared"
+  },
+  "reject": [
+    {
+      "name": "invalid-request-id",
+      "request_id": "../request"
+    },
+    {
+      "name": "invalid-run-id",
+      "run_id": "../run"
+    },
+    {
+      "name": "short-commit",
+      "expected_commit": "abc123"
+    },
+    {
+      "name": "wrong-clean-commit",
+      "expected_commit": "1111111111111111111111111111111111111111"
+    },
+    {
+      "name": "existing-nonempty-result",
+      "reason": "result destination collision"
+    },
+    {
+      "name": "changed-template",
+      "reason": "template hash differs from protected allowlist"
+    },
+    {
+      "name": "excess-resources",
+      "reason": "request exceeds protected resource limits"
+    },
+    {
+      "name": "reused-run-id",
+      "reason": "run ID belongs to different immutable inputs"
+    }
+  ]
+}

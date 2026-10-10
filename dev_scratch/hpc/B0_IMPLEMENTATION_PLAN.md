@@ -1,259 +1,347 @@
-# B0 integrated simulation implementation plan
+# B0 repository-integration plan
 
-Status: B0.1 architecture audit complete; B0.2 repository work is in progress.
-No protected helper has been changed, promoted, or executed for B0.
+Status: revised design approved. B0.1 and B0.2 pass locally. The B0.3
+protected-preparation candidate is implemented and awaits manual promotion and
+installed-command tests.
+
+The earlier B0.2a `exp_results/automation/...` prototype has been removed. The
+replacement keeps scientific results in their established locations and puts
+only top-level job records and logs beneath `hpc_jobs/runs/`.
 
 ## Goal
 
-Prepare the repository and protected helper boundary for unique, immutable
-single and batch simulation runs. B0 ends after local tests, a protected
-preview, and a clean exact-commit checkout update. It does not submit a real
-simulation; that is Gate B1 and requires separate explicit approval.
+Prepare the smallest repository interface needed to test HPC-Codex with real
+jobs while preserving the existing experiment-management conventions.
 
-## B0.1 audit findings
+B0 ends after local tests, protected preparation, preview, and an exact-commit
+checkout update. No NetPyNE job is submitted until B1 and separate approval.
 
-| Component | Current behavior | B0 consequence |
-| --- | --- | --- |
-| `submit_single_slurm_local.sh` | Hardcodes experiment, manual checkout, fixed logs, 60 tasks, 256 GB, and 24 hours. Stdout and stderr use the same fixed file. | Convert it into a tracked launcher template. Never execute it directly from the mutable repository location. |
-| `submit_batch_slurm_local.sh` | Hardcodes manual checkout and fixed controller logs. Controller resources are mixed conceptually with child resources. | Convert it into a tracked controller template with separately rendered controller resources. |
-| `grid_search_slurm_local.py` | Selects the experiment and child resources through edited module constants. Uses fixed result/checkpoint locations and concurrency. | Refactor into callable functions plus a strict CLI driven by one immutable run-context file. |
-| `run_exp.py` | Single mode accepts an unchecked experiment string. Batch mode infers the experiment by stripping a fixed number of characters from `simLabel`. Single results default to `exp_results/<experiment>`. | Resolve a validated experiment explicitly and accept one exact run result directory. Remove label-length experiment discovery from the automation path. |
-| `LocalSlurmSubmit` | Writes useful child scripts but does not durably record the parsed child Slurm submission response at submission time. | Keep script generation for B0/B1. Add atomic child-ID recording only at B2 if the real two-child probe confirms it is needed. |
-| `run_workflow.py` | Already uses script-relative roots, validated run IDs, immutable resolved parameters, source hashes, per-stage directories, durable job records, output validation, and attempt-specific BatchTools artifacts. | Reuse these patterns instead of creating a second incompatible workflow model. Do not route B1 through a full iterative workflow. |
-| `workflow_utils.py` | Provides stable JSON hashing, atomic writes, parameter-grid expansion, job validation, polling, and artifact collection. | Extract or reuse the pure pieces for automation run preparation and tests. |
-| Protected A-stage helpers | Prove exact commit, preview, submission idempotency, lifecycle status, and bounded incremental logs, but assume one fixed probe wrapper and `run_id == request_id`. | Extend the model to separate request ID from unique run ID and to submit a hash-bound rendered launcher. Preserve the proven rejection, audit, and uncertainty behavior. |
-| Result storage | `.gitignore` already ignores `exp_results/automation/`. | Store real automation run directories there; Git updates remain clean while results stay beside the repository. |
-| Runtime environment | Local development and tests use `netpyne`. HPC Slurm jobs use the existing `netpyne_batch_slurm` environment, but the launchers select it through interactive shell setup. Its exact Python, `nrniv`, environment prefix, and supporting variables are not yet recorded. | Keep the two environments distinct. Replace interactive HPC activation with reviewed absolute paths and fixed environment values from `netpyne_batch_slurm` after one read-only lattice probe. |
+## Separation of responsibilities
 
-## Reusable baseline
+HPC-Codex manages approved Slurm operations:
 
-The focused workflow baseline is verified in the local `netpyne` environment:
+- validate a tracked job request against protected limits;
+- prepare and hash one exact shell script;
+- submit that script with `sbatch` exactly once;
+- record top-level and known child Slurm IDs;
+- report scheduler state and bounded log increments;
+- verify declared completion evidence and retrieve selected artifacts.
 
-```text
-/home/nnovikov/conda_env/netpyne/bin/python -m unittest discover \
-  -s tests -p 'test_workflow.py'
-/home/nnovikov/conda_env/netpyne/bin/python -m unittest discover \
-  -s tests -p 'test_workflow_dummy.py'
-Ran 52 tests: OK
-```
+Repository code interprets scientific configuration:
 
-The broader `tests.test_workflow_fullsim` baseline has three existing failures:
+- `run_exp.py` and `exp_cfg.py` resolve a single simulation;
+- the BatchTools main program and `batch_params.py` resolve a batch;
+- `run_workflow.py` and `workflow_cfg.py` resolve workflow stages;
+- experiment and workflow code determine their established result layouts.
 
-- two expectations no longer match the current full-simulation configuration;
-- one mocked `sim_data_analyzer.xr_adapters` module lacks `get_lfp_xr`.
+The protected helpers do not reproduce `exp_cfg.py`, `batch_params.py`,
+`workflow_cfg.py`, `cfg.saveFolder`, or workflow-stage logic.
 
-B0 tests must pass independently. Changes to the full-simulation baseline will
-be kept separate unless a B0 change directly requires that module.
+Protected preparation also does not import or execute repository Python on
+lethe. Scientific preflight runs locally for review and runs again inside the
+allocated Slurm job before simulation work or BatchTools child submission.
+The protected layer validates only the tracked JSON request, protected limits,
+clean exact commit, fixed template tokens, repository-confined paths, and
+recorded hashes.
 
-## Target architecture
+## Intended repository layout on HPC
 
 ```text
-protected request catalog + exact Git commit + validated unique RUN_ID
-  -> hpc-run-preview
-  -> protected run preparation on lethe
-       -> resolve tracked launcher template from the exact checkout
-       -> create exp_results/automation/<experiment>/<run-id>/
-       -> write canonical request.json and immutable run.json
-       -> render controller/submit.sh
-       -> record template and rendered-script SHA256 values
-       -> register RUN_ID in the protected run index
-  -> explicit hpc-submit RUN_ID approval
-       -> lock against concurrent Git updates
-       -> revalidate checkout commit, run record, and submit.sh SHA256
-       -> create the global active-run marker
-       -> sbatch the exact controller/submit.sh once
-  -> controller
-       -> single: run one validated experiment
-       -> batch: submit known child requests with separate child resources
-  -> hpc-status / hpc-log
-       -> resolve RUN_ID only through protected metadata
-       -> never accept an arbitrary filesystem path
+A1_OUinp_codex/
+  exp_configs/                       # tracked scientific configurations
+    <experiment>/
+  workflow_configs/                  # tracked workflow configurations
+    <workflow>/
+  hpc_jobs/
+    requests/                        # tracked job requests
+    templates/                       # tracked sbatch templates
+    runs/                            # ignored prepared scripts and top-level logs
+      <run-id>/
+        request.json
+        run.json
+        submission.json
+        submit.sh
+        slurm-<job-id>.out
+        slurm-<job-id>.err
+  exp_results/                       # ignored scientific results
+    <experiment>/
+      <exp_name_sub>/
+    workflows/
+      <workflow>/
+        <run-id>/
+  exp_logs/                          # existing non-HPC-Codex runtime uses
 ```
 
-## Run directory
+Only `hpc_jobs/requests/` and `hpc_jobs/templates/` are tracked.
+`hpc_jobs/runs/` is ignored.
+
+The external HPC-Codex state root contains only small authoritative records:
 
 ```text
-exp_results/automation/<experiment>/<run-id>/
-  request.json
-  run.json
-  submission.json
-  status.json
-  controller/
-    submit.sh
-    slurm-<controller-id>.out
-    slurm-<controller-id>.err
-  jobs/
-    index.jsonl
-    scripts/
-    logs/
-    comm/
-    summaries/
-  sim_results/
-  meta/
+hpc_codex/state/A1_OUinp/
+  run index
+  audit records
+  submission records and Slurm IDs
+  recorded repository paths and hashes
+  incremental-log cursors
+  checkout lock and active-run marker
 ```
 
-The run directory is user-owned and writable while work is active. Immutable
-inputs and records are written atomically and never silently replaced. The
-rendered `submit.sh` is made non-writable after preparation. Global locks,
-audit state, and the run index stay under the existing out-of-repository state
-root.
+Large Slurm or simulation logs are not copied into this state root.
 
-## Design decisions
+## Existing scientific result identity
 
-### Request and run identity
+Ordinary experiments retain their current correspondence:
 
-- `request_id` selects one reviewed catalog entry.
-- `run_id` is a separate validated unique name, at most 80 characters.
-- Reusing a run ID is accepted only when request digest, commit, template hash,
-  rendered-script hash, and immutable metadata are identical.
-- A protected run index maps a run ID to its exact generated directory. Status,
-  log, and submission helpers use the index; callers never provide a path.
-
-### Launcher rendering
-
-- The single and batch launcher sources remain ordinary tracked repository
-  files.
-- The preparation helper reads them only from the exact automation checkout.
-- Rendering supports a small fixed token set. Every token must occur exactly
-  once where required; missing, duplicated, unknown, newline-bearing, or
-  shell-active values are rejected.
-- Controller resources, absolute checkout path, experiment ID, run directory,
-  and fixed runtime paths are inserted from validated protected data.
-- `run.json` records both source-template and rendered-script SHA256 values.
-- The submission helper hashes `submit.sh` again immediately before `sbatch`.
-
-### Resource separation
-
-Version-2 simulation requests distinguish:
-
-- `controller_resources`: the outer single simulation or batch controller;
-- `child_resources`: BatchTools simulation jobs, required only for batch runs;
-- `calculated_child_jobs` and `max_concurrent_jobs`.
-
-The protected global limits apply independently to controller and child
-resources. A controller allocation is never reused as an implicit child
-allocation.
-
-### Runtime environment
-
-Rendered scripts will use absolute reviewed `srun`, `nrniv`, and Python paths,
-plus fixed environment variables. They will not source `~/.bashrc`, call
-`conda activate`, inherit arbitrary shell functions, or depend on the login
-shell's current directory.
-
-### Checkout lock
-
-- Preparation alone does not block Git updates.
-- Submission acquires the same global lock used by the A2 updater, rechecks the
-  commit and run snapshot, and creates `active-run.json` before `sbatch`.
-- A known submission failure removes the marker; an uncertain outcome keeps it.
-- Terminal scheduler state alone does not remove the marker. A protected
-  finalize operation requires terminal state plus the expected durable output
-  evidence, then archives the marker and releases the checkout.
-- Release after an abandoned prepared run or uncertain submission is explicit,
-  audited, and never automatic.
-
-## Progressive implementation gates
-
-### B0.2: pure repository refactor
-
-Implement and test without protected installation or Slurm:
-
-- add a small pure module for experiment/run-ID validation, result-path
-  construction, canonical run context, and fixed launcher-token rendering;
-- refactor `grid_search_slurm_local.py` into functions and a strict CLI;
-- add explicit automation arguments to `run_exp.py` while retaining the manual
-  invocation path;
-- remove BatchTools experiment discovery by `simLabel` suffix from the
-  automation path;
-- convert `submit_single_slurm_local.sh` and
-  `submit_batch_slurm_local.sh` into reviewed tracked templates;
-- add golden rendering and rejection tests.
-
-Pass condition: local tests produce unique single and batch run layouts and
-scripts without importing NEURON, invoking BatchTools, or calling Slurm.
-
-### B0.3: protected preparation candidate
-
-Add candidate helpers and schemas, but do not execute them from the repository:
-
-- local `hpc-run-prepare REQUEST_ID RUN_ID`;
-- lethe-side fixed preparation helper;
-- version-2 request, run-record, run-index, and render-result schemas;
-- protected configuration for the automation result root, tracked templates,
-  runtime paths, and fixed limits;
-- fixture self-tests for immutable reuse, collision rejection, symlinks,
-  traversal, token errors, resource overflow, and atomic records.
-
-Pass condition: after manual promotion, one fixture request prepares the exact
-directory and script snapshot without submission.
-
-### B0.4: real-run submission boundary
-
-Extend the proven submission/status/log path:
-
-- submit by run ID through the protected run index;
-- revalidate the rendered script and exact commit;
-- implement the active-run marker state machine;
-- retain one-intent/one-receipt idempotency and uncertain-outcome behavior;
-- resolve B-run controller logs from the indexed run directory;
-- add explicit finalize/release behavior.
-
-Pass condition: fixture and dry-run tests prove all checks without calling
-`sbatch`; the A-stage probe path remains valid or is deliberately migrated.
-
-### B0.5: purpose-built B1 experiment and local smoke test
-
-- create a new small experiment configuration specifically for B1;
-- keep duration, active populations, recording, and expected artifacts minimal
-  but scientifically meaningful;
-- define one single-run catalog entry with conservative resources;
-- smoke-test config resolution and expected-output planning without simulation;
-- run all B0 tests plus the 52-test reusable workflow baseline;
-- review, commit, push, preview, and fast-forward the automation checkout.
-
-Pass condition: the exact B1 request previews one unique run and a hash-bound
-controller script, while no simulation has been submitted.
-
-## Required lattice environment handoff
-
-Before finalizing rendered launchers, record these values after activating the
-approved `netpyne_batch_slurm` environment on lattice:
-
-```bash
-printf 'CONDA_PREFIX=%s\n' "$CONDA_PREFIX"
-command -v python3
-command -v nrniv
-command -v srun
-python3 --version
-nrniv --version
-python3 -c 'import netpyne, neuron; print(netpyne.__version__, neuron.__version__)'
+```text
+exp_configs/<experiment>/
+exp_results/<experiment>/<exp_name_sub>/
 ```
 
-This is read-only. The reviewed paths will be configuration values, not
-credentials and not caller-controlled arguments.
+`exp_name_sub` remains the human-readable identity derived from frequently
+changed scientific constants. Codex must check that changing such a constant
+also changes the resolved name where the experiment convention requires it.
+The exact commit and saved configuration provide machine-readable provenance.
+
+Workflows retain their current layout:
+
+```text
+workflow_configs/<workflow>/
+exp_results/workflows/<workflow>/<run-id>/
+```
+
+Workflow stage specifications and resolved-parameter records identify the
+experiments and scientific values used within each stage.
+
+HPC-Codex does not insert an `automation/` or `hpc_runs/` directory into
+`exp_results` during Gate B.
+
+## Collision policy
+
+The prepared request records the expected scientific result path as an
+assertion, not as the source of scientific parameters. Repository code resolves
+the actual path and must reject a mismatch before expensive work begins.
+
+Initial Gate-B rules are conservative:
+
+- a new job requires a result location that is safe for the selected
+  experiment's existing behavior;
+- an existing non-empty result location is rejected;
+- no result is overwritten, deleted, archived, or resumed automatically;
+- resource-only changes create a new job request and run ID, but do not create
+  a new experiment or scientific result name;
+- retaining multiple executions of the same scientific configuration requires
+  a later, explicit experiment-management design.
+
+The first B1 experiment therefore uses one fresh, purpose-built result path.
+
+## Tracked job requests
+
+A request is a small JSON record beneath `hpc_jobs/requests/`. It is selected
+by a validated request ID and read only from the exact automation commit.
+
+It records:
+
+- a tracked template ID;
+- an experiment or workflow identifier;
+- top-level Slurm resources;
+- BatchTools child resources and concurrency when applicable;
+- workflow-stage simulation resources when applicable;
+- the expected scientific result path and bounded completion evidence;
+- protected-limit inputs such as maximum child count.
+
+Scientific parameter values remain in `exp_cfg.py`, `batch_params.py`, or
+`workflow_cfg.py`. A result path in the request is a checked expectation.
+
+Changing scientific parameters follows the existing model:
+
+```text
+edit tracked Python configuration
+  -> update descriptive result naming if needed
+  -> local checks
+  -> commit, push, exact checkout update
+  -> preview and submit
+```
+
+Changing only Slurm resources creates or revises a tracked job request; it does
+not require another experiment directory.
+
+## Shell-script preparation
+
+Templates beneath `hpc_jobs/templates/` remain ordinary tracked repository
+files. The protected preparation helper reads the selected template from the
+exact clean commit and renders a small fixed token set.
+
+Values come from three sources:
+
+- tracked request: target identifier and requested resources;
+- protected configuration: checkout root, allowed resources, and reviewed
+  absolute paths from the HPC `netpyne_batch_slurm` environment;
+- protected derivation: run ID, safe job name, request path, and top-level log
+  paths beneath `hpc_jobs/runs/<run-id>/`.
+
+The helper writes `submit.sh` atomically beneath the ignored run directory,
+records its source and rendered SHA256 values, and removes its write bits. The
+submission helper rechecks the exact commit and script hash, then calls only:
+
+```text
+sbatch <exact prepared submit.sh>
+```
+
+The caller never supplies shell text or an arbitrary path.
+
+## Job shapes
+
+HPC-Codex is not limited internally to three hard-coded operations. It submits
+approved tracked templates under one protected policy. Gate B exercises three
+repository job shapes:
+
+### Single simulation job
+
+- the top-level Slurm job is the simulation job;
+- it selects one validated experiment and uses existing `run_exp.py` behavior;
+- repository code resolves `cfg.exp_name_sub` and the result path;
+- no BatchTools child jobs exist.
+
+### BatchTools main job
+
+- the top-level Slurm job runs the BatchTools main program;
+- `batch_params.py` remains authoritative for parameter axes;
+- the tracked request supplies top-level resources, child-job resources, and
+  maximum concurrency;
+- BatchTools submits child simulation jobs through `sbatch`;
+- B2 determines whether the existing submission result exposes enough child
+  information or needs one atomic `jobs/index.jsonl` record per child.
+
+### Workflow manager job
+
+- the top-level Slurm job runs `run_workflow.py`;
+- `workflow_cfg.py` remains authoritative for scientific workflow parameters;
+- the request supplies manager-job and per-stage simulation resources;
+- `run_workflow.py` validates stage names and applies those resource settings
+  when constructing BatchTools jobs;
+- the existing workflow result and completion records remain authoritative.
+
+The same protected submission mechanism can later support another reviewed
+tracked template, such as preprocessing or analysis, without accepting an
+arbitrary command. Job arrays, dependencies, GPUs, cancellation, and retries
+remain unavailable until separately designed and tested.
+
+## B0 implementation status
+
+Completed in B0.1-B0.2 and the B0.3 candidate:
+
+1. Audited representative single and batch experiments and workflow code for
+   result-name resolution, collision behavior, expected files, and consumers.
+2. Defined the tracked request schema and fixed-token templates. Protected
+   ceilings remain enforced by protected configuration in B0.3.
+3. Added `hpc_jobs/runs/` to `.gitignore` while keeping requests and templates
+   tracked.
+4. Added a preflight that resolves an experiment's expected scientific
+   result path without running a simulation.
+5. Preserved manual `run_exp.py` behavior and added validation needed to
+   assert the expected result path for an HPC-Codex job.
+6. Added strict tracked-request inputs to `grid_search_slurm_local.py` for the
+   experiment, simulation-job resources, and concurrency while retaining the
+   former no-argument manual defaults. `batch_params.py` remains authoritative
+   for parameter axes.
+7. Made the existing workflow CLI effective and added validated per-stage
+   simulation-job resources plus a whole-workflow simulation-job budget.
+8. Added local tests for request validation, script rendering, result-path
+   assertions, collisions, resource propagation, and manual-mode compatibility.
+9. Added protected local and lethe preparation candidates, configuration,
+   schemas, fixtures, promotion scripts, and handoff instructions without
+   executing a candidate from the repository.
+
+Remaining:
+
+10. Commit, push, update the exact automation checkout, and manually promote
+    both B0.3 candidates.
+11. Test the installed preparation command, idempotency, rejected inputs, and
+    immutable records without submission.
+12. Implement the fixture-only B0.4 real-job boundary and the purpose-built B1
+    request/preflight in B0.5. Do not submit a simulation during B0.
+
+## Progressive B0 review points
+
+### B0.1: repository contract audit and design
+
+Pass condition: the selected single, batch, and workflow paths are documented,
+all known result-path consumers are identified, and this revised design is
+approved before implementation.
+
+Status: PASS. The design was approved in discussion before implementation
+resumed.
+
+### B0.2: tracked request and repository interface
+
+Pass condition: local tests show exact resource propagation, resolved result
+paths, collision rejection, and unchanged manual invocation behavior without
+calling Slurm or running a simulation.
+
+Status: PASS locally. The `netpyne` environment passed 29 Gate-B contract and
+entry-point tests, 36 workflow regression tests, and 16 dummy-workflow tests.
+Representative real-config preflights resolved one existing single result path
+and the existing 15-job `net_newsec_var_seed` batch without constructing a
+network or contacting Slurm. The three previously recorded full-simulation
+test failures remain unchanged and unrelated to B0.
+
+### B0.3: protected preparation
+
+Pass condition: after manual promotion, a reviewed request produces one
+hash-bound `hpc_jobs/runs/<run-id>/submit.sh` and small external state records,
+without submission.
+
+Status: candidate ready. The protected helper validates the tracked request,
+exact clean commit, protected limits, tracked target files, and allowlisted
+template hash. It renders fixed tokens and writes immutable snapshots without
+executing repository Python or contacting Slurm. Promotion and installed-copy
+tests are still pending.
+
+### B0.4: protected real-job boundary
+
+Pass condition: fixtures prove exact-commit locking, one-intent/one-receipt
+submission handling, bounded log-path resolution, child-record ingestion, and
+explicit finalize/release behavior without calling `sbatch`.
+
+### B0.5: B1 request and local smoke tests
+
+Pass condition: one fresh purpose-built single experiment previews from an
+exact clean commit with its existing descriptive result path, expected files,
+top-level resources, and prepared-script hash. No simulation has run.
+
+## Required HPC environment handoff
+
+Before finalizing the templates, record the reviewed absolute runtime paths
+from the existing `netpyne_batch_slurm` environment on lattice. Local
+development and tests use the local `netpyne` environment.
+
+The HPC handoff must identify the established command used inside an `sbatch`
+allocation. HPC-Codex itself uses only `sbatch` for top-level submission and
+does not assume that `srun` is the correct internal launcher.
 
 ## B0 non-goals
 
 - no real Slurm submission;
+- no general experiment-management redesign;
+- no automatic declarative replacement for edited Python constants;
+- no multiple-attempt result layout;
 - no production experiment migration;
-- no cancellation or resubmission;
+- no cancellation, retry, or resubmission;
 - no arbitrary remote path or shell interface;
-- no recursive result-tree scans;
-- no child-ID inference until the B2 two-child observation;
-- no broad cleanup of unrelated hardcoded historical analysis paths.
+- no recursive result-tree scan;
+- no broad cleanup of historical analysis paths.
 
 ## B0 completion evidence
 
 B0 is complete only when:
 
-- validation and rendering tests pass;
-- single and batch controller resources are demonstrably separate from child
-  resources;
-- unique result/log paths and immutable run records are proven;
-- run-index and active-lock transitions pass fixtures;
-- rendered script tampering is rejected;
+- the revised repository contract is approved;
+- tracked request and template tests pass locally under `netpyne`;
+- top-level and child/stage resources propagate to the intended Slurm fields;
+- existing experiment and workflow result layouts remain unchanged;
+- result-path mismatches and collisions are rejected;
+- the prepared script and small external records are hash-bound and immutable;
 - the purpose-built B1 request previews from one exact clean commit;
-- the automation checkout is updated through A2 without touching the manual
-  checkout;
+- the automation checkout is updated through the proven A2 path;
 - no real simulation has run.

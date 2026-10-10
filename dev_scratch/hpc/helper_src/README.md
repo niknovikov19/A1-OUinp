@@ -292,13 +292,19 @@ completion reconciliation, and log/result retrieval are separate later gates.
 
 The promoted A4 wrapper is specific to the repository-independent probe. In
 integrated experiment gates, single and batch launcher sources remain tracked
-in the exact repository commit. A protected run-preparation helper creates and
-hashes a run-specific shell snapshot at
-`exp_results/automation/<experiment>/<run-id>/controller/submit.sh`; launcher
-development does not require promoting a new infrastructure helper each time.
-A separate protected submission helper rechecks that snapshot's recorded hash
-before calling `sbatch`. The script and run records remain with the ignored
-scientific-result package, while global audit and lock state remain outside it.
+in the exact repository commit. Reviewed request definitions belong in
+`hpc_jobs/requests/`, and reusable shell templates belong in
+`hpc_jobs/templates/`. The planned protected run-preparation operation resolves
+both from the exact commit and writes a hash-bound snapshot to
+`hpc_jobs/runs/<run-id>/submit.sh`. A separate protected submission operation
+rechecks the recorded hash before calling `sbatch`.
+
+The ignored `hpc_jobs/runs/<run-id>/` directory contains only prepared job
+records, the exact submitted script, and top-level Slurm logs. Scientific
+results remain in the established `exp_results/<experiment>/<exp_name_sub>/`
+or `exp_results/workflows/<workflow>/<run-id>/` layout. Compact authoritative
+audit, job-ID, path, hash, cursor, and lock records remain outside the
+repository in the protected HPC-Codex state root.
 
 ## A5.1 contents
 
@@ -411,6 +417,48 @@ installed A6 reader prove appended-content-only transfer, line-cap
 continuation, and byte-cap continuation against a real Slurm log. Promotion
 only allowlists and installs the payload; submission still requires separate
 explicit approval.
+
+## B0.3 protected job preparation
+
+```text
+local/hpc-job-prepare
+remote_lethe/hpc-lethe-prepare
+config_examples/remote-hpc-prepare.json.example
+schemas/remote-hpc-prepare-config.schema.json
+schemas/prepared-job-record.schema.json
+test_fixtures/b0_prepare_cases.json
+promotion/promote_b0_prepare_local.sh
+promotion/promote_b0_prepare_lethe.sh
+INSTALL_B0_3.md
+```
+
+`hpc-job-prepare` accepts only a request ID, a fresh run ID, and one full Git
+commit. The lethe helper requires the exact clean automation checkout, reads
+the request only from `hpc_jobs/requests/`, and accepts only a template whose
+path and SHA256 are fixed in protected configuration. It enforces protected
+resource ceilings and verifies that the selected scientific configuration
+files are tracked regular files.
+
+The helper renders a fixed token set into
+`hpc_jobs/runs/<run-id>/submit.sh`, stores read-only request and run snapshots,
+and writes one compact mode-`0600` state copy. It does not execute repository
+Python, run scientific preflight, call lattice or Slurm, or create scientific
+results. A repeated identical invocation returns `already-prepared`; a reused
+run ID with different immutable inputs is rejected.
+
+### B0.3 call chain
+
+```text
+Codex
+  -> /opt/a1-hpc/bin/hpc-job-prepare REQUEST_ID RUN_ID EXPECTED_COMMIT
+  -> /usr/bin/ssh lethe
+  -> hpc-lethe-prepare prepare REQUEST_ID RUN_ID EXPECTED_COMMIT
+  -> require exact clean commit and acquire the fixed preparation lock
+  -> validate the tracked request, target files, protected limits, and template
+  -> render fixed tokens without importing repository Python
+  -> publish the ignored job-run snapshot and compact external state record
+  -> return bounded JSON and append the local audit event
+```
 
 ## Exit codes
 

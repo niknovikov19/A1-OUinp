@@ -1207,3 +1207,149 @@ Local `netpyne` test evidence:
 
 No NEURON, BatchTools, protected helper, remote host, or scheduler operation
 was invoked by the new B0.2 tests.
+
+## Gate-B architecture review and plan reset
+
+The B0.1 conclusion and B0.2a layout above were reviewed before any protected
+Gate-B promotion or real simulation submission. The review found that the
+earlier `exp_results/automation/...` proposal mixed two separate goals:
+
+- testing whether HPC-Codex can safely prepare, submit, and observe real jobs;
+- redesigning the repository's experiment-management and result layout.
+
+The agreed direction is to test the first goal while preserving the current
+scientific organization:
+
+```text
+exp_configs/<experiment>/
+exp_results/<experiment>/<exp_name_sub>/
+
+workflow_configs/<workflow>/
+exp_results/workflows/<workflow>/<run-id>/
+```
+
+Scientific parameters remain in `exp_cfg.py`, `batch_params.py`, and
+`workflow_cfg.py`. `exp_name_sub` remains the ordinary experiment's
+human-readable scientific result identity. A change to Slurm resources changes
+a tracked job request, not the experiment configuration or result name.
+
+The revised job-preparation layout is:
+
+```text
+hpc_jobs/requests/                  # tracked reviewed requests
+hpc_jobs/templates/                 # tracked reviewed shell templates
+hpc_jobs/runs/<run-id>/             # ignored prepared job records and logs
+```
+
+The prepared run directory holds `request.json`, `run.json`,
+`submission.json`, the exact `submit.sh`, and top-level Slurm stdout/stderr.
+Scientific results and BatchTools/workflow child logs stay in their established
+repository locations. The external HPC-Codex state root contains only compact
+authoritative audit, job-ID, path, hash, cursor, and lock records.
+
+The protected machinery is planned as a generic policy for approved tracked
+requests and templates. Gate B first exercises a single simulation job, a
+BatchTools main job, and a workflow manager job; these are initial test shapes,
+not permanent hard-coded operation types. Top-level jobs are submitted only
+with `sbatch`.
+
+Initial collision handling remains conservative: the request's expected
+result path is an assertion, an existing non-empty destination is rejected,
+and no overwrite, deletion, archive, resume, or automatic rerun layout is
+introduced. B1 will use a fresh purpose-built scientific result identity.
+
+The previous `B0.1 PASS` is therefore superseded. B0.1 is reopened pending
+approval of the revised repository contract in `B0_IMPLEMENTATION_PLAN.md`.
+The committed B0.2a validation code remains provisional and must be revised or
+removed before implementation resumes; it was not promoted or used to submit
+a job.
+
+Review conclusion: planning only. No Gate-B helper implementation, protected
+promotion, remote mutation, or Slurm submission was performed during this
+architecture review.
+
+## B0.2 revised repository interface
+
+The approved replacement removes the provisional `automation_run.py` model
+and preserves the established scientific result paths. The implementation
+adds:
+
+- `hpc_job.py`: strict request, resource, result-path, job-run, commit, and
+  fixed-token template validation;
+- `hpc_preflight.py`: read-only scientific path and job-count resolution from
+  `exp_cfg.py`, `batch_params.py`, and `workflow_cfg.py`;
+- tracked request documentation/schema and single, BatchTools-main, and
+  workflow-manager templates beneath `hpc_jobs/`;
+- ignored top-level job records and logs beneath `hpc_jobs/runs/`;
+- tracked-request selection and result-path assertion in `run_exp.py`;
+- tracked BatchTools operational settings in `grid_search_slurm_local.py`,
+  while preserving its former no-argument defaults;
+- effective `run_workflow.py` CLI selection, per-stage simulation resources,
+  exact stage-name validation, and a whole-workflow simulation-job budget.
+
+The exact Git commit is deliberately external to the tracked request. A
+tracked file cannot contain the hash of the commit that contains that same
+file. B0.3 preparation will accept and record the exact clean commit separately
+and bind it to the request and rendered-script hashes.
+
+Local `netpyne` evidence:
+
+- 29 Gate-B contract, preflight, BatchTools-main, and workflow-entry tests
+  passed;
+- all 36 `test_workflow.py` tests passed;
+- all 16 `test_workflow_dummy.py` tests passed;
+- the three previously recorded `test_workflow_fullsim.py` failures were
+  reproduced unchanged: two stale expected values and one incomplete
+  `sim_data_analyzer` mock;
+- all three tracked templates passed fixed-token rendering and `bash -n`;
+- JSON schema syntax and Python compilation passed;
+- a real single-config preflight resolved
+  `exp_results/single_rxbkg_state1_mech1/net_newsec/`
+  `exp_a1_ee_fade_pulses_seed_1111_t_7.0_10.0_ictrl_wmult_0.25_ee_0.5_`
+  `pulse_TCM_d_150_T_500_c_25_w_0.1_r_100.0_544.0_t0_5000_jit_0`;
+- a real batch-config preflight resolved
+  `exp_results/batch_rxbkg_state1_mech1/net_newsec_var_seed/`
+  `exp_a1_ee_fade_nseed_15_t_15.0_20.0_ictrl_wmult_0.25_ee_0.5` and
+  calculated 15 jobs directly from the `seed_main` axis.
+
+The local `netpyne` environment does not contain Ray, so the implementation
+loads BatchTools/Ray only when a batch is actually launched. This allowed the
+repository contract and resource mapping to be tested without launching a
+batch. The HPC `netpyne_batch_slurm` environment must be checked for the
+existing BatchTools/Ray runtime before B2.
+
+No candidate helper, protected installation, remote checkout, SSH operation,
+Slurm command, or simulation was invoked. Gate conclusion: B0.2 PASS locally.
+
+## B0.3 protected-preparation candidate
+
+The candidate adds a fixed local `hpc-job-prepare` command and one lethe
+preparation helper. The remote side requires the exact clean `codex-hpc`
+commit, reads one tracked request, verifies its scientific configuration files
+are tracked, enforces protected resource ceilings, and accepts only the fixed
+template path and SHA256 from protected configuration. It renders a fixed
+token set into `hpc_jobs/runs/<run-id>/submit.sh`, stores read-only request and
+run snapshots, and writes a compact mode-`0600` state copy.
+
+Local verification evidence:
+
+- 29 Gate-B contract, preflight, BatchTools-main, and workflow-entry tests
+  passed in the local `netpyne` environment;
+- all 36 workflow regression tests and all 16 dummy-workflow tests passed;
+- Python AST parsing, shell `bash -n`, JSON parsing, Draft 2020-12 schema
+  checks, request/config instance validation, and protected template SHA256
+  checks passed;
+- the real `b0-prepare-single` scientific preflight resolved one planned job
+  and the exact expected established result path;
+- the candidate source contains no `sbatch`, `squeue`, `sacct`, lattice/grid
+  call, or repository-module loader;
+- reviewed source hashes and bundle identity are fixed in `INSTALL_B0_3.md`
+  and both promotion scripts.
+
+The local preflight printed the known missing-local-MPI warning but returned
+status `ok`; it did not construct a network or run a simulation. No candidate
+helper was executed or sourced, no protected file was changed, no SSH or Git
+remote operation was used, and no scheduler command was called.
+
+Gate conclusion: B0.3 candidate ready for commit, exact-checkout update, manual
+promotion, and installed-command testing. B0.3 has not passed yet.
