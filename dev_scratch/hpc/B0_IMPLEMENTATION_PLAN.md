@@ -1,8 +1,9 @@
 # B0 repository-integration plan
 
-Status: revised design approved. B0.1 and B0.2 pass locally. The B0.3
-protected-preparation candidate is implemented and awaits manual promotion and
-installed-command tests.
+Status: revised design approved. B0.1 and B0.2 pass locally, B0.3 passed
+promotion and installed-command tests at commit
+`c6a60561a0cba178edaf8b673d6f25c618ce248a`, and B0.4 passes its local
+fixture gate. B0.5 is next.
 
 The earlier B0.2a `exp_results/automation/...` prototype has been removed. The
 replacement keeps scientific results in their established locations and puts
@@ -229,7 +230,7 @@ remain unavailable until separately designed and tested.
 
 ## B0 implementation status
 
-Completed in B0.1-B0.2 and the B0.3 candidate:
+Completed in B0.1-B0.4:
 
 1. Audited representative single and batch experiments and workflow code for
    result-name resolution, collision behavior, expected files, and consumers.
@@ -252,15 +253,18 @@ Completed in B0.1-B0.2 and the B0.3 candidate:
 9. Added protected local and lethe preparation candidates, configuration,
    schemas, fixtures, promotion scripts, and handoff instructions without
    executing a candidate from the repository.
-
-Remaining:
-
 10. Commit, push, update the exact automation checkout, and manually promote
     both B0.3 candidates.
 11. Test the installed preparation command, idempotency, rejected inputs, and
     immutable records without submission.
-12. Implement the fixture-only B0.4 real-job boundary and the purpose-built B1
-    request/preflight in B0.5. Do not submit a simulation during B0.
+12. Add the fixture-only B0.4 lifecycle contract for exact-commit locking,
+    one-intent/one-receipt submission, fixed log paths, bounded child records,
+    terminal evidence, and explicit active-run release.
+
+Remaining:
+
+13. Add the purpose-built B1 request and local preflight in B0.5. Do not
+    submit a simulation during B0.
 
 ## Progressive B0 review points
 
@@ -292,17 +296,23 @@ Pass condition: after manual promotion, a reviewed request produces one
 hash-bound `hpc_jobs/runs/<run-id>/submit.sh` and small external state records,
 without submission.
 
-Status: candidate ready. The protected helper validates the tracked request,
-exact clean commit, protected limits, tracked target files, and allowlisted
-template hash. It renders fixed tokens and writes immutable snapshots without
-executing repository Python or contacting Slurm. Promotion and installed-copy
-tests are still pending.
+Status: PASS. The protected helper validated the tracked request, exact clean
+commit, protected limits, tracked target files, and allowlisted template hash.
+The installed command prepared one immutable run snapshot, repeated it as an
+idempotent no-op, rejected invalid identifiers and commit values, and created
+no submission record or scheduler state.
 
 ### B0.4: protected real-job boundary
 
 Pass condition: fixtures prove exact-commit locking, one-intent/one-receipt
 submission handling, bounded log-path resolution, child-record ingestion, and
 explicit finalize/release behavior without calling `sbatch`.
+
+Status: PASS locally. `hpc_job_lifecycle.py` and its checked-in fixture prove
+the record and transition contract with no scheduler command. Eighteen focused
+tests cover clean exact-commit checks, fail-closed pending and unknown
+submissions, idempotent receipts, bounded top-level and child logs, child-job
+limits, terminal evidence, and explicit active-marker release.
 
 ### B0.5: B1 request and local smoke tests
 

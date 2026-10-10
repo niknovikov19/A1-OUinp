@@ -8,6 +8,8 @@ This folder contains the repository-owned part of the HPC-Codex contract.
   submission records.
 - `job-request.schema.json` documents the request JSON shape enforced by
   `hpc_job.py`.
+- `hpc_job_lifecycle.py` defines the exact submission, log, child-job,
+  finalization, and release records used by later protected helpers.
 
 Requests contain scientific target names and operational resources. Scientific
 parameter values remain in `exp_configs/` or `workflow_configs/`. The expected
@@ -20,3 +22,7 @@ tracked request because a file cannot contain the hash of its own commit.
 Protected preparation never imports repository experiment or workflow Python.
 Scientific preflight runs locally and again inside the allocated top-level
 Slurm job before expensive work or child-job submission.
+
+The lifecycle module contains no scheduler command. Its fixture tests prove
+fail-closed intent/receipt transitions and path bounds before B1 connects the
+same record contract to a protected `sbatch` helper.

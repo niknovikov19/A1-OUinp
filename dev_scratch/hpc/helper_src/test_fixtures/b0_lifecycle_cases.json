@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "prepared": {
+    "schema_version": 1,
+    "request_id": "b0-batch",
+    "request_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "run_id": "b0-batch-001",
+    "job_kind": "batch",
+    "git_commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "simulation_job_limit": 2,
+    "expected_result_path": "exp_results/group/batch/exp_001",
+    "completion_files": [
+      "result.json"
+    ],
+    "job_run_dir": "/repo/A1_OUinp/hpc_jobs/runs/b0-batch-001",
+    "submit_script": "/repo/A1_OUinp/hpc_jobs/runs/b0-batch-001/submit.sh",
+    "stdout_path": "/repo/A1_OUinp/hpc_jobs/runs/b0-batch-001/slurm-%j.out",
+    "stderr_path": "/repo/A1_OUinp/hpc_jobs/runs/b0-batch-001/slurm-%j.err",
+    "status": "prepared",
+    "rendered_script_sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+  },
+  "intent_at_utc": "2026-10-10T12:00:00+00:00",
+  "submitted_at_utc": "2026-10-10T12:00:01+00:00",
+  "finalized_at_utc": "2026-10-10T12:10:00+00:00",
+  "released_at_utc": "2026-10-10T12:10:01+00:00",
+  "slurm_job_id": 117900,
+  "scheduler_state": "COMPLETED",
+  "present_completion_files": [
+    "result.json"
+  ],
+  "children_jsonl": "{\"child_key\":\"sim-000\",\"run_id\":\"b0-batch-001\",\"schema_version\":1,\"slurm_job_id\":120001,\"stderr_path\":\"exp_results/group/batch/exp_001/batchtools/logs/sim-000.err\",\"stdout_path\":\"exp_results/group/batch/exp_001/batchtools/logs/sim-000.out\"}\n{\"child_key\":\"sim-001\",\"run_id\":\"b0-batch-001\",\"schema_version\":1,\"slurm_job_id\":120002,\"stderr_path\":\"exp_results/group/batch/exp_001/batchtools/logs/sim-001.err\",\"stdout_path\":\"exp_results/group/batch/exp_001/batchtools/logs/sim-001.out\"}"
+}

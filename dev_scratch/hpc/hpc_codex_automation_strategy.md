@@ -164,7 +164,10 @@ The B0.3 candidate implements the preparation half of this contract. It reads
 only an exact tracked request and a protected-hash-allowlisted template,
 enforces protected resource ceilings, and creates the ignored job-run snapshot
 plus a compact external state copy. It does not import repository Python or
-contact Slurm. The hash-rechecking submission half remains a later gate.
+contact Slurm. B0.4 defines and fixture-tests the exact-commit,
+intent/receipt, log-path, child-record, finalization, and release contract that
+the later protected submission helper must use. It still contains no scheduler
+command.
 
 For batch runs, record resources for the BatchTools main job separately from
 resources for child simulation jobs. For workflows, record resources for the

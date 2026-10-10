@@ -1351,5 +1351,66 @@ status `ok`; it did not construct a network or run a simulation. No candidate
 helper was executed or sourced, no protected file was changed, no SSH or Git
 remote operation was used, and no scheduler command was called.
 
-Gate conclusion: B0.3 candidate ready for commit, exact-checkout update, manual
-promotion, and installed-command testing. B0.3 has not passed yet.
+Promotion and installed-command evidence at commit
+`c6a60561a0cba178edaf8b673d6f25c618ce248a`:
+
+- local and lethe promotion reports both returned `B0_PREPARE_RESULT=PASS`;
+- protected bundle `0.8.0-b0`, source hashes, configuration, ownership, and
+  modes matched `INSTALL_B0_3.md`;
+- the automation checkout was clean, on `codex-hpc`, and at the exact commit;
+- the first installed invocation prepared `b0-prepare-single-001`, and the
+  second returned `already-prepared` with identical request and script hashes;
+- invalid request ID, invalid run ID, malformed commit, and valid-but-wrong
+  commit inputs all returned exit code 2 and appeared as rejected audit events;
+- the rejected run IDs produced no repository run directory or compact state
+  record;
+- the accepted run directory was mode `0700`, its three files were mode
+  `0444`, and its compact external record was mode `0600`;
+- the accepted directory contained only `request.json`, `run.json`, and
+  `submit.sh`; it had no `submission.json` or controller directory.
+
+No B0.3 test called `sbatch`, created a Slurm ID, or started a simulation.
+Gate conclusion: B0.3 PASS. B0.4 fixture-based real-job boundary testing is
+next.
+
+## B0.4 fixture-only job lifecycle
+
+The tracked `hpc_job_lifecycle.py` module defines the record contract that the
+later protected submission helper must use. It does not contain `sbatch`, a
+subprocess interface, SSH, scheduler queries, or a callable command-line entry
+point.
+
+Fixture and transition evidence:
+
+- the checkout must remain clean at the exact prepared commit;
+- one absent submission record produces one pending intent;
+- a pending intent accepts one Slurm ID receipt, while a repeated submitted
+  record returns the existing ID;
+- pending and unknown outcomes reject automatic retry;
+- state records are created exclusively at mode `0600`, replaced only from
+  exact expected contents, and never silently overwritten;
+- top-level log paths are derived only from the prepared `%j` paths and the
+  receipt job ID;
+- child-job JSONL is UTF-8 and byte bounded, limited by the prepared maximum,
+  unique by child key and Slurm ID, and confined below the expected scientific
+  result directory;
+- successful finalization requires a terminal `COMPLETED` state and every
+  declared completion file; failed terminal states may finalize without
+  successful output evidence;
+- the active-run marker remains separate from finalization and is released
+  only after the complete terminal record matches its run, commit, request,
+  and rendered-script identities.
+
+Local `netpyne` verification:
+
+- all 18 focused lifecycle tests passed, including the checked-in JSON
+  lifecycle fixture;
+- the existing 29 request, render, preflight, batch-entry, and workflow-entry
+  tests passed unchanged;
+- all 36 workflow regression tests and all 16 dummy-workflow tests passed;
+- Python compilation, JSON parsing, line-length checks, and `git diff --check`
+  passed.
+
+No protected candidate was executed or installed, and no SSH, Git remote,
+Slurm, or simulation command was called. Gate conclusion: B0.4 PASS locally.
+B0.5 purpose-built B1 request and local preflight are next.

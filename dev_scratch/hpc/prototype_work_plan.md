@@ -513,7 +513,7 @@ Do not add these until the prototype has been used successfully on several real 
 
 ## Immediate next action
 
-Commit and push the reviewed B0.2 interface and B0.3 preparation candidates,
-then update the automation checkout through A2. The user manually runs the two
-promotion scripts in `INSTALL_B0_3.md`; Codex then tests only the installed
-command. B0.3 prepares one script and records hashes but does not submit a job.
+Begin B0.5: add one purpose-built B1 single-experiment request and run its
+local scientific preflight, request validation, template rendering, and result
+collision checks. B0.4 passed locally with fixture-only lifecycle tests; it did
+not invoke a scheduler or install another helper.
