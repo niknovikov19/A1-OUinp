@@ -1,0 +1,76 @@
+# Local A1-OUinp staging
+prefix_rule(
+    pattern = ["git", "add"],
+    decision = "allow",
+    justification = "Stage reviewed files in the trusted A1-OUinp repository.",
+)
+
+prefix_rule(
+    pattern = ["git", "commit"],
+    decision = "allow",
+    justification = "Create a recoverable local commit in the trusted A1-OUinp repository.",
+)
+
+# Existing A1-OUinp branch push permission
+prefix_rule(
+    pattern = ["git", "push", "origin", "codex-hpc"],
+    decision = "allow",
+    justification = "Push the A1-OUinp codex-hpc branch to origin.",
+    match = [
+        "git push origin codex-hpc",
+    ],
+    not_match = [
+        "git push origin main",
+        "git push upstream codex-hpc",
+    ],
+)
+
+# Protected read-only HPC-Codex operations
+prefix_rule(
+    pattern = ["/opt/a1-hpc/bin/hpc-helper-info"],
+    decision = "allow",
+    justification = "Inspect the protected HPC-Codex installation and redacted configuration.",
+)
+
+prefix_rule(
+    pattern = ["/opt/a1-hpc/bin/hpc-probe"],
+    decision = "allow",
+    justification = "Run a fixed bounded connectivity probe through protected helpers.",
+)
+
+prefix_rule(
+    pattern = ["/opt/a1-hpc/bin/hpc-code-status"],
+    decision = "allow",
+    justification = "Inspect the fixed A1-OUinp automation checkout without modifying it.",
+)
+
+prefix_rule(
+    pattern = ["/opt/a1-hpc/bin/hpc-run-preview"],
+    decision = "allow",
+    justification = "Preview one reviewed A1-OUinp request without submitting it.",
+)
+
+prefix_rule(
+    pattern = ["/opt/a1-hpc/bin/hpc-status"],
+    decision = "allow",
+    justification = "Query bounded scheduler state for a recorded A1-OUinp run.",
+)
+
+prefix_rule(
+    pattern = ["/opt/a1-hpc/bin/hpc-log"],
+    decision = "allow",
+    justification = "Read bounded incremental logs for a recorded A1-OUinp run.",
+)
+
+# Protected state-changing HPC-Codex operations
+prefix_rule(
+    pattern = ["/opt/a1-hpc/bin/hpc-code-update"],
+    decision = "allow",
+    justification = "Update only the fixed clean A1-OUinp checkout to one validated commit.",
+)
+
+prefix_rule(
+    pattern = ["/opt/a1-hpc/bin/hpc-submit"],
+    decision = "allow",
+    justification = "Submit only a reviewed A1-OUinp request within protected limits.",
+)
