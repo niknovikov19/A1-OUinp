@@ -570,6 +570,52 @@ job alive. Child-aware status and log operations expose the real scheduler
 state and the selected child error without an ad hoc SSH command. Cancellation
 remains a separate scheduler mutation and requires its own protected operation.
 
+## B5 selective result access
+
+```text
+local/hpc-result
+remote_lethe/hpc-lethe-result
+hpc_result.py
+promotion/promote_b5_result_local.sh
+promotion/promote_b5_result_lethe.sh
+INSTALL_B5.md
+```
+
+`hpc-result inventory RUN_ID` accepts only a finalized successful run. On its
+first call, the lethe helper loads matching repository and protected lifecycle
+records, reads the already-validated `jobs/index.jsonl`, and inspects only the
+declared child outputs. It records child parameters, artifact type, repository-
+relative path, size, modification time, and a checksum for bounded files. The
+inventory is then stored under protected state and reused on later calls.
+
+`hpc-result get RUN_ID CHILD_KEY ARTIFACT_TYPE` resolves exactly one entry from
+that inventory. It accepts no path or wildcard, rejects changed files and
+artifacts above 256 KiB, and copies the verified bytes beneath the ignored
+`exp_results_local/hpc_codex/<run-id>/` cache. Before requesting bytes, the
+local helper compares an existing cache file with inventory size and checksum;
+a match returns `cache-hit` without repeating the artifact transfer.
+
+### B5 call chains
+
+```text
+Codex
+  -> /opt/a1-hpc/bin/hpc-result inventory RUN_ID
+  -> /usr/bin/ssh lethe
+  -> hpc-lethe-result inventory RUN_ID
+  -> verify matching complete-run records
+  -> load existing protected inventory, or inspect only declared outputs once
+  -> return compact artifact metadata
+```
+
+```text
+Codex
+  -> /opt/a1-hpc/bin/hpc-result get RUN_ID CHILD_KEY ARTIFACT_TYPE
+  -> obtain compact inventory metadata
+  -> return cache-hit when the ignored local copy has the same checksum
+  -> otherwise request the exact inventory entry from hpc-lethe-result
+  -> verify size and checksum and atomically write the local cached copy
+```
+
 ## Exit codes
 
 - `0`: success;

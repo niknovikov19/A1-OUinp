@@ -1867,3 +1867,24 @@ Finalization verified the child index and the successful child's result,
 recorded `run_status: failed`, and preserved the missing failed-child result as
 evidence. The run was released without retry or duplicate submission. Together
 with the existing fail-closed fixtures and B2/B3 signal cases, B4 passes.
+
+## B5 implementation candidate
+
+The candidate adds a separate `hpc-result` operation rather than expanding
+`hpc-job` with file access. It accepts only a complete run ID for inventory,
+or a complete run ID plus exact child key and allowlisted artifact type for
+retrieval. It never accepts a result path.
+
+Inventory generation uses matching repository/protected prepared and final
+records plus the bounded child index already ingested by B2 finalization. It
+opens only declared child outputs, records compact metadata, and persists the
+result beneath protected state. Retrieval checks the stored size, modification
+time, and checksum before returning one artifact. The local helper writes only
+to the ignored `exp_results_local/hpc_codex/` cache and detects a matching
+cached copy before requesting artifact bytes.
+
+Focused unit tests cover declared-output inventory, exact selection, bounded
+reads, unknown selectors, changed files, symlinks, and oversized transfers.
+The real B5 test remains pending manual promotion and will use one of the four
+small JSON artifacts from successful run `b3-tiny-batch-003` because that
+prototype run did not produce a PNG or PKL.

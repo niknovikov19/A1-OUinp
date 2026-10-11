@@ -1,0 +1,394 @@
+#!/usr/bin/env python3
+import argparse
+import base64
+import hashlib
+import json
+import os
+from pathlib import Path, PurePosixPath
+import stat
+import subprocess
+import sys
+
+sys.dont_write_bytecode = True
+
+from hpc_common import (
+    EXIT_FAILED,
+    EXIT_REJECTED,
+    EXIT_SUCCESS,
+    EXIT_UNKNOWN,
+    HelperFailure,
+    RejectedInput,
+    append_audit_event,
+    get_config_identity,
+    load_config,
+    validate_request_id,
+    validate_run_id,
+)
+
+
+SSH_PATH = '/usr/bin/ssh'
+RESULT_CONFIG_PATH = Path('/opt/a1-hpc/config/A1_OUinp-result.json')
+MAX_REMOTE_BYTES = 524288
+REMOTE_TIMEOUT_SEC = 120
+ALLOWED_ARTIFACT_TYPES = {'result-json', 'raster', 'data-pkl'}
+
+
+class RemoteUnavailable(RuntimeError):
+    """Represent an unavailable or invalid remote result response. """
+
+
+def build_parser():
+    """Build the fixed local result-operation parser. """
+    parser = argparse.ArgumentParser(description='Inspect exact completed results.')
+    parser.add_argument('--json', action='store_true')
+    commands = parser.add_subparsers(dest='operation', required=True)
+    inventory = commands.add_parser('inventory')
+    inventory.add_argument('run_id')
+    get = commands.add_parser('get')
+    get.add_argument('run_id')
+    get.add_argument('child_key')
+    get.add_argument('artifact_type', choices=sorted(ALLOWED_ARTIFACT_TYPES))
+    return parser
+
+
+def validate_args(args):
+    """Validate public result selectors before any connection. """
+    args.run_id = validate_run_id(args.run_id)
+    if args.operation == 'get':
+        args.child_key = validate_request_id(args.child_key)
+    return args
+
+
+def load_result_config():
+    """Load the fixed non-secret local cache configuration. """
+    try:
+        file_stat = RESULT_CONFIG_PATH.lstat()
+        data = RESULT_CONFIG_PATH.read_bytes()
+    except OSError as exc:
+        raise HelperFailure(f'Cannot load result configuration: {exc}') from exc
+    if stat.S_ISLNK(file_stat.st_mode) or not stat.S_ISREG(file_stat.st_mode):
+        raise HelperFailure('Result configuration must be a regular file')
+    if stat.S_IMODE(file_stat.st_mode) != 0o444 or len(data) > 65536:
+        raise HelperFailure('Result configuration mode or size is invalid')
+    try:
+        value = json.loads(data.decode())
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise HelperFailure(f'Invalid result configuration: {exc}') from exc
+    required = {'schema_version', 'remote_helper', 'cache_root'}
+    if not isinstance(value, dict) or set(value) != required:
+        raise HelperFailure('Invalid result configuration keys')
+    if value['schema_version'] != 1:
+        raise HelperFailure('Invalid result configuration version')
+    for key in ('remote_helper', 'cache_root'):
+        if not isinstance(value[key], str) or not Path(value[key]).is_absolute():
+            raise HelperFailure(f'Invalid result configuration {key}')
+    return value
+
+
+def build_ssh_command(config, result_config, args):
+    """Build one fixed SSH invocation of the protected lethe helper. """
+    command = [
+        SSH_PATH,
+        '-o', 'BatchMode=yes',
+        '-o', f'ConnectTimeout={config["ssh"]["connect_timeout_sec"]}',
+        '--', config['ssh']['lethe_host_alias'],
+        result_config['remote_helper'],
+        args.operation,
+        args.run_id,
+    ]
+    if args.operation == 'get':
+        command.extend([args.child_key, args.artifact_type])
+    return command
+
+
+def parse_remote_result(completed, operation, run_id):
+    """Validate one bounded structured lethe response. """
+    if len(completed.stdout) > MAX_REMOTE_BYTES:
+        raise RemoteUnavailable('Remote result response is too large')
+    try:
+        result = json.loads(completed.stdout.decode())
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        details = completed.stderr.decode(errors='replace')[:500]
+        raise RemoteUnavailable(f'Remote result was not JSON: {details}') from exc
+    valid = (
+        isinstance(result, dict) and
+        result.get('operation') == f'result-{operation}' and
+        result.get('status') in {'ok', 'rejected', 'unknown', 'failed'}
+    )
+    if not valid:
+        raise RemoteUnavailable('Remote result response was invalid')
+    if result['status'] == 'ok' and result.get('run_id') != run_id:
+        raise RemoteUnavailable('Remote result response has another run ID')
+    return result
+
+
+def run_remote(config, result_config, args):
+    """Run and validate one fixed remote result operation. """
+    try:
+        completed = subprocess.run(
+            build_ssh_command(config, result_config, args),
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            timeout=REMOTE_TIMEOUT_SEC,
+            check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        raise RemoteUnavailable(f'Remote result unavailable: {exc}') from exc
+    result = parse_remote_result(completed, args.operation, args.run_id)
+    expected = {
+        EXIT_SUCCESS: 'ok',
+        EXIT_REJECTED: 'rejected',
+        EXIT_FAILED: 'failed',
+    }
+    if expected.get(completed.returncode) != result['status']:
+        raise RemoteUnavailable('Remote result exit status was inconsistent')
+    result['local_config_sha256'] = get_config_identity(config)
+    return result, completed.returncode
+
+
+def select_inventory_artifact(inventory, child_key, artifact_type):
+    """Select one exact artifact from a validated remote inventory response. """
+    artifacts = inventory.get('artifacts') if isinstance(inventory, dict) else None
+    if not isinstance(artifacts, list):
+        raise RemoteUnavailable('Remote inventory artifacts are invalid')
+    selected = [
+        item for item in artifacts
+        if isinstance(item, dict) and item.get('child_key') == child_key and
+        item.get('artifact_type') == artifact_type
+    ]
+    if len(selected) != 1:
+        raise RemoteUnavailable('Remote inventory selection is invalid')
+    artifact = selected[0]
+    required = {
+        'child_key', 'parameters', 'artifact_type', 'relative_path',
+        'size_bytes', 'mtime_ns', 'sha256',
+    }
+    if set(artifact) != required:
+        raise RemoteUnavailable('Remote artifact metadata is invalid')
+    checksum = artifact['sha256']
+    valid_size = (
+        isinstance(artifact['size_bytes'], int) and
+        not isinstance(artifact['size_bytes'], bool) and
+        artifact['size_bytes'] >= 0
+    )
+    valid_checksum = (
+        isinstance(checksum, str) and len(checksum) == 64 and
+        all(char in '0123456789abcdef' for char in checksum)
+    )
+    if not valid_size or not valid_checksum:
+        raise RemoteUnavailable('Remote artifact is not retrievable')
+    if not isinstance(artifact['relative_path'], str):
+        raise RemoteUnavailable('Remote artifact path is invalid')
+    return artifact
+
+
+def require_cache_directory(fpath):
+    """Create or validate one real private cache directory. """
+    current = Path(fpath.anchor)
+    for part in fpath.parts[1:]:
+        current /= part
+        try:
+            current.mkdir(mode=0o700)
+        except FileExistsError:
+            pass
+        except OSError as exc:
+            raise HelperFailure(f'Cannot create result cache: {exc}') from exc
+        try:
+            file_stat = current.lstat()
+        except OSError as exc:
+            raise HelperFailure(f'Cannot inspect result cache: {exc}') from exc
+        if stat.S_ISLNK(file_stat.st_mode) or not stat.S_ISDIR(file_stat.st_mode):
+            raise HelperFailure('Result cache path contains a symlink')
+
+
+def cache_path(result_config, args, artifact):
+    """Return the fixed local path for one selected artifact. """
+    basename = PurePosixPath(artifact['relative_path']).name
+    if not basename or '/' in basename or basename in {'.', '..'}:
+        raise RemoteUnavailable('Remote artifact name is invalid')
+    cache_root = Path(result_config['cache_root'])
+    target_dir = cache_root / args.run_id / args.child_key
+    require_cache_directory(target_dir)
+    return target_dir / basename
+
+
+def cached_artifact_matches(fpath, artifact):
+    """Return whether one regular cached copy matches the inventory checksum. """
+    flags = os.O_RDONLY | getattr(os, 'O_CLOEXEC', 0)
+    flags |= getattr(os, 'O_NOFOLLOW', 0)
+    try:
+        file_id = os.open(fpath, flags)
+    except FileNotFoundError:
+        return False
+    except OSError as exc:
+        raise HelperFailure(f'Cannot inspect cached result: {exc}') from exc
+    try:
+        file_stat = os.fstat(file_id)
+        if not stat.S_ISREG(file_stat.st_mode):
+            raise HelperFailure('Cached result must be a regular file')
+        if file_stat.st_size != artifact['size_bytes']:
+            return False
+        digest = hashlib.sha256()
+        offset = 0
+        while offset < file_stat.st_size:
+            data = os.pread(file_id, min(65536, file_stat.st_size - offset), offset)
+            if not data:
+                raise HelperFailure('Cached result changed while reading')
+            digest.update(data)
+            offset += len(data)
+    except OSError as exc:
+        raise HelperFailure(f'Cannot read cached result: {exc}') from exc
+    finally:
+        os.close(file_id)
+    return digest.hexdigest() == artifact['sha256']
+
+
+def write_cache(fpath, data, artifact):
+    """Atomically store one verified small artifact in the ignored cache. """
+    if len(data) != artifact['size_bytes']:
+        raise RemoteUnavailable('Transferred artifact size differs')
+    if hashlib.sha256(data).hexdigest() != artifact['sha256']:
+        raise RemoteUnavailable('Transferred artifact checksum differs')
+    temp = fpath.with_name(f'.{fpath.name}.{os.getpid()}.tmp')
+    flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
+    flags |= getattr(os, 'O_CLOEXEC', 0) | getattr(os, 'O_NOFOLLOW', 0)
+    try:
+        file_id = os.open(temp, flags, 0o600)
+        try:
+            os.write(file_id, data)
+            os.fsync(file_id)
+        finally:
+            os.close(file_id)
+        os.replace(temp, fpath)
+    except OSError as exc:
+        raise HelperFailure(f'Cannot write cached result: {exc}') from exc
+
+
+def get_result(config, result_config, args):
+    """Use inventory metadata to cache one exact artifact locally. """
+    inventory_args = argparse.Namespace(operation='inventory', run_id=args.run_id)
+    inventory_result, exit_code = run_remote(config, result_config, inventory_args)
+    if exit_code != EXIT_SUCCESS:
+        return inventory_result, exit_code
+    artifact = select_inventory_artifact(
+        inventory_result.get('inventory'),
+        args.child_key,
+        args.artifact_type,
+    )
+    fpath = cache_path(result_config, args, artifact)
+    if cached_artifact_matches(fpath, artifact):
+        return {
+            'schema_version': 1,
+            'operation': 'result-get',
+            'status': 'ok',
+            'result': 'cache-hit',
+            'run_id': args.run_id,
+            'artifact': artifact,
+            'cache_path': fpath.as_posix(),
+            'local_config_sha256': get_config_identity(config),
+        }, EXIT_SUCCESS
+    transfer, exit_code = run_remote(config, result_config, args)
+    if exit_code != EXIT_SUCCESS:
+        return transfer, exit_code
+    if transfer.get('artifact') != artifact:
+        raise RemoteUnavailable('Transferred artifact metadata differs')
+    try:
+        data = base64.b64decode(transfer.pop('content_base64'), validate=True)
+    except (KeyError, ValueError) as exc:
+        raise RemoteUnavailable('Transferred artifact encoding is invalid') from exc
+    write_cache(fpath, data, artifact)
+    transfer['cache_path'] = fpath.as_posix()
+    transfer['result'] = 'downloaded'
+    return transfer, exit_code
+
+
+def concise_output(result):
+    """Print one compact human-readable result-operation response. """
+    if result['status'] != 'ok':
+        print(f'Status: {result["status"]}')
+        print(f'Reason: {result.get("reason", "unknown")}')
+        if result.get('details'):
+            print(f'Details: {result["details"]}')
+        return
+    print('Status: ok')
+    print(f'Run: {result["run_id"]}')
+    if result['operation'] == 'result-inventory':
+        print(f'Artifacts: {result["inventory"]["artifact_count"]}')
+        for item in result['inventory']['artifacts']:
+            print(
+                f'{item["child_key"]} {item["artifact_type"]} '
+                f'{item["size_bytes"]} {item["relative_path"]}'
+            )
+    else:
+        print(f'Result: {result["result"]}')
+        print(f'Cache: {result["cache_path"]}')
+
+
+def audit_or_fail(action, status, exit_code, raw_args, details=None):
+    """Write one mandatory local result-operation audit event. """
+    try:
+        append_audit_event(
+            action,
+            status,
+            exit_code,
+            raw_args,
+            details=details,
+            helper='hpc-result',
+        )
+        return True
+    except HelperFailure as exc:
+        print(f'Audit failure: {exc}', file=sys.stderr)
+        return False
+
+
+def main():
+    """Validate, audit, and run one fixed result operation. """
+    raw_args = sys.argv[1:]
+    try:
+        args = validate_args(build_parser().parse_args())
+        config = load_config()
+        result_config = load_result_config()
+    except (RejectedInput, HelperFailure) as exc:
+        if not audit_or_fail('result', 'rejected', EXIT_REJECTED, raw_args, exc):
+            return EXIT_FAILED
+        print(f'Rejected: {exc}', file=sys.stderr)
+        return EXIT_REJECTED
+    if not audit_or_fail(
+        f'result-{args.operation}-intent',
+        'accepted',
+        EXIT_SUCCESS,
+        raw_args,
+    ):
+        return EXIT_FAILED
+    try:
+        if args.operation == 'get':
+            result, exit_code = get_result(config, result_config, args)
+        else:
+            result, exit_code = run_remote(config, result_config, args)
+    except (RemoteUnavailable, HelperFailure) as exc:
+        result = {
+            'schema_version': 1,
+            'operation': f'result-{args.operation}',
+            'status': 'unknown',
+            'reason': 'result-unavailable',
+            'details': str(exc)[:500],
+        }
+        exit_code = EXIT_UNKNOWN
+    if not audit_or_fail(
+        f'result-{args.operation}',
+        result['status'],
+        exit_code,
+        raw_args,
+        result.get('reason'),
+    ):
+        return EXIT_FAILED
+    if args.json:
+        print(json.dumps(result, indent=2, sort_keys=True))
+    else:
+        concise_output(result)
+    return exit_code
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())

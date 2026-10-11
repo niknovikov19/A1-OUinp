@@ -7,7 +7,7 @@ import stat
 from datetime import datetime, timezone
 
 
-BUNDLE_VERSION = '0.12.0-b2'
+BUNDLE_VERSION = '0.13.0-b5'
 CONFIG_SCHEMA_VERSION = 1
 
 EXIT_SUCCESS = 0
@@ -23,6 +23,7 @@ RUNTIME_SOURCE_NAMES = (
     'hpc-job-prepare',
     'hpc-log',
     'hpc-probe',
+    'hpc-result',
     'hpc-run-preview',
     'hpc-status',
     'hpc-submit',
@@ -58,11 +59,15 @@ PUBLIC_AUDIT_ARGS = {
     'git-commit',
     'grid',
     'info',
+    'inventory',
     'job-label',
     'lethe',
     'log',
     'finalize',
     'release',
+    'result-json',
+    'raster',
+    'data-pkl',
     'run-id',
     'status',
     'submit',

@@ -1,0 +1,331 @@
+#!/usr/bin/env python3
+import argparse
+import base64
+import fcntl
+import json
+import os
+from datetime import datetime, timezone
+from pathlib import Path
+import stat
+import sys
+
+sys.dont_write_bytecode = True
+
+from hpc_job import canonical_json, validate_run_id, validate_safe_name
+from hpc_job_lifecycle import (
+    HpcJobLifecycleError,
+    parse_child_records,
+    validate_final_record,
+    validate_prepared_record,
+)
+from hpc_result import (
+    HpcResultError,
+    build_result_inventory,
+    read_inventory_artifact,
+    select_artifact,
+    validate_artifact_types,
+    validate_result_inventory,
+)
+
+
+CONFIG_PATH = Path(
+    '/ddn/niknovikov19/hpc_codex/config/A1_OUinp-result.json'
+)
+EXIT_SUCCESS = 0
+EXIT_REJECTED = 2
+EXIT_FAILED = 4
+MAX_RECORD_BYTES = 1048576
+
+
+class ResultFailure(RuntimeError):
+    """Represent a trusted result-helper failure. """
+
+
+def helper_identity():
+    """Return the reviewed lethe result-helper identity. """
+    return {'name': 'hpc-lethe-result', 'version': '0.13.0-b5'}
+
+
+def require_regular_file(fpath, label, mode=None):
+    """Require one real regular file with an optional exact mode. """
+    try:
+        file_stat = Path(fpath).lstat()
+    except OSError as exc:
+        raise ResultFailure(f'Cannot inspect {label}: {exc}') from exc
+    if stat.S_ISLNK(file_stat.st_mode) or not stat.S_ISREG(file_stat.st_mode):
+        raise ResultFailure(f'{label} must be a regular file')
+    if mode is not None and stat.S_IMODE(file_stat.st_mode) != mode:
+        raise ResultFailure(f'{label} must have mode {mode:04o}')
+
+
+def read_json(fpath, label):
+    """Read one bounded JSON object. """
+    require_regular_file(fpath, label)
+    try:
+        with open(fpath, 'rb') as fid:
+            data = fid.read(MAX_RECORD_BYTES + 1)
+    except OSError as exc:
+        raise ResultFailure(f'Cannot read {label}: {exc}') from exc
+    if len(data) > MAX_RECORD_BYTES:
+        raise ResultFailure(f'{label} is too large')
+    try:
+        return json.loads(data.decode())
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise ResultFailure(f'{label} is invalid JSON') from exc
+
+
+def validate_config(value):
+    """Validate the fixed non-secret B5 configuration. """
+    required = {
+        'schema_version', 'deployment_id', 'git', 'runs', 'state',
+        'artifact_types', 'limits',
+    }
+    if not isinstance(value, dict) or set(value) != required:
+        raise ResultFailure('Invalid result configuration keys')
+    if value['schema_version'] != 1:
+        raise ResultFailure('Invalid result configuration version')
+    validate_safe_name(value['deployment_id'], 'deployment ID')
+    git_required = {'automation_checkout'}
+    runs_required = {'root'}
+    state_required = {'root', 'inventory_dir', 'result_lock'}
+    if set(value['git']) != git_required or set(value['runs']) != runs_required:
+        raise ResultFailure('Invalid result path configuration')
+    if set(value['state']) != state_required:
+        raise ResultFailure('Invalid result state configuration')
+    for group in ('git', 'runs', 'state'):
+        for path in value[group].values():
+            if not isinstance(path, str) or not Path(path).is_absolute():
+                raise ResultFailure('Result configuration paths must be absolute')
+    validate_artifact_types(value['artifact_types'])
+    limits = value['limits']
+    if set(limits) != {'max_artifacts', 'max_transfer_bytes', 'checksum_max_bytes'}:
+        raise ResultFailure('Invalid result limits')
+    for name, limit in limits.items():
+        if isinstance(limit, bool) or not isinstance(limit, int) or limit < 1:
+            raise ResultFailure(f'Invalid {name}')
+    if limits['max_transfer_bytes'] > limits['checksum_max_bytes']:
+        raise ResultFailure('Transfer limit exceeds checksum limit')
+    return value
+
+
+def load_config():
+    """Load the fixed protected B5 configuration. """
+    require_regular_file(CONFIG_PATH, 'result configuration', mode=0o444)
+    return validate_config(read_json(CONFIG_PATH, 'result configuration'))
+
+
+def run_paths(config, run_id):
+    """Return exact repository records for one validated run ID. """
+    run_id = validate_run_id(run_id)
+    root = Path(config['runs']['root']) / run_id
+    return {'prepared': root / 'run.json', 'final': root / 'final.json'}
+
+
+def state_paths(config, run_id):
+    """Return exact protected records for one validated run ID. """
+    run_id = validate_run_id(run_id)
+    root = Path(config['state']['root'])
+    return {
+        'prepared': root / 'runs' / f'{run_id}.json',
+        'final': root / 'finals' / f'{run_id}.json',
+        'inventory': Path(config['state']['inventory_dir']) / f'{run_id}.json',
+    }
+
+
+def load_completed_run(config, run_id):
+    """Load matching prepared and successful final records. """
+    paths = run_paths(config, run_id)
+    state = state_paths(config, run_id)
+    prepared = validate_prepared_record(read_json(paths['prepared'], 'prepared record'))
+    protected = validate_prepared_record(
+        read_json(state['prepared'], 'protected prepared record')
+    )
+    if canonical_json(prepared) != canonical_json(protected):
+        raise ResultFailure('Prepared records differ')
+    if prepared['run_id'] != run_id:
+        raise HpcResultError('Prepared record does not match run ID')
+    final = validate_final_record(read_json(paths['final'], 'final record'), prepared)
+    protected_final = validate_final_record(
+        read_json(state['final'], 'protected final record'),
+        prepared,
+    )
+    if canonical_json(final) != canonical_json(protected_final):
+        raise ResultFailure('Final records differ')
+    if final['status'] != 'complete':
+        raise HpcResultError('Only complete runs expose results')
+    return prepared, final
+
+
+def load_children(config, prepared):
+    """Load only the bounded child index declared by one batch run. """
+    if prepared['job_kind'] != 'batch':
+        return []
+    fpath = (
+        Path(config['git']['automation_checkout']) /
+        prepared['expected_result_path'] /
+        'jobs/index.jsonl'
+    )
+    require_regular_file(fpath, 'child-job index')
+    try:
+        with open(fpath, 'rb') as fid:
+            payload = fid.read(65537)
+    except OSError as exc:
+        raise ResultFailure(f'Cannot read child-job index: {exc}') from exc
+    return parse_child_records(payload, prepared)
+
+
+def acquire_lock(config):
+    """Acquire the pre-created B5 inventory lock. """
+    fpath = Path(config['state']['result_lock'])
+    require_regular_file(fpath, 'result lock', mode=0o600)
+    flags = os.O_RDWR | getattr(os, 'O_CLOEXEC', 0)
+    flags |= getattr(os, 'O_NOFOLLOW', 0)
+    file_id = os.open(fpath, flags)
+    try:
+        fcntl.flock(file_id, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError as exc:
+        os.close(file_id)
+        raise ResultFailure('Result inventory operation is active') from exc
+    return file_id
+
+
+def create_inventory_record(fpath, inventory):
+    """Create one immutable protected inventory record. """
+    data = (canonical_json(inventory) + '\n').encode()
+    flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
+    flags |= getattr(os, 'O_CLOEXEC', 0) | getattr(os, 'O_NOFOLLOW', 0)
+    try:
+        file_id = os.open(fpath, flags, 0o600)
+        try:
+            os.write(file_id, data)
+            os.fsync(file_id)
+        finally:
+            os.close(file_id)
+    except OSError as exc:
+        raise ResultFailure(f'Cannot create result inventory: {exc}') from exc
+
+
+def load_or_create_inventory(config, run_id):
+    """Load one stored inventory or generate it once from known outputs. """
+    lock_id = acquire_lock(config)
+    try:
+        prepared, final = load_completed_run(config, run_id)
+        fpath = state_paths(config, run_id)['inventory']
+        if fpath.exists():
+            inventory = validate_result_inventory(
+                read_json(fpath, 'result inventory'),
+                prepared,
+            )
+            return inventory, 'existing'
+        children = load_children(config, prepared)
+        inventory = build_result_inventory(
+            config['git']['automation_checkout'],
+            prepared,
+            final,
+            children,
+            config['artifact_types'],
+            config['limits'],
+            datetime.now(timezone.utc).isoformat(),
+        )
+        create_inventory_record(fpath, inventory)
+        return inventory, 'created'
+    finally:
+        fcntl.flock(lock_id, fcntl.LOCK_UN)
+        os.close(lock_id)
+
+
+def inventory_result(config, run_id):
+    """Return one compact persisted result inventory. """
+    inventory, result_value = load_or_create_inventory(config, run_id)
+    return {
+        'schema_version': 1,
+        'operation': 'result-inventory',
+        'status': 'ok',
+        'result': result_value,
+        'run_id': run_id,
+        'inventory': inventory,
+        'helper': helper_identity(),
+    }
+
+
+def get_result(config, run_id, child_key, artifact_type):
+    """Return one exact small artifact selected only through the inventory. """
+    inventory, _ = load_or_create_inventory(config, run_id)
+    artifact = select_artifact(inventory, child_key, artifact_type)
+    data = read_inventory_artifact(
+        config['git']['automation_checkout'],
+        artifact,
+        config['limits']['max_transfer_bytes'],
+    )
+    return {
+        'schema_version': 1,
+        'operation': 'result-get',
+        'status': 'ok',
+        'result': 'transfer',
+        'run_id': run_id,
+        'artifact': artifact,
+        'content_base64': base64.b64encode(data).decode(),
+        'helper': helper_identity(),
+    }
+
+
+def error_result(operation, status, reason, details):
+    """Build one bounded structured result-helper error. """
+    return {
+        'schema_version': 1,
+        'operation': f'result-{operation}',
+        'status': status,
+        'reason': reason,
+        'details': str(details)[:500],
+    }
+
+
+def build_parser():
+    """Build the fixed lethe result-operation parser. """
+    parser = argparse.ArgumentParser(description='Inspect exact completed results.')
+    commands = parser.add_subparsers(dest='operation', required=True)
+    commands.add_parser('version')
+    inventory = commands.add_parser('inventory')
+    inventory.add_argument('run_id')
+    get = commands.add_parser('get')
+    get.add_argument('run_id')
+    get.add_argument('child_key')
+    get.add_argument('artifact_type')
+    return parser
+
+
+def main():
+    """Run one fixed lethe-side result operation. """
+    try:
+        args = build_parser().parse_args()
+    except SystemExit as exc:
+        return int(exc.code)
+    operation = args.operation
+    try:
+        if operation == 'version':
+            result = {'status': 'ok', 'helper': helper_identity()}
+        else:
+            config = load_config()
+            args.run_id = validate_run_id(args.run_id)
+            if operation == 'inventory':
+                result = inventory_result(config, args.run_id)
+            else:
+                result = get_result(
+                    config,
+                    args.run_id,
+                    args.child_key,
+                    args.artifact_type,
+                )
+        exit_code = EXIT_SUCCESS
+    except (HpcJobLifecycleError, HpcResultError, ValueError) as exc:
+        result = error_result(operation, 'rejected', 'request-rejected', exc)
+        exit_code = EXIT_REJECTED
+    except ResultFailure as exc:
+        result = error_result(operation, 'failed', 'operation-failed', exc)
+        exit_code = EXIT_FAILED
+    print(json.dumps(result, sort_keys=True))
+    return exit_code
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())

@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "deployment_id": "a1-ouinp-codex-hpc",
+  "git": {
+    "automation_checkout": "/ddn/niknovikov19/repo/A1_OUinp_codex"
+  },
+  "runs": {
+    "root": "/ddn/niknovikov19/repo/A1_OUinp_codex/hpc_jobs/runs"
+  },
+  "state": {
+    "root": "/ddn/niknovikov19/hpc_codex/state/A1_OUinp",
+    "inventory_dir": "/ddn/niknovikov19/hpc_codex/state/A1_OUinp/result-inventories",
+    "result_lock": "/ddn/niknovikov19/hpc_codex/state/A1_OUinp/result.lock"
+  },
+  "artifact_types": {
+    "result-json": [
+      ".json"
+    ],
+    "raster": [
+      ".png"
+    ],
+    "data-pkl": [
+      ".pkl",
+      ".pickle"
+    ]
+  },
+  "limits": {
+    "max_artifacts": 20,
+    "max_transfer_bytes": 262144,
+    "checksum_max_bytes": 262144
+  }
+}

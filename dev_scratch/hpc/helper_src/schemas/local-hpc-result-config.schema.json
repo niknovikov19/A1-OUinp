@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://a1-ouinp.local/schemas/local-hpc-result-config.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "remote_helper", "cache_root"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "remote_helper": {"$ref": "#/$defs/absolutePath"},
+    "cache_root": {"$ref": "#/$defs/absolutePath"}
+  },
+  "$defs": {
+    "absolutePath": {
+      "type": "string",
+      "pattern": "^/[^\\u0000]*$"
+    }
+  }
+}

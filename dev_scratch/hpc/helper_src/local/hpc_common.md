@@ -164,21 +164,23 @@ The audit file may be absent before its first append, but its parent directory m
 
 ### Installed source identity
 
-`get_bundle_identity()` hashes the installed `hpc-code-status`,
-`hpc-code-update`, `hpc-helper-info`, `hpc-log`, `hpc-probe`,
-`hpc-run-preview`, `hpc-status`, `hpc-submit`, and `hpc_common.py` files. It
-returns:
+`get_bundle_identity()` hashes every filename in the fixed
+`RUNTIME_SOURCE_NAMES` tuple: the code, preparation, submission, observation,
+result-access, and information entry points plus `hpc_common.py`. It returns:
 
 ```json
 {
-  "bundle_version": "0.7.0-a6",
+  "bundle_version": "0.13.0-b5",
   "bundle_sha256": "...",
   "source_sha256": {
     "hpc-code-status": "...",
     "hpc-code-update": "...",
     "hpc-helper-info": "...",
+    "hpc-job": "...",
+    "hpc-job-prepare": "...",
     "hpc-log": "...",
     "hpc-probe": "...",
+    "hpc-result": "...",
     "hpc-run-preview": "...",
     "hpc-status": "...",
     "hpc-submit": "...",

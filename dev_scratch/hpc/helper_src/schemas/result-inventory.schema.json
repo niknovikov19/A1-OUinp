@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://a1-ouinp.local/schemas/result-inventory.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "run_id",
+    "git_commit",
+    "expected_result_path",
+    "generated_at_utc",
+    "known_output_count",
+    "artifact_count",
+    "artifacts"
+  ],
+  "properties": {
+    "schema_version": {"const": 1},
+    "run_id": {"type": "string"},
+    "git_commit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "expected_result_path": {"type": "string"},
+    "generated_at_utc": {"type": "string"},
+    "known_output_count": {"type": "integer", "minimum": 0},
+    "artifact_count": {"type": "integer", "minimum": 0},
+    "artifacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "child_key",
+          "parameters",
+          "artifact_type",
+          "relative_path",
+          "size_bytes",
+          "mtime_ns",
+          "sha256"
+        ],
+        "properties": {
+          "child_key": {"type": "string"},
+          "parameters": {"type": "object"},
+          "artifact_type": {"type": "string"},
+          "relative_path": {"type": "string"},
+          "size_bytes": {"type": "integer", "minimum": 0},
+          "mtime_ns": {"type": "integer", "minimum": 0},
+          "sha256": {
+            "oneOf": [
+              {"type": "null"},
+              {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+            ]
+          }
+        }
+      }
+    }
+  }
+}

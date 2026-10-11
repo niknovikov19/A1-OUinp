@@ -577,7 +577,9 @@ Implementation target:
 Tests after promotion:
 
 - List the tiny batch's inventory without scanning the tree again.
-- Retrieve one selected PNG or small PKL.
+- Retrieve one selected PNG or small PKL when the run declares one; for the B3
+  prototype, retrieve one declared small result JSON because it produced no
+  PNG or PKL.
 - Request it again and confirm a cache hit with no repeat transfer.
 - Reject arbitrary paths, wildcards, unknown labels/types, too many files, and an oversized transfer.
 
