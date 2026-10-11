@@ -1620,3 +1620,22 @@ but restores the established BatchTools-main allocation from
 promotion scripts update the local and lethe preparation ceilings before the
 fresh `b2-child-discovery-002` run can be prepared. Job `117831` must never be
 resubmitted.
+
+## B2 second real BatchTools attempt
+
+Run `b2-child-discovery-002` was submitted once as main Slurm job `117832`
+with the established 2-task, 16 GB, 24-hour allocation. Ray reached about 4.9
+GB peak RSS without an OOM event, but `ray.init()` again stopped progressing
+after uploading a 115.79 MiB working-directory package. No Tune checkpoint,
+child script, or child Slurm job appeared in more than 10 minutes.
+
+After explicit approval, job `117832` was cancelled. Slurm reported
+`CANCELLED by 1014`; protected finalization recorded zero child IDs and no
+completion files, and the checkout was explicitly released. This run must not
+be resubmitted.
+
+The package contained coordinator-irrelevant tracked directories such as
+`revision`, `analysis`, and `model_versions`. Local Ray workers execute on the
+same allocated node and can read the shared exact checkout directly. The next
+candidate therefore removes `runtime_env.working_dir`, disables the unused Ray
+dashboard, and supplies the shared checkout through inherited `PYTHONPATH`.

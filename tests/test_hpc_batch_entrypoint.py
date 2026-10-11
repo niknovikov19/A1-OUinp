@@ -6,6 +6,15 @@ import grid_search_slurm_local as batch_main
 
 
 class HpcBatchEntrypointTests(unittest.TestCase):
+    def test_local_ray_uses_shared_checkout_without_packaging(self):
+        """Avoid transferring the repository to workers on the same node. """
+        with patch.dict('os.environ', {'PYTHONPATH': '/existing'}):
+            ray_config = batch_main._configure_local_ray()
+            python_path = batch_main.os.environ['PYTHONPATH'].split(':')
+        self.assertEqual(ray_config, {'include_dashboard': False})
+        self.assertEqual(python_path[0], batch_main.DIR_REPO.as_posix())
+        self.assertEqual(python_path[1], '/existing')
+
     def test_manual_no_argument_settings_remain_unchanged(self):
         args = SimpleNamespace(
             hpc_request=None,

@@ -34,3 +34,10 @@ Both reports must end in `B2_RETRY_RESULT=PASS`. Promotion changes only the
 reviewed preparation ceilings and does not submit a job. Codex will then
 preflight and prepare fresh run `b2-child-discovery-002`, show its rendered
 script, and obtain separate approval before submission.
+
+Run `b2-child-discovery-002` proved that the established memory allocation was
+sufficient, but Ray stalled while installing a 115.79 MiB repository package.
+It was explicitly cancelled, finalized, and released with no children. The
+tracked follow-up removes unnecessary repository packaging for local Ray and
+uses fresh run `b2-child-discovery-003`; no additional protected promotion is
+required for that repository-code change.

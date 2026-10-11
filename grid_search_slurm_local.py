@@ -1,4 +1,5 @@
 import argparse
+import os
 from pathlib import Path
 
 from hpc_batch_jobs import (
@@ -142,6 +143,17 @@ def _load_batchtools(child_recorder=None):
     return search, LocalDispatcher, submitter
 
 
+def _configure_local_ray():
+    """Use the shared checkout without packaging it as a Ray environment. """
+    repo_path = DIR_REPO.as_posix()
+    python_paths = os.environ.get('PYTHONPATH', '').split(os.pathsep)
+    python_paths = [path for path in python_paths if path]
+    if repo_path not in python_paths:
+        python_paths.insert(0, repo_path)
+    os.environ['PYTHONPATH'] = os.pathsep.join(python_paths)
+    return {'include_dashboard': False}
+
+
 def _split_experiment(experiment):
     """Split one validated experiment into subdirectory and label values."""
     if '/' not in experiment:
@@ -262,20 +274,8 @@ def run_batch(experiment, resources, max_concurrent, hpc_run_id=None,
     slurm_config = _build_slurm_config(resources, experiment_subdir)
     if child_recorder is not None:
         slurm_config['job_path'] = child_recorder['job_path']
-    ray_config = {
-        'runtime_env': {
-            'working_dir': '.',
-            'excludes': [
-                '**/*.pkl',
-                '**/*.out',
-                '/.git/',
-                '**/__pycache__/',
-                '/exp_results/',
-                '/exp_logs_old/',
-                '/OLD/',
-            ],
-        },
-    }
+    ray_config = _configure_local_ray()
+    print('Starting local Ray from the shared checkout', flush=True)
 
     # Keep the established BatchTools output and checkpoint locations
     search(
