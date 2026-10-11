@@ -27,7 +27,7 @@ from hpc_job_lifecycle import (
 )
 
 
-HELPER_VERSION = '0.9.0-b1'
+HELPER_VERSION = '0.10.0-b2'
 EXIT_SUCCESS = 0
 EXIT_REJECTED = 2
 EXIT_UNKNOWN = 3
@@ -53,7 +53,7 @@ def get_common_root():
 
 
 def get_config_path():
-    """Return the fixed B1 job configuration path."""
+    """Return the fixed job configuration path."""
     return get_common_root() / 'config' / 'A1_OUinp-job.json'
 
 
@@ -105,7 +105,7 @@ def validate_absolute_path(value, label):
 
 
 def validate_config(config):
-    """Validate the grid-side subset of fixed B1 configuration."""
+    """Validate the grid-side subset of fixed job configuration."""
     required = {
         'deployment_id',
         'git',
@@ -162,7 +162,7 @@ def validate_config(config):
 
 
 def load_config():
-    """Load the fixed non-secret B1 job configuration."""
+    """Load the fixed non-secret job configuration."""
     fpath = get_config_path()
     require_regular_file(fpath, 'job configuration', mode=0o444)
     try:
@@ -173,7 +173,7 @@ def load_config():
 
 
 def load_prepared(config, run_id):
-    """Load one exact prepared single-job record from the fixed run root."""
+    """Load one exact prepared job record from the fixed run root."""
     run_id = validate_run_id(run_id)
     run_root = Path(config['runs']['root'])
     require_real_directory(run_root, 'job-run root')
@@ -194,8 +194,8 @@ def load_prepared(config, run_id):
         raise SubmitFailure('Repository and protected prepared records differ')
     if prepared['run_id'] != run_id or Path(prepared['job_run_dir']) != run_dir:
         raise RejectedInput('Prepared record does not match run ID')
-    if prepared['job_kind'] != 'single':
-        raise RejectedInput('B1 submission accepts only a single job')
+    if prepared['job_kind'] not in {'single', 'batch'}:
+        raise RejectedInput('B2 submission accepts only a single or batch job')
     return prepared
 
 
@@ -377,7 +377,7 @@ def error_result(status, reason, details=None):
 
 def build_parser():
     """Build the fixed grid prepared-job parser."""
-    parser = argparse.ArgumentParser(description='Submit one prepared B1 job.')
+    parser = argparse.ArgumentParser(description='Submit one prepared HPC job.')
     commands = parser.add_subparsers(dest='operation', required=True)
     commands.add_parser('version')
     submit_parser = commands.add_parser('submit')
@@ -389,7 +389,7 @@ def build_parser():
 
 
 def main():
-    """Run one fixed grid-side B1 operation."""
+    """Run one fixed grid-side job operation."""
     parser = build_parser()
     try:
         args = parser.parse_args()

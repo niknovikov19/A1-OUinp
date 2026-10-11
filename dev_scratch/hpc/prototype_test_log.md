@@ -1574,3 +1574,30 @@ Finalization verified the declared completion file
 `results/result_00000_seed_1201.json` beneath the expected scientific result
 directory. The protected final record was created, and the checkout lock was
 then explicitly released. Gate conclusion: B1 PASS.
+
+## B2 two-child BatchTools candidate
+
+Inspection of the installed BatchTools stack found that `LocalProcCmd.run()`
+returns a synchronous `CompletedProcess` containing the exact stdout and
+stderr from `sbatch`. The previous repository `LocalSlurmSubmit` subclass did
+not override the lowercase templates used by its parent, did not provide the
+message and completion handles required by `LocalDispatcher`, and returned the
+unparsed process without retaining the scheduler receipt.
+
+The B2 candidate replaces that incomplete adapter with explicit local Slurm
+templates. It submits each child through `/usr/bin/sbatch --parsable`, parses
+the numeric ID, and appends one locked JSONL record containing the child label,
+seed coordinate, log paths, expected scientific output, and submission time.
+The purpose-built request resolves to two one-cell simulations at seeds 1301
+and 1302 in one shared established result directory.
+
+Sixty-five focused HPC tests pass. A direct adapter test with the installed
+local BatchTools package rendered a placeholder-free child script, parsed
+`117901;cluster`, and wrote the expected record without calling Slurm. The full
+scientific suite was also run under the local `netpyne` environment; its HPC
+tests passed, while six pre-existing parameter-expectation failures and one
+unrelated `sim_data_analyzer` import error remained outside B2 scope.
+
+Gate status: candidate ready for exact-commit update, local and lethe
+promotion, protected preparation, and explicit approval of the first real
+two-child submission.

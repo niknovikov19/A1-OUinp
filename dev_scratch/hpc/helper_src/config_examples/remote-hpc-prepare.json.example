@@ -23,7 +23,7 @@
       },
       "batch": {
         "path": "hpc_jobs/templates/batch.sh",
-        "sha256": "67fa0609c1a47d1e1a46d3354a1f8ec0584e7cb236ada720b88b4c262912b36c"
+        "sha256": "a5b6bae1475a5b3f9cad7cdc5428fd6783a822d80292a54c27983006b0c01d75"
       },
       "workflow": {
         "path": "hpc_jobs/templates/workflow.sh",

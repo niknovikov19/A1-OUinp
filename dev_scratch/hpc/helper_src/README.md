@@ -533,6 +533,29 @@ Codex
   -> release: verify final evidence and remove the active-run marker
 ```
 
+## B2 BatchTools child-job evidence
+
+```text
+local/hpc-job
+remote_lethe/hpc-lethe-job
+remote_grid/hpc-grid-job
+promotion/promote_b2_job_local.sh
+promotion/promote_b2_job_lethe.sh
+INSTALL_B2.md
+```
+
+B2 keeps the B1 top-level submission path and permits a prepared `batch` job.
+The tracked BatchTools submitter calls `/usr/bin/sbatch --parsable` for each
+simulation job. Under one file lock it appends a bounded record to the
+scientific result's `jobs/index.jsonl`; no monitor reconstructs IDs by scanning
+logs or querying jobs by name.
+
+Each record binds the prepared run ID to the child label, Slurm ID, parameter
+coordinates, stdout/stderr paths, declared scientific output, and submission
+time. Finalization ingests this file through `hpc_job_lifecycle.py`. A completed
+batch requires exactly the prepared number of child records, and every child
+output must also be declared by the tracked request.
+
 ## Exit codes
 
 - `0`: success;

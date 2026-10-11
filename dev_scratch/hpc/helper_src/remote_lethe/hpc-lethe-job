@@ -35,6 +35,7 @@ from hpc_job_lifecycle import (
     build_active_run_marker,
     build_final_record,
     decide_submission,
+    parse_child_records,
     read_state_record,
     record_sha256,
     release_active_run,
@@ -48,16 +49,17 @@ from hpc_job_lifecycle import (
 )
 
 
-HELPER_VERSION = '0.9.0-b1'
+HELPER_VERSION = '0.10.0-b2'
 EXIT_SUCCESS = 0
 EXIT_REJECTED = 2
 EXIT_UNKNOWN = 3
 EXIT_FAILED = 4
 MAX_COMMAND_BYTES = 1048576
+MAX_CHILD_INDEX_BYTES = 65536
 
 
 class RejectedInput(ValueError):
-    """Represent a B1 job operation rejected by protected policy."""
+    """Represent a job operation rejected by protected policy."""
 
 
 class JobUnavailable(RuntimeError):
@@ -65,7 +67,7 @@ class JobUnavailable(RuntimeError):
 
 
 class JobFailure(RuntimeError):
-    """Represent a known lethe-side B1 job failure."""
+    """Represent a known lethe-side job failure."""
 
 
 def get_common_root():
@@ -74,7 +76,7 @@ def get_common_root():
 
 
 def get_config_path():
-    """Return the fixed B1 job configuration path."""
+    """Return the fixed job configuration path."""
     return get_common_root() / 'config' / 'A1_OUinp-job.json'
 
 
@@ -112,7 +114,7 @@ def validate_positive_int(value, label, maximum):
 
 
 def validate_config(config):
-    """Validate the complete fixed B1 job configuration."""
+    """Validate the complete fixed job configuration."""
     required = {
         'deployment_id',
         'git',
@@ -226,7 +228,7 @@ def load_json(fpath, label):
 
 
 def load_config():
-    """Load the fixed non-secret B1 job configuration."""
+    """Load the fixed non-secret job configuration."""
     fpath = get_config_path()
     require_regular_file(fpath, 'job configuration', mode=0o444)
     return validate_config(load_json(fpath, 'job configuration'))
@@ -275,8 +277,8 @@ def load_prepared(config, run_id):
         raise JobFailure('Repository and protected prepared records differ')
     if prepared['run_id'] != run_id or Path(prepared['job_run_dir']) != paths['dir']:
         raise RejectedInput('Prepared record does not match run ID')
-    if prepared['job_kind'] != 'single':
-        raise RejectedInput('B1 accepts only a prepared single job')
+    if prepared['job_kind'] not in {'single', 'batch'}:
+        raise RejectedInput('B2 accepts only a prepared single or batch job')
     return prepared
 
 
@@ -670,6 +672,36 @@ def write_dual_record(state_path, run_path, record, label):
     return 'created'
 
 
+def load_child_records(config, prepared, scheduler_state):
+    """Load the bounded batch index or allow no evidence after failure. """
+    if prepared['job_kind'] == 'single':
+        return []
+    fpath = (
+        Path(config['git']['automation_checkout']) /
+        prepared['expected_result_path'] /
+        'jobs/index.jsonl'
+    )
+    if not fpath.exists():
+        if scheduler_state == 'COMPLETED':
+            raise RejectedInput('Completed batch lacks its child-job index')
+        return []
+    require_regular_file(fpath, 'child-job index')
+    try:
+        with open(fpath, 'rb') as fid:
+            payload = fid.read(MAX_CHILD_INDEX_BYTES + 1)
+        if len(payload) > MAX_CHILD_INDEX_BYTES:
+            raise RejectedInput('Child-job index is too large')
+        records = parse_child_records(payload, prepared)
+    except (OSError, HpcJobLifecycleError) as exc:
+        raise RejectedInput(f'Invalid child-job index: {exc}') from exc
+    if (
+        scheduler_state == 'COMPLETED' and
+        len(records) != prepared['simulation_job_limit']
+    ):
+        raise RejectedInput('Completed batch has incomplete child-job evidence')
+    return records
+
+
 def finalize_job(config, run_id):
     """Record one terminal scheduler state and declared-file evidence."""
     lock_id = acquire_lock(config['state']['job_lock'], 'job-operation lock')
@@ -704,12 +736,13 @@ def finalize_job(config, run_id):
                 config['git']['automation_checkout'],
                 prepared,
             )
+            child_records = load_child_records(config, prepared, terminal)
             final = build_final_record(
                 prepared,
                 submission,
                 terminal,
                 present,
-                [],
+                child_records,
                 datetime.now(timezone.utc).isoformat(),
             )
         except HpcJobLifecycleError as exc:
@@ -736,6 +769,7 @@ def final_result(prepared, final, result_value, observed):
         'slurm_job_id': final['slurm_job_id'],
         'scheduler_state': final['scheduler_state'],
         'completion_files_verified': final['completion_files_verified'],
+        'child_job_ids': final['child_job_ids'],
         'observed_at_utc': observed,
         'helper': helper_identity(),
     }
@@ -827,8 +861,8 @@ def error_result(operation, status, reason, details=None):
 
 
 def build_parser():
-    """Build the fixed lethe B1 job-operation parser."""
-    parser = argparse.ArgumentParser(description='Control one prepared B1 job.')
+    """Build the fixed lethe job-operation parser."""
+    parser = argparse.ArgumentParser(description='Control one prepared HPC job.')
     commands = parser.add_subparsers(dest='operation', required=True)
     commands.add_parser('version')
     submit = commands.add_parser('submit')
@@ -844,7 +878,7 @@ def build_parser():
 
 
 def main():
-    """Run one fixed lethe-side B1 job operation."""
+    """Run one fixed lethe-side job operation."""
     parser = build_parser()
     try:
         args = parser.parse_args()

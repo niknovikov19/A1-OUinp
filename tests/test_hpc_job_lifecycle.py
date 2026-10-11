@@ -63,8 +63,11 @@ def make_child(prepared, child_key='sim-000', slurm_job_id=120001):
         'run_id': prepared['run_id'],
         'child_key': child_key,
         'slurm_job_id': slurm_job_id,
+        'parameters': {'stim_seed': slurm_job_id - 118700},
         'stdout_path': f'{result}/batchtools/logs/{child_key}.out',
         'stderr_path': f'{result}/batchtools/logs/{child_key}.err',
+        'expected_outputs': [f'{result}/result.json'],
+        'submitted_at_utc': NOW,
     }
 
 
@@ -212,14 +215,17 @@ class FinalizeReleaseTests(unittest.TestCase):
         prepared = make_prepared()
         intent, _ = decide_submission(None, prepared, NOW)
         receipt = build_submission_receipt(intent, prepared, 117900, LATER)
-        child = make_child(prepared)
+        children = [
+            make_child(prepared),
+            make_child(prepared, 'sim-001', 120002),
+        ]
         active = build_active_run_marker(prepared, NOW)
         final = build_final_record(
             prepared,
             receipt,
             'COMPLETED',
             ['result.json'],
-            [child],
+            children,
             LATER,
         )
         self.assertEqual(final['status'], 'complete')
@@ -257,12 +263,16 @@ class FinalizeReleaseTests(unittest.TestCase):
         prepared = make_prepared()
         intent, _ = decide_submission(None, prepared, NOW)
         receipt = build_submission_receipt(intent, prepared, 117900, LATER)
+        children = [
+            make_child(prepared),
+            make_child(prepared, 'sim-001', 120002),
+        ]
         final = build_final_record(
             prepared,
             receipt,
             'COMPLETED',
             ['result.json'],
-            [],
+            children,
             LATER,
         )
         validate_final_record(final, prepared)

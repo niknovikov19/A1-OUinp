@@ -30,9 +30,16 @@ The lifecycle module contains no scheduler command. Its fixture tests prove
 fail-closed intent/receipt transitions and path bounds before B1 connects the
 same record contract to a protected `sbatch` helper.
 
-The B1 protected candidate consumes a prepared run by ID. It writes
+The protected job layer consumes a prepared run by ID. It writes
 `submission.json`, `final.json`, and `release.json` beside the immutable
 snapshot while retaining matching mode-`0600` records in external protected
 state. Finalization and release remain separate: a terminal job continues to
 block checkout updates until its evidence is finalized and explicitly
 released.
+
+For tracked batch requests, `grid_search_slurm_local.py` writes one locked
+JSONL entry at each successful child submission. The index remains beneath the
+established scientific result directory in `jobs/index.jsonl`; it contains
+small submission evidence, while child stdout and stderr stay in the adjacent
+ignored `jobs/` directory. The protected finalizer trusts only validated
+records bound to the prepared run and declared output paths.

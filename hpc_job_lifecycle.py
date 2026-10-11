@@ -292,8 +292,11 @@ def _validate_child_record(record, prepared):
         'run_id',
         'child_key',
         'slurm_job_id',
+        'parameters',
         'stdout_path',
         'stderr_path',
+        'expected_outputs',
+        'submitted_at_utc',
     }
     _require_exact_keys(record, required, 'child-job record')
     if record['schema_version'] != 1 or record['run_id'] != prepared['run_id']:
@@ -313,6 +316,32 @@ def _validate_child_record(record, prepared):
         prefix = result_root.parts
         if parts[:len(prefix)] != prefix or len(parts) <= len(prefix):
             raise HpcJobLifecycleError('Child log path left expected results')
+    parameters = record['parameters']
+    if not isinstance(parameters, dict) or not parameters:
+        raise HpcJobLifecycleError('Invalid child parameters')
+    try:
+        parameter_data = canonical_json(parameters).encode()
+    except HpcJobValidationError as exc:
+        raise HpcJobLifecycleError(str(exc)) from exc
+    if len(parameter_data) > MAX_CHILD_LINE_BYTES:
+        raise HpcJobLifecycleError('Child parameters are too large')
+    outputs = record['expected_outputs']
+    if not isinstance(outputs, list) or not outputs:
+        raise HpcJobLifecycleError('Invalid child expected outputs')
+    try:
+        outputs = [
+            validate_repo_path(path, 'child expected output')
+            for path in outputs
+        ]
+    except HpcJobValidationError as exc:
+        raise HpcJobLifecycleError(str(exc)) from exc
+    if len(outputs) != len(set(outputs)):
+        raise HpcJobLifecycleError('Duplicate child expected output')
+    for output in outputs:
+        parts = PurePosixPath(output).parts
+        if parts[:len(result_root.parts)] != result_root.parts:
+            raise HpcJobLifecycleError('Child output left expected results')
+    _validate_timestamp(record['submitted_at_utc'], 'child submission timestamp')
     return record
 
 
@@ -470,6 +499,19 @@ def build_final_record(
         b'\n'.join(canonical_json(record).encode() for record in child_records),
         prepared,
     )
+    if (
+        scheduler_state == 'COMPLETED' and
+        prepared['job_kind'] == 'batch' and
+        len(records) != prepared['simulation_job_limit']
+    ):
+        raise HpcJobLifecycleError('Completed batch lacks child-job records')
+    declared_outputs = {
+        (PurePosixPath(prepared['expected_result_path']) / path).as_posix()
+        for path in prepared['completion_files']
+    }
+    for record in records:
+        if not set(record['expected_outputs']) <= declared_outputs:
+            raise HpcJobLifecycleError('Child output is not declared by the run')
     status_value = 'complete' if scheduler_state == 'COMPLETED' else 'failed'
     return {
         **get_submission_binding(prepared),

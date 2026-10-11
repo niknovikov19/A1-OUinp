@@ -38,11 +38,11 @@ IDENTITY_RE = re.compile(r'[0-9]+:[0-9]+')
 
 
 class RemoteUnavailable(RuntimeError):
-    """Represent an unavailable or invalid remote B1 job response."""
+    """Represent an unavailable or invalid remote job response."""
 
 
 def build_parser():
-    """Build the fixed local B1 job-operation parser."""
+    """Build the fixed local job-operation parser."""
     parser = argparse.ArgumentParser(description='Control one prepared HPC job.')
     parser.add_argument(
         '--json',
@@ -68,7 +68,7 @@ def validate_args(args):
 
 
 def get_cursor_paths():
-    """Return fixed local B1 log-cursor paths."""
+    """Return fixed local job-log cursor paths."""
     state_dir = Path(__file__).resolve().parents[1] / 'state'
     return (
         state_dir,
@@ -217,7 +217,7 @@ def update_cursors(state, run_id, result):
 
 
 def build_ssh_command(config, args, cursor_payload=None):
-    """Build one allowlisted lethe B1 job invocation."""
+    """Build one allowlisted lethe job invocation."""
     helper = Path(config['remote_helpers']['lethe_dir']) / 'hpc-lethe-job'
     parts = [helper.as_posix(), args.operation, args.run_id]
     if args.operation == 'submit':
@@ -241,7 +241,7 @@ def build_ssh_command(config, args, cursor_payload=None):
 
 
 def parse_remote_result(completed, operation, run_id):
-    """Parse and bind one bounded remote B1 job response."""
+    """Parse and bind one bounded remote job response."""
     if len(completed.stdout) > MAX_REMOTE_BYTES or len(completed.stderr) > 65536:
         raise RemoteUnavailable('Remote response exceeded its bound')
     try:
@@ -311,7 +311,7 @@ def run_log(config, args):
 
 
 def concise_output(result):
-    """Print one compact human-readable B1 operation result."""
+    """Print one compact human-readable job-operation result."""
     if result['status'] != 'ok':
         print(f'Status: {result["status"]}')
         print(f'Reason: {result.get("reason", "unknown")}')
@@ -345,7 +345,7 @@ def concise_output(result):
 
 
 def audit_or_fail(action, status, exit_code, raw_args, details=None):
-    """Write one mandatory local B1 job audit event."""
+    """Write one mandatory local job-operation audit event."""
     try:
         append_audit_event(
             action,

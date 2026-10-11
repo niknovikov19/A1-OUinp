@@ -7,7 +7,7 @@ import stat
 from datetime import datetime, timezone
 
 
-BUNDLE_VERSION = '0.9.0-b1'
+BUNDLE_VERSION = '0.10.0-b2'
 CONFIG_SCHEMA_VERSION = 1
 
 EXIT_SUCCESS = 0

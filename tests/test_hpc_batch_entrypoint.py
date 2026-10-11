@@ -9,6 +9,7 @@ class HpcBatchEntrypointTests(unittest.TestCase):
     def test_manual_no_argument_settings_remain_unchanged(self):
         args = SimpleNamespace(
             hpc_request=None,
+            hpc_run_id=None,
             experiment=None,
             partition=None,
             nodes=None,
@@ -28,6 +29,7 @@ class HpcBatchEntrypointTests(unittest.TestCase):
     def test_request_resources_reach_batchtools_slurm_fields(self):
         args = SimpleNamespace(
             hpc_request='hpc_jobs/requests/b2-batch.json',
+            hpc_run_id='b2-batch-001',
             experiment=None,
             partition=None,
             nodes=None,
@@ -48,6 +50,7 @@ class HpcBatchEntrypointTests(unittest.TestCase):
             'target': 'batch_fixture/sweep',
             'simulation_job_resources': resources,
             'max_concurrent_simulation_jobs': 2,
+            'expected_result_path': 'exp_results/batch_fixture/sweep/exp_001',
         }
         with patch.object(
             batch_main,

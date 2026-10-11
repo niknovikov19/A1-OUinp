@@ -49,7 +49,7 @@ TEMPLATE_TOKENS = {
     },
     'batch': {
         'CHECKOUT', 'CORES', 'JOB_NAME', 'MEMORY', 'NODES', 'PARTITION',
-        'REQUEST_PATH', 'STDERR', 'STDOUT', 'WALL_TIME',
+        'REQUEST_PATH', 'RUN_ID', 'STDERR', 'STDOUT', 'WALL_TIME',
     },
     'workflow': {
         'CHECKOUT', 'CORES', 'JOB_NAME', 'MEMORY', 'NODES', 'PARTITION',
@@ -447,6 +447,8 @@ def build_template_values(context, checkout_root):
     }
     if context['job_kind'] == 'single':
         values['TASKS'] = str(resources['nodes'] * resources['cores'])
+    elif context['job_kind'] == 'batch':
+        values['RUN_ID'] = run_id
     if set(values) != TEMPLATE_TOKENS[context['job_kind']]:
         raise HpcJobValidationError('Prepared values do not match job template')
     return values

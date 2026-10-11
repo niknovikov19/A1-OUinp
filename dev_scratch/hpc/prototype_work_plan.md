@@ -412,6 +412,13 @@ Pass condition: one simulation completes from an exact commit, all records agree
 
 Purpose: resolve the largest application-specific uncertainty before building general batch monitoring.
 
+Implementation status: candidate ready for promotion and the first real
+two-child run. Inspection showed that `LocalProcCmd` returns the complete
+`sbatch` result synchronously, while the previous repository subclass neither
+parsed nor retained it. The candidate uses `sbatch --parsable`, records each
+receipt at submission time in `jobs/index.jsonl`, and makes completed-batch
+finalization require the exact prepared child count and declared outputs.
+
 Start with a successful two-child batch. Inspect only bounded output from the
 BatchTools main job and known BatchTools artifact locations to determine:
 
@@ -421,7 +428,10 @@ BatchTools main job and known BatchTools artifact locations to determine:
 - whether the BatchTools main job can terminate before every child completion
   record is visible.
 
-If IDs and paths are not available reliably, make the smallest change to `LocalSlurmSubmit` so it records one JSONL entry atomically at each child submission. Do not rediscover child jobs by recursively searching logs on every status check.
+IDs are available reliably in the synchronous `CompletedProcess`. The B2
+submitter therefore records one JSONL entry under an exclusive file lock at
+each child submission. Monitoring must not rediscover child jobs by recursively
+searching logs on every status check.
 
 Pass condition: `jobs/index.jsonl` maps both labels to Slurm IDs, parameter coordinates, exact log paths, and expected outputs.
 

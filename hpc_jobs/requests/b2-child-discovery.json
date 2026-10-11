@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "request_id": "b2-child-discovery",
+  "job_kind": "batch",
+  "target": "batch_hpc_prototype/b2_child_discovery",
+  "template_path": "hpc_jobs/templates/batch.sh",
+  "expected_result_path": "exp_results/batch_hpc_prototype/b2_child_discovery/exp_hpc_b2_child_discovery_nseed_2_t_0.5_1.0_rx_10000_100_wx_0.1_0.05_n_1",
+  "completion_files": [
+    "jobs/index.jsonl",
+    "results/b2_child_discovery_00000.json",
+    "results/b2_child_discovery_00001.json"
+  ],
+  "top_level_resources": {
+    "partition": "cpu.q",
+    "nodes": 1,
+    "cores": 1,
+    "memory_gb": 2,
+    "wall_time_min": 10
+  },
+  "simulation_job_resources": {
+    "partition": "cpu.q",
+    "nodes": 1,
+    "cores": 1,
+    "memory_gb": 2,
+    "wall_time_min": 10
+  },
+  "max_concurrent_simulation_jobs": 2,
+  "max_simulation_jobs": 2
+}

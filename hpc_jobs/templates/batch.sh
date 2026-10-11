@@ -16,4 +16,6 @@ set -euo pipefail
 export LD_LIBRARY_PATH="$CONDA_PREFIX/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
 export MKL_THREADING_LAYER=GNU
 cd @@CHECKOUT@@
-python -u grid_search_slurm_local.py --hpc-request @@REQUEST_PATH@@
+python -u grid_search_slurm_local.py \
+    --hpc-request @@REQUEST_PATH@@ \
+    --hpc-run-id @@RUN_ID@@
