@@ -39,6 +39,7 @@ from hpc_job_lifecycle import (
     read_state_record,
     record_sha256,
     release_active_run,
+    resolve_child_log_path,
     remove_state_record,
     replace_state_record,
     resolve_top_level_log_path,
@@ -49,7 +50,7 @@ from hpc_job_lifecycle import (
 )
 
 
-HELPER_VERSION = '0.10.1-b2'
+HELPER_VERSION = '0.11.0-b2'
 EXIT_SUCCESS = 0
 EXIT_REJECTED = 2
 EXIT_UNKNOWN = 3
@@ -551,33 +552,64 @@ def submission_result(config, prepared, submission, result_value):
     }
 
 
-def scheduler_status(config, prepared, submission):
-    """Query one recorded Slurm ID through the established A5 status helper."""
-    if submission['status'] != 'submitted':
-        raise RejectedInput('Scheduler status requires a submitted receipt')
+def scheduler_statuses(config, job_ids):
+    """Query recorded Slurm IDs through the established A5 status helper. """
+    if not job_ids or len(job_ids) != len(set(job_ids)):
+        raise JobFailure('Scheduler status requires unique recorded IDs')
     helper = config['scheduler']['status_helper']
     result, exit_code = run_grid_command(
         config,
         helper,
-        ('status', str(submission['slurm_job_id'])),
+        ('status', ','.join(str(job_id) for job_id in job_ids)),
     )
     if exit_code != EXIT_SUCCESS or result.get('operation') != 'grid-status':
         raise JobUnavailable('Scheduler status is unavailable')
     jobs = result.get('jobs')
-    if not isinstance(jobs, list) or len(jobs) != 1:
+    valid_result = (
+        result.get('job_ids') == job_ids and
+        isinstance(jobs, list) and
+        len(jobs) == len(job_ids)
+    )
+    if not valid_result:
         raise JobUnavailable('Scheduler status returned an invalid job list')
-    try:
-        job = validate_scheduler_job(jobs[0], submission['slurm_job_id'])
-    except HpcJobLifecycleError as exc:
-        raise JobUnavailable(str(exc)) from exc
-    return job, result.get('observed_at_utc')
+    validated = []
+    for job_id, job in zip(job_ids, jobs):
+        try:
+            validated.append(validate_scheduler_job(job, job_id))
+        except HpcJobLifecycleError as exc:
+            raise JobUnavailable(str(exc)) from exc
+    return validated, result.get('observed_at_utc')
+
+
+def scheduler_status(config, prepared, submission):
+    """Query one recorded top-level Slurm ID. """
+    if submission['status'] != 'submitted':
+        raise RejectedInput('Scheduler status requires a submitted receipt')
+    jobs, observed = scheduler_statuses(config, [submission['slurm_job_id']])
+    return jobs[0], observed
 
 
 def status_job(config, run_id):
-    """Return submission and scheduler state for one known prepared run."""
+    """Return top-level and recorded child scheduler states. """
     prepared = load_prepared(config, run_id)
     submission = load_submission(config, prepared)
-    job, observed = scheduler_status(config, prepared, submission)
+    if submission['status'] != 'submitted':
+        raise RejectedInput('Scheduler status requires a submitted receipt')
+    child_records = load_child_records(config, prepared, None)
+    job_ids = [submission['slurm_job_id']]
+    job_ids.extend(record['slurm_job_id'] for record in child_records)
+    jobs, observed = scheduler_statuses(config, job_ids)
+    children = []
+    for record, scheduler in zip(child_records, jobs[1:]):
+        children.append({
+            'child_key': record['child_key'],
+            'expected_outputs': record['expected_outputs'],
+            'parameters': record['parameters'],
+            'slurm_job_id': record['slurm_job_id'],
+            'stderr_path': record['stderr_path'],
+            'stdout_path': record['stdout_path'],
+            'scheduler': scheduler,
+        })
     return {
         'schema_version': 1,
         'operation': 'job-status',
@@ -585,7 +617,8 @@ def status_job(config, run_id):
         'run_id': prepared['run_id'],
         'git_commit': prepared['git_commit'],
         'slurm_job_id': submission['slurm_job_id'],
-        'scheduler': job,
+        'scheduler': jobs[0],
+        'children': children,
         'observed_at_utc': observed,
         'remote_host': socket.gethostname(),
         'helper': helper_identity(),
@@ -622,21 +655,34 @@ def decode_cursors(payload, maximum):
         raise RejectedInput(str(exc)) from exc
 
 
-def log_job(config, run_id, payload):
-    """Read new bounded stdout and stderr for one submitted top-level job."""
+def log_job(config, run_id, payload, child_key=None):
+    """Read new bounded top-level or selected child stdout and stderr. """
     prepared = load_prepared(config, run_id)
     submission = load_submission(config, prepared)
+    if submission['status'] != 'submitted':
+        raise RejectedInput('Log retrieval requires a submitted receipt')
     cursors = decode_cursors(payload, config['logs']['max_cursor_payload_bytes'])
+    child_records = []
+    if child_key is not None:
+        child_records = load_child_records(config, prepared, None)
     streams = {}
     for name in ('stdout', 'stderr'):
-        fpath = resolve_top_level_log_path(prepared, submission, name)
+        if child_key is None:
+            fpath = resolve_top_level_log_path(prepared, submission, name)
+        else:
+            fpath = resolve_child_log_path(
+                prepared,
+                child_records,
+                child_key,
+                name,
+            )
         streams[name] = read_log_stream(
             fpath,
             cursors[name],
             config['logs']['max_bytes_per_stream'],
             config['logs']['max_lines_per_stream'],
         )
-    return {
+    result = {
         'schema_version': 1,
         'operation': 'job-log',
         'status': 'ok',
@@ -646,6 +692,14 @@ def log_job(config, run_id, payload):
         'remote_host': socket.gethostname(),
         'helper': helper_identity(),
     }
+    if child_key is not None:
+        result['child_key'] = child_key
+        selected = [
+            record for record in child_records
+            if record['child_key'] == child_key
+        ]
+        result['slurm_job_id'] = selected[0]['slurm_job_id']
+    return result
 
 
 def write_dual_record(state_path, run_path, record, label):
@@ -868,6 +922,7 @@ def build_parser():
     log = commands.add_parser('log')
     log.add_argument('run_id')
     log.add_argument('cursor_payload')
+    log.add_argument('child_key', nargs='?')
     return parser
 
 
@@ -889,7 +944,12 @@ def main():
             elif operation == 'status':
                 result = status_job(config, args.run_id)
             elif operation == 'log':
-                result = log_job(config, args.run_id, args.cursor_payload)
+                result = log_job(
+                    config,
+                    args.run_id,
+                    args.cursor_payload,
+                    args.child_key,
+                )
             elif operation == 'finalize':
                 result = finalize_job(config, args.run_id)
             else:

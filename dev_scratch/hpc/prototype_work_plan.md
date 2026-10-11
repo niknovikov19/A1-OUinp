@@ -448,6 +448,13 @@ archived under the already-ignored `batchtools_csv/` directory with the HPC run
 ID in the filename, so neither success nor failure leaves the automation
 checkout dirty. Run 005 tests the corrected child script and archive behavior.
 
+Run 005 passed child submission and durable discovery: jobs `117836` and
+`117837` were recorded with their coordinates and paths. Both simulations
+failed, while BatchTools kept showing them as running and held main job
+`117835` open. Before B3, `hpc-job status` and `hpc-job log --child` must expose
+the recorded child states and bounded logs. A protected cancellation operation
+must be designed separately because it mutates scheduler state.
+
 Inspection showed that `LocalProcCmd` returns the complete `sbatch` result
 synchronously, while the previous repository subclass neither parsed nor
 retained it. The candidate uses `sbatch --parsable`, records each receipt at

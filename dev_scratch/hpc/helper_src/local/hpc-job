@@ -25,6 +25,7 @@ from hpc_common import (
     get_config_identity,
     load_config,
     validate_git_commit,
+    validate_request_id,
     validate_run_id,
 )
 
@@ -53,9 +54,12 @@ def build_parser():
     submit = commands.add_parser('submit')
     submit.add_argument('run_id')
     submit.add_argument('expected_commit')
-    for operation in ('status', 'log', 'finalize', 'release'):
+    for operation in ('status', 'finalize', 'release'):
         command = commands.add_parser(operation)
         command.add_argument('run_id')
+    log = commands.add_parser('log')
+    log.add_argument('run_id')
+    log.add_argument('--child', dest='child_key')
     return parser
 
 
@@ -64,6 +68,8 @@ def validate_args(args):
     args.run_id = validate_run_id(args.run_id)
     if args.operation == 'submit':
         args.expected_commit = validate_git_commit(args.expected_commit)
+    if args.operation == 'log' and args.child_key is not None:
+        args.child_key = validate_request_id(args.child_key)
     return args
 
 
@@ -133,9 +139,28 @@ def validate_cursor_state(value):
             validate_run_id(run_id)
         except RejectedInput as exc:
             raise HelperFailure('Invalid run ID in cursor state') from exc
-        if not isinstance(streams, dict) or not set(streams) <= {'stdout', 'stderr'}:
+        allowed = {'children', 'stderr', 'stdout'}
+        if not isinstance(streams, dict) or not set(streams) <= allowed:
             raise HelperFailure('Invalid cursor streams')
         for name, cursor in streams.items():
+            if name == 'children':
+                if not isinstance(cursor, dict) or len(cursor) > 100:
+                    raise HelperFailure('Invalid child cursors')
+                for child_key, child_streams in cursor.items():
+                    try:
+                        validate_request_id(child_key)
+                    except RejectedInput as exc:
+                        raise HelperFailure('Invalid child cursor key') from exc
+                    if not isinstance(child_streams, dict):
+                        raise HelperFailure('Invalid child cursor streams')
+                    if not set(child_streams) <= {'stdout', 'stderr'}:
+                        raise HelperFailure('Invalid child cursor streams')
+                    for stream_name, child_cursor in child_streams.items():
+                        validate_cursor(
+                            child_cursor,
+                            f'{run_id} {child_key} {stream_name}',
+                        )
+                continue
             validate_cursor(cursor, f'{run_id} {name}')
     return value
 
@@ -179,9 +204,17 @@ def write_cursor_state(fpath, state):
         raise HelperFailure(f'Cannot write cursor state: {exc}') from exc
 
 
-def encode_cursors(state, run_id):
-    """Encode only one run's stdout and stderr cursor values."""
+def get_stored_cursors(state, run_id, child_key=None):
+    """Return stored controller or selected child stream cursors. """
     stored = state['runs'].get(run_id, {})
+    if child_key is not None:
+        stored = stored.get('children', {}).get(child_key, {})
+    return stored
+
+
+def encode_cursors(state, run_id, child_key=None):
+    """Encode one controller or selected child cursor pair. """
+    stored = get_stored_cursors(state, run_id, child_key)
     value = {
         'schema_version': 1,
         'streams': {
@@ -192,12 +225,13 @@ def encode_cursors(state, run_id):
     return base64.urlsafe_b64encode(canonical_json(value).encode()).decode()
 
 
-def update_cursors(state, run_id, result):
-    """Advance local cursors only to validated successful remote offsets."""
+def update_cursors(state, run_id, result, child_key=None):
+    """Advance one controller or selected child cursor pair. """
     streams = result.get('streams')
     if not isinstance(streams, dict) or set(streams) != {'stdout', 'stderr'}:
         raise RemoteUnavailable('Remote log streams are invalid')
-    current = dict(state['runs'].get(run_id, {}))
+    run_cursors = dict(state['runs'].get(run_id, {}))
+    current = dict(get_stored_cursors(state, run_id, child_key))
     for name, stream in streams.items():
         if not isinstance(stream, dict) or stream.get('status') not in {'ok', 'missing'}:
             raise RemoteUnavailable(f'Remote {name} stream is invalid')
@@ -212,7 +246,13 @@ def update_cursors(state, run_id, result):
             if not valid_identity or not valid_offset or offset < 0:
                 raise RemoteUnavailable(f'Remote {name} cursor is invalid')
             current[name] = {'identity': identity, 'offset': offset}
-    state['runs'][run_id] = current
+    if child_key is None:
+        run_cursors.update(current)
+    else:
+        children = dict(run_cursors.get('children', {}))
+        children[child_key] = current
+        run_cursors['children'] = children
+    state['runs'][run_id] = run_cursors
     return state
 
 
@@ -224,6 +264,8 @@ def build_ssh_command(config, args, cursor_payload=None):
         parts.append(args.expected_commit)
     elif args.operation == 'log':
         parts.append(cursor_payload)
+        if args.child_key is not None:
+            parts.append(args.child_key)
     remote = ' '.join(shlex.quote(item) for item in parts)
     timeout = config['ssh']['connect_timeout_sec']
     return [
@@ -299,10 +341,15 @@ def run_log(config, args):
     lock_id = acquire_cursor_lock(state_dir, lock_path)
     try:
         state = load_cursor_state(state_path)
-        payload = encode_cursors(state, args.run_id)
+        payload = encode_cursors(state, args.run_id, args.child_key)
         result, exit_code = run_remote(config, args, payload)
         if exit_code == EXIT_SUCCESS:
-            update_cursors(state, args.run_id, result)
+            update_cursors(
+                state,
+                args.run_id,
+                result,
+                args.child_key,
+            )
             write_cursor_state(state_path, state)
         return result, exit_code
     finally:
@@ -329,7 +376,16 @@ def concise_output(result):
         job = result['scheduler']
         print(f'Slurm job: {result["slurm_job_id"]}')
         print(f'Scheduler: {job["normalized_state"]} ({job["raw_state"]})')
+        for child in result.get('children', []):
+            scheduler = child['scheduler']
+            print(
+                f'Child {child["child_key"]}: '
+                f'{scheduler["normalized_state"]} '
+                f'({scheduler["raw_state"]})'
+            )
     elif operation == 'job-log':
+        if result.get('child_key'):
+            print(f'Child: {result["child_key"]}')
         for name in ('stdout', 'stderr'):
             stream = result['streams'][name]
             print(f'--- {name} [{stream["start_offset"]}:{stream["end_offset"]}] ---')

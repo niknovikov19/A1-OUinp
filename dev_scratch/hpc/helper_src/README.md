@@ -499,12 +499,15 @@ The grid helper replaces the pending repository record with the receipt before
 returning. An unavailable or malformed scheduler response becomes `unknown`;
 pending and unknown submissions are never retried automatically.
 
-Status queries only the recorded Slurm ID through the established A5 status
-helper. Log retrieval derives stdout and stderr from that receipt and returns
-only new bounded content. Finalization requires a terminal scheduler state and,
-for `COMPLETED`, every declared completion file. It does not release the code
-checkout. `release` is a separate operation that verifies matching terminal
-records before removing the active-run marker.
+Status queries the recorded top-level Slurm ID and any recorded BatchTools
+child IDs together through the established A5 status helper. Log retrieval
+derives top-level stdout and stderr from the submission receipt; optional
+`log RUN_ID --child CHILD_KEY` derives child paths only from the validated
+child index. Both return only new bounded content with separate cursors.
+Finalization requires a terminal scheduler state and, for `COMPLETED`, every
+declared completion file. It does not release the code checkout. `release` is
+a separate operation that verifies matching terminal records before removing
+the active-run marker.
 
 ### B1 call chains
 
@@ -527,8 +530,8 @@ Codex
 Codex
   -> /opt/a1-hpc/bin/hpc-job status|log|finalize|release RUN_ID
   -> derive every ID and path from protected records
-  -> status: query the one recorded ID through hpc-grid-status
-  -> log: read bounded incremental top-level stdout and stderr
+  -> status: query recorded top-level and child IDs through hpc-grid-status
+  -> log: read bounded incremental top-level or selected child streams
   -> finalize: bind terminal scheduler and declared-file evidence
   -> release: verify final evidence and remove the active-run marker
 ```
@@ -555,6 +558,12 @@ coordinates, stdout/stderr paths, declared scientific output, and submission
 time. Finalization ingests this file through `hpc_job_lifecycle.py`. A completed
 batch requires exactly the prepared number of child records, and every child
 output must also be declared by the tracked request.
+
+If a simulation job fails without producing the BatchTools completion
+artifact, BatchTools can continue displaying it as running and keep the main
+job alive. Child-aware status and log operations expose the real scheduler
+state and the selected child error without an ad hoc SSH command. Cancellation
+remains a separate scheduler mutation and requires its own protected operation.
 
 ## Exit codes
 

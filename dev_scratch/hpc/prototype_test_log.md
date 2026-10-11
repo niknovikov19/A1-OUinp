@@ -1693,3 +1693,22 @@ and its active-run lock was released. The failed BatchTools attempt had also
 left `b2_child_discovery.csv` at the checkout root. It was moved to the ignored
 run archive, and the batch entry point now performs that move automatically in
 a `finally` block using a run-specific filename under `batchtools_csv/`.
+
+## B2 fifth real BatchTools attempt
+
+Run `b2-child-discovery-005` was submitted once as main Slurm job `117835`.
+Ray returned, both seed trials started, and BatchTools successfully submitted
+child jobs `117836` and `117837`. Their exact IDs and metadata were preserved
+in `jobs/index.jsonl`, proving the B2 child-discovery mechanism.
+
+Both simulation jobs then failed and terminated. BatchTools did not propagate
+their terminal scheduler states; it continued to display both trials as
+running and kept the main allocation alive. The installed protected commands
+could observe only the main job and its logs, so the main job required one
+explicit one-time cancellation. Run 005 then finalized durably as failed and
+was released.
+
+Before another scientific submission, the read-only protected interface is
+extended so `status` reports all recorded children and `log --child` reads one
+recorded child's bounded streams. Protected cancellation remains a separate
+follow-up because it is a scheduler mutation.

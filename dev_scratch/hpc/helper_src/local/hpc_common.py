@@ -7,7 +7,7 @@ import stat
 from datetime import datetime, timezone
 
 
-BUNDLE_VERSION = '0.10.0-b2'
+BUNDLE_VERSION = '0.11.0-b2'
 CONFIG_SCHEMA_VERSION = 1
 
 EXIT_SUCCESS = 0
@@ -47,6 +47,7 @@ SENSITIVE_KEY_PARTS = (
 )
 
 PUBLIC_AUDIT_ARGS = {
+    '--child',
     '--help',
     '--json',
     '--self-test',

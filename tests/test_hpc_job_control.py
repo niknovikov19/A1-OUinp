@@ -64,7 +64,12 @@ LOCAL = load_script_module(
 
 def make_scheduler_job(job_id=117950, raw_state='COMPLETED'):
     """Return one normalized A5 scheduler result."""
-    normalized = 'completed' if raw_state == 'COMPLETED' else 'running'
+    normalized = {
+        'CANCELLED': 'cancelled',
+        'COMPLETED': 'completed',
+        'FAILED': 'failed',
+        'RUNNING': 'running',
+    }[raw_state]
     return {
         'job_id': job_id,
         'source': 'sacct' if raw_state == 'COMPLETED' else 'squeue',
@@ -168,6 +173,51 @@ class HpcJobControlUnitTests(unittest.TestCase):
         valid['runs']['b1-single-fixture-001']['stdout']['identity'] = '12:x'
         with self.assertRaises(LOCAL.HelperFailure):
             LOCAL.validate_cursor_state(valid)
+
+    def test_local_cursor_state_separates_child_logs(self):
+        """Keep one incremental cursor pair for each recorded child key. """
+        state = {'schema_version': 1, 'runs': {}}
+        result = {
+            'streams': {
+                'stdout': {
+                    'status': 'ok',
+                    'identity': '12:34',
+                    'end_offset': 10,
+                },
+                'stderr': {'status': 'missing'},
+            },
+        }
+        LOCAL.update_cursors(
+            state,
+            'b2-child-fixture-001',
+            result,
+            'run_00000',
+        )
+        self.assertEqual(
+            state['runs']['b2-child-fixture-001']['children']
+            ['run_00000']['stdout']['offset'],
+            10,
+        )
+        self.assertEqual(LOCAL.validate_cursor_state(state), state)
+
+    def test_local_child_log_argument_is_validated(self):
+        """Accept one safe child key and reject path-like values. """
+        parser = LOCAL.build_parser()
+        args = parser.parse_args([
+            'log',
+            'b2-child-fixture-001',
+            '--child',
+            'run_00000',
+        ])
+        self.assertEqual(LOCAL.validate_args(args).child_key, 'run_00000')
+        unsafe = parser.parse_args([
+            'log',
+            'b2-child-fixture-001',
+            '--child',
+            '../run',
+        ])
+        with self.assertRaises(LOCAL.RejectedInput):
+            LOCAL.validate_args(unsafe)
 
 
 class HpcJobControlLifecycleTests(unittest.TestCase):
@@ -341,6 +391,89 @@ class HpcJobControlLifecycleTests(unittest.TestCase):
         released = LETHE.release_job(self.config, self.run_id)
         self.assertEqual(released['result'], 'released')
         self.assertFalse((self.state / 'active-run.json').exists())
+
+    def test_batch_status_includes_recorded_child_scheduler_states(self):
+        """Query the main allocation and every recorded child together. """
+        batch = {
+            **self.prepared,
+            'job_kind': 'batch',
+            'simulation_job_limit': 2,
+        }
+        submission = {'status': 'submitted', 'slurm_job_id': 117950}
+        child = {
+            'child_key': 'run_00000',
+            'expected_outputs': ['exp_results/group/smoke/exp_fixture/result.json'],
+            'parameters': {'seed': 1},
+            'slurm_job_id': 117951,
+            'stderr_path': 'exp_results/group/smoke/exp_fixture/jobs/run_00000.err',
+            'stdout_path': 'exp_results/group/smoke/exp_fixture/jobs/run_00000.run',
+        }
+        jobs = [
+            make_scheduler_job(raw_state='RUNNING'),
+            make_scheduler_job(117951, raw_state='FAILED'),
+        ]
+        with patch.object(LETHE, 'load_prepared', return_value=batch):
+            with patch.object(LETHE, 'load_submission', return_value=submission):
+                with patch.object(LETHE, 'load_child_records', return_value=[child]):
+                    with patch.object(
+                        LETHE,
+                        'scheduler_statuses',
+                        return_value=(jobs, NOW),
+                    ) as status:
+                        result = LETHE.status_job(self.config, self.run_id)
+        status.assert_called_once_with(self.config, [117950, 117951])
+        self.assertEqual(result['scheduler']['normalized_state'], 'running')
+        self.assertEqual(
+            result['children'][0]['scheduler']['normalized_state'],
+            'failed',
+        )
+
+    def test_batch_child_log_uses_only_recorded_paths(self):
+        """Read one selected child's bounded streams from its fixed record. """
+        batch = {
+            **self.prepared,
+            'job_kind': 'batch',
+            'simulation_job_limit': 2,
+        }
+        result_root = self.repo / batch['expected_result_path']
+        jobs_dir = result_root / 'jobs'
+        jobs_dir.mkdir(parents=True)
+        (jobs_dir / 'run_00000.run').write_text('child output\n')
+        (jobs_dir / 'run_00000.err').write_text('child error\n')
+        child = {
+            'schema_version': 1,
+            'run_id': self.run_id,
+            'child_key': 'run_00000',
+            'slurm_job_id': 117951,
+            'parameters': {'seed': 1},
+            'stdout_path': (
+                f'{batch["expected_result_path"]}/jobs/run_00000.run'
+            ),
+            'stderr_path': (
+                f'{batch["expected_result_path"]}/jobs/run_00000.err'
+            ),
+            'expected_outputs': [
+                f'{batch["expected_result_path"]}/result.json',
+            ],
+            'submitted_at_utc': NOW,
+        }
+        payload = base64.urlsafe_b64encode(canonical_json({
+            'schema_version': 1,
+            'streams': {'stdout': None, 'stderr': None},
+        }).encode()).decode()
+        submission = {'status': 'submitted', 'slurm_job_id': 117950}
+        with patch.object(LETHE, 'load_prepared', return_value=batch):
+            with patch.object(LETHE, 'load_submission', return_value=submission):
+                with patch.object(LETHE, 'load_child_records', return_value=[child]):
+                    result = LETHE.log_job(
+                        self.config,
+                        self.run_id,
+                        payload,
+                        'run_00000',
+                    )
+        self.assertEqual(result['slurm_job_id'], 117951)
+        self.assertEqual(result['streams']['stdout']['content'], 'child output\n')
+        self.assertEqual(result['streams']['stderr']['content'], 'child error\n')
 
 
 if __name__ == '__main__':
