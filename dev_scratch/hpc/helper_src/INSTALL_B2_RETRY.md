@@ -47,5 +47,15 @@ successful local startup, but `ray.init()` again did not return. All three B2
 attempts ran on `node10`; the same environment previously completed a large
 BatchTools run on the cluster. After explicit approval, job `117833` was
 cancelled, finalized, and released with no children. The next tracked retry
-uses a dedicated top-level template with `#SBATCH --exclude=node10` and fresh
-run `b2-child-discovery-004`. Simulation-job settings are unchanged.
+adds `#SBATCH --exclude=node10` to the canonical batch main-job template and
+uses fresh run `b2-child-discovery-004`. Simulation-job settings are unchanged.
+
+The changed template hash requires only the remote preparation policy to be
+promoted again; the local protected installation and helper code are unchanged.
+After updating the automation checkout to the reported commit, run on lethe:
+
+```bash
+B2_RETRY_COMMIT='<same full 40-character commit>'
+bash /ddn/niknovikov19/repo/A1_OUinp_codex/dev_scratch/hpc/helper_src/promotion/promote_b2_retry_lethe.sh \
+    "$B2_RETRY_COMMIT"
+```

@@ -432,7 +432,8 @@ Run `b2-child-discovery-003` confirmed that repository packaging was removed,
 but `ray.init()` still did not return after announcing local startup. All three
 B2 attempts were assigned to `node10`, while the same environment previously
 completed a large BatchTools run. The next retry excludes `node10` only for
-the top-level BatchTools main job and keeps all reviewed resource settings.
+batch main jobs, not for BatchTools-generated simulation jobs, and keeps all
+reviewed resource settings.
 
 Inspection showed that `LocalProcCmd` returns the complete `sbatch` result
 synchronously, while the previous repository subclass neither parsed nor

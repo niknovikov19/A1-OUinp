@@ -361,8 +361,8 @@ class HpcJobRenderTests(unittest.TestCase):
                     template,
                 )
 
-    def test_b2_retry_template_excludes_node_with_repeated_ray_stalls(self):
-        """Require the B2 retry to avoid the node with repeated Ray stalls. """
+    def test_batch_template_excludes_node_with_repeated_ray_stalls(self):
+        """Require batch main jobs to avoid the node with repeated Ray stalls. """
         dirpath_repo = Path(__file__).resolve().parents[1]
         request_path = dirpath_repo / 'hpc_jobs/requests/b2-child-discovery.json'
         request = validate_request(json.loads(request_path.read_text()))

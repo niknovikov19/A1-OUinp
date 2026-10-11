@@ -5,6 +5,7 @@
 #SBATCH --ntasks=@@CORES@@
 #SBATCH --mem=@@MEMORY@@
 #SBATCH --partition=@@PARTITION@@
+#SBATCH --exclude=node10
 #SBATCH --output=@@STDOUT@@
 #SBATCH --error=@@STDERR@@
 #SBATCH --export=ALL

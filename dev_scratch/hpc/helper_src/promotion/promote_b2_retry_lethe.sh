@@ -39,7 +39,7 @@ B2R_CONFIG="$B2R_REPO/dev_scratch/hpc/helper_src/config_examples/remote-hpc-prep
 B2R_REQUEST="$B2R_REPO/hpc_jobs/requests/b2-child-discovery.json"
 B2R_TEMPLATE="$B2R_REPO/hpc_jobs/templates/batch.sh"
 B2R_STATE="$B2R_ROOT/state/A1_OUinp"
-printf 'B2 retry resource-policy promotion: lethe\n'
+printf 'B2 node-isolation policy promotion: lethe\n'
 printf 'B2 retry commit: %s\n' "$B2R_COMMIT"
 printf 'Started UTC: %s\n' "$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
 printf 'Report: %s\n' "$B2R_REPORT"
@@ -69,8 +69,8 @@ printf '\n== Installed configuration ==\n'
 sha256sum "$B2R_ROOT/config/A1_OUinp-prepare.json"
 cmp -s "$B2R_CONFIG" "$B2R_ROOT/config/A1_OUinp-prepare.json"
 stat -c '%A %a %U:%G %n' "$B2R_ROOT/config" "$B2R_ROOT/config/A1_OUinp-prepare.json"
-test ! -e "$B2R_REPO/hpc_jobs/runs/b2-child-discovery-002"
-test ! -e "$B2R_STATE/runs/b2-child-discovery-002.json"
+test ! -e "$B2R_REPO/hpc_jobs/runs/b2-child-discovery-004"
+test ! -e "$B2R_STATE/runs/b2-child-discovery-004.json"
 test ! -e "$B2R_STATE/active-run.json"
 printf 'Fresh B2 retry run ID: absent as expected\n'
 printf '\nCompleted UTC: %s\n' "$(date -u +'%Y-%m-%dT%H:%M:%SZ')"

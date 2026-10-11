@@ -18,6 +18,10 @@ Requests contain scientific target names and operational resources. Scientific
 parameter values remain in `exp_configs/` or `workflow_configs/`. The expected
 result path is an assertion against the path derived by `hpc_preflight.py`.
 
+The canonical batch main-job template temporarily excludes `node10` because
+three B2 Ray-startup attempts stalled there. BatchTools-generated simulation
+jobs do not inherit that exclusion.
+
 The exact Git commit is supplied to the protected preparation operation and is
 stored in the prepared run record. It is intentionally not embedded in a
 tracked request because a file cannot contain the hash of its own commit.
