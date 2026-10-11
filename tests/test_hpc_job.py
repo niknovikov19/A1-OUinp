@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 import tempfile
 import unittest
@@ -359,6 +360,24 @@ class HpcJobRenderTests(unittest.TestCase):
                     '${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}',
                     template,
                 )
+
+    def test_b2_retry_template_excludes_node_with_repeated_ray_stalls(self):
+        """Require the B2 retry to avoid the node with repeated Ray stalls. """
+        dirpath_repo = Path(__file__).resolve().parents[1]
+        request_path = dirpath_repo / 'hpc_jobs/requests/b2-child-discovery.json'
+        request = validate_request(json.loads(request_path.read_text()))
+        template = (dirpath_repo / request['template_path']).read_text()
+        context = {
+            'job_kind': 'batch',
+            'request_id': request['request_id'],
+            'run_id': 'b2-child-discovery-004',
+            'top_level_resources': request['top_level_resources'],
+            'stdout_path': '/repo/hpc_jobs/runs/b2/slurm-%j.out',
+            'stderr_path': '/repo/hpc_jobs/runs/b2/slurm-%j.err',
+        }
+        values = build_template_values(context, '/repo/A1_OUinp')
+        rendered = render_template(template, values, TEMPLATE_TOKENS['batch'])
+        self.assertIn('#SBATCH --exclude=node10\n', rendered)
 
 
 if __name__ == '__main__':

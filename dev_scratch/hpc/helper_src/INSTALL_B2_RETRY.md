@@ -41,3 +41,11 @@ It was explicitly cancelled, finalized, and released with no children. The
 tracked follow-up removes unnecessary repository packaging for local Ray and
 uses fresh run `b2-child-discovery-003`; no additional protected promotion is
 required for that repository-code change.
+
+Run `b2-child-discovery-003` removed repository packaging, and Ray reported a
+successful local startup, but `ray.init()` again did not return. All three B2
+attempts ran on `node10`; the same environment previously completed a large
+BatchTools run on the cluster. After explicit approval, job `117833` was
+cancelled, finalized, and released with no children. The next tracked retry
+uses a dedicated top-level template with `#SBATCH --exclude=node10` and fresh
+run `b2-child-discovery-004`. Simulation-job settings are unchanged.

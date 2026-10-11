@@ -1639,3 +1639,23 @@ The package contained coordinator-irrelevant tracked directories such as
 same allocated node and can read the shared exact checkout directly. The next
 candidate therefore removes `runtime_env.working_dir`, disables the unused Ray
 dashboard, and supplies the shared checkout through inherited `PYTHONPATH`.
+
+## B2 third real BatchTools attempt
+
+Run `b2-child-discovery-003` was submitted once as main Slurm job `117833`.
+The corrected startup did not package or upload the repository, and Ray logged
+that its local instance had started. `ray.init()` nevertheless did not return,
+no Tune checkpoint appeared, and no child job was submitted.
+
+Slurm accounting showed that all three B2 attempts ran on `node10`. The same
+`netpyne_batch_slurm` environment and `/tmp/ray` layout had previously
+completed a 225-trial BatchTools run, while both installed environments used
+the same editable BatchTools `0.1.6` source. The repeated node placement is
+therefore the leading remaining variable. After explicit approval, job
+`117833` was cancelled, finalized with zero children and zero completion
+files, and released.
+
+The next retry uses a dedicated tracked top-level template containing
+`#SBATCH --exclude=node10`. The exclusion applies only to the BatchTools main
+job; its established 2-task, 16 GB, 24-hour allocation and both simulation-job
+resource specifications remain unchanged.

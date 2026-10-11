@@ -412,8 +412,8 @@ Pass condition: one simulation completes from an exact commit, all records agree
 
 Purpose: resolve the largest application-specific uncertainty before building general batch monitoring.
 
-Implementation status: two real attempts failed before child submission;
-Ray-startup correction is in development. Run `b2-child-discovery-001`
+Implementation status: three real attempts failed before child submission;
+node-isolation retry is in development. Run `b2-child-discovery-001`
 started Ray as Slurm job `117831`, reached the 2 GB main-job limit, suffered 21
 OOM kills, and timed out without a child `sbatch`. It was finalized and
 released. The retry uses the established BatchTools-main allocation from
@@ -427,6 +427,12 @@ finalized, and released. Local Ray workers share the allocated node and DDN
 checkout; the next candidate therefore imports coordinator code through the
 shared checkout and does not package the repository as a Ray runtime
 environment.
+
+Run `b2-child-discovery-003` confirmed that repository packaging was removed,
+but `ray.init()` still did not return after announcing local startup. All three
+B2 attempts were assigned to `node10`, while the same environment previously
+completed a large BatchTools run. The next retry excludes `node10` only for
+the top-level BatchTools main job and keeps all reviewed resource settings.
 
 Inspection showed that `LocalProcCmd` returns the complete `sbatch` result
 synchronously, while the previous repository subclass neither parsed nor
