@@ -1819,3 +1819,36 @@ all outputs declared for that exact child exist, it returns the fixed
 `{"done": 1}` metric used by this non-optimizing batch. This avoids reliance on
 the broken signal path without changing BatchTools or inferring completion from
 logs. The retry uses a fresh `attempt_3` result directory.
+
+## B3 third real four-child attempt
+
+Run `b3-tiny-batch-003` was submitted once as main job `117858`. The first two
+simulation jobs were `117859` and `117860`; after their declared outputs
+appeared, the repository dispatcher released both BatchTools concurrency slots
+and submitted `117861` and `117862`. No second BatchTools main job ran in
+parallel.
+
+All four child jobs and the main job completed with Slurm exit code `0:0`.
+Protected finalization verified `jobs/index.jsonl` plus all four declared result
+JSON files and recorded `run_status: complete`. A bounded sanity check of child
+`b3_tiny_batch_00003` showed one cell, 15 spikes, and 15 Hz. The run was then
+released. B3 passes without opening every child log or scanning the result
+tree.
+
+## B4 controlled-failure candidate
+
+Existing fixture tests already cover fail-closed submission after a lost
+scheduler response, `unknown` submission state, missing outputs after Slurm
+completion, mixed main/child scheduler states, bounded child-log selection,
+and explicit cancellation bound to the active run. B2 and B3 additionally
+cover a waiting BatchTools main job with valid outputs and successful recovery
+without duplicate submission.
+
+The remaining real-path test uses two reviewed seeds. Seed `1501` follows the
+successful one-cell path; seed `1502` raises an intentional error in
+experiment-owned `post_run()` after the short simulation and before its
+declared result is moved into place. The expected evidence is one completed
+child with a result, one failed child with no declared result, an exact
+parameter mapping in `jobs/index.jsonl`, and a bounded traceback for only the
+failed child. The main job must be cancelled only after diagnosis, then
+finalized as failed and released without retrying either child.

@@ -501,11 +501,12 @@ reports both child scheduler states without recursively scanning result trees.
 
 Purpose: validate compact batch status and completion logic.
 
-Implementation status: candidate ready. It uses four stimulus seeds,
-concurrency two, the B2-proven one-cell simulation, and fresh result paths.
-The known BatchTools main-job notification limitation is accepted: after all
-children and outputs are verified, a still-running main job is cancelled via
-the protected operation before finalization and release.
+Implementation status: passed. Run `b3-tiny-batch-003` used four stimulus
+seeds, concurrency two, and the B2-proven one-cell simulation. The
+repository-owned dispatcher released each slot from the exact child's declared
+scientific outputs when the BatchTools file signal was unavailable. All four
+children and the main job completed with exit code `0:0`; protected
+finalization verified the child index and all four result files.
 
 Sequence:
 
@@ -517,11 +518,19 @@ Sequence:
 - Compare Slurm terminal states, BatchTools main-job state, job completion
   records, and expected result existence.
 
-Pass condition: all four jobs and outputs are accounted for without opening every log or scanning the result tree.
+Pass result: all four jobs and outputs were accounted for through one compact
+status operation and one selected child-log sanity check, without recursively
+scanning the result tree.
 
 ### Gate B4: controlled failure and uncertainty handling
 
 Purpose: prove conservative behavior before relying on the workflow.
+
+Implementation status: fixture coverage is present for lost submission
+responses, unknown state, missing outputs, mixed main/child states, bounded
+child logs, and cancellation binding. One two-child real-path candidate adds a
+single reviewed failure at stimulus seed `1502`; seed `1501` remains the
+successful control.
 
 Use fixtures whenever the behavior can be tested without consuming cluster resources. Use one explicitly approved tiny failing child only for behavior that requires the real BatchTools/Slurm path.
 
