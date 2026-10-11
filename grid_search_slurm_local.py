@@ -50,6 +50,7 @@ set -eo pipefail
 export JOBID=$SLURM_JOB_ID
 export MSGFILE="{job_path}/{label}.out"
 export SGLFILE="{job_path}/{label}.sgl"
+unset SOCNAME
 {env}
 {custom}
 cd @@CHECKOUT@@

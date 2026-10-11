@@ -16,6 +16,7 @@ class HpcBatchEntrypointTests(unittest.TestCase):
         self.assertIn(f'cd {checkout}', script)
         self.assertIn('set -eo pipefail', script)
         self.assertIn('exec {command}', script)
+        self.assertIn('unset SOCNAME', script)
         self.assertNotIn('{project_path}', script)
         self.assertNotIn('\nwait\n', script)
 

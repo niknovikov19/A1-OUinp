@@ -10,7 +10,7 @@ RXE = 10000
 RXI = 100
 WXE = 0.1
 WXI = 0.05
-RUN_ATTEMPT = 1
+RUN_ATTEMPT = 2
 
 
 def apply_exp_cfg(cfg):

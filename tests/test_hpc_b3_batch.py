@@ -11,7 +11,7 @@ REQUEST_PATH = 'hpc_jobs/requests/b3-tiny-batch.json'
 EXPECTED_RESULT_PATH = (
     'exp_results/batch_hpc_prototype/b3_tiny_batch/'
     'exp_hpc_b3_tiny_batch_nseed_4_t_0.5_1.0_'
-    'rx_10000_100_wx_0.1_0.05_n_1_attempt_1'
+    'rx_10000_100_wx_0.1_0.05_n_1_attempt_2'
 )
 
 

@@ -1788,3 +1788,18 @@ outputs succeed while the BatchTools main misses their completion signal, the
 main job will be cancelled only after that evidence is verified. The formal
 top-level run status will then remain `failed`/`CANCELLED`, while the scientific
 batch outcome is recorded separately as successful.
+
+## B3 first real four-child attempt
+
+Run `b3-tiny-batch-001` was submitted once as main job `117852`. With the
+concurrency limit of two, BatchTools submitted children `117853` and `117854`.
+Both completed with Slurm exit code `0:0` and produced their declared result
+JSON files. BatchTools did not acknowledge either completion, so the remaining
+two simulations could not enter the two occupied concurrency slots.
+
+The main job was cancelled only after both submitted children were terminal.
+It finalized as failed with the child index and two available results verified,
+then released the checkout. The repository retry explicitly removes inherited
+`SOCNAME` from the file-based child job, verifies that `MSGFILE` exists after
+`comm.send()`, and creates the corresponding `SGLFILE` completion marker. The
+retry uses a fresh `attempt_2` result directory.

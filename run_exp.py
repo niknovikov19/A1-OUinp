@@ -164,6 +164,19 @@ def _write_json_atomic(fpath, value):
     os.replace(fpath_tmp, fpath)
 
 
+def _ensure_batchtools_file_signal():
+    """Verify the BatchTools message and create its file completion marker. """
+    fpath_message = os.environ.get('MSGFILE')
+    fpath_signal = os.environ.get('SGLFILE')
+    if fpath_message is None and fpath_signal is None:
+        return
+    if not fpath_message or not fpath_signal:
+        raise RuntimeError('Incomplete BatchTools file-signaling environment')
+    if not Path(fpath_message).is_file():
+        raise FileNotFoundError('BatchTools result message was not written')
+    Path(fpath_signal).touch(exist_ok=True)
+
+
 def _get_workflow_job_id(sim_label):
     """Extract the BatchTools integer job ID from simLabel."""
     try:
@@ -598,6 +611,7 @@ if comm.is_host():
     except:
         print('COMM SEND FAILED') """
     comm.send({'done': 1, **batch_metrics})
+    _ensure_batchtools_file_signal()
     comm.close()
 
 
