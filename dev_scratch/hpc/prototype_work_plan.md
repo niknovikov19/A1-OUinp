@@ -412,8 +412,9 @@ Pass condition: one simulation completes from an exact commit, all records agree
 
 Purpose: resolve the largest application-specific uncertainty before building general batch monitoring.
 
-Implementation status: three real attempts failed before child submission;
-node-isolation retry is in development. Run `b2-child-discovery-001`
+Implementation status: passed with a known BatchTools completion-notification
+limitation. Early attempts failed before child submission. Run
+`b2-child-discovery-001`
 started Ray as Slurm job `117831`, reached the 2 GB main-job limit, suffered 21
 OOM kills, and timed out without a child `sbatch`. It was finalized and
 released. The retry uses the established BatchTools-main allocation from
@@ -463,12 +464,14 @@ The repository-owned `LocalSlurmSubmit` adapter must render the exact shared
 checkout into `#SBATCH --chdir` and `cd`, then propagate the simulation
 command's exit status. The installed BatchTools package remains unchanged.
 
-Run 006 proved successful child execution and declared scientific outputs, but
-the BatchTools main job remained active because its final file signal was
-missing. The repository dispatcher may treat the trial as complete only when
-the normal message file exists and all declared child outputs are regular
-files. A protected `cancel RUN_ID` operation resolves only the recorded active
-top-level job and accepts no caller-supplied scheduler ID or option.
+Runs 006 and 007 proved successful child execution and declared scientific
+outputs, but the BatchTools main job remained active because its completion
+signal was missing. A narrow repository dispatcher fallback did not change
+that behavior and was removed. The protected `cancel RUN_ID` operation resolves
+only the recorded active top-level job and accepts no caller-supplied scheduler
+ID or option. Until the existing BatchTools signaling becomes reliable, a
+stuck main job is cancelled only after every recorded child is terminal and
+every declared scientific output has been verified.
 
 Inspection showed that `LocalProcCmd` returns the complete `sbatch` result
 synchronously, while the previous repository subclass neither parsed nor
@@ -490,11 +493,19 @@ submitter therefore records one JSONL entry under an exclusive file lock at
 each child submission. Monitoring must not rediscover child jobs by recursively
 searching logs on every status check.
 
-Pass condition: `jobs/index.jsonl` maps both labels to Slurm IDs, parameter coordinates, exact log paths, and expected outputs.
+Pass result: `jobs/index.jsonl` maps both labels to Slurm IDs, parameter
+coordinates, exact log paths, and expected outputs. Protected status also
+reports both child scheduler states without recursively scanning result trees.
 
 ### Gate B3: tiny successful batch
 
 Purpose: validate compact batch status and completion logic.
+
+Implementation status: candidate ready. It uses four stimulus seeds,
+concurrency two, the B2-proven one-cell simulation, and fresh result paths.
+The known BatchTools main-job notification limitation is accepted: after all
+children and outputs are verified, a still-running main job is cancelled via
+the protected operation before finalization and release.
 
 Sequence:
 

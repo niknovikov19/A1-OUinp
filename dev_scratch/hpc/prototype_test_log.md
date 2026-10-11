@@ -1744,12 +1744,47 @@ shared working directory and exit-status propagation.
 BatchTools nevertheless continued to display both completed simulations as
 running because its final file signal was absent. The main job therefore
 remained active after the durable scientific outputs existed. The next narrow
-promotion adds protected top-level cancellation and a repository dispatcher
-fallback that recognizes completion only after the normal BatchTools message
-file and every declared child output exist. BatchTools itself remains
+promotion adds protected top-level cancellation. BatchTools itself remains
 unchanged.
 
 The protected cancel operation stopped only main job `117846`. Finalization
 verified `jobs/index.jsonl` and both result JSON files, recorded the run as
 failed because the top-level scheduler state was `CANCELLED`, and released the
-checkout. The completion-fallback verification uses fresh `attempt_7` output.
+checkout.
+
+## B2 seventh real BatchTools attempt
+
+Run `b2-child-discovery-007` was submitted once as main job `117849`, with
+children `117850` and `117851`. Both child jobs completed with Slurm exit code
+`0:0`, produced their declared result JSON files, and were durably mapped to
+their parameter coordinates, logs, and outputs in `jobs/index.jsonl`.
+
+A repository dispatcher experiment tried to recognize completion from the
+declared outputs after BatchTools entered its running state. It did not change
+the observed behavior: BatchTools continued to display both completed trials
+as running. Because this notification failure is an established limitation and
+is not required for B2 child discovery, the experimental fallback was removed
+instead of adding more BatchTools-specific state handling.
+
+The protected cancel operation stopped only main job `117849`. Finalization
+verified the child index and both scientific result files, recorded the formal
+run status as failed because the top-level scheduler state was `CANCELLED`, and
+released the checkout. Scientifically, both simulations succeeded. B2 passes:
+the protected status operation accounts for both child IDs and states, while
+the durable index accounts for both parameter coordinates, logs, and outputs.
+
+## B3 four-child batch candidate
+
+The B3 candidate keeps the proven one-cell B2 simulation and resource values,
+but uses four distinct stimulus seeds with at most two simulation jobs running
+concurrently. Its tracked request declares one durable child index and four
+non-colliding result JSON files beneath a fresh descriptive result directory.
+The BatchTools main allocation remains the established 2 CPU, 16 GB, 24-hour
+setting; each simulation job remains 1 CPU, 2 GB, and 10 minutes.
+
+B3 uses the protected child-aware status, bounded log, cancellation,
+finalization, and release operations proven in B2. If all four children and
+outputs succeed while the BatchTools main misses their completion signal, the
+main job will be cancelled only after that evidence is verified. The formal
+top-level run status will then remain `failed`/`CANCELLED`, while the scientific
+batch outcome is recorded separately as successful.

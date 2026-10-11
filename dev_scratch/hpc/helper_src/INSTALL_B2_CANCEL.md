@@ -1,11 +1,10 @@
-# B2 protected cancellation and completion fallback
+# B2 protected cancellation
 
 Run 006 proved that both simulation jobs can complete successfully while the
 BatchTools main job remains stuck because its final file signal is missing.
 This promotion adds a protected `hpc-job cancel RUN_ID` operation. The caller
 provides no job ID or Slurm option: the helpers bind `scancel` to the recorded
-active top-level job. It also promotes the repository-owned completion fallback
-for the next attempt; BatchTools itself is not modified.
+active top-level job. BatchTools itself is not modified.
 
 ## Local promotion
 
@@ -41,6 +40,6 @@ bash "$B2_SCRIPT" "$B2_CANCEL_COMMIT"
 rm -f "$B2_SCRIPT"
 ```
 
-The report must end in `B2_CANCEL_RESULT=PASS`. Codex will then cancel run 006
-through the protected command, finalize it from scheduler and output evidence,
-release the checkout, and prepare a fresh completion-fallback verification.
+The report must end in `B2_CANCEL_RESULT=PASS`. Codex then cancels a stuck
+BatchTools main job through the protected command, finalizes it from scheduler
+and output evidence, and releases the checkout.

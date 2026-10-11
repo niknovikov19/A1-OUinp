@@ -28,16 +28,6 @@ class HpcBatchEntrypointTests(unittest.TestCase):
         self.assertEqual(python_path[0], batch_main.DIR_REPO.as_posix())
         self.assertEqual(python_path[1], '/existing')
 
-    def test_declared_child_outputs_control_completion_fallback(self):
-        """Require every declared output before replacing a missing signal. """
-        with tempfile.TemporaryDirectory() as tmp:
-            first = Path(tmp) / 'first.json'
-            second = Path(tmp) / 'second.json'
-            first.write_text('{}\n')
-            self.assertFalse(batch_main._expected_outputs_exist([first, second]))
-            second.write_text('{}\n')
-            self.assertTrue(batch_main._expected_outputs_exist([first, second]))
-
     def test_manual_no_argument_settings_remain_unchanged(self):
         args = SimpleNamespace(
             hpc_request=None,
