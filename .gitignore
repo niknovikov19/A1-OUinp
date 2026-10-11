@@ -18,6 +18,7 @@ exp_results/**/*.json
 exp_results/**/*.run
 exp_results/**/*.sh
 exp_results/**/*.out
+exp_results/**/jobs/
 !exp_results/*/plots/*.png
 !exp_results/*/plots_voltage/*.png
 exp_configs/UNUSED

@@ -454,6 +454,8 @@ failed, while BatchTools kept showing them as running and held main job
 `117835` open. Before B3, `hpc-job status` and `hpc-job log --child` must expose
 the recorded child states and bounded logs. A protected cancellation operation
 must be designed separately because it mutates scheduler state.
+Generated `exp_results/**/jobs/` directories are retained in the result tree
+but ignored as scheduler metadata, including the durable child JSONL index.
 
 Inspection showed that `LocalProcCmd` returns the complete `sbatch` result
 synchronously, while the previous repository subclass neither parsed nor

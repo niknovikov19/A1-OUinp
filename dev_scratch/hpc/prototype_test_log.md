@@ -1712,3 +1712,9 @@ Before another scientific submission, the read-only protected interface is
 extended so `status` reports all recorded children and `log --child` reads one
 recorded child's bounded streams. Protected cancellation remains a separate
 follow-up because it is a scheduler mutation.
+
+The cancelled main process could not execute its Python `finally` cleanup.
+The generated result-side `jobs/index.jsonl` consequently exposed a missing
+ignore rule: sibling scheduler artifacts were already ignored by extension,
+but JSONL was not. The complete generated `exp_results/**/jobs/` directory is
+now ignored while remaining available beside the scientific result.
