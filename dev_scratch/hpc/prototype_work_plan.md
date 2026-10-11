@@ -622,9 +622,7 @@ Do not add these until the prototype has been used successfully on several real 
 
 ## Immediate next action
 
-Commit and push the updated tracked-template hashes, update the clean
-automation checkout, and manually rerun the B1 remote promotion to install the
-reviewed preparation policy. Then prepare fresh run `b1-single-smoke-003`,
-review its rendered script, and obtain separate explicit approval before the
-second real `sbatch` call. The B0 evidence run `b1-single-smoke-001` and failed
-B1 run `b1-single-smoke-002` must not be submitted again.
+Gates A and B are complete. Review the final protected-helper contract and
+choose the first ordinary scientific-development task that will use it. Keep
+the explicitly deferred capabilities out of that task unless they become a
+separate reviewed requirement.
