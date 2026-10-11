@@ -457,6 +457,12 @@ must be designed separately because it mutates scheduler state.
 Generated `exp_results/**/jobs/` directories are retained in the result tree
 but ignored as scheduler metadata, including the durable child JSONL index.
 
+Child-aware observation then exposed that both recorded simulations failed
+inside `srun`, even though Slurm reported their wrapper jobs as `COMPLETED`.
+The repository-owned `LocalSlurmSubmit` adapter must render the exact shared
+checkout into `#SBATCH --chdir` and `cd`, then propagate the simulation
+command's exit status. The installed BatchTools package remains unchanged.
+
 Inspection showed that `LocalProcCmd` returns the complete `sbatch` result
 synchronously, while the previous repository subclass neither parsed nor
 retained it. The candidate uses `sbatch --parsable`, records each receipt at

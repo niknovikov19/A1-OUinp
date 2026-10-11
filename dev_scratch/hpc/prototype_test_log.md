@@ -1718,3 +1718,12 @@ The generated result-side `jobs/index.jsonl` consequently exposed a missing
 ignore rule: sibling scheduler artifacts were already ignored by extension,
 but JSONL was not. The complete generated `exp_results/**/jobs/` directory is
 now ignored while remaining available beside the scientific result.
+
+After the child-aware observation promotion, both child records resolved to
+Slurm `COMPLETED 0:0`, but their stderr showed that `srun` failed. The scripts
+inherited a node-local Ray working directory unavailable on the selected node,
+then tried to enter literal `{project_path}` and could not open `run_exp.py`.
+Their trailing `wait` returned zero and masked the failure. The repository
+adapter now fixes the shared checkout in `#SBATCH --chdir` and `cd`, and uses
+`exec {command}` with shell fail-fast behavior so Slurm receives the real
+simulation exit status. No BatchTools source or environment is modified.

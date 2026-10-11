@@ -30,6 +30,34 @@ DEFAULT_MAX_CONCURRENT = 6
 DIR_REPO = Path(__file__).resolve().parent
 
 
+def _get_child_script_template():
+    """Return the BatchTools child-job script with a fixed shared checkout. """
+    checkout = DIR_REPO.as_posix()
+    template = """\
+#!/bin/bash
+#SBATCH --job-name={label}
+#SBATCH -t {realtime}
+#SBATCH --nodes={nodes}
+#SBATCH --ntasks-per-node={coresPerNode}
+#SBATCH --cpus-per-task=1
+#SBATCH --mem={mem}
+#SBATCH --partition={partition}
+#SBATCH --chdir=@@CHECKOUT@@
+#SBATCH -o {job_path}/{label}.run
+#SBATCH -e {job_path}/{label}.err
+#SBATCH --export=ALL
+set -eo pipefail
+export JOBID=$SLURM_JOB_ID
+export MSGFILE="{job_path}/{label}.out"
+export SGLFILE="{job_path}/{label}.sgl"
+{env}
+{custom}
+cd @@CHECKOUT@@
+exec {command}
+"""
+    return template.replace('@@CHECKOUT@@', checkout)
+
+
 def _resolve_child_outputs(exp_config_path, expected_result_path,
                            child_key, parameters):
     """Resolve experiment-owned child outputs beneath one result root. """
@@ -59,31 +87,11 @@ def _build_local_slurm_submit(child_recorder=None):
                 key_args={'job_path', 'label'},
             )
             script_template = Template(
-                template="""\
-#!/bin/bash
-#SBATCH --job-name={label}
-#SBATCH -t {realtime}
-#SBATCH --nodes={nodes}
-#SBATCH --ntasks-per-node={coresPerNode}
-#SBATCH --cpus-per-task=1
-#SBATCH --mem={mem}
-#SBATCH --partition={partition}
-#SBATCH -o {job_path}/{label}.run
-#SBATCH -e {job_path}/{label}.err
-#SBATCH --export=ALL
-export JOBID=$SLURM_JOB_ID
-export MSGFILE="{job_path}/{label}.out"
-export SGLFILE="{job_path}/{label}.sgl"
-{env}
-{custom}
-cd {project_path}
-{command}
-wait
-""",
+                template=_get_child_script_template(),
                 key_args={
                     'label', 'realtime', 'nodes', 'coresPerNode', 'mem',
                     'partition', 'job_path', 'env', 'custom',
-                    'project_path', 'command',
+                    'command',
                 },
             )
             handles = {

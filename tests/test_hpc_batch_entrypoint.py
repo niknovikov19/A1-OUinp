@@ -8,6 +8,17 @@ import grid_search_slurm_local as batch_main
 
 
 class HpcBatchEntrypointTests(unittest.TestCase):
+    def test_child_script_uses_shared_checkout_and_preserves_failure(self):
+        """Keep child jobs on shared storage and expose the srun status. """
+        script = batch_main._get_child_script_template()
+        checkout = batch_main.DIR_REPO.as_posix()
+        self.assertIn(f'#SBATCH --chdir={checkout}', script)
+        self.assertIn(f'cd {checkout}', script)
+        self.assertIn('set -eo pipefail', script)
+        self.assertIn('exec {command}', script)
+        self.assertNotIn('{project_path}', script)
+        self.assertNotIn('\nwait\n', script)
+
     def test_local_ray_uses_shared_checkout_without_packaging(self):
         """Avoid transferring the repository to workers on the same node. """
         with patch.dict('os.environ', {'PYTHONPATH': '/existing'}):
