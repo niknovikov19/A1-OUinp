@@ -172,7 +172,7 @@ def _build_slurm_config(resources, experiment_subdir):
         'custom': '\n'.join([
             'source ~/.bashrc',
             'conda activate netpyne_batch_slurm',
-            'export LD_LIBRARY_PATH="$CONDA_PREFIX/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"',
+            'export LD_LIBRARY_PATH="$CONDA_PREFIX/lib:$LD_LIBRARY_PATH"',
             'export MKL_THREADING_LAYER=GNU',
         ]),
         'command': (

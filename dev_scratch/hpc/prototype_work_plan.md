@@ -435,6 +435,14 @@ completed a large BatchTools run. The next retry excludes `node10` only for
 batch main jobs, not for BatchTools-generated simulation jobs, and keeps all
 reviewed resource settings.
 
+Run `b2-child-discovery-004` ran on `node03`; Ray returned and created both
+trials, confirming the node-isolation result. BatchTools then rejected the
+child script because a braced shell expansion was parsed as a Python template
+field. The correction uses the established non-braced environment export and
+makes missing completion evidence finalize as failure even if Slurm reports
+the top-level process as completed. Routine scheduler and log monitoring must
+use protected HPC-Codex commands, not repeated direct SSH calls.
+
 Inspection showed that `LocalProcCmd` returns the complete `sbatch` result
 synchronously, while the previous repository subclass neither parsed nor
 retained it. The candidate uses `sbatch --parsable`, records each receipt at

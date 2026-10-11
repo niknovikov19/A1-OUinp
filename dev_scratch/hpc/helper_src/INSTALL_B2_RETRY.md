@@ -30,6 +30,10 @@ bash /ddn/niknovikov19/repo/A1_OUinp_codex/dev_scratch/hpc/helper_src/promotion/
     "$B2_RETRY_COMMIT"
 ```
 
+That promotion passed and run 004 proved that Ray returns on `node03`. Its
+child scripts failed during BatchTools formatting, and recovery continues in
+`INSTALL_B2_FINALIZE_RECOVERY.md`.
+
 Both reports must end in `B2_RETRY_RESULT=PASS`. Promotion changes only the
 reviewed preparation ceilings and does not submit a job. Codex will then
 preflight and prepare fresh run `b2-child-discovery-002`, show its rendered

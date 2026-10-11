@@ -232,14 +232,23 @@ class FinalizeReleaseTests(unittest.TestCase):
         released = release_active_run(active, final, prepared, LATER)
         self.assertEqual(released['status'], 'released')
 
-    def test_finalize_rejects_active_state_and_missing_results(self):
+    def test_finalize_rejects_active_state_and_records_missing_evidence(self):
         prepared = make_prepared()
         intent, _ = decide_submission(None, prepared, NOW)
         receipt = build_submission_receipt(intent, prepared, 117900, LATER)
         with self.assertRaises(HpcJobLifecycleError):
             build_final_record(prepared, receipt, 'RUNNING', [], [], LATER)
-        with self.assertRaises(HpcJobLifecycleError):
-            build_final_record(prepared, receipt, 'COMPLETED', [], [], LATER)
+        final = build_final_record(
+            prepared,
+            receipt,
+            'COMPLETED',
+            [],
+            [],
+            LATER,
+        )
+        self.assertEqual(final['status'], 'failed')
+        self.assertEqual(final['scheduler_state'], 'COMPLETED')
+        self.assertEqual(validate_final_record(final, prepared), final)
 
     def test_failed_run_can_finalize_before_explicit_release(self):
         prepared = make_prepared('single')

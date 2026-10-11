@@ -49,7 +49,7 @@ from hpc_job_lifecycle import (
 )
 
 
-HELPER_VERSION = '0.10.0-b2'
+HELPER_VERSION = '0.10.1-b2'
 EXIT_SUCCESS = 0
 EXIT_REJECTED = 2
 EXIT_UNKNOWN = 3
@@ -672,7 +672,7 @@ def write_dual_record(state_path, run_path, record, label):
     return 'created'
 
 
-def load_child_records(config, prepared, scheduler_state):
+def load_child_records(config, prepared, _scheduler_state):
     """Load the bounded batch index or allow no evidence after failure. """
     if prepared['job_kind'] == 'single':
         return []
@@ -682,8 +682,6 @@ def load_child_records(config, prepared, scheduler_state):
         'jobs/index.jsonl'
     )
     if not fpath.exists():
-        if scheduler_state == 'COMPLETED':
-            raise RejectedInput('Completed batch lacks its child-job index')
         return []
     require_regular_file(fpath, 'child-job index')
     try:
@@ -694,11 +692,6 @@ def load_child_records(config, prepared, scheduler_state):
         records = parse_child_records(payload, prepared)
     except (OSError, HpcJobLifecycleError) as exc:
         raise RejectedInput(f'Invalid child-job index: {exc}') from exc
-    if (
-        scheduler_state == 'COMPLETED' and
-        len(records) != prepared['simulation_job_limit']
-    ):
-        raise RejectedInput('Completed batch has incomplete child-job evidence')
     return records
 
 
@@ -766,6 +759,7 @@ def final_result(prepared, final, result_value, observed):
         'status': 'ok',
         'result': result_value,
         'run_id': prepared['run_id'],
+        'run_status': final['status'],
         'slurm_job_id': final['slurm_job_id'],
         'scheduler_state': final['scheduler_state'],
         'completion_files_verified': final['completion_files_verified'],

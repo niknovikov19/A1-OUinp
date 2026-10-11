@@ -431,9 +431,6 @@ def validate_final_record(record, prepared):
     state = record['scheduler_state']
     if state not in SLURM_TERMINAL_STATES:
         raise HpcJobLifecycleError('Final record is not terminal')
-    expected_status = 'complete' if state == 'COMPLETED' else 'failed'
-    if record['status'] != expected_status:
-        raise HpcJobLifecycleError('Final status differs from scheduler state')
     _validate_positive_int(record['slurm_job_id'], 'Slurm job ID')
     _validate_timestamp(record['finalized_at_utc'], 'final timestamp')
 
@@ -450,9 +447,6 @@ def validate_final_record(record, prepared):
         raise HpcJobLifecycleError(str(exc)) from exc
     if not verified <= expected:
         raise HpcJobLifecycleError('Unexpected verified completion file')
-    if state == 'COMPLETED' and verified != expected:
-        raise HpcJobLifecycleError('Complete run lacks declared result files')
-
     child_job_ids = record['child_job_ids']
     valid_ids = isinstance(child_job_ids, list) and all(
         isinstance(job_id, int) and not isinstance(job_id, bool) and job_id > 0
@@ -464,6 +458,18 @@ def validate_final_record(record, prepared):
         raise HpcJobLifecycleError('Final child-job count exceeds prepared limit')
     if prepared['job_kind'] == 'single' and child_job_ids:
         raise HpcJobLifecycleError('Single job has child-job IDs')
+    complete_evidence = verified == expected
+    if prepared['job_kind'] == 'batch':
+        complete_evidence &= (
+            len(child_job_ids) == prepared['simulation_job_limit']
+        )
+    expected_status = (
+        'complete'
+        if state == 'COMPLETED' and complete_evidence
+        else 'failed'
+    )
+    if record['status'] != expected_status:
+        raise HpcJobLifecycleError('Final status differs from run evidence')
     return record
 
 
@@ -492,19 +498,10 @@ def build_final_record(
     except HpcJobValidationError as exc:
         raise HpcJobLifecycleError(str(exc)) from exc
     expected = set(prepared['completion_files'])
-    missing = sorted(expected - present)
-    if scheduler_state == 'COMPLETED' and missing:
-        raise HpcJobLifecycleError('Completed job lacks declared result files')
     records = parse_child_records(
         b'\n'.join(canonical_json(record).encode() for record in child_records),
         prepared,
     )
-    if (
-        scheduler_state == 'COMPLETED' and
-        prepared['job_kind'] == 'batch' and
-        len(records) != prepared['simulation_job_limit']
-    ):
-        raise HpcJobLifecycleError('Completed batch lacks child-job records')
     declared_outputs = {
         (PurePosixPath(prepared['expected_result_path']) / path).as_posix()
         for path in prepared['completion_files']
@@ -512,7 +509,14 @@ def build_final_record(
     for record in records:
         if not set(record['expected_outputs']) <= declared_outputs:
             raise HpcJobLifecycleError('Child output is not declared by the run')
-    status_value = 'complete' if scheduler_state == 'COMPLETED' else 'failed'
+    complete_evidence = present == expected
+    if prepared['job_kind'] == 'batch':
+        complete_evidence &= len(records) == prepared['simulation_job_limit']
+    status_value = (
+        'complete'
+        if scheduler_state == 'COMPLETED' and complete_evidence
+        else 'failed'
+    )
     return {
         **get_submission_binding(prepared),
         'status': status_value,

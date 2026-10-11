@@ -321,6 +321,27 @@ class HpcJobControlLifecycleTests(unittest.TestCase):
         self.assertEqual(repeated_release['result'], 'existing')
         self.assertFalse((self.state / 'active-run.json').exists())
 
+    def test_completed_scheduler_without_outputs_finalizes_as_failed(self):
+        """Record failed evidence and release even when Slurm reports success. """
+        self.submit_fixture()
+        scheduler = make_scheduler_job()
+        with patch.object(
+            LETHE,
+            'scheduler_status',
+            return_value=(scheduler, NOW),
+        ):
+            final = LETHE.finalize_job(self.config, self.run_id)
+        self.assertEqual(final['scheduler_state'], 'COMPLETED')
+        self.assertEqual(final['run_status'], 'failed')
+        stored = read_state_record(
+            self.state / 'finals' / f'{self.run_id}.json',
+            'final',
+        )
+        self.assertEqual(stored['status'], 'failed')
+        released = LETHE.release_job(self.config, self.run_id)
+        self.assertEqual(released['result'], 'released')
+        self.assertFalse((self.state / 'active-run.json').exists())
+
 
 if __name__ == '__main__':
     unittest.main()

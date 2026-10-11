@@ -78,6 +78,11 @@ class HpcBatchEntrypointTests(unittest.TestCase):
         self.assertEqual(config['coresPerNode'], 4)
         self.assertEqual(config['mem'], '8G')
         self.assertIn('--subdir batch_fixture', config['command'])
+        self.assertIn(
+            'export LD_LIBRARY_PATH="$CONDA_PREFIX/lib:$LD_LIBRARY_PATH"',
+            config['custom'],
+        )
+        self.assertEqual(config['custom'].format(), config['custom'])
 
 
 if __name__ == '__main__':
