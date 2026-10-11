@@ -1803,3 +1803,19 @@ then released the checkout. The repository retry explicitly removes inherited
 `SOCNAME` from the file-based child job, verifies that `MSGFILE` exists after
 `comm.send()`, and creates the corresponding `SGLFILE` completion marker. The
 retry uses a fresh `attempt_2` result directory.
+
+## B3 second real four-child attempt
+
+Run `b3-tiny-batch-002` was submitted once as main job `117855`. Children
+`117856` and `117857` completed with Slurm exit code `0:0` and produced their
+declared outputs, but the explicit child-side file marker still did not release
+the BatchTools concurrency slots. No second main job was active. The main job
+was cancelled, finalized with its two submitted children and outputs verified,
+and released before preparing another retry.
+
+The failed child-side workaround is removed. The next repository dispatcher
+first uses the normal BatchTools message. If that message is unavailable but
+all outputs declared for that exact child exist, it returns the fixed
+`{"done": 1}` metric used by this non-optimizing batch. This avoids reliance on
+the broken signal path without changing BatchTools or inferring completion from
+logs. The retry uses a fresh `attempt_3` result directory.

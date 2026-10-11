@@ -29,6 +29,29 @@ class HpcBatchEntrypointTests(unittest.TestCase):
         self.assertEqual(python_path[0], batch_main.DIR_REPO.as_posix())
         self.assertEqual(python_path[1], '/existing')
 
+    def test_declared_child_outputs_control_completion_fallback(self):
+        """Require every declared output before returning the done metric. """
+        with tempfile.TemporaryDirectory() as tmp:
+            first = Path(tmp) / 'first.json'
+            second = Path(tmp) / 'second.json'
+            first.write_text('{}\n')
+            self.assertFalse(batch_main._expected_outputs_exist([first, second]))
+            second.write_text('{}\n')
+            self.assertTrue(batch_main._expected_outputs_exist([first, second]))
+
+    def test_dispatcher_returns_done_for_declared_outputs(self):
+        """Release one concurrency slot from durable scientific evidence. """
+        dispatcher_type = batch_main._build_result_aware_dispatcher()
+        dispatcher = object.__new__(dispatcher_type)
+        with tempfile.TemporaryDirectory() as tmp:
+            output = Path(tmp) / 'result.json'
+            output.write_text('{}\n')
+            dispatcher.submit = SimpleNamespace(expected_outputs=[output])
+            parent = 'batchtk.runtk.dispatchers.LocalDispatcher.check_msg'
+            with patch(parent, return_value=False):
+                message = dispatcher.check_msg()
+        self.assertEqual(message, '{"done": 1}')
+
     def test_manual_no_argument_settings_remain_unchanged(self):
         args = SimpleNamespace(
             hpc_request=None,
