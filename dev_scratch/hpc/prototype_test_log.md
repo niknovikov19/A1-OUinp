@@ -1687,3 +1687,9 @@ non-braced form so BatchTools cannot interpret it as a format field.
 Routine monitoring after the user raised the approval issue was performed only
 through protected `hpc-job status` and `hpc-job log`; direct repeated SSH
 scheduler polling was stopped.
+
+The recovery promotion passed, run 004 finalized with `run_status: failed`,
+and its active-run lock was released. The failed BatchTools attempt had also
+left `b2_child_discovery.csv` at the checkout root. It was moved to the ignored
+run archive, and the batch entry point now performs that move automatically in
+a `finally` block using a run-specific filename under `batchtools_csv/`.

@@ -12,6 +12,7 @@ from hpc_job import (
     get_batchtools_resource_config,
     validate_positive_int,
     validate_repo_path,
+    validate_run_id,
 )
 from hpc_preflight import preflight_request, read_tracked_request
 from load_module import load_module
@@ -154,6 +155,26 @@ def _configure_local_ray():
     return {'include_dashboard': False}
 
 
+def _get_hpc_summary_paths(experiment_name, hpc_run_id):
+    """Return fresh root and ignored archive paths for one HPC batch summary. """
+    if hpc_run_id is None:
+        return None, None
+    hpc_run_id = validate_run_id(hpc_run_id)
+    source = DIR_REPO / f'{experiment_name}.csv'
+    archive = DIR_REPO / 'batchtools_csv' / f'{hpc_run_id}_{experiment_name}.csv'
+    if source.exists() or archive.exists():
+        raise ValueError('HPC batch summary destination already exists')
+    return source, archive
+
+
+def _archive_hpc_summary(source, archive):
+    """Move a generated HPC batch summary out of the checkout root. """
+    if source is None or not source.is_file():
+        return
+    archive.parent.mkdir(parents=True, exist_ok=True)
+    source.replace(archive)
+
+
 def _split_experiment(experiment):
     """Split one validated experiment into subdirectory and label values."""
     if '/' not in experiment:
@@ -275,29 +296,36 @@ def run_batch(experiment, resources, max_concurrent, hpc_run_id=None,
     if child_recorder is not None:
         slurm_config['job_path'] = child_recorder['job_path']
     ray_config = _configure_local_ray()
+    summary_source, summary_archive = _get_hpc_summary_paths(
+        experiment_name,
+        hpc_run_id,
+    )
     print('Starting local Ray from the shared checkout', flush=True)
 
     # Keep the established BatchTools output and checkpoint locations
-    search(
-        dispatcher_constructor=dispatcher,
-        submit_constructor=submitter,
-        label=experiment_name,
-        params=params,
-        output_path=f'./exp_results/{experiment}',
-        checkpoint_path=f'./exp_logs/{experiment}/ray',
-        run_config=slurm_config,
-        metric='done',
-        mode='max',
-        sample_interval=1,
-        num_samples=1,
-        max_concurrent=max_concurrent,
-        batch=True,
-        ray_config=ray_config,
-        algorithm='variant_generator',
-        remote_dir=DIR_REPO.as_posix(),
-        advanced_logging=False,
-        attempt_restore=False,
-    )
+    try:
+        search(
+            dispatcher_constructor=dispatcher,
+            submit_constructor=submitter,
+            label=experiment_name,
+            params=params,
+            output_path=f'./exp_results/{experiment}',
+            checkpoint_path=f'./exp_logs/{experiment}/ray',
+            run_config=slurm_config,
+            metric='done',
+            mode='max',
+            sample_interval=1,
+            num_samples=1,
+            max_concurrent=max_concurrent,
+            batch=True,
+            ray_config=ray_config,
+            algorithm='variant_generator',
+            remote_dir=DIR_REPO.as_posix(),
+            advanced_logging=False,
+            attempt_restore=False,
+        )
+    finally:
+        _archive_hpc_summary(summary_source, summary_archive)
 
 
 def main_cli():

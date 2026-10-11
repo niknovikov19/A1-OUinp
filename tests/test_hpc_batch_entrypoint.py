@@ -1,3 +1,5 @@
+from pathlib import Path
+import tempfile
 from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
@@ -34,6 +36,19 @@ class HpcBatchEntrypointTests(unittest.TestCase):
             settings['max_concurrent'],
             batch_main.DEFAULT_MAX_CONCURRENT,
         )
+
+    def test_hpc_batch_summary_is_archived_outside_checkout_root(self):
+        """Move each generated HPC summary to its ignored run-specific path. """
+        with tempfile.TemporaryDirectory() as tmp:
+            with patch.object(batch_main, 'DIR_REPO', Path(tmp)):
+                source, archive = batch_main._get_hpc_summary_paths(
+                    'b2_child_discovery',
+                    'b2-child-discovery-005',
+                )
+                source.write_text('done\n')
+                batch_main._archive_hpc_summary(source, archive)
+            self.assertFalse(source.exists())
+            self.assertEqual(archive.read_text(), 'done\n')
 
     def test_request_resources_reach_batchtools_slurm_fields(self):
         args = SimpleNamespace(

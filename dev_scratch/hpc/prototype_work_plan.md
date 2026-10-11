@@ -443,6 +443,11 @@ makes missing completion evidence finalize as failure even if Slurm reports
 the top-level process as completed. Routine scheduler and log monitoring must
 use protected HPC-Codex commands, not repeated direct SSH calls.
 
+Run 004 was recovered as failed and released. BatchTools root summary CSVs are
+archived under the already-ignored `batchtools_csv/` directory with the HPC run
+ID in the filename, so neither success nor failure leaves the automation
+checkout dirty. Run 005 tests the corrected child script and archive behavior.
+
 Inspection showed that `LocalProcCmd` returns the complete `sbatch` result
 synchronously, while the previous repository subclass neither parsed nor
 retained it. The candidate uses `sbatch --parsable`, records each receipt at
