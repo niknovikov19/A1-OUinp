@@ -10,6 +10,7 @@ RXE = 10000
 RXI = 100
 WXE = 0.1
 WXI = 0.05
+RUN_ATTEMPT = 6
 
 
 def apply_exp_cfg(cfg):
@@ -68,7 +69,7 @@ def gen_exp_name_sub(cfg):
         f'_t_{t0}_{t1}'
         f'_rx_{inp["exc"]["r"]}_{inp["inh"]["r"]}'
         f'_wx_{inp["exc"]["w"]}_{inp["inh"]["w"]}'
-        '_n_1'
+        f'_n_1_attempt_{RUN_ATTEMPT}'
     )
 
 

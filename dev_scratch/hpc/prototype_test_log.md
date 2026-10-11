@@ -1727,3 +1727,8 @@ Their trailing `wait` returned zero and masked the failure. The repository
 adapter now fixes the shared checkout in `#SBATCH --chdir` and `cd`, and uses
 `exec {command}` with shell fail-fast behavior so Slurm receives the real
 simulation exit status. No BatchTools source or environment is modified.
+
+The failed run 005 directory remains immutable. The fresh verification uses
+the same scientific settings with an explicit `attempt_6` suffix in both the
+experiment-derived result name and tracked request, preventing overwrite of
+the earlier scheduler evidence.

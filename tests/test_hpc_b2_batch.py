@@ -18,7 +18,7 @@ REQUEST_PATH = 'hpc_jobs/requests/b2-child-discovery.json'
 EXPECTED_RESULT_PATH = (
     'exp_results/batch_hpc_prototype/b2_child_discovery/'
     'exp_hpc_b2_child_discovery_nseed_2_t_0.5_1.0_'
-    'rx_10000_100_wx_0.1_0.05_n_1'
+    'rx_10000_100_wx_0.1_0.05_n_1_attempt_6'
 )
 
 
