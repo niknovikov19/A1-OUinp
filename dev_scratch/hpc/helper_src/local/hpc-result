@@ -157,6 +157,8 @@ def select_inventory_artifact(inventory, child_key, artifact_type):
         if isinstance(item, dict) and item.get('child_key') == child_key and
         item.get('artifact_type') == artifact_type
     ]
+    if not selected:
+        raise RejectedInput('Unknown child key or artifact type')
     if len(selected) != 1:
         raise RemoteUnavailable('Remote inventory selection is invalid')
     artifact = selected[0]
@@ -366,6 +368,15 @@ def main():
             result, exit_code = get_result(config, result_config, args)
         else:
             result, exit_code = run_remote(config, result_config, args)
+    except RejectedInput as exc:
+        result = {
+            'schema_version': 1,
+            'operation': f'result-{args.operation}',
+            'status': 'rejected',
+            'reason': 'request-rejected',
+            'details': str(exc)[:500],
+        }
+        exit_code = EXIT_REJECTED
     except (RemoteUnavailable, HelperFailure) as exc:
         result = {
             'schema_version': 1,

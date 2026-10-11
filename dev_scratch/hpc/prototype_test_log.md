@@ -1888,3 +1888,11 @@ reads, unknown selectors, changed files, symlinks, and oversized transfers.
 The real B5 test remains pending manual promotion and will use one of the four
 small JSON artifacts from successful run `b3-tiny-batch-003` because that
 prototype run did not produce a PNG or PKL.
+
+The first protected negative test found one fail-closed status-classification
+bug: a syntactically valid but absent child/type pair caused the local helper
+to return `unknown` after consulting the inventory. It transferred no bytes,
+but this is caller input and must be `rejected`. The local candidate now maps
+an absent inventory selector to exit code 2 while reserving `unknown` for a
+malformed or unavailable remote response. A regression test fixes this
+distinction before repeating the local promotion.

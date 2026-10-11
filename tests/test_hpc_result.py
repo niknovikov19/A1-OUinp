@@ -17,8 +17,6 @@ from hpc_result import (
     select_artifact,
     validate_result_inventory,
 )
-
-
 COMMIT = '1' * 40
 NOW = '2026-10-11T12:00:00+00:00'
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -226,6 +224,16 @@ class HpcResultTests(unittest.TestCase):
         self.assertEqual(second_code, 0)
         self.assertEqual(second['result'], 'cache-hit')
         self.assertEqual(remote.call_count, 1)
+
+    def test_local_unknown_selector_is_rejected(self):
+        """Classify a missing inventory selector as rejected, not unknown. """
+        inventory = {'artifacts': []}
+        with self.assertRaises(LOCAL.RejectedInput):
+            LOCAL.select_inventory_artifact(
+                inventory,
+                'unknown',
+                'result-json',
+            )
 
 
 if __name__ == '__main__':

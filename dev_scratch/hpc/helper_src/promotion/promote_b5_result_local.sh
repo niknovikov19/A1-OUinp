@@ -62,7 +62,7 @@ fi
 
 # Verify every promoted local artifact
 printf '\n== Reviewed source hashes ==\n'
-b5_check_sha256 'ed6f8910c34fb096b0f1b61b2e39b9184a33680ec7ac885c244d397707f44139' "$B5_SRC/local/hpc-result"
+b5_check_sha256 '8a51b05bb53988703d93a43d24406d9fa98d553920c30d3d0fcbe0998d616e11' "$B5_SRC/local/hpc-result"
 b5_check_sha256 '85039dca58bdfc423ec33885ef556b64d154e00f485e6fa3b707318c3f79ad9d' "$B5_SRC/local/hpc_common.py"
 b5_check_sha256 'c161238017b5c44edbd09dffde2398c89136524ef46c6607eba9399d3c9a6e89' "$B5_SRC/config_examples/local-hpc-result.json.example"
 b5_check_sha256 '58f0ebe2464fd4a6cd29af56edd06baf05a0c236f580e1ebf7254edd5c28f4de' "$B5_SRC/schemas/local-hpc-result-config.schema.json"
@@ -87,7 +87,7 @@ printf '\n== Installed identity ==\n'
 B5_INFO=$(/opt/a1-hpc/bin/hpc-helper-info --json info)
 printf '%s\n' "$B5_INFO"
 printf '%s\n' "$B5_INFO" | grep -Fq '"bundle_version": "0.13.0-b5"'
-printf '%s\n' "$B5_INFO" | grep -Fq '"hpc-result": "ed6f8910c34fb096b0f1b61b2e39b9184a33680ec7ac885c244d397707f44139"'
+printf '%s\n' "$B5_INFO" | grep -Fq '"hpc-result": "8a51b05bb53988703d93a43d24406d9fa98d553920c30d3d0fcbe0998d616e11"'
 b5_check_sha256 'c161238017b5c44edbd09dffde2398c89136524ef46c6607eba9399d3c9a6e89' /opt/a1-hpc/config/A1_OUinp-result.json
 stat -c '%A %a %U:%G %n' \
     /opt/a1-hpc/bin \
