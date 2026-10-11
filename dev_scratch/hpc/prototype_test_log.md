@@ -1896,3 +1896,23 @@ but this is caller input and must be `rejected`. The local candidate now maps
 an absent inventory selector to exit code 2 while reserving `unknown` for a
 malformed or unavailable remote response. A regression test fixes this
 distinction before repeating the local promotion.
+
+## B5 protected result
+
+Both B5 promotions passed. The first inventory request for completed run
+`b3-tiny-batch-003` created one protected record containing exactly four
+declared `result-json` artifacts. It preserved the child-to-seed mapping
+`1401` through `1404`; each file was 44 bytes and had a bounded SHA256 digest.
+A repeated inventory request returned `existing`, proving that it reused the
+protected record rather than rescanning the result tree.
+
+Retrieval of child `b3_tiny_batch_00003` downloaded its exact JSON to the
+ignored local cache with mode `0600`. The local SHA256 matched the inventory,
+and JSON validation showed the expected compact rate record. Repeating the
+same request returned `cache-hit` without another artifact transfer.
+
+Malformed run and wildcard selectors were rejected locally. Well-formed but
+unknown child and missing child/type selectors were rejected with exit code 2
+after the classification fix. Unit fixtures cover changed files, symlinks,
+inventory limits, and oversized transfer rejection. B5 therefore passes
+without a mount, arbitrary remote path, wildcard retrieval, or recursive scan.
