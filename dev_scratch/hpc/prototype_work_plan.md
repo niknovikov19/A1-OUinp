@@ -381,17 +381,21 @@ leaving the manual checkout unchanged, and overwriting no result or log.
 
 Purpose: prove the complete path with the smallest meaningful NetPyNE run.
 
-Implementation status: the scheduler-free B1 candidate connects prepared-run
-submission, status, incremental top-level logs, terminal evidence, and
-explicit checkout release to the B0 record contract. It must be manually
-promoted and the lattice runtime paths must be checked before a fresh run is
-prepared. No real submission is authorized by implementation or promotion.
+Implementation status: PASS. The protected path prepared and submitted one
+short simulation from an exact clean commit, monitored its scheduler state and
+incremental logs, verified its declared completion file, finalized it, and
+explicitly released the checkout.
 
 The first real job reached Slurm but stopped in shell setup because nounset
 mode preceded `.bashrc`. That attempt was finalized and released. The tracked
 single, batch, and workflow templates now activate the HPC environment before
-strict shell mode; B1 must retry with a new immutable run ID and separate
-submission approval.
+strict shell mode.
+
+The second real job reached NetPyNE but failed before cell creation because the
+clean automation checkout had no compiled NEURON mechanisms. Compiled
+`x86_64` artifacts remain ignored. After the mechanisms were compiled through
+the ordinary repository operating procedure, the third immutable run completed
+successfully as Slurm job `117830` and satisfied all B1 evidence checks.
 
 Sequence:
 

@@ -1531,3 +1531,46 @@ template hashes. This is the intended boundary for generic launch-script
 changes: scientific experiment commits do not need promotion, while a change
 to shared executable templates does. The B1 remote promotion now reviews and
 installs the updated preparation policy before the retry is prepared.
+
+## B1 second real single-job attempt
+
+After the updated preparation policy passed remote promotion, prepared run
+`b1-single-smoke-003` was submitted once as Slurm job `117828`. The shell and
+Conda setup passed, and the job reported NEURON `8.2.4` with one MPI process.
+It then ended in scheduler state `FAILED`, exit code `1:0`, while NetPyNE was
+creating the first cell. The bounded traceback ended with:
+
+```text
+RuntimeError: Some mechanisms and/or ions were not inserted. Check if your .mod files are compiled (run 'nrnivmodl mod').
+```
+
+The exact automation checkout contains the tracked `mod/*.mod` sources, but
+its compiled `x86_64` directory is intentionally ignored and was absent. The
+run was finalized with no completion files and explicitly released. It will
+not be resubmitted.
+
+## B1 successful single-job run
+
+The ordinary repository mechanism build was run on lethe in the
+`netpyne_batch_slurm` environment. The Conda linker required explicit access
+to lethe's GLIBC while linking `special`:
+
+```text
+nrnivmodl -loadflags '-L/lib64 -Wl,-rpath-link,/lib64 -Wl,--no-as-needed -lc -lrt' mod
+```
+
+The ignored `x86_64` output was left in the shared automation checkout. The A2
+status helper still reported the exact clean commit
+`492147dd76f57126f7aedf87e29c8ccc4237b953`, no active run, and no checkout
+changes.
+
+After explicit approval, immutable run `b1-single-smoke-004` was submitted
+once as Slurm job `117830`. NEURON `8.2.4` loaded the complete reviewed
+mechanism set. The one-cell simulation completed 1000 ms in 0.22 seconds and
+reported 15 spikes at 15 Hz. Slurm accounting reported `COMPLETED` with exit
+code `0:0`.
+
+Finalization verified the declared completion file
+`results/result_00000_seed_1201.json` beneath the expected scientific result
+directory. The protected final record was created, and the checkout lock was
+then explicitly released. Gate conclusion: B1 PASS.
