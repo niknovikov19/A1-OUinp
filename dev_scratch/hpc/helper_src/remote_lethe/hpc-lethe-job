@@ -50,7 +50,7 @@ from hpc_job_lifecycle import (
 )
 
 
-HELPER_VERSION = '0.11.0-b2'
+HELPER_VERSION = '0.12.0-b2'
 EXIT_SUCCESS = 0
 EXIT_REJECTED = 2
 EXIT_UNKNOWN = 3
@@ -158,12 +158,13 @@ def validate_config(config):
     required_scheduler = {
         'command_timeout_sec',
         'sbatch_path',
+        'scancel_path',
         'status_helper',
         'user',
     }
     if not isinstance(scheduler, dict) or set(scheduler) != required_scheduler:
         raise JobFailure('Invalid scheduler configuration')
-    for key in ('sbatch_path', 'status_helper'):
+    for key in ('sbatch_path', 'scancel_path', 'status_helper'):
         validate_absolute_path(scheduler[key], f'scheduler {key}')
     validate_positive_int(
         scheduler['command_timeout_sec'],
@@ -625,6 +626,57 @@ def status_job(config, run_id):
     }
 
 
+def cancel_job(config, run_id):
+    """Cancel one recorded active top-level Slurm job. """
+    lock_id = acquire_lock(config['state']['job_lock'], 'job-operation lock')
+    try:
+        prepared = load_prepared(config, run_id)
+        submission = load_submission(config, prepared)
+        if submission['status'] != 'submitted':
+            raise RejectedInput('Cancellation requires a submitted receipt')
+        marker = read_state_record(
+            config['state']['active_run'],
+            'active-run marker',
+        )
+        expected = {
+            'status': 'active',
+            'run_id': prepared['run_id'],
+            'git_commit': prepared['git_commit'],
+            'request_sha256': prepared['request_sha256'],
+            'rendered_script_sha256': prepared['rendered_script_sha256'],
+        }
+        if any(marker.get(key) != value for key, value in expected.items()):
+            raise RejectedInput('Active-run marker does not match prepared job')
+        helper = config['remote_helpers']['grid_job']
+        result, exit_code = run_grid_command(config, helper, (
+            'cancel',
+            prepared['run_id'],
+            prepared['git_commit'],
+            prepared['request_sha256'],
+            prepared['rendered_script_sha256'],
+        ))
+        valid = (
+            exit_code == EXIT_SUCCESS and
+            result.get('operation') == 'grid-job-cancel' and
+            result.get('run_id') == prepared['run_id'] and
+            result.get('slurm_job_id') == submission['slurm_job_id']
+        )
+        if not valid:
+            raise JobUnavailable('Lattice cancellation result is invalid')
+        return {
+            'schema_version': 1,
+            'operation': 'job-cancel',
+            'status': 'ok',
+            'result': result['result'],
+            'run_id': prepared['run_id'],
+            'slurm_job_id': submission['slurm_job_id'],
+            'remote_host': socket.gethostname(),
+            'helper': helper_identity(),
+        }
+    finally:
+        release_lock(lock_id)
+
+
 def decode_cursors(payload, maximum):
     """Decode one bounded local stdout/stderr cursor document."""
     if not isinstance(payload, str) or len(payload) > maximum * 2:
@@ -916,7 +968,7 @@ def build_parser():
     submit = commands.add_parser('submit')
     submit.add_argument('run_id')
     submit.add_argument('expected_commit')
-    for operation in ('status', 'finalize', 'release'):
+    for operation in ('status', 'cancel', 'finalize', 'release'):
         command = commands.add_parser(operation)
         command.add_argument('run_id')
     log = commands.add_parser('log')
@@ -943,6 +995,8 @@ def main():
                 result = submit_job(config, args.run_id, args.expected_commit)
             elif operation == 'status':
                 result = status_job(config, args.run_id)
+            elif operation == 'cancel':
+                result = cancel_job(config, args.run_id)
             elif operation == 'log':
                 result = log_job(
                     config,

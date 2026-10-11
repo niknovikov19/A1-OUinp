@@ -80,12 +80,14 @@
       "required": [
         "user",
         "sbatch_path",
+        "scancel_path",
         "status_helper",
         "command_timeout_sec"
       ],
       "properties": {
         "user": {"$ref": "#/$defs/safeName"},
         "sbatch_path": {"$ref": "#/$defs/absolutePath"},
+        "scancel_path": {"$ref": "#/$defs/absolutePath"},
         "status_helper": {"$ref": "#/$defs/absolutePath"},
         "command_timeout_sec": {
           "type": "integer",

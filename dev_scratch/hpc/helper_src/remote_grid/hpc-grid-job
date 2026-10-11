@@ -27,7 +27,7 @@ from hpc_job_lifecycle import (
 )
 
 
-HELPER_VERSION = '0.10.0-b2'
+HELPER_VERSION = '0.12.0-b2'
 EXIT_SUCCESS = 0
 EXIT_REJECTED = 2
 EXIT_UNKNOWN = 3
@@ -146,12 +146,14 @@ def validate_config(config):
     required_scheduler = {
         'command_timeout_sec',
         'sbatch_path',
+        'scancel_path',
         'status_helper',
         'user',
     }
     if not isinstance(scheduler, dict) or set(scheduler) != required_scheduler:
         raise SubmitFailure('Invalid scheduler configuration')
     validate_absolute_path(scheduler['sbatch_path'], 'sbatch path')
+    validate_absolute_path(scheduler['scancel_path'], 'scancel path')
     validate_absolute_path(scheduler['status_helper'], 'status helper')
     timeout = scheduler['command_timeout_sec']
     if isinstance(timeout, bool) or not isinstance(timeout, int) or not 1 <= timeout <= 120:
@@ -267,6 +269,34 @@ def run_sbatch(config, submit_script):
         raise SubmitUnknown(str(exc)) from exc
 
 
+def run_scancel(config, job_id):
+    """Call `scancel` once for one recorded top-level job ID. """
+    command = [config['scheduler']['scancel_path'], '--', str(job_id)]
+    environment = os.environ.copy()
+    environment.update({'LANG': 'C', 'LC_ALL': 'C'})
+    try:
+        completed = subprocess.run(
+            command,
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            timeout=config['scheduler']['command_timeout_sec'],
+            check=False,
+            env=environment,
+        )
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        raise SubmitUnknown(f'Cannot determine scancel result: {exc}') from exc
+    if len(completed.stdout) > MAX_COMMAND_BYTES or len(completed.stderr) > MAX_COMMAND_BYTES:
+        raise SubmitUnknown('scancel output exceeded its bound')
+    try:
+        stderr = completed.stderr.decode('utf-8')
+    except UnicodeDecodeError as exc:
+        raise SubmitUnknown('scancel output was not UTF-8') from exc
+    if completed.returncode != 0:
+        details = stderr.replace('\r', ' ').replace('\n', ' ').strip()[:500]
+        raise SubmitFailure(f'scancel exited {completed.returncode}: {details}')
+
+
 def submit(config, run_id, expected_commit, request_sha256, script_sha256):
     """Submit one exact prepared script and durably record its receipt."""
     if pwd.getpwuid(os.getuid()).pw_name != config['scheduler']['user']:
@@ -362,11 +392,51 @@ def submit_locked(config, run_id, expected_commit, request_sha256, script_sha256
     }
 
 
-def error_result(status, reason, details=None):
-    """Build one bounded grid submission error result."""
+def cancel(config, run_id, expected_commit, request_sha256, script_sha256):
+    """Cancel one exact active top-level job through its recorded receipt. """
+    if pwd.getpwuid(os.getuid()).pw_name != config['scheduler']['user']:
+        raise SubmitFailure('Current user does not match scheduler policy')
+    lock_id = acquire_submit_lock(config)
+    try:
+        prepared = load_prepared(config, run_id)
+        expected = {
+            'git_commit': validate_git_commit(expected_commit),
+            'request_sha256': request_sha256,
+            'rendered_script_sha256': script_sha256,
+        }
+        if any(prepared[key] != value for key, value in expected.items()):
+            raise RejectedInput('Cancellation binding differs from prepared job')
+        require_active_binding(config, prepared)
+        submission = validate_submission_record(
+            read_state_record(
+                Path(prepared['job_run_dir']) / 'submission.json',
+                'submission record',
+            ),
+            prepared,
+        )
+        if submission['status'] != 'submitted':
+            raise RejectedInput('Cancellation requires a submitted receipt')
+        run_scancel(config, submission['slurm_job_id'])
+        return {
+            'schema_version': 1,
+            'operation': 'grid-job-cancel',
+            'status': 'ok',
+            'result': 'cancel-requested',
+            'run_id': prepared['run_id'],
+            'slurm_job_id': submission['slurm_job_id'],
+            'remote_host': socket.gethostname(),
+            'helper': helper_identity(),
+        }
+    finally:
+        fcntl.flock(lock_id, fcntl.LOCK_UN)
+        os.close(lock_id)
+
+
+def error_result(operation, status, reason, details=None):
+    """Build one bounded grid job-operation error result."""
     result = {
         'schema_version': 1,
-        'operation': 'grid-job-submit',
+        'operation': f'grid-job-{operation}',
         'status': status,
         'reason': reason,
     }
@@ -385,6 +455,11 @@ def build_parser():
     submit_parser.add_argument('expected_commit')
     submit_parser.add_argument('request_sha256')
     submit_parser.add_argument('script_sha256')
+    cancel_parser = commands.add_parser('cancel')
+    cancel_parser.add_argument('run_id')
+    cancel_parser.add_argument('expected_commit')
+    cancel_parser.add_argument('request_sha256')
+    cancel_parser.add_argument('script_sha256')
     return parser
 
 
@@ -398,7 +473,7 @@ def main():
     try:
         if args.operation == 'version':
             result = {'status': 'ok', 'helper': helper_identity()}
-        else:
+        elif args.operation == 'submit':
             config = load_config()
             result = submit(
                 config,
@@ -407,15 +482,24 @@ def main():
                 args.request_sha256,
                 args.script_sha256,
             )
+        else:
+            config = load_config()
+            result = cancel(
+                config,
+                args.run_id,
+                args.expected_commit,
+                args.request_sha256,
+                args.script_sha256,
+            )
         exit_code = EXIT_SUCCESS
     except (RejectedInput, HpcJobLifecycleError, ValueError) as exc:
-        result = error_result('rejected', 'request-rejected', exc)
+        result = error_result(args.operation, 'rejected', 'request-rejected', exc)
         exit_code = EXIT_REJECTED
     except SubmitUnknown as exc:
-        result = error_result('unknown', 'submission-unknown', exc)
+        result = error_result(args.operation, 'unknown', 'operation-unknown', exc)
         exit_code = EXIT_UNKNOWN
     except SubmitFailure as exc:
-        result = error_result('failed', 'submission-failed', exc)
+        result = error_result(args.operation, 'failed', 'operation-failed', exc)
         exit_code = EXIT_FAILED
     print(json.dumps(result, sort_keys=True))
     return exit_code

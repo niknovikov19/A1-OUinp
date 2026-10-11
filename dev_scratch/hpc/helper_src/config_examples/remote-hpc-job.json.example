@@ -26,6 +26,7 @@
   "scheduler": {
     "user": "niknovikov19",
     "sbatch_path": "/usr/bin/sbatch",
+    "scancel_path": "/usr/bin/scancel",
     "status_helper": "/ddn/niknovikov19/hpc_codex/helpers/grid/hpc-grid-status",
     "command_timeout_sec": 90
   },

@@ -1732,3 +1732,19 @@ The failed run 005 directory remains immutable. The fresh verification uses
 the same scientific settings with an explicit `attempt_6` suffix in both the
 experiment-derived result name and tracked request, preventing overwrite of
 the earlier scheduler evidence.
+
+## B2 sixth real BatchTools attempt
+
+Run `b2-child-discovery-006` was submitted once as main job `117846`. Ray
+returned, and BatchTools submitted child jobs `117847` and `117848`. Both
+one-cell simulations completed with exit code `0:0`, produced their declared
+result JSON files, and reported 15 spikes at 15 Hz. This proves the corrected
+shared working directory and exit-status propagation.
+
+BatchTools nevertheless continued to display both completed simulations as
+running because its final file signal was absent. The main job therefore
+remained active after the durable scientific outputs existed. The next narrow
+promotion adds protected top-level cancellation and a repository dispatcher
+fallback that recognizes completion only after the normal BatchTools message
+file and every declared child output exist. BatchTools itself remains
+unchanged.

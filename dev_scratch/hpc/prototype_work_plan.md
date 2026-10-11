@@ -463,6 +463,13 @@ The repository-owned `LocalSlurmSubmit` adapter must render the exact shared
 checkout into `#SBATCH --chdir` and `cd`, then propagate the simulation
 command's exit status. The installed BatchTools package remains unchanged.
 
+Run 006 proved successful child execution and declared scientific outputs, but
+the BatchTools main job remained active because its final file signal was
+missing. The repository dispatcher may treat the trial as complete only when
+the normal message file exists and all declared child outputs are regular
+files. A protected `cancel RUN_ID` operation resolves only the recorded active
+top-level job and accepts no caller-supplied scheduler ID or option.
+
 Inspection showed that `LocalProcCmd` returns the complete `sbatch` result
 synchronously, while the previous repository subclass neither parsed nor
 retained it. The candidate uses `sbatch --parsable`, records each receipt at

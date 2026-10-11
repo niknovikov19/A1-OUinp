@@ -7,7 +7,7 @@ import stat
 from datetime import datetime, timezone
 
 
-BUNDLE_VERSION = '0.11.0-b2'
+BUNDLE_VERSION = '0.12.0-b2'
 CONFIG_SCHEMA_VERSION = 1
 
 EXIT_SUCCESS = 0
@@ -52,6 +52,7 @@ PUBLIC_AUDIT_ARGS = {
     '--json',
     '--self-test',
     'audit-tail',
+    'cancel',
     'controller',
     'experiment-id',
     'git-commit',

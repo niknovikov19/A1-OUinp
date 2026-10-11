@@ -474,8 +474,8 @@ promotion/promote_b1_job_lethe.sh
 INSTALL_B1.md
 ```
 
-`hpc-job` accepts only five operations over a prepared run ID: `submit`,
-`status`, `log`, `finalize`, and `release`. Submission additionally requires
+`hpc-job` accepts six operations over a prepared run ID: `submit`, `status`,
+`log`, `cancel`, `finalize`, and `release`. Submission additionally requires
 the full prepared Git commit. The caller cannot supply a script path, Slurm
 option, job ID, result path, log path, or retry instruction.
 
@@ -498,6 +498,11 @@ be prepared.
 The grid helper replaces the pending repository record with the receipt before
 returning. An unavailable or malformed scheduler response becomes `unknown`;
 pending and unknown submissions are never retried automatically.
+
+Cancellation accepts only the prepared run ID. The fixed helpers resolve its
+recorded active top-level Slurm ID and call `scancel` without accepting a job
+ID or scheduler option from the caller. Finalization and release remain
+separate explicit operations after Slurm reports a terminal state.
 
 Status queries the recorded top-level Slurm ID and any recorded BatchTools
 child IDs together through the established A5 status helper. Log retrieval

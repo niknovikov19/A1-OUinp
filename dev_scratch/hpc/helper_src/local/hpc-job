@@ -54,7 +54,7 @@ def build_parser():
     submit = commands.add_parser('submit')
     submit.add_argument('run_id')
     submit.add_argument('expected_commit')
-    for operation in ('status', 'finalize', 'release'):
+    for operation in ('status', 'cancel', 'finalize', 'release'):
         command = commands.add_parser(operation)
         command.add_argument('run_id')
     log = commands.add_parser('log')
@@ -391,6 +391,9 @@ def concise_output(result):
             print(f'--- {name} [{stream["start_offset"]}:{stream["end_offset"]}] ---')
             if stream['content']:
                 print(stream['content'], end='' if stream['content'].endswith('\n') else '\n')
+    elif operation == 'job-cancel':
+        print(f'Result: {result["result"]}')
+        print(f'Slurm job: {result["slurm_job_id"]}')
     elif operation == 'job-finalize':
         print(f'Result: {result["result"]}')
         print(f'Scheduler: {result["scheduler_state"]}')

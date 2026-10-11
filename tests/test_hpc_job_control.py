@@ -159,6 +159,32 @@ class HpcJobControlUnitTests(unittest.TestCase):
             ],
         )
 
+    def test_grid_scancel_call_has_only_the_recorded_job_id(self):
+        """Call `scancel` with no caller-supplied scheduler options. """
+        config = {
+            'scheduler': {
+                'scancel_path': '/usr/bin/scancel',
+                'command_timeout_sec': 90,
+            },
+        }
+        completed = SimpleNamespace(returncode=0, stdout=b'', stderr=b'')
+        with patch.object(GRID.subprocess, 'run', return_value=completed) as run:
+            GRID.run_scancel(config, 117950)
+        self.assertEqual(
+            run.call_args.args[0],
+            ['/usr/bin/scancel', '--', '117950'],
+        )
+
+    def test_local_cancel_accepts_only_one_run_id(self):
+        """Expose cancellation without accepting a job ID or Slurm option. """
+        parser = LOCAL.build_parser()
+        args = LOCAL.validate_args(parser.parse_args([
+            'cancel',
+            'b2-child-fixture-001',
+        ]))
+        self.assertEqual(args.operation, 'cancel')
+        self.assertEqual(args.run_id, 'b2-child-fixture-001')
+
     def test_local_cursor_state_accepts_only_inode_identities(self):
         """Reject local cursor identities that the remote reader cannot use."""
         valid = {
@@ -293,6 +319,7 @@ class HpcJobControlLifecycleTests(unittest.TestCase):
             'scheduler': {
                 'user': 'fixture',
                 'sbatch_path': '/usr/bin/sbatch',
+                'scancel_path': '/usr/bin/scancel',
                 'status_helper': '/helpers/grid/hpc-grid-status',
                 'command_timeout_sec': 90,
             },
@@ -474,6 +501,56 @@ class HpcJobControlLifecycleTests(unittest.TestCase):
         self.assertEqual(result['slurm_job_id'], 117951)
         self.assertEqual(result['streams']['stdout']['content'], 'child output\n')
         self.assertEqual(result['streams']['stderr']['content'], 'child error\n')
+
+    def test_cancel_forwards_only_the_bound_active_run(self):
+        """Bind cancellation to the protected receipt and active marker. """
+        receipt, _ = self.submit_fixture()
+        grid_result = {
+            'schema_version': 1,
+            'operation': 'grid-job-cancel',
+            'status': 'ok',
+            'result': 'cancel-requested',
+            'run_id': self.run_id,
+            'slurm_job_id': receipt['slurm_job_id'],
+        }
+        with patch.object(
+            LETHE,
+            'run_grid_command',
+            return_value=(grid_result, LETHE.EXIT_SUCCESS),
+        ) as remote:
+            result = LETHE.cancel_job(self.config, self.run_id)
+        remote.assert_called_once_with(
+            self.config,
+            '/helpers/grid/hpc-grid-job',
+            (
+                'cancel',
+                self.run_id,
+                COMMIT,
+                self.prepared['request_sha256'],
+                self.prepared['rendered_script_sha256'],
+            ),
+        )
+        self.assertEqual(result['operation'], 'job-cancel')
+        self.assertEqual(result['slurm_job_id'], receipt['slurm_job_id'])
+
+    def test_grid_cancel_resolves_only_the_recorded_receipt(self):
+        """Resolve the scheduler ID from protected records before `scancel`. """
+        receipt, _ = self.submit_fixture()
+        with patch.object(
+            GRID.pwd,
+            'getpwuid',
+            return_value=SimpleNamespace(pw_name='fixture'),
+        ), patch.object(GRID, 'run_scancel') as scancel:
+            result = GRID.cancel(
+                self.config,
+                self.run_id,
+                COMMIT,
+                self.prepared['request_sha256'],
+                self.prepared['rendered_script_sha256'],
+            )
+        scancel.assert_called_once_with(self.config, receipt['slurm_job_id'])
+        self.assertEqual(result['operation'], 'grid-job-cancel')
+        self.assertEqual(result['slurm_job_id'], receipt['slurm_job_id'])
 
 
 if __name__ == '__main__':

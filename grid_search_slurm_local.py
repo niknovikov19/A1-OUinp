@@ -72,6 +72,11 @@ def _resolve_child_outputs(exp_config_path, expected_result_path,
     return [f'{expected_result_path}/{path}' for path in outputs]
 
 
+def _expected_outputs_exist(outputs):
+    """Return whether every declared child output is a regular file. """
+    return bool(outputs) and all(Path(path).is_file() for path in outputs)
+
+
 def _build_local_slurm_submit(child_recorder=None):
     """Build the local Slurm submitter with optional child recording. """
     from batchtk import runtk
@@ -106,6 +111,7 @@ def _build_local_slurm_submit(child_recorder=None):
                 handles=handles,
             )
             self.batch_parameters = None
+            self.expected_outputs = None
 
         def create_job(self, **kwargs):
             """Capture parameters before rendering the child script. """
@@ -129,6 +135,7 @@ def _build_local_slurm_submit(child_recorder=None):
                 child_key,
                 self.batch_parameters,
             )
+            self.expected_outputs = [DIR_REPO / path for path in outputs]
             record = build_child_record(
                 child_recorder['run_id'],
                 child_key,
@@ -143,13 +150,36 @@ def _build_local_slurm_submit(child_recorder=None):
     return LocalSlurmSubmit
 
 
+def _build_result_aware_dispatcher():
+    """Build a local dispatcher that accepts declared output completion. """
+    from batchtk import runtk
+    from batchtk.runtk.dispatchers import LocalDispatcher, _Status
+
+    class ResultAwareLocalDispatcher(LocalDispatcher):
+        """Complete successful trials whose BatchTools signal is missing. """
+
+        def check_status(self):
+            """Use declared outputs after the normal message file appears. """
+            status = super().check_status()
+            outputs = getattr(self.submit, 'expected_outputs', None)
+            completed = (
+                status.status is runtk.STATUS.RUNNING and
+                _expected_outputs_exist(outputs)
+            )
+            if completed:
+                return _Status(runtk.STATUS.COMPLETED, status.msg)
+            return status
+
+    return ResultAwareLocalDispatcher
+
+
 def _load_batchtools(child_recorder=None):
     """Load BatchTools and Ray only when a batch is actually launched. """
-    from batchtk.runtk.dispatchers import LocalDispatcher
     from netpyne.batchtools.search import search
 
     submitter = _build_local_slurm_submit(child_recorder)
-    return search, LocalDispatcher, submitter
+    dispatcher = _build_result_aware_dispatcher()
+    return search, dispatcher, submitter
 
 
 def _configure_local_ray():
