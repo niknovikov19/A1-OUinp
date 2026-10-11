@@ -4,7 +4,7 @@
   "job_kind": "batch",
   "target": "batch_hpc_prototype/b2_child_discovery",
   "template_path": "hpc_jobs/templates/batch.sh",
-  "expected_result_path": "exp_results/batch_hpc_prototype/b2_child_discovery/exp_hpc_b2_child_discovery_nseed_2_t_0.5_1.0_rx_10000_100_wx_0.1_0.05_n_1_attempt_6",
+  "expected_result_path": "exp_results/batch_hpc_prototype/b2_child_discovery/exp_hpc_b2_child_discovery_nseed_2_t_0.5_1.0_rx_10000_100_wx_0.1_0.05_n_1_attempt_7",
   "completion_files": [
     "jobs/index.jsonl",
     "results/b2_child_discovery_00000.json",

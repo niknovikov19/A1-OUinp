@@ -1748,3 +1748,8 @@ promotion adds protected top-level cancellation and a repository dispatcher
 fallback that recognizes completion only after the normal BatchTools message
 file and every declared child output exist. BatchTools itself remains
 unchanged.
+
+The protected cancel operation stopped only main job `117846`. Finalization
+verified `jobs/index.jsonl` and both result JSON files, recorded the run as
+failed because the top-level scheduler state was `CANCELLED`, and released the
+checkout. The completion-fallback verification uses fresh `attempt_7` output.
