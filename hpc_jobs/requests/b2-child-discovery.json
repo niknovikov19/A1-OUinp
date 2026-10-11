@@ -13,9 +13,9 @@
   "top_level_resources": {
     "partition": "cpu.q",
     "nodes": 1,
-    "cores": 1,
-    "memory_gb": 2,
-    "wall_time_min": 10
+    "cores": 2,
+    "memory_gb": 16,
+    "wall_time_min": 1440
   },
   "simulation_job_resources": {
     "partition": "cpu.q",

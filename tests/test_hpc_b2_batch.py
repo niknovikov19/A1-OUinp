@@ -55,6 +55,21 @@ class HpcB2BatchTests(unittest.TestCase):
         self.assertEqual(result['planned_jobs'], 2)
         self.assertEqual(result['parameter_axis_sizes'], {'stim_seed': 2})
 
+    def test_main_job_uses_established_batchtools_resources(self):
+        """Keep the proven BatchTools-main allocation separate from children. """
+        self.assertEqual(
+            self.request['top_level_resources'],
+            {
+                'partition': 'cpu.q',
+                'nodes': 1,
+                'cores': 2,
+                'memory_gb': 16,
+                'wall_time_min': 1440,
+            },
+        )
+        child_resources = self.request['simulation_job_resources']
+        self.assertEqual(child_resources['memory_gb'], 2)
+
     def test_each_child_has_one_deterministic_completion_file(self):
         """Map both BatchTools labels to non-colliding result records. """
         outputs = []
@@ -90,6 +105,8 @@ class HpcB2BatchTests(unittest.TestCase):
             values,
             TEMPLATE_TOKENS['batch'],
         )
+        self.assertIn('#SBATCH --ntasks=2', rendered)
+        self.assertNotIn('--cpus-per-task', rendered)
         self.assertIn('--hpc-run-id b2-child-discovery-001', rendered)
         self.assertNotIn('@@', rendered)
 

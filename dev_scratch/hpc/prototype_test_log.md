@@ -1601,3 +1601,22 @@ unrelated `sim_data_analyzer` import error remained outside B2 scope.
 Gate status: candidate ready for exact-commit update, local and lethe
 promotion, protected preparation, and explicit approval of the first real
 two-child submission.
+
+## B2 first real BatchTools attempt
+
+Both B2 promotions passed and immutable run `b2-child-discovery-001` was
+submitted once as main Slurm job `117831`. Ray started inside the allocation
+and uploaded a 115.79 MiB working-directory package, but BatchTools never
+reached a child `sbatch`. `squeue` and `sacct` showed only the main job.
+
+The main job had reused the tiny simulation allocation: 1 CPU, 2 GB, and 10
+minutes. Slurm recorded step state `OUT_OF_MEMORY`, peak RSS `2096240K`, 21 OOM
+kills, and final state `TIMEOUT`. Finalization recorded zero child IDs and no
+completion files, then the checkout lock was explicitly released.
+
+The retry request now keeps simulation jobs at 1 CPU, 2 GB, and 10 minutes,
+but restores the established BatchTools-main allocation from
+`submit_batch_slurm_local.sh`: 1 node, 2 CPUs, 16 GB, and 24 hours. Narrow
+promotion scripts update the local and lethe preparation ceilings before the
+fresh `b2-child-discovery-002` run can be prepared. Job `117831` must never be
+resubmitted.

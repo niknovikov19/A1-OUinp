@@ -412,12 +412,19 @@ Pass condition: one simulation completes from an exact commit, all records agree
 
 Purpose: resolve the largest application-specific uncertainty before building general batch monitoring.
 
-Implementation status: candidate ready for promotion and the first real
-two-child run. Inspection showed that `LocalProcCmd` returns the complete
-`sbatch` result synchronously, while the previous repository subclass neither
-parsed nor retained it. The candidate uses `sbatch --parsable`, records each
-receipt at submission time in `jobs/index.jsonl`, and makes completed-batch
-finalization require the exact prepared child count and declared outputs.
+Implementation status: first real attempt failed before child submission;
+resource-corrected retry awaits promotion. Run `b2-child-discovery-001`
+started Ray as Slurm job `117831`, reached the 2 GB main-job limit, suffered 21
+OOM kills, and timed out without a child `sbatch`. It was finalized and
+released. The retry uses the established BatchTools-main allocation from
+`submit_batch_slurm_local.sh`: 1 node, 2 CPUs, 16 GB, and 24 hours. Child
+resources remain the small B2 probe allocation.
+
+Inspection showed that `LocalProcCmd` returns the complete `sbatch` result
+synchronously, while the previous repository subclass neither parsed nor
+retained it. The candidate uses `sbatch --parsable`, records each receipt at
+submission time in `jobs/index.jsonl`, and makes completed-batch finalization
+require the exact prepared child count and declared outputs.
 
 Start with a successful two-child batch. Inspect only bounded output from the
 BatchTools main job and known BatchTools artifact locations to determine:

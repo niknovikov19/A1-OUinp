@@ -23,7 +23,7 @@
       },
       "batch": {
         "path": "hpc_jobs/templates/batch.sh",
-        "sha256": "a5b6bae1475a5b3f9cad7cdc5428fd6783a822d80292a54c27983006b0c01d75"
+        "sha256": "88d0e59103bcd927ad278d5011169636c138892f0c932544e92cad8f85a5d8f0"
       },
       "workflow": {
         "path": "hpc_jobs/templates/workflow.sh",
@@ -38,10 +38,10 @@
     "limits": {
       "max_child_jobs": 10,
       "max_concurrent_jobs": 4,
-      "max_cores_per_job": 1,
-      "max_memory_gb_per_job": 2,
+      "max_cores_per_job": 2,
+      "max_memory_gb_per_job": 16,
       "max_nodes_per_job": 1,
-      "max_wall_time_min": 10
+      "max_wall_time_min": 1440
     }
   }
 }

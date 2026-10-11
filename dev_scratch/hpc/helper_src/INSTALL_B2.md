@@ -66,23 +66,26 @@ B2_JOB_RESULT=PASS
 B2_JOB_REPORT=/ddn/niknovikov19/hpc_codex/state/A1_OUinp/reports/promotion/b2-job-remote-promotion.<suffix>.txt
 ```
 
-On lattice, verify that the established simulation environment also contains
-the BatchTools main-job dependency:
-
-```bash
-source ~/.bashrc
-conda activate netpyne_batch_slurm
-python -c 'import ray; import netpyne.batchtools.search; print(ray.__version__)'
-```
-
-This imports software only; it does not submit or allocate a job.
+Do not run an interactive Python dependency check on lattice. Outside Slurm
+jobs, lattice access is limited to scheduler operations. The scheduled B2
+main job activates `netpyne_batch_slurm` and tests the Ray and BatchTools
+imports as part of normal execution; an import failure is retained in its
+Slurm error log and no simulation jobs are spawned.
 
 ## Post-promotion order
 
-After both promotions pass, Codex will:
+The first promoted run, `b2-child-discovery-001`, reached Ray startup as Slurm
+job `117831` but exhausted its 2 GB main-job allocation before submitting a
+child. It was finalized as `TIMEOUT` and released. Do not reuse that run ID.
+
+Continue with `INSTALL_B2_RETRY.md`, which restores the established
+BatchTools-main resource allocation and uses fresh run
+`b2-child-discovery-002`.
+
+After both retry promotions pass, Codex will:
 
 1. verify the exact clean automation checkout;
-2. run read-only B2 preflight and prepare `b2-child-discovery-001`;
+2. run read-only B2 preflight and prepare `b2-child-discovery-002`;
 3. show the commit, resources, two seed coordinates, result path, and rendered top-level script;
 4. request explicit approval for the real `hpc-job submit` call;
 5. submit once, monitor the recorded main-job ID and bounded top-level logs;

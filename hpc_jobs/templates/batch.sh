@@ -2,8 +2,7 @@
 #SBATCH --job-name=@@JOB_NAME@@
 #SBATCH --time=@@WALL_TIME@@
 #SBATCH --nodes=@@NODES@@
-#SBATCH --ntasks=1
-#SBATCH --cpus-per-task=@@CORES@@
+#SBATCH --ntasks=@@CORES@@
 #SBATCH --mem=@@MEMORY@@
 #SBATCH --partition=@@PARTITION@@
 #SBATCH --output=@@STDOUT@@

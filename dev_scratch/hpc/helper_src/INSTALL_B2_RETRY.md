@@ -1,0 +1,36 @@
+# B2 BatchTools-main resource retry
+
+Run `b2-child-discovery-001` reached Slurm as job `117831`, but Ray startup
+consumed the complete 2 GB main-job allocation. Slurm recorded 21 OOM kills,
+the job timed out, and no child job was submitted. The run was finalized as
+`TIMEOUT` and released; never submit that run ID again.
+
+The retry uses the established `submit_batch_slurm_local.sh` allocation for
+the BatchTools main job: 1 node, 2 CPUs, 16 GB, and 24 hours. The two B2
+simulation jobs remain at 1 CPU, 2 GB, and 10 minutes each.
+
+## Local promotion
+
+After Codex reports the exact commit, run locally under `sudo`:
+
+```bash
+B2_RETRY_COMMIT='<full 40-character commit>'
+sudo bash /home/nnovikov/repo/A1-OUinp/dev_scratch/hpc/helper_src/promotion/promote_b2_retry_local.sh \
+    "$B2_RETRY_COMMIT"
+```
+
+## Remote promotion
+
+First update the automation checkout through `hpc-code-update`. Then run on
+lethe without `sudo`:
+
+```bash
+B2_RETRY_COMMIT='<same full 40-character commit>'
+bash /ddn/niknovikov19/repo/A1_OUinp_codex/dev_scratch/hpc/helper_src/promotion/promote_b2_retry_lethe.sh \
+    "$B2_RETRY_COMMIT"
+```
+
+Both reports must end in `B2_RETRY_RESULT=PASS`. Promotion changes only the
+reviewed preparation ceilings and does not submit a job. Codex will then
+preflight and prepare fresh run `b2-child-discovery-002`, show its rendered
+script, and obtain separate approval before submission.
