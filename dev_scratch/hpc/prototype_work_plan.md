@@ -526,11 +526,13 @@ scanning the result tree.
 
 Purpose: prove conservative behavior before relying on the workflow.
 
-Implementation status: fixture coverage is present for lost submission
+Implementation status: passed. Fixture coverage handles lost submission
 responses, unknown state, missing outputs, mixed main/child states, bounded
-child logs, and cancellation binding. One two-child real-path candidate adds a
-single reviewed failure at stimulus seed `1502`; seed `1501` remains the
-successful control.
+child logs, and cancellation binding. In run `b4-controlled-failure-001`, seed
+`1501` completed with its output and seed `1502` failed with no output. The
+protected status and selected bounded log identified the exact coordinate and
+traceback. The main job was cancelled only after both children were terminal,
+then finalized as failed and released without retry.
 
 Use fixtures whenever the behavior can be tested without consuming cluster resources. Use one explicitly approved tiny failing child only for behavior that requires the real BatchTools/Slurm path.
 
@@ -552,7 +554,9 @@ Expected behavior:
 - never cancel, resubmit, or duplicate automatically;
 - request user direction before any recovery action.
 
-Pass condition: every case yields a conservative diagnosis and no unapproved state-changing action.
+Pass result: every case yields a conservative diagnosis, and the real failure
+required an explicit protected cancellation with no automatic retry or
+duplicate submission.
 
 ### Gate B5: selective result inventory and retrieval
 

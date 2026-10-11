@@ -1852,3 +1852,18 @@ child with a result, one failed child with no declared result, an exact
 parameter mapping in `jobs/index.jsonl`, and a bounded traceback for only the
 failed child. The main job must be cancelled only after diagnosis, then
 finalized as failed and released without retrying either child.
+
+## B4 real controlled-failure result
+
+Run `b4-controlled-failure-001` was submitted once as main job `117863`.
+Protected status mapped seed `1501` to child `117866`, which completed with
+exit code `0:0` and produced its declared result. It mapped seed `1502` to
+child `117867`, which failed with exit code `1:0` and produced no declared
+result. A bounded log request for only the failed child showed the exact
+intentional `post_run()` exception and `srun` exit code 1.
+
+The waiting main job was cancelled only after both children were terminal.
+Finalization verified the child index and the successful child's result,
+recorded `run_status: failed`, and preserved the missing failed-child result as
+evidence. The run was released without retry or duplicate submission. Together
+with the existing fail-closed fixtures and B2/B3 signal cases, B4 passes.
