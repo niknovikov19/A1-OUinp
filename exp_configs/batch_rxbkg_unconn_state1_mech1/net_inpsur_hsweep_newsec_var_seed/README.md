@@ -10,6 +10,10 @@ targets a separate zero-amplitude IClamp for each population. After network
 creation, `modify_network()` attaches the waveform to those declared clamps
 with `Vector.play`; it does not construct clamps manually.
 
+`H_SWEEP_AMP` sets the common amplitude. `H_SWEEP_AMPS` repeats that value for
+each active population because downstream waveform and metadata handling remain
+population-indexed. The result directory records only the common amplitude.
+
 The initial configuration is an explicitly labelled one-seed pilot using a
 uniform amplitude of 0.1 nA. Its purpose is to choose useful fixed amplitudes
 for the later five-seed dataset. Background rates, surrogate target rates,
@@ -17,6 +21,9 @@ membrane changes, resting-current clamps, and rate-control current corrections
 are copied unchanged from `net_inpsur_rsweep_newsec_var_seed_pre`.
 `PILOT_ATTEMPT` gives reruns a new result directory while retaining failed-run
 evidence; the current attempt is 2.
+
+The 20-second L2 simulation child uses 30 tasks/ranks and 128 GB RAM. The
+BatchTools controller uses a separate lightweight allocation.
 
 Each job saves population-rate dynamics in `rvec_xr/` and the exact applied
 current waveforms in `hvec_xr/`. The only batch coordinate is `seed_main`.

@@ -30,7 +30,8 @@ POPS_USED = L2_POPS
 H_SWEEP_TYPE = 'tri'
 H_SWEEP_T0 = 5000
 H_SWEEP_PERIOD = 7500
-H_SWEEP_AMPS = {pop: 0.1 for pop in POPS_USED}
+H_SWEEP_AMP = 0.1
+H_SWEEP_AMPS = {pop: H_SWEEP_AMP for pop in POPS_USED}
 H_STIM_PREFIX = 'hsweep'
 
 # Calibrated baseline inputs
@@ -115,11 +116,7 @@ def gen_exp_name_sub(cfg):
         f'_T_{int(cfg.h_sweep_period)}'
     )
 
-    # Record all fixed population amplitudes in stable population order
-    amp_label = '_'.join(
-        f'{pop}_{cfg.h_sweep_amps[pop]:g}' for pop in POPS_USED
-    )
-    exp_name_sub += f'_amp_{amp_label}'
+    exp_name_sub += f'_amp_{cfg.h_sweep_amp:g}'
     if USE_IBKG_CTRL:
         exp_name_sub += '_ictrl'
     exp_name_sub += f'_wmult_{cfg.wmult}_ee_{cfg.EEGain}'
@@ -156,6 +153,7 @@ def apply_exp_cfg(cfg):
     cfg.h_sweep_type = H_SWEEP_TYPE
     cfg.h_sweep_t0 = H_SWEEP_T0
     cfg.h_sweep_period = H_SWEEP_PERIOD
+    cfg.h_sweep_amp = H_SWEEP_AMP
     cfg.h_sweep_amps = dict(H_SWEEP_AMPS)
 
     # Keep all active-to-active inputs frozen at their calibrated target rates

@@ -4,7 +4,7 @@
   "job_kind": "batch",
   "target": "batch_rxbkg_unconn_state1_mech1/net_inpsur_hsweep_newsec_var_seed",
   "template_path": "hpc_jobs/templates/batch.sh",
-  "expected_result_path": "exp_results/batch_rxbkg_unconn_state1_mech1/net_inpsur_hsweep_newsec_var_seed/exp_L2_pilot2_nseed_1_t_5.0_20.0_tri_t0_5000_T_7500_amp_IT2_0.1_PV2_0.1_SOM2_0.1_VIP2_0.1_NGF2_0.1_ictrl_wmult_0.25_ee_0.5",
+  "expected_result_path": "exp_results/batch_rxbkg_unconn_state1_mech1/net_inpsur_hsweep_newsec_var_seed/exp_L2_pilot2_nseed_1_t_5.0_20.0_tri_t0_5000_T_7500_amp_0.1_ictrl_wmult_0.25_ee_0.5",
   "completion_files": [
     "jobs/index.jsonl",
     "cfg/cfg_00000_seed_1000.json",
@@ -22,8 +22,8 @@
   "simulation_job_resources": {
     "partition": "cpu.q",
     "nodes": 1,
-    "cores": 2,
-    "memory_gb": 16,
+    "cores": 30,
+    "memory_gb": 128,
     "wall_time_min": 1440
   },
   "max_concurrent_simulation_jobs": 1,
