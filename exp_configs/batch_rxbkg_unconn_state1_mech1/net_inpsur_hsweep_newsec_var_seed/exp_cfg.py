@@ -16,7 +16,7 @@ import xarray as xr
 
 from analysis.ou_tuning import sim_res_proc_utils as proc
 from analysis.ou_tuning.netpyne_res_parse_utils import prepare_sim_result
-from batch_params import L2_POPS, N_SEEDS, PILOT
+from batch_params import L2_POPS, N_SEEDS, PILOT, PILOT_ATTEMPT
 from sim_data_analyzer.xr_adapters import get_net_rate_dynamics_xr
 
 
@@ -103,7 +103,7 @@ def gen_exp_name_sub(cfg):
     """Generate the result subdirectory name."""
     exp_name_sub = f'exp_{EXP_LABEL}'
     if PILOT:
-        exp_name_sub += '_pilot'
+        exp_name_sub += f'_pilot{PILOT_ATTEMPT}'
     if not SURR_INP_ON:
         exp_name_sub += '_nosurr'
 
