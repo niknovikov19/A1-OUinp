@@ -22,9 +22,9 @@
   "simulation_job_resources": {
     "partition": "cpu.q",
     "nodes": 1,
-    "cores": 60,
-    "memory_gb": 256,
-    "wall_time_min": 420
+    "cores": 2,
+    "memory_gb": 16,
+    "wall_time_min": 1440
   },
   "max_concurrent_simulation_jobs": 1,
   "max_simulation_jobs": 1
