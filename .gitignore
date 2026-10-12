@@ -75,3 +75,5 @@ dev_scratch/thal_frz/**/*.png
 dev_scratch/thal_frz/**/*.nc
 dev_scratch/thal_frz_2/**/*.png
 dev_scratch/thal_frz_2/**/*.nc
+# Temporary HPC-Codex quarantine smoke-test artifact
+exp_results/single_unconn/hpc_codex_quarantine_probe.trace
