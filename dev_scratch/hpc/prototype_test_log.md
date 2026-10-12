@@ -1927,4 +1927,28 @@ stash. Nine isolated repository tests passed, including successful restoration
 under a new ignore rule and fail-closed cases for unrelated edits, stale
 target, file-count limit, symlinks, merge failure, and a target that still
 does not ignore the result. Protected promotion and a real-path test are
-pending; this is not yet a passed operational capability.
+pending at candidate review.
+
+## Post-prototype code-update quarantine protected result
+
+The local and lethe promotions of commit
+`af1ef28355721741d5541502d1483b90d9d60491` passed. Their reports are
+`/tmp/code-quarantine-local-promotion.a2Fo64.txt` and
+`state/A1_OUinp/reports/promotion/code-quarantine-remote-promotion.jO5Hu3.txt`.
+Installed source hashes matched the reviewed candidate, the local bundle
+reported `0.14.0-recovery`, and the remote helper reported the same version.
+An ordinary update to the already-installed commit returned `no-op`.
+
+For the live test, the user created exactly one untracked regular file at
+`exp_results/single_unconn/hpc_codex_quarantine_probe.trace` while the HPC
+checkout was at `af1ef28355721741d5541502d1483b90d9d60491`. The
+subsequent commit `1fbefdbbf1e65f9b5db6085079ae9f28d7fda124` added an
+ignore rule for that exact path. Protected status showed one change, no
+active run, and no active quarantine before the update. The protected
+`--quarantine-generated` update returned `fast-forwarded`, one quarantined
+file, and one restored file. Final status showed the exact target commit,
+zero changes, and no active quarantine marker. The user checked the restored
+file on lethe; its SHA256 was
+`a23f30435f3f8df5b86975674da1e600aa01ccd632555f880dd7c71aee07164a`,
+matching the original one-line marker. The positive real-path test passes.
+The temporary marker and exact ignore rule remain to be cleaned up.
