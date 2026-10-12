@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "request_id": "hsweep-l2-pilot",
+  "job_kind": "batch",
+  "target": "batch_rxbkg_unconn_state1_mech1/net_inpsur_hsweep_newsec_var_seed",
+  "template_path": "hpc_jobs/templates/batch.sh",
+  "expected_result_path": "exp_results/batch_rxbkg_unconn_state1_mech1/net_inpsur_hsweep_newsec_var_seed/exp_L2_pilot_nseed_1_t_5.0_20.0_tri_t0_5000_T_7500_amp_IT2_0.1_PV2_0.1_SOM2_0.1_VIP2_0.1_NGF2_0.1_ictrl_wmult_0.25_ee_0.5",
+  "completion_files": [
+    "jobs/index.jsonl",
+    "cfg/cfg_00000_seed_1000.json",
+    "results/result_00000_seed_1000.json",
+    "rvec_xr/rvec_00000_seed_1000.nc",
+    "hvec_xr/hvec_00000_seed_1000.nc"
+  ],
+  "top_level_resources": {
+    "partition": "cpu.q",
+    "nodes": 1,
+    "cores": 2,
+    "memory_gb": 16,
+    "wall_time_min": 1440
+  },
+  "simulation_job_resources": {
+    "partition": "cpu.q",
+    "nodes": 1,
+    "cores": 60,
+    "memory_gb": 256,
+    "wall_time_min": 420
+  },
+  "max_concurrent_simulation_jobs": 1,
+  "max_simulation_jobs": 1
+}
