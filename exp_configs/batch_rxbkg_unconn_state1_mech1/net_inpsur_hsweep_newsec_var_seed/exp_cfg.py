@@ -130,7 +130,8 @@ def get_batch_completion_files(child_key, parameters):
     """Return the compact outputs owned by one h-sweep child."""
     if set(parameters) != {'seed_main'}:
         raise ValueError('Unexpected h-sweep batch parameters')
-    postfix = f'{child_key}_seed_{parameters["seed_main"]}'
+    child_id = child_key.rsplit('_', 1)[-1]
+    postfix = f'{child_id}_seed_{parameters["seed_main"]}'
     return [
         f'cfg/cfg_{postfix}.json',
         f'results/result_{postfix}.json',
