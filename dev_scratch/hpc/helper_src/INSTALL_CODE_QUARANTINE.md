@@ -18,6 +18,23 @@ review. No `git stash`, reset, force update, or arbitrary path argument is
 used. This mode does not make a missing `.gitignore` rule safe: add the exact
 rule to the target commit first.
 
+## Update the clean automation checkout
+
+The checkout was confirmed clean before this promotion. After pushing the
+final commit, use the already installed A2 updater to move it to that exact
+commit. Run locally as your ordinary user:
+
+```bash
+CQ_COMMIT='<full 40-character commit>'
+/opt/a1-hpc/bin/hpc-code-status --json
+/opt/a1-hpc/bin/hpc-code-update --json "$CQ_COMMIT"
+/opt/a1-hpc/bin/hpc-code-status --json
+```
+
+The final status must report `clean: true`, `active_run: false`, and the exact
+commit. Stop if any check fails; do not use the new quarantine flag to
+bootstrap its own promotion.
+
 ## Local promotion
 
 After reviewing the commit and the local promotion script, run on the local
@@ -35,55 +52,42 @@ verifies source hashes, installs `hpc-code-update`, `hpc_common.py`, and the
 remote code-configuration schema, then restores the protected directories to
 mode `0555`. It does not change local audit-state permissions.
 
-## Lethe promotion when the automation checkout is dirty
+## Lethe promotion
 
-The old updater cannot move a dirty checkout to the new commit. Stage only
-the two reviewed remote artifacts from the local commit directly on lethe;
-do not stash or modify the automation checkout. The staging directory is
-outside the repository. Run these commands locally as your ordinary user:
+After the A2 update succeeds, log in to lethe and run the script from the
+updated automation checkout as `niknovikov19` (no sudo):
 
 ```bash
 CQ_COMMIT='<same full 40-character commit>'
-CQ_REPO=/home/nnovikov/repo/A1-OUinp
-CQ_SRC="$CQ_REPO/dev_scratch/hpc/helper_src"
-CQ_STAGE="/ddn/niknovikov19/hpc_codex/staging/code-quarantine/$CQ_COMMIT"
-ssh lethe "mkdir -p '$CQ_STAGE' && chmod 0700 '$CQ_STAGE'"
-scp "$CQ_SRC/remote_lethe/hpc-lethe-code" "lethe:$CQ_STAGE/hpc-lethe-code"
-scp "$CQ_SRC/config_examples/remote-hpc-code.json.example" "lethe:$CQ_STAGE/remote-hpc-code.json.example"
-scp "$CQ_SRC/promotion/promote_code_quarantine_lethe.sh" "lethe:$CQ_STAGE/promote_code_quarantine_lethe.sh"
+CQ_REPO=/ddn/niknovikov19/repo/A1_OUinp_codex
+bash "$CQ_REPO/dev_scratch/hpc/helper_src/promotion/promote_code_quarantine_lethe.sh" "$CQ_COMMIT"
 ```
 
-The commit and paths above are literal deployment inputs, not inputs accepted
-by the protected helper. Review the staged configuration and script, then run
-this on lethe as `niknovikov19` (no sudo):
-
-```bash
-CQ_COMMIT='<same full 40-character commit>'
-CQ_STAGE="/ddn/niknovikov19/hpc_codex/staging/code-quarantine/$CQ_COMMIT"
-bash "$CQ_STAGE/promote_code_quarantine_lethe.sh" "$CQ_COMMIT"
-```
-
-The script verifies hard-coded source hashes, installs the helper and config,
-creates `state/A1_OUinp/code-quarantine` with mode `0700`, and restores the
-protected `helpers/lethe` and `config` directories to mode `0555`. It prints
+The script requires the exact commit, branch, and clean checkout. It verifies
+hard-coded source hashes, installs the helper and config, creates
+`state/A1_OUinp/code-quarantine` with mode `0700`, and restores the protected
+`helpers/lethe` and `config` directories to mode `0555`. It prints
 `CQ_REMOTE_RESULT` and a report path beneath
 `state/A1_OUinp/reports/promotion`. The installed remote config contains no
 credentials or repository URL. Do not manually edit the promoted config to
 choose a different generated-output root.
 
-If the automation checkout is clean and already at this commit, the staging
-copy is still acceptable; the source hashes, not checkout location, determine
-what gets installed.
+If the checkout becomes dirty before the A2 update, stop and inspect the
+changes. That would require a separate bootstrap procedure; these promotion
+scripts deliberately do not stash or discard them.
 
 ## Protected test and recovery
 
-After both reports say `PASS`, inspect status and the actual dirty paths.
-Use the optional flag only if **every** change is an eligible untracked
-`exp_results` file and the target commit ignores every such path:
+After both reports say `PASS`, inspect status. The current commit is already
+installed, so a quarantine update to that same commit would be a no-op and
+would not test the new mode. For a later commit, use the optional flag only
+if **every** checkout change is an eligible untracked `exp_results` file and
+the later target commit ignores every such path:
 
 ```bash
+NEXT_COMMIT='<later full 40-character commit>'
 /opt/a1-hpc/bin/hpc-code-status --json
-/opt/a1-hpc/bin/hpc-code-update --json --quarantine-generated "$CQ_COMMIT"
+/opt/a1-hpc/bin/hpc-code-update --json --quarantine-generated "$NEXT_COMMIT"
 /opt/a1-hpc/bin/hpc-code-status --json
 ```
 
