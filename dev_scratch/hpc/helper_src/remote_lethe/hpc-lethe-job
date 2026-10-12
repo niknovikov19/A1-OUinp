@@ -50,7 +50,7 @@ from hpc_job_lifecycle import (
 )
 
 
-HELPER_VERSION = '0.12.0-b2'
+HELPER_VERSION = '0.15.0-cancel-tree'
 EXIT_SUCCESS = 0
 EXIT_REJECTED = 2
 EXIT_UNKNOWN = 3
@@ -627,7 +627,7 @@ def status_job(config, run_id):
 
 
 def cancel_job(config, run_id):
-    """Cancel one recorded active top-level Slurm job. """
+    """Cancel one protected controller and its recorded child jobs."""
     lock_id = acquire_lock(config['state']['job_lock'], 'job-operation lock')
     try:
         prepared = load_prepared(config, run_id)
@@ -647,6 +647,10 @@ def cancel_job(config, run_id):
         }
         if any(marker.get(key) != value for key, value in expected.items()):
             raise RejectedInput('Active-run marker does not match prepared job')
+        child_job_ids = [
+            record['slurm_job_id']
+            for record in load_child_records(config, prepared, None)
+        ]
         helper = config['remote_helpers']['grid_job']
         result, exit_code = run_grid_command(config, helper, (
             'cancel',
@@ -659,7 +663,8 @@ def cancel_job(config, run_id):
             exit_code == EXIT_SUCCESS and
             result.get('operation') == 'grid-job-cancel' and
             result.get('run_id') == prepared['run_id'] and
-            result.get('slurm_job_id') == submission['slurm_job_id']
+            result.get('slurm_job_id') == submission['slurm_job_id'] and
+            result.get('child_job_ids') == child_job_ids
         )
         if not valid:
             raise JobUnavailable('Lattice cancellation result is invalid')
@@ -670,6 +675,7 @@ def cancel_job(config, run_id):
             'result': result['result'],
             'run_id': prepared['run_id'],
             'slurm_job_id': submission['slurm_job_id'],
+            'child_job_ids': result['child_job_ids'],
             'remote_host': socket.gethostname(),
             'helper': helper_identity(),
         }

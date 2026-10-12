@@ -394,6 +394,8 @@ def concise_output(result):
     elif operation == 'job-cancel':
         print(f'Result: {result["result"]}')
         print(f'Slurm job: {result["slurm_job_id"]}')
+        for job_id in result.get('child_job_ids', []):
+            print(f'Child Slurm job: {job_id}')
     elif operation == 'job-finalize':
         print(f'Result: {result["result"]}')
         print(f'Scheduler: {result["scheduler_state"]}')

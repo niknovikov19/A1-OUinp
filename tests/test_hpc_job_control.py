@@ -19,6 +19,7 @@ from hpc_job_control import (
 )
 from hpc_job_lifecycle import (
     HpcJobLifecycleError,
+    build_final_record,
     build_submission_receipt,
     create_state_record,
     read_state_record,
@@ -159,8 +160,8 @@ class HpcJobControlUnitTests(unittest.TestCase):
             ],
         )
 
-    def test_grid_scancel_call_has_only_the_recorded_job_id(self):
-        """Call `scancel` with no caller-supplied scheduler options. """
+    def test_grid_scancel_call_has_only_recorded_job_ids(self):
+        """Call `scancel` with no caller-supplied scheduler options."""
         config = {
             'scheduler': {
                 'scancel_path': '/usr/bin/scancel',
@@ -169,10 +170,10 @@ class HpcJobControlUnitTests(unittest.TestCase):
         }
         completed = SimpleNamespace(returncode=0, stdout=b'', stderr=b'')
         with patch.object(GRID.subprocess, 'run', return_value=completed) as run:
-            GRID.run_scancel(config, 117950)
+            GRID.run_scancel(config, [117950, 117951])
         self.assertEqual(
             run.call_args.args[0],
-            ['/usr/bin/scancel', '--', '117950'],
+            ['/usr/bin/scancel', '--quiet', '--', '117950', '117951'],
         )
 
     def test_local_cancel_accepts_only_one_run_id(self):
@@ -512,6 +513,7 @@ class HpcJobControlLifecycleTests(unittest.TestCase):
             'result': 'cancel-requested',
             'run_id': self.run_id,
             'slurm_job_id': receipt['slurm_job_id'],
+            'child_job_ids': [],
         }
         with patch.object(
             LETHE,
@@ -533,13 +535,100 @@ class HpcJobControlLifecycleTests(unittest.TestCase):
         self.assertEqual(result['operation'], 'job-cancel')
         self.assertEqual(result['slurm_job_id'], receipt['slurm_job_id'])
 
-    def test_grid_cancel_resolves_only_the_recorded_receipt(self):
-        """Resolve the scheduler ID from protected records before `scancel`. """
+    def test_cancel_forwards_recorded_children_without_caller_job_ids(self):
+        """Cancel children resolved only from the protected batch index."""
         receipt, _ = self.submit_fixture()
+        batch = {
+            **self.prepared,
+            'job_kind': 'batch',
+            'simulation_job_limit': 2,
+        }
+        child = {'slurm_job_id': 117951}
+        grid_result = {
+            'schema_version': 1,
+            'operation': 'grid-job-cancel',
+            'status': 'ok',
+            'result': 'cancel-requested',
+            'run_id': self.run_id,
+            'slurm_job_id': receipt['slurm_job_id'],
+            'child_job_ids': [child['slurm_job_id']],
+        }
+        with (
+            patch.object(LETHE, 'load_prepared', return_value=batch),
+            patch.object(LETHE, 'load_submission', return_value=receipt),
+            patch.object(
+                LETHE,
+                'load_child_records',
+                return_value=[child],
+            ),
+            patch.object(
+                LETHE,
+                'run_grid_command',
+                return_value=(grid_result, LETHE.EXIT_SUCCESS),
+            ) as remote,
+        ):
+            result = LETHE.cancel_job(self.config, self.run_id)
+        remote.assert_called_once_with(
+            self.config,
+            '/helpers/grid/hpc-grid-job',
+            (
+                'cancel',
+                self.run_id,
+                COMMIT,
+                self.prepared['request_sha256'],
+                self.prepared['rendered_script_sha256'],
+            ),
+        )
+        self.assertEqual(result['child_job_ids'], [child['slurm_job_id']])
+
+    def test_invalid_child_output_declaration_finalizes_as_failed(self):
+        """Release terminal batches with malformed child declarations."""
+        receipt, _ = self.submit_fixture()
+        batch = {
+            **self.prepared,
+            'job_kind': 'batch',
+            'simulation_job_limit': 1,
+        }
+        child = {
+            'schema_version': 1,
+            'run_id': self.run_id,
+            'child_key': 'run_00000',
+            'slurm_job_id': 117951,
+            'parameters': {'seed': 1},
+            'stdout_path': (
+                f'{batch["expected_result_path"]}/jobs/run_00000.run'
+            ),
+            'stderr_path': (
+                f'{batch["expected_result_path"]}/jobs/run_00000.err'
+            ),
+            'expected_outputs': [
+                f'{batch["expected_result_path"]}/results/wrong.json',
+            ],
+            'submitted_at_utc': NOW,
+        }
+        final = build_final_record(
+            batch,
+            receipt,
+            'CANCELLED',
+            [],
+            [child],
+            LATER,
+        )
+        self.assertEqual(final['status'], 'failed')
+        self.assertEqual(final['child_job_ids'], [117951])
+
+    def test_grid_cancel_resolves_only_the_recorded_receipt(self):
+        """Resolve controller and child IDs from protected records."""
+        receipt, _ = self.submit_fixture()
+        child = {'slurm_job_id': 117951}
         with patch.object(
             GRID.pwd,
             'getpwuid',
             return_value=SimpleNamespace(pw_name='fixture'),
+        ), patch.object(
+            GRID,
+            'load_child_records',
+            return_value=[child],
         ), patch.object(GRID, 'run_scancel') as scancel:
             result = GRID.cancel(
                 self.config,
@@ -548,9 +637,13 @@ class HpcJobControlLifecycleTests(unittest.TestCase):
                 self.prepared['request_sha256'],
                 self.prepared['rendered_script_sha256'],
             )
-        scancel.assert_called_once_with(self.config, receipt['slurm_job_id'])
+        scancel.assert_called_once_with(
+            self.config,
+            [receipt['slurm_job_id'], child['slurm_job_id']],
+        )
         self.assertEqual(result['operation'], 'grid-job-cancel')
         self.assertEqual(result['slurm_job_id'], receipt['slurm_job_id'])
+        self.assertEqual(result['child_job_ids'], [child['slurm_job_id']])
 
 
 if __name__ == '__main__':

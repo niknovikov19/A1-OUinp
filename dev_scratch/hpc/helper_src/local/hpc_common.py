@@ -7,7 +7,7 @@ import stat
 from datetime import datetime, timezone
 
 
-BUNDLE_VERSION = '0.14.0-recovery'
+BUNDLE_VERSION = '0.15.0-cancel-tree'
 CONFIG_SCHEMA_VERSION = 1
 
 EXIT_SUCCESS = 0

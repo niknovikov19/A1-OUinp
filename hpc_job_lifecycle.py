@@ -506,10 +506,11 @@ def build_final_record(
         (PurePosixPath(prepared['expected_result_path']) / path).as_posix()
         for path in prepared['completion_files']
     }
-    for record in records:
-        if not set(record['expected_outputs']) <= declared_outputs:
-            raise HpcJobLifecycleError('Child output is not declared by the run')
-    complete_evidence = present == expected
+    child_outputs_declared = all(
+        set(record['expected_outputs']) <= declared_outputs
+        for record in records
+    )
+    complete_evidence = present == expected and child_outputs_declared
     if prepared['job_kind'] == 'batch':
         complete_evidence &= len(records) == prepared['simulation_job_limit']
     status_value = (

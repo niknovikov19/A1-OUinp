@@ -506,9 +506,10 @@ returning. An unavailable or malformed scheduler response becomes `unknown`;
 pending and unknown submissions are never retried automatically.
 
 Cancellation accepts only the prepared run ID. The fixed helpers resolve its
-recorded active top-level Slurm ID and call `scancel` without accepting a job
-ID or scheduler option from the caller. Finalization and release remain
-separate explicit operations after Slurm reports a terminal state.
+recorded active controller and validated BatchTools child Slurm IDs, then call
+one bounded `scancel` without accepting a job ID or scheduler option from the
+caller. Finalization and release remain separate explicit operations after
+Slurm reports a terminal state.
 
 Status queries the recorded top-level Slurm ID and any recorded BatchTools
 child IDs together through the established A5 status helper. Log retrieval
@@ -568,13 +569,15 @@ Each record binds the prepared run ID to the child label, Slurm ID, parameter
 coordinates, stdout/stderr paths, declared scientific output, and submission
 time. Finalization ingests this file through `hpc_job_lifecycle.py`. A completed
 batch requires exactly the prepared number of child records, and every child
-output must also be declared by the tracked request.
+output must also be declared by the tracked request. A terminal batch with a
+malformed output declaration is finalized as failed, allowing safe release
+without treating the scientific evidence as complete.
 
 If a simulation job fails without producing the BatchTools completion
 artifact, BatchTools can continue displaying it as running and keep the main
 job alive. Child-aware status and log operations expose the real scheduler
-state and the selected child error without an ad hoc SSH command. Cancellation
-remains a separate scheduler mutation and requires its own protected operation.
+state and the selected child error without an ad hoc SSH command. The protected
+cancellation operation stops both the controller and all recorded children.
 
 ## B5 selective result access
 

@@ -20,6 +20,7 @@ from hpc_job_lifecycle import (
     HpcJobLifecycleError,
     build_submission_receipt,
     build_unknown_submission,
+    parse_child_records,
     read_state_record,
     replace_state_record,
     validate_prepared_record,
@@ -27,12 +28,13 @@ from hpc_job_lifecycle import (
 )
 
 
-HELPER_VERSION = '0.12.0-b2'
+HELPER_VERSION = '0.15.0-cancel-tree'
 EXIT_SUCCESS = 0
 EXIT_REJECTED = 2
 EXIT_UNKNOWN = 3
 EXIT_FAILED = 4
 MAX_COMMAND_BYTES = 65536
+MAX_CHILD_INDEX_BYTES = 65536
 
 
 class RejectedInput(ValueError):
@@ -269,9 +271,26 @@ def run_sbatch(config, submit_script):
         raise SubmitUnknown(str(exc)) from exc
 
 
-def run_scancel(config, job_id):
-    """Call `scancel` once for one recorded top-level job ID. """
-    command = [config['scheduler']['scancel_path'], '--', str(job_id)]
+def run_scancel(config, job_ids):
+    """Call `scancel` once for validated recorded job IDs."""
+    valid_ids = (
+        isinstance(job_ids, list) and
+        job_ids and
+        all(
+            isinstance(job_id, int) and
+            not isinstance(job_id, bool) and
+            job_id > 0
+            for job_id in job_ids
+        )
+    )
+    if not valid_ids or len(job_ids) != len(set(job_ids)):
+        raise SubmitFailure('Invalid cancellation job IDs')
+    command = [
+        config['scheduler']['scancel_path'],
+        '--quiet',
+        '--',
+        *[str(job_id) for job_id in job_ids],
+    ]
     environment = os.environ.copy()
     environment.update({'LANG': 'C', 'LC_ALL': 'C'})
     try:
@@ -295,6 +314,28 @@ def run_scancel(config, job_id):
     if completed.returncode != 0:
         details = stderr.replace('\r', ' ').replace('\n', ' ').strip()[:500]
         raise SubmitFailure(f'scancel exited {completed.returncode}: {details}')
+
+
+def load_child_records(config, prepared):
+    """Load validated child records from one bounded batch index."""
+    if prepared['job_kind'] == 'single':
+        return []
+    fpath = (
+        Path(config['git']['automation_checkout']) /
+        prepared['expected_result_path'] /
+        'jobs/index.jsonl'
+    )
+    if not fpath.exists():
+        return []
+    require_regular_file(fpath, 'child-job index')
+    try:
+        with open(fpath, 'rb') as fid:
+            payload = fid.read(MAX_CHILD_INDEX_BYTES + 1)
+        if len(payload) > MAX_CHILD_INDEX_BYTES:
+            raise RejectedInput('Child-job index is too large')
+        return parse_child_records(payload, prepared)
+    except (OSError, HpcJobLifecycleError) as exc:
+        raise RejectedInput(f'Invalid child-job index: {exc}') from exc
 
 
 def submit(config, run_id, expected_commit, request_sha256, script_sha256):
@@ -393,7 +434,7 @@ def submit_locked(config, run_id, expected_commit, request_sha256, script_sha256
 
 
 def cancel(config, run_id, expected_commit, request_sha256, script_sha256):
-    """Cancel one exact active top-level job through its recorded receipt. """
+    """Cancel one active controller and all of its recorded children."""
     if pwd.getpwuid(os.getuid()).pw_name != config['scheduler']['user']:
         raise SubmitFailure('Current user does not match scheduler policy')
     lock_id = acquire_submit_lock(config)
@@ -416,7 +457,12 @@ def cancel(config, run_id, expected_commit, request_sha256, script_sha256):
         )
         if submission['status'] != 'submitted':
             raise RejectedInput('Cancellation requires a submitted receipt')
-        run_scancel(config, submission['slurm_job_id'])
+        child_records = load_child_records(config, prepared)
+        child_job_ids = [
+            record['slurm_job_id'] for record in child_records
+        ]
+        job_ids = [submission['slurm_job_id'], *child_job_ids]
+        run_scancel(config, job_ids)
         return {
             'schema_version': 1,
             'operation': 'grid-job-cancel',
@@ -424,6 +470,7 @@ def cancel(config, run_id, expected_commit, request_sha256, script_sha256):
             'result': 'cancel-requested',
             'run_id': prepared['run_id'],
             'slurm_job_id': submission['slurm_job_id'],
+            'child_job_ids': child_job_ids,
             'remote_host': socket.gethostname(),
             'helper': helper_identity(),
         }
