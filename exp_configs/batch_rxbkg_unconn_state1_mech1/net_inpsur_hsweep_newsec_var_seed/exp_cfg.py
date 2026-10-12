@@ -126,6 +126,19 @@ def gen_exp_name_sub(cfg):
     return exp_name_sub
 
 
+def get_batch_completion_files(child_key, parameters):
+    """Return the compact outputs owned by one h-sweep child."""
+    if set(parameters) != {'seed_main'}:
+        raise ValueError('Unexpected h-sweep batch parameters')
+    postfix = f'{child_key}_seed_{parameters["seed_main"]}'
+    return [
+        f'cfg/cfg_{postfix}.json',
+        f'results/result_{postfix}.json',
+        f'rvec_xr/rvec_{postfix}.nc',
+        f'hvec_xr/hvec_{postfix}.nc',
+    ]
+
+
 def apply_exp_cfg(cfg):
     """Apply the L2 h-sweep configuration to the calibrated base model."""
     cfg.duration = SIM_DURATION
@@ -381,11 +394,14 @@ def post_run(sim):
         ('cfg', 'json', 'cfg'),
         ('netParams', 'json', 'netpar'),
     ]
+    outputs = []
     for data_name, ext, dirname_sub in data_info:
         fpath_old = dirpath_res / f'{exp_name}_{data_name}.{ext}'
         fpath_new = dirpath_res_sub / dirname_sub / f'{data_name}_{postfix}.{ext}'
         if fpath_old.exists():
             fpath_old.rename(fpath_new)
+            if data_name == 'cfg':
+                outputs.append(fpath_new.relative_to(dirpath_res_sub).as_posix())
         else:
             print('RESULT NOT FOUND: ', fpath_old)
 
@@ -396,6 +412,7 @@ def post_run(sim):
     fpath_result = dirpath_res_sub / 'results' / f'result_{postfix}.json'
     with open(fpath_result, 'w') as fid:
         json.dump(result, fid, indent=4)
+    outputs.append(fpath_result.relative_to(dirpath_res_sub).as_posix())
 
     # Save compact rate dynamics through sim_data_analyzer
     sim_result = prepare_sim_result(sim)
@@ -421,10 +438,12 @@ def post_run(sim):
     rvec_xr.attrs['seed_main'] = int(cfg.seed_main)
     fpath_rvec = dirpath_res_sub / 'rvec_xr' / f'rvec_{postfix}.nc'
     rvec_xr.to_netcdf(fpath_rvec)
+    outputs.append(fpath_rvec.relative_to(dirpath_res_sub).as_posix())
 
     hvec_xr = _build_hvec_xr(rvec_xr, cfg)
     fpath_hvec = dirpath_res_sub / 'hvec_xr' / f'hvec_{postfix}.nc'
     hvec_xr.to_netcdf(fpath_hvec)
+    outputs.append(fpath_hvec.relative_to(dirpath_res_sub).as_posix())
 
     if PLOT_RATE_DYNAMICS:
         # Plot rates and their applied currents on a shared time axis
@@ -453,3 +472,11 @@ def post_run(sim):
         fpath_fig = dirpath_res_sub / 'rvec_figs' / f'L2_{postfix}.png'
         fig.savefig(fpath_fig, bbox_inches='tight', dpi=200)
         plt.close(fig)
+
+    expected = get_batch_completion_files(
+        exp_id,
+        {'seed_main': cfg.seed_main},
+    )
+    if outputs != expected:
+        raise FileNotFoundError('H-sweep child completion files were not produced')
+    return outputs
