@@ -1951,4 +1951,5 @@ zero changes, and no active quarantine marker. The user checked the restored
 file on lethe; its SHA256 was
 `a23f30435f3f8df5b86975674da1e600aa01ccd632555f880dd7c71aee07164a`,
 matching the original one-line marker. The positive real-path test passes.
-The temporary marker and exact ignore rule remain to be cleaned up.
+The user then removed the hash-checked temporary marker. The exact test-only
+ignore rule was removed in the subsequent cleanup commit.
