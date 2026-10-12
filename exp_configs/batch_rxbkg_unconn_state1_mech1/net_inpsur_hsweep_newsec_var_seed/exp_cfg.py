@@ -17,7 +17,7 @@ import xarray as xr
 from analysis.ou_tuning import sim_res_proc_utils as proc
 from analysis.ou_tuning.netpyne_res_parse_utils import prepare_sim_result
 from batch_params import L2_POPS, N_SEEDS, PILOT
-from external.sim_data_analyzer.xr_adapters import get_net_rate_dynamics_xr
+from sim_data_analyzer.xr_adapters import get_net_rate_dynamics_xr
 
 
 SIM_DURATION = 20 * 1e3
