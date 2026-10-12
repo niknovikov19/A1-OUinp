@@ -8,6 +8,11 @@
     "remote_name": "origin"
   },
   "state": {
-    "root": "/ddn/niknovikov19/hpc_codex/state/A1_OUinp"
+    "root": "/ddn/niknovikov19/hpc_codex/state/A1_OUinp",
+    "quarantine_root": "/ddn/niknovikov19/hpc_codex/state/A1_OUinp/code-quarantine"
+  },
+  "quarantine": {
+    "generated_roots": ["exp_results"],
+    "max_files": 128
   }
 }

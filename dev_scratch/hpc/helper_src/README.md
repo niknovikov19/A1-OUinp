@@ -133,6 +133,12 @@ manual checkout, selects another branch/remote/path, or accepts Git arguments
 from the caller. Fetch failures are `unknown`; policy and known checkout
 failures do not trigger retries.
 
+An optional `--quarantine-generated` recovery mode is documented in
+`INSTALL_CODE_QUARANTINE.md`. It handles only bounded untracked regular files
+under `exp_results`; the target commit must ignore them. A conflict leaves
+the files in private protected state for explicit review. The default clean-
+checkout rule and fixed branch/commit checks are unchanged.
+
 ### A2 call chains
 
 Read-only status:

@@ -41,18 +41,23 @@ def build_parser():
         action='store_true',
         help='Print structured JSON instead of a concise summary.',
     )
+    parser.add_argument(
+        '--quarantine-generated',
+        action='store_true',
+        help='Temporarily move eligible untracked results during the update.',
+    )
     parser.add_argument('expected_commit')
     return parser
 
 
-def build_ssh_command(config, expected_commit):
+def build_ssh_command(config, expected_commit, quarantine_generated=False):
     """Build the one allowlisted remote code-update invocation."""
     helper = Path(config['remote_helpers']['lethe_dir']) / 'hpc-lethe-code'
-    remote_command = ' '.join((
-        shlex.quote(helper.as_posix()),
-        'update',
-        shlex.quote(expected_commit),
-    ))
+    parts = [shlex.quote(helper.as_posix()), 'update']
+    if quarantine_generated:
+        parts.append('--quarantine-generated')
+    parts.append(shlex.quote(expected_commit))
+    remote_command = ' '.join(parts)
     timeout = config['ssh']['connect_timeout_sec']
     return [
         SSH_PATH,
@@ -113,9 +118,9 @@ def parse_remote_result(stdout):
     return result
 
 
-def run_update(config, expected_commit):
+def run_update(config, expected_commit, quarantine_generated=False):
     """Run the fixed remote update and normalize its exit state."""
-    command = build_ssh_command(config, expected_commit)
+    command = build_ssh_command(config, expected_commit, quarantine_generated)
     try:
         completed = subprocess.run(
             command,
@@ -249,7 +254,11 @@ def main():
     ):
         return EXIT_FAILED
 
-    result, exit_code = run_update(config, expected_commit)
+    result, exit_code = run_update(
+        config,
+        expected_commit,
+        args.quarantine_generated,
+    )
     status = result['status']
     status = 'success' if status == 'ok' else status
     if not audit_or_fail(

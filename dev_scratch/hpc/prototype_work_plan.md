@@ -220,6 +220,13 @@ Tests after promotion:
 
 Pass condition: the GitHub round trip preserves the exact commit, cannot modify the manual checkout, and refuses ambiguous or divergent states.
 
+Post-prototype hardening: an optional `--quarantine-generated` mode may
+temporarily move only bounded untracked `exp_results` files during an exact
+fast-forward, restoring them only when the new commit ignores them. It is not
+part of the A2 pass condition and does not weaken ordinary clean-checkout
+updates. See `helper_src/INSTALL_CODE_QUARANTINE.md` for manual promotion and
+recovery behavior.
+
 ### Gate A3: prove mechanical preview and request pinning
 
 Purpose: catch parameter explosions and resource mistakes before any Slurm mutation.

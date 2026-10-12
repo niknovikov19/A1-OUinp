@@ -170,7 +170,7 @@ result-access, and information entry points plus `hpc_common.py`. It returns:
 
 ```json
 {
-  "bundle_version": "0.13.0-b5",
+  "bundle_version": "0.14.0-recovery",
   "bundle_sha256": "...",
   "source_sha256": {
     "hpc-code-status": "...",

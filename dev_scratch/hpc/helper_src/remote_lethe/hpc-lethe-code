@@ -5,14 +5,15 @@ import fcntl
 import hashlib
 import json
 import os
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 import re
 import socket
 import stat
 import subprocess
+from uuid import uuid4
 
 
-HELPER_VERSION = '0.3.0-a2'
+HELPER_VERSION = '0.14.0-recovery'
 EXIT_SUCCESS = 0
 EXIT_REJECTED = 2
 EXIT_UNKNOWN = 3
@@ -20,9 +21,11 @@ EXIT_FAILED = 4
 
 GIT_TIMEOUT_SEC = 120
 MAX_COMMAND_BYTES = 65536
+MAX_QUARANTINE_RECORD_BYTES = 65536
 GIT_COMMIT_RE = re.compile(r'[0-9a-f]{40}')
 SAFE_NAME_RE = re.compile(r'[A-Za-z0-9][A-Za-z0-9_.-]{0,63}')
 SAFE_BRANCH_RE = re.compile(r'[A-Za-z0-9][A-Za-z0-9._/-]{0,127}')
+SAFE_OUTPUT_PART_RE = re.compile(r'[A-Za-z0-9][A-Za-z0-9_.+-]{0,239}')
 
 
 class CodeFailure(RuntimeError):
@@ -117,7 +120,7 @@ def validate_absolute_path(value, label):
 def validate_config(config):
     """Validate the fixed remote Git-helper configuration."""
     config = require_mapping(config, 'configuration')
-    required = {'deployment_id', 'git', 'schema_version', 'state'}
+    required = {'deployment_id', 'git', 'quarantine', 'schema_version', 'state'}
     require_exact_keys(config, required, 'configuration')
     if config['schema_version'] != 1:
         raise CodeFailure('Unsupported remote code configuration schema')
@@ -132,8 +135,26 @@ def validate_config(config):
     validate_safe_name(git['remote_name'], 'Git remote name')
 
     state_config = require_mapping(config['state'], 'state')
-    require_exact_keys(state_config, {'root'}, 'state')
+    require_exact_keys(state_config, {'root', 'quarantine_root'}, 'state')
     validate_absolute_path(state_config['root'], 'state root')
+    validate_absolute_path(state_config['quarantine_root'], 'quarantine root')
+    quarantine_root = Path(state_config['root']) / 'code-quarantine'
+    if Path(state_config['quarantine_root']) != quarantine_root:
+        raise CodeFailure('Quarantine root must be below the fixed state root')
+
+    quarantine = require_mapping(config['quarantine'], 'quarantine')
+    require_exact_keys(
+        quarantine,
+        {'generated_roots', 'max_files'},
+        'quarantine',
+    )
+    if quarantine['generated_roots'] != ['exp_results']:
+        raise CodeFailure('Unsupported generated-output roots')
+    max_files = quarantine['max_files']
+    if isinstance(max_files, bool) or not isinstance(max_files, int):
+        raise CodeFailure('Invalid quarantine file limit')
+    if not 1 <= max_files <= 128:
+        raise CodeFailure('Invalid quarantine file limit')
     return config
 
 
@@ -235,6 +256,7 @@ def get_state_paths(config):
         'lock': state_root / 'code-update.lock',
         'active_run': state_root / 'active-run.json',
         'record': state_root / 'last-code-update.json',
+        'quarantine': Path(config['state']['quarantine_root']),
     }
 
 
@@ -303,7 +325,262 @@ def read_checkout_state(config, lock_active=None):
         'change_count': len(porcelain.splitlines()) if porcelain else 0,
         'update_lock_active': lock_active,
         'active_run': inspect_active_run(paths['active_run']),
+        'quarantine_active': inspect_active_run(
+            paths['quarantine'] / 'active.json'
+        ),
     }
+
+
+def validate_generated_path(value):
+    """Accept only simple paths inside the reviewed result root. """
+    if not isinstance(value, str) or len(value) > 4096:
+        raise CodeFailure('Invalid generated-output path')
+    parts = PurePosixPath(value).parts
+    if len(parts) < 3 or parts[0] != 'exp_results':
+        raise CodeFailure('Dirty path is outside approved generated results')
+    if value != PurePosixPath(value).as_posix():
+        raise CodeFailure('Generated-output path is not normalized')
+    if any(SAFE_OUTPUT_PART_RE.fullmatch(part) is None for part in parts):
+        raise CodeFailure('Generated-output path has unsupported characters')
+    return value
+
+
+def list_generated_changes(config):
+    """Return only bounded untracked regular result files. """
+    _, porcelain = run_git(
+        config,
+        ['status', '--porcelain=v1', '-z', '--untracked-files=all'],
+    )
+    if not porcelain:
+        return []
+    if not porcelain.endswith('\x00'):
+        raise CodeFailure('Dirty checkout listing was incomplete')
+    entries = porcelain[:-1].split('\x00')
+    if len(entries) > config['quarantine']['max_files']:
+        raise CodeFailure('Too many untracked result files to quarantine')
+    paths = []
+    for entry in entries:
+        if not entry.startswith('?? '):
+            raise CodeFailure('Tracked or unsupported checkout changes remain')
+        paths.append(validate_generated_path(entry[3:]))
+    if len(paths) != len(set(paths)):
+        raise CodeFailure('Duplicate generated-output path')
+    return paths
+
+
+def require_generated_file(config, relpath):
+    """Inspect one exact result file without following path symlinks. """
+    checkout = Path(config['git']['automation_checkout'])
+    current = checkout
+    for part in PurePosixPath(relpath).parts[:-1]:
+        current /= part
+        try:
+            directory_stat = current.lstat()
+        except OSError as exc:
+            raise CodeFailure(f'Cannot inspect result directory: {exc}') from exc
+        if not stat.S_ISDIR(directory_stat.st_mode):
+            raise CodeFailure('Generated-output path contains a symlink')
+    source = checkout / relpath
+    try:
+        file_stat = source.lstat()
+    except OSError as exc:
+        raise CodeFailure(f'Cannot inspect generated result: {exc}') from exc
+    if not stat.S_ISREG(file_stat.st_mode) or file_stat.st_nlink != 1:
+        raise CodeFailure('Generated result must be a single-link regular file')
+    return source, file_stat
+
+
+def write_quarantine_json(fpath, value, exclusive=False):
+    """Persist one small recovery record without following a symlink. """
+    data = (canonical_json(value) + '\n').encode()
+    if len(data) > MAX_QUARANTINE_RECORD_BYTES:
+        raise CodeFailure('Quarantine record exceeds its size limit')
+    temp = fpath if exclusive else fpath.with_name(f'.{fpath.name}.tmp')
+    flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
+    flags |= getattr(os, 'O_CLOEXEC', 0) | getattr(os, 'O_NOFOLLOW', 0)
+    try:
+        file_id = os.open(temp, flags, 0o600)
+        try:
+            if os.write(file_id, data) != len(data):
+                raise CodeFailure('Quarantine record write was incomplete')
+            os.fsync(file_id)
+        finally:
+            os.close(file_id)
+        if not exclusive:
+            os.replace(temp, fpath)
+    except OSError as exc:
+        raise CodeFailure(f'Cannot write quarantine record: {exc}') from exc
+
+
+def require_no_quarantine_active(config):
+    """Refuse another update while recovery files need inspection. """
+    root = get_state_paths(config)['quarantine']
+    require_real_directory(root, 'Code-quarantine root')
+    active = root / 'active.json'
+    try:
+        active_stat = active.lstat()
+    except FileNotFoundError:
+        return
+    except OSError as exc:
+        raise CodeFailure(f'Cannot inspect quarantine marker: {exc}') from exc
+    if not stat.S_ISREG(active_stat.st_mode):
+        raise CodeFailure('Quarantine marker is not a regular file')
+    raise CodeFailure(f'Previous quarantine needs review: {active}')
+
+
+def begin_quarantine(config, paths, before_commit, expected_commit):
+    """Create durable recovery records before moving any result file. """
+    root = get_state_paths(config)['quarantine']
+    require_real_directory(root, 'Code-quarantine root')
+    if stat.S_IMODE(root.stat().st_mode) != 0o700:
+        raise CodeFailure('Code-quarantine root must have mode 0700')
+    checkout = Path(config['git']['automation_checkout'])
+    if checkout.stat().st_dev != root.stat().st_dev:
+        raise CodeFailure('Quarantine must share the checkout filesystem')
+    entries = []
+    for relpath in paths:
+        _, file_stat = require_generated_file(config, relpath)
+        entries.append({
+            'path': relpath,
+            'size_bytes': file_stat.st_size,
+            'mtime_ns': file_stat.st_mtime_ns,
+            'state': 'planned',
+        })
+
+    # Keep one durable manifest and active marker for crash recovery
+    operation_id = uuid4().hex
+    operation_dir = root / operation_id
+    operation_dir.mkdir(mode=0o700)
+    (operation_dir / 'items').mkdir(mode=0o700)
+    manifest = {
+        'schema_version': 1,
+        'operation_id': operation_id,
+        'before_commit': before_commit,
+        'expected_commit': expected_commit,
+        'status': 'moving',
+        'entries': entries,
+    }
+    write_quarantine_json(operation_dir / 'manifest.json', manifest, exclusive=True)
+    marker = {
+        'operation_id': operation_id,
+        'manifest': (operation_dir / 'manifest.json').as_posix(),
+    }
+    write_quarantine_json(
+        root / 'active.json',
+        marker,
+        exclusive=True,
+    )
+    return manifest
+
+
+def save_quarantine(config, manifest):
+    """Atomically update the manifest after one file transition. """
+    root = get_state_paths(config)['quarantine']
+    fpath = root / manifest['operation_id'] / 'manifest.json'
+    write_quarantine_json(fpath, manifest)
+
+
+def move_generated_files(config, manifest):
+    """Move only the previously inspected files into protected state. """
+    root = get_state_paths(config)['quarantine']
+    operation_dir = root / manifest['operation_id'] / 'items'
+    for entry in manifest['entries']:
+        source, file_stat = require_generated_file(config, entry['path'])
+        if file_stat.st_size != entry['size_bytes']:
+            raise CodeFailure('Generated result changed before quarantine')
+        if file_stat.st_mtime_ns != entry['mtime_ns']:
+            raise CodeFailure('Generated result changed before quarantine')
+        destination = operation_dir / entry['path']
+        destination.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+        try:
+            os.rename(source, destination)
+        except OSError as exc:
+            raise CodeFailure(f'Cannot quarantine generated result: {exc}') from exc
+        entry['state'] = 'quarantined'
+        save_quarantine(config, manifest)
+    manifest['status'] = 'quarantined'
+    save_quarantine(config, manifest)
+
+
+def restore_generated_files(config, manifest, require_ignored):
+    """Restore safe paths and retain conflicts for manual recovery. """
+    root = get_state_paths(config)['quarantine']
+    checkout = Path(config['git']['automation_checkout'])
+    pending = []
+    restored = 0
+    for entry in manifest['entries']:
+        source = root / manifest['operation_id'] / 'items' / entry['path']
+        destination = checkout / entry['path']
+        try:
+            source_stat = source.lstat()
+        except FileNotFoundError:
+            if entry['state'] == 'planned':
+                try:
+                    _, original_stat = require_generated_file(config, entry['path'])
+                    untouched = (
+                        original_stat.st_size == entry['size_bytes'] and
+                        original_stat.st_mtime_ns == entry['mtime_ns']
+                    )
+                except CodeFailure:
+                    untouched = False
+                if untouched and not require_ignored:
+                    entry['state'] = 'restored'
+                    continue
+            pending.append(entry['path'])
+            continue
+        except OSError as exc:
+            raise CodeFailure(f'Cannot inspect quarantined file: {exc}') from exc
+        valid_source = (
+            stat.S_ISREG(source_stat.st_mode) and
+            source_stat.st_nlink == 1 and
+            source_stat.st_size == entry['size_bytes'] and
+            source_stat.st_mtime_ns == entry['mtime_ns']
+        )
+        if not valid_source:
+            pending.append(entry['path'])
+            continue
+        if destination.exists() or destination.is_symlink():
+            pending.append(entry['path'])
+            continue
+        if require_ignored:
+            tracked, _ = run_git(
+                config,
+                ['ls-files', '--error-unmatch', '--', entry['path']],
+                allowed_codes=(0, 1),
+            )
+            ignored, _ = run_git(
+                config,
+                ['check-ignore', '-q', '--', entry['path']],
+                allowed_codes=(0, 1),
+            )
+            if tracked == 0 or ignored != 0:
+                pending.append(entry['path'])
+                continue
+        try:
+            require_generated_file_parent(config, entry['path'])
+            os.link(source, destination, follow_symlinks=False)
+            os.unlink(source)
+        except (OSError, CodeFailure):
+            pending.append(entry['path'])
+            continue
+        entry['state'] = 'restored'
+        restored += 1
+        save_quarantine(config, manifest)
+    manifest['status'] = 'needs-review' if pending else 'restored'
+    save_quarantine(config, manifest)
+    if not pending:
+        (root / 'active.json').unlink()
+    return restored, pending
+
+
+def require_generated_file_parent(config, relpath):
+    """Require every restore parent to be a real existing directory. """
+    current = Path(config['git']['automation_checkout'])
+    for part in PurePosixPath(relpath).parts[:-1]:
+        current /= part
+        directory_stat = current.lstat()
+        if not stat.S_ISDIR(directory_stat.st_mode):
+            raise CodeFailure('Restore path contains a symlink')
 
 
 def base_result(config, operation):
@@ -394,19 +671,29 @@ def finish_record(config, record, status, result, after_commit=None):
     write_update_record(config, record)
 
 
-def update_checkout(config, expected_commit):
-    """Fetch and fast-forward the fixed clean checkout to one exact commit."""
+def update_checkout(config, expected_commit, quarantine_generated=False):
+    """Fetch and fast-forward the fixed checkout to one exact commit."""
     validate_commit(expected_commit)
     lock_id = acquire_update_lock(config)
     record = None
+    quarantine_record = None
+    before = None
     try:
+        require_no_quarantine_active(config)
         before = read_checkout_state(config, lock_active=True)
         if not before['branch_matches']:
             raise CodeFailure('Automation checkout is on the wrong branch')
-        if not before['clean']:
-            raise CodeFailure('Automation checkout is not clean')
         if before['active_run']:
             raise CodeFailure('An automation run is active')
+        generated_paths = []
+        if not before['clean']:
+            if not quarantine_generated:
+                raise CodeFailure('Automation checkout is not clean')
+            generated_paths = list_generated_changes(config)
+            if not generated_paths:
+                raise CodeFailure('No eligible generated files were found')
+            if before['commit'] == expected_commit:
+                raise CodeFailure('Dirty checkout cannot use a no-op update')
 
         pending_record = update_record(config, expected_commit, before)
         write_update_record(config, pending_record)
@@ -469,10 +756,53 @@ def update_checkout(config, expected_commit):
             finish_record(config, record, 'failed', 'non-fast-forward')
             raise CodeFailure('Expected commit is not a fast-forward')
 
+        if generated_paths:
+            quarantine_record = begin_quarantine(
+                config,
+                generated_paths,
+                before['commit'],
+                expected_commit,
+            )
+            move_generated_files(config, quarantine_record)
+            clean_before_merge = read_checkout_state(config, lock_active=True)
+            if not clean_before_merge['clean']:
+                raise CodeFailure('Checkout changed during quarantine')
+
         run_git(
             config,
             ['merge', '--ff-only', '--no-edit', expected_commit],
         )
+        restored_files = 0
+        if quarantine_record is not None:
+            restored_files, pending = restore_generated_files(
+                config,
+                quarantine_record,
+                require_ignored=True,
+            )
+            if pending:
+                finish_record(
+                    config,
+                    record,
+                    'failed',
+                    'quarantine-needs-review',
+                    expected_commit,
+                )
+                result = base_result(config, 'code-update')
+                result.update({
+                    'status': 'failed',
+                    'reason': 'quarantine-needs-review',
+                    'expected_commit': expected_commit,
+                    'before_commit': before['commit'],
+                    'after_commit': expected_commit,
+                    'quarantine_manifest': (
+                        get_state_paths(config)['quarantine'] /
+                        quarantine_record['operation_id'] /
+                        'manifest.json'
+                    ).as_posix(),
+                    'pending_file_count': len(pending),
+                })
+                return result, EXIT_FAILED
+
         after = read_checkout_state(config, lock_active=True)
         valid_after = (
             after['commit'] == expected_commit and
@@ -504,15 +834,53 @@ def update_checkout(config, expected_commit):
             'before_commit': before['commit'],
             'after_commit': after['commit'],
         })
+        if quarantine_record is not None:
+            result['quarantined_file_count'] = len(generated_paths)
+            result['restored_file_count'] = restored_files
+            result['quarantine_manifest'] = (
+                get_state_paths(config)['quarantine'] /
+                quarantine_record['operation_id'] /
+                'manifest.json'
+            ).as_posix()
         return result, EXIT_SUCCESS
     except CodeUnavailable:
         if record is not None:
             finish_record(config, record, 'unknown', 'fetch-unavailable')
         raise
-    except CodeFailure:
+    except CodeFailure as exc:
+        active_quarantine = get_state_paths(config)['quarantine'] / 'active.json'
+        needs_recovery = (
+            quarantine_record is not None and
+            before is not None and
+            active_quarantine.exists()
+        )
+        if needs_recovery:
+            manifest_path = (
+                get_state_paths(config)['quarantine'] /
+                quarantine_record['operation_id'] /
+                'manifest.json'
+            )
+            try:
+                _, current_commit = run_git(
+                    config,
+                    ['rev-parse', '--verify', 'HEAD^{commit}'],
+                )
+                if current_commit in {before['commit'], expected_commit}:
+                    _, pending = restore_generated_files(
+                        config,
+                        quarantine_record,
+                        require_ignored=current_commit != before['commit'],
+                    )
+                    if pending:
+                        raise CodeFailure('Quarantined files still need review')
+            except CodeFailure as recovery_exc:
+                exc = CodeFailure(
+                    f'{exc}; recovery needs review at {manifest_path}: '
+                    f'{recovery_exc}'
+                )
         if record is not None and record.get('status') == 'pending':
             finish_record(config, record, 'failed', 'operation-failed')
-        raise
+        raise exc
     finally:
         fcntl.flock(lock_id, fcntl.LOCK_UN)
         os.close(lock_id)
@@ -540,6 +908,7 @@ def build_parser():
     commands.add_parser('version')
     commands.add_parser('status')
     update = commands.add_parser('update')
+    update.add_argument('--quarantine-generated', action='store_true')
     update.add_argument('expected_commit')
     return parser
 
@@ -566,6 +935,7 @@ def main():
                 result, exit_code = update_checkout(
                     config,
                     args.expected_commit,
+                    args.quarantine_generated,
                 )
     except CodeUnavailable as exc:
         result = error_result(operation, 'unknown', 'git-unavailable', exc)

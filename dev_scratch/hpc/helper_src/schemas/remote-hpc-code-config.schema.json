@@ -8,7 +8,8 @@
     "schema_version",
     "deployment_id",
     "git",
-    "state"
+    "state",
+    "quarantine"
   ],
   "properties": {
     "schema_version": {
@@ -46,11 +47,30 @@
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "root"
+        "root",
+        "quarantine_root"
       ],
       "properties": {
         "root": {
           "$ref": "#/$defs/absolutePath"
+        },
+        "quarantine_root": {
+          "$ref": "#/$defs/absolutePath"
+        }
+      }
+    },
+    "quarantine": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["generated_roots", "max_files"],
+      "properties": {
+        "generated_roots": {
+          "const": ["exp_results"]
+        },
+        "max_files": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 128
         }
       }
     }

@@ -7,7 +7,7 @@ import stat
 from datetime import datetime, timezone
 
 
-BUNDLE_VERSION = '0.13.0-b5'
+BUNDLE_VERSION = '0.14.0-recovery'
 CONFIG_SCHEMA_VERSION = 1
 
 EXIT_SUCCESS = 0
@@ -51,6 +51,7 @@ PUBLIC_AUDIT_ARGS = {
     '--child',
     '--help',
     '--json',
+    '--quarantine-generated',
     '--self-test',
     'audit-tail',
     'cancel',

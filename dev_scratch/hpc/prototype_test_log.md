@@ -1916,3 +1916,15 @@ unknown child and missing child/type selectors were rejected with exit code 2
 after the classification fix. Unit fixtures cover changed files, symlinks,
 inventory limits, and oversized transfer rejection. B5 therefore passes
 without a mount, arbitrary remote path, wildcard retrieval, or recursive scan.
+
+## Post-prototype code-update quarantine candidate
+
+An optional update mode was added for the case where a completed job creates
+untracked result files that the current commit does not ignore. The mode is
+restricted to regular files under `exp_results`, the same exact branch and
+fast-forward checks, and a private recovery manifest. It does not use Git
+stash. Nine isolated repository tests passed, including successful restoration
+under a new ignore rule and fail-closed cases for unrelated edits, stale
+target, file-count limit, symlinks, merge failure, and a target that still
+does not ignore the result. Protected promotion and a real-path test are
+pending; this is not yet a passed operational capability.
