@@ -72,15 +72,21 @@ canonical L2 dataset and should be clearly marked as such.
    `1000`–`1004` to match the existing J sweep. Current amplitudes `A_i` are
    fixed configuration values, not a batch coordinate.
 
-## Pilot and amplitude choice
+## Pilot and next run
 
-Run a small pilot before the full batch. Inspect rate-versus-current coverage
-for every population, especially around `h_i = 0`. Choose fixed amplitudes
-that produce a measurable slope without pushing most cells into silence or
-saturation. Population-specific `A_i` values are acceptable and preserve the
-seed-only batch design. The numerical amplitudes remain to be selected from
-the pilot; the existing 5 Hz oscillatory-current amplitudes are not assumed
-to be suitable for this slow, static measurement.
+The completed one-seed pilot used a common `0.1 nA` amplitude, a `7.5 s`
+triangle period, and a `20 s` simulation with the first `5 s` unperturbed.
+It established measurable pooled slopes, but the rising and falling branches
+differ substantially for several populations.
+
+For the next diagnostic run, keep the common amplitude at `0.1 nA`, double the
+period to `15 s`, and extend the simulation to `35 s` so that two complete
+post-baseline cycles remain available. This isolates the effect of sweep
+speed. A simultaneous increase to `0.25 nA` is deferred: with `T = 15 s`, the
+triangle would move 25% faster in current space rather than slower. If the
+wider range is later needed, use `T = 18.75 s` to preserve the present speed,
+or `T = 37.5 s` to halve it. Population-specific amplitudes remain compatible
+with the seed-only batch design and the fitter.
 
 ## Processing and checks
 
@@ -99,6 +105,7 @@ to be suitable for this slow, static measurement.
    retune the baseline. Confirm population ordering before combining J and Q.
 
 The downstream recurrent-response prediction, `(I - J)^-1 Q delta_h`, and
-closed-loop validation are separate work after Q has been checked. Implementation
-and HPC submission wait until this plan, especially the pilot amplitude
-strategy, is agreed.
+closed-loop validation are separate work after Q has been checked. The L2
+pilot and local fitter are now implemented; see
+[`h_r_processing.md`](h_r_processing.md) for the processing command, outputs,
+and current pilot diagnostics.
