@@ -1,8 +1,8 @@
 # Connected L2 current-step experiment
 
 Local configuration tests and real network-parameter construction have passed.
-The first HPC test is awaiting the twelve-child policy promotion. Its status
-is recorded in
+The twelve-child policy promotion passed; the first controller exposed an
+HPC companion-repository import path, now corrected. Test status is recorded in
 [`connected_hstep_testing.md`](../../../dev_scratch/step_resp/connected_hstep_testing.md).
 The specification is
 [`connected_hstep_spec.md`](../../../dev_scratch/step_resp/connected_hstep_spec.md).

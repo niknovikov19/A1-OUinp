@@ -44,7 +44,7 @@ The existing local NetPyNE environment was used; no dependencies were installed.
   files to the actual trial indices; the job index gives 49 required files.
 - The two Gate-B promotion scripts passed shell syntax checks.
 
-## HPC launch pending promotion
+## HPC launch and initial import correction
 
 The installed helper permits ten children per batch. The test has twelve.
 Prepared promotion scripts raise only the child ceiling to twelve, retaining
@@ -61,8 +61,15 @@ check rejecting oversized manifests. The remote promotion also updates the
 protected request-contract copies on Lethe and grid; their old hashes were
 checked directly before writing the promotion.
 
-Under the user's Gate-B procedure, the user runs the promotion scripts and
-reports `HPC_CHILD_LIMIT_RESULT=PASS`. No simulation has been submitted yet.
-After promotion, prepare and submit `hstep-l2-first-pilot-001`, monitor all
-children, validate the declared artifacts, and inspect matched controls and
-late-window settling before interpreting prediction accuracy.
+Both Gate-B promotions passed. Run `hstep-l2-first-pilot-001` was submitted
+as controller job `118060` from commit `8850329`, but failed during experiment
+import before launching children. The new configuration resolved companion
+modules through `external/`, whereas the HPC dependency is a sibling
+repository. Earlier experiments incidentally added that parent directory
+through another analysis import. The corrected configuration explicitly adds
+the repository parent to its import paths. No baseline parameters changed.
+
+The failed controller was finalized; retry with a fresh protected run ID and
+the same still-unused scientific result path. Monitor all children, validate
+the declared artifacts, and inspect matched controls and late-window settling
+before interpreting prediction accuracy.
