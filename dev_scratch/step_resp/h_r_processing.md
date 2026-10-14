@@ -53,7 +53,7 @@ MPLCONFIGDIR=.mplcache \
   dev_scratch/step_resp/code/analyze_h_io.py
 ```
 
-The default dataset is `dev_scratch/step_resp/data/l2_asym_pilot`. Use
+The default dataset is `dev_scratch/step_resp/data/l2_sym_slow_pilot`. Use
 `--data-dir dev_scratch/step_resp/data/<dataset>` for another run.
 `--smooth-win`, `--fit-start`, `--fit-stop`, and `--turn-margin` control the
 fit. `--no-plot` disables figures. Do not install another scientific Python
@@ -168,3 +168,40 @@ first four populations, although PV2, SOM2, and VIP2 retain moderate branch
 separation. NGF2 still has strong hysteresis and should not be represented by
 its pooled static derivative without further treatment. The generated fit
 figures have no axes grid.
+
+## Symmetric slow five-seed retry
+
+The run `hsweep-l2-sym-slow-pilot-001` completed as top-level Slurm job
+`118003`. All five seeds ran concurrently with 30 cores and 128 GB per child.
+Protected finalization verified the 21 declared outputs before the run was
+released.
+
+The simulation output is under:
+
+```text
+/ddn/niknovikov19/repo/A1_OUinp/exp_results/
+batch_rxbkg_unconn_state1_mech1/net_inpsur_hsweep_newsec_var_seed/
+exp_L2_pilot5_nseed_5_t_5.0_85.0_tri_t0_5000_T_40000_h_-0.1_0.1_ictrl_wmult_0.25_ee_0.5/
+```
+
+Only its five `rvec_xr` and five `hvec_xr` files were copied to the ignored
+local dataset `data/l2_sym_slow_pilot/`; every copy was checked byte-for-byte.
+The probe covers `[-0.1, 0.1] nA` with a 40-s period: two symmetric cycles
+after the 5-s baseline give an 85-s simulation. Each leg has a 10-s duration,
+so the sweep speed is `0.01 nA/s`.
+
+The provisional pooled diagonal is stable across the tested smoothing windows:
+
+```text
+smooth (s)   IT2     PV2     SOM2    VIP2    NGF2
+0.1          20.76   187.92  122.83  151.80  54.70
+0.2          20.77   188.13  122.93  151.78  54.77
+0.4          20.79   188.48  123.37  151.76  54.88
+```
+
+At 0.4-s smoothing, NGF2 has pooled `R² = 0.865`; its rising and falling
+branch fits have `R² = 0.951` and `0.931`, respectively. The negative-current
+range constrains the rising curve's zero-rate left flank, resolving the prior
+poorly constrained fit. Hysteresis remains substantial: the branch gains at
+zero current are 83.82 and 31.46 Hz/nA, whereas the pooled derivative is 54.88
+Hz/nA. Figures have no axes grid.
