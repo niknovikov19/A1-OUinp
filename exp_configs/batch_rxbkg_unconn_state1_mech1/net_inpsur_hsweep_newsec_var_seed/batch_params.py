@@ -21,8 +21,8 @@ THAL_POPS = CORE_POPS + MATX_POPS
 
 # Keep the initial amplitude-selection run separate from the canonical dataset
 PILOT = 1
-PILOT_ATTEMPT = 2
-N_SEEDS = 1 if PILOT else 5
+PILOT_ATTEMPT = 3
+N_SEEDS = 2 if PILOT else 5
 
 
 def get_batch_params():

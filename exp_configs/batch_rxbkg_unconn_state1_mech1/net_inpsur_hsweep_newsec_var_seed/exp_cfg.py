@@ -20,7 +20,7 @@ from batch_params import L2_POPS, N_SEEDS, PILOT, PILOT_ATTEMPT
 from sim_data_analyzer.xr_adapters import get_net_rate_dynamics_xr
 
 
-SIM_DURATION = 20 * 1e3
+SIM_DURATION = 35 * 1e3
 T0_CALC = 5 * 1e3
 
 EXP_LABEL = 'L2'
@@ -29,7 +29,7 @@ POPS_USED = L2_POPS
 # Direct-current identification waveform
 H_SWEEP_TYPE = 'tri'
 H_SWEEP_T0 = 5000
-H_SWEEP_PERIOD = 7500
+H_SWEEP_PERIOD = 15000
 H_SWEEP_AMP = 0.1
 H_SWEEP_AMPS = {pop: H_SWEEP_AMP for pop in POPS_USED}
 H_STIM_PREFIX = 'hsweep'
