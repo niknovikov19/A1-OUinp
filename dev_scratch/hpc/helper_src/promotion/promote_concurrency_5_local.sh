@@ -36,6 +36,18 @@ hpc5_check_sha256() {
     test "$hpc5_actual" = "$hpc5_expected"
 }
 
+hpc5_check_sha256_one_of() {
+    local hpc5_old=$1
+    local hpc5_new=$2
+    local hpc5_path=$3
+    local hpc5_actual
+
+    hpc5_actual=$(sha256sum "$hpc5_path")
+    hpc5_actual=${hpc5_actual%% *}
+    printf '%s  %s\n' "$hpc5_actual" "$hpc5_path"
+    test "$hpc5_actual" = "$hpc5_old" || test "$hpc5_actual" = "$hpc5_new"
+}
+
 trap hpc5_cleanup EXIT
 
 # Bind installation to the exact reviewed checkout
@@ -52,8 +64,9 @@ test "$(git -c safe.directory="$HPC5_REPO" -C "$HPC5_REPO" rev-parse HEAD)" = "$
 test "$(git -c safe.directory="$HPC5_REPO" -C "$HPC5_REPO" branch --show-current)" = 'codex-hpc'
 
 # Verify the installed and reviewed configurations
-hpc5_check_sha256 \
+hpc5_check_sha256_one_of \
     'ace578ab30da99738b392b67b46cbb5dc21db907e890149e145a47064be75e83' \
+    '14290299e8d9d619a10fc1caa7d56b0a8cc7228e960e649fae20ce2ef6e210a4' \
     /opt/a1-hpc/config/hpc-helper.json
 hpc5_check_sha256 \
     '14290299e8d9d619a10fc1caa7d56b0a8cc7228e960e649fae20ce2ef6e210a4' \
@@ -69,9 +82,16 @@ install -o root -g root -m 0444 \
 chmod 0555 /opt/a1-hpc/config
 HPC5_CONFIG_OPEN=0
 
-# Verify the installed concurrency ceiling
+# Verify the installed concurrency ceiling without invoking a user helper as root
 hpc5_check_sha256 \
     '14290299e8d9d619a10fc1caa7d56b0a8cc7228e960e649fae20ce2ef6e210a4' \
     /opt/a1-hpc/config/hpc-helper.json
-/opt/a1-hpc/bin/hpc-helper-info info
+python3 - <<'PY'
+import json
+
+with open('/opt/a1-hpc/config/hpc-helper.json') as hpc5_file:
+    hpc5_config = json.load(hpc5_file)
+
+assert hpc5_config['scheduler']['limits']['max_concurrent_jobs'] == 5
+PY
 printf 'Completed UTC: %s\n' "$(date -u +'%Y-%m-%dT%H:%M:%SZ')"

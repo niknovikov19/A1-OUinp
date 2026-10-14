@@ -40,6 +40,18 @@ hpc5_check_sha256() {
     test "$hpc5_actual" = "$hpc5_expected"
 }
 
+hpc5_check_sha256_one_of() {
+    local hpc5_old=$1
+    local hpc5_new=$2
+    local hpc5_path=$3
+    local hpc5_actual
+
+    hpc5_actual=$(sha256sum "$hpc5_path")
+    hpc5_actual=${hpc5_actual%% *}
+    printf '%s  %s\n' "$hpc5_actual" "$hpc5_path"
+    test "$hpc5_actual" = "$hpc5_old" || test "$hpc5_actual" = "$hpc5_new"
+}
+
 trap hpc5_cleanup EXIT
 
 # Bind installation to the exact clean automation checkout
@@ -59,11 +71,12 @@ test "$(git -C "$HPC5_REPO" branch --show-current)" = 'codex-hpc'
 test -z "$(git -C "$HPC5_REPO" status --porcelain=v1)"
 
 # Verify the installed and reviewed configurations
-hpc5_check_sha256 \
+hpc5_check_sha256_one_of \
     '42e043602a8b6ccb6a30a99582c72df229251cf8a08f6bca0c746b77e15ea064' \
+    '434cf03d636027e73358af04a4b5b5b7d7a93704ef9ed307e13be15bb8f8e795' \
     "$HPC5_TARGET"
 hpc5_check_sha256 \
-    '434cf03d636027e73358af04a4b5b7d7a93704ef9ed307e13be15bb8f8e795' \
+    '434cf03d636027e73358af04a4b5b5b7d7a93704ef9ed307e13be15bb8f8e795' \
     "$HPC5_SOURCE"
 python3 -m json.tool "$HPC5_SOURCE" >/dev/null
 
@@ -76,7 +89,7 @@ HPC5_CONFIG_OPEN=0
 
 # Verify the installed concurrency ceiling
 hpc5_check_sha256 \
-    '434cf03d636027e73358af04a4b5b7d7a93704ef9ed307e13be15bb8f8e795' \
+    '434cf03d636027e73358af04a4b5b5b7d7a93704ef9ed307e13be15bb8f8e795' \
     "$HPC5_TARGET"
 python3 -m json.tool "$HPC5_TARGET" >/dev/null
 printf 'Completed UTC: %s\n' "$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
