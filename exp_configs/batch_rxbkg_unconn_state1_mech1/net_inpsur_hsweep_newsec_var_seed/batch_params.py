@@ -21,7 +21,7 @@ THAL_POPS = CORE_POPS + MATX_POPS
 
 # Keep the initial amplitude-selection run separate from the canonical dataset
 PILOT = 1
-PILOT_ATTEMPT = 4
+PILOT_ATTEMPT = 5
 N_SEEDS = 5
 
 
