@@ -14,7 +14,7 @@ DIR_STEP_RESP = Path(__file__).resolve().parents[1]
 
 
 # Configuration
-DATASET_NAME = 'l2_pilot2'
+DATASET_NAME = 'l2_slow_pilot'
 DIR_DATA_DEFAULT = DIR_STEP_RESP / 'data' / DATASET_NAME
 
 # Time range and smoothing used in fitting

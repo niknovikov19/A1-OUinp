@@ -16,12 +16,12 @@ recurrent connections are frozen in this experiment.
 
 ## HPC source and local workspace
 
-The current pilot came from this HPC result directory:
+The completed two-seed slow pilot came from this HPC result directory:
 
 ```text
 /ddn/niknovikov19/repo/A1_OUinp/exp_results/
 batch_rxbkg_unconn_state1_mech1/net_inpsur_hsweep_newsec_var_seed/
-exp_L2_pilot2_nseed_1_t_5.0_20.0_tri_t0_5000_T_7500_amp_0.1_ictrl_wmult_0.25_ee_0.5/
+exp_L2_pilot3_nseed_2_t_5.0_35.0_tri_t0_5000_T_15000_amp_0.1_ictrl_wmult_0.25_ee_0.5/
 ```
 
 Keep the simulation output on HPC. For fitting, copy each compact `rvec` and
@@ -39,8 +39,9 @@ The fitter discovers all pairs and derives the actual current independently
 for each seed and population from `hvec`; it does not assume equal IClamp
 amplitudes. It requires one job per seed because seed is the only batch
 coordinate. Raw PKLs, configurations, and network parameters are not needed.
-The current local dataset is `data/l2_pilot2/`. The entire `data/` directory
-is git-ignored because it contains copied and generated binary artifacts.
+The matching local dataset is `data/l2_slow_pilot/`. The earlier one-seed
+dataset remains in `data/l2_pilot2/`. The entire `data/` directory is
+git-ignored because it contains copied and generated binary artifacts.
 
 ## Run
 
@@ -52,7 +53,7 @@ MPLCONFIGDIR=.mplcache \
   dev_scratch/step_resp/code/analyze_h_io.py
 ```
 
-The default dataset is `dev_scratch/step_resp/data/l2_pilot2`. Use
+The default dataset is `dev_scratch/step_resp/data/l2_slow_pilot`. Use
 `--data-dir dev_scratch/step_resp/data/<dataset>` for another run.
 `--smooth-win`, `--fit-start`, `--fit-stop`, and `--turn-margin` control the
 fit. `--no-plot` disables figures. Do not install another scientific Python
@@ -84,38 +85,49 @@ data/<dataset>/processed/
 The Q files follow the existing r-r orientation: input population is the first
 dimension and output population is the second.
 
-## Current pilot
+## Slow two-seed pilot
 
-The single-seed, common-amplitude pilot completed five pooled fits at a 0.2-s
-additional smoothing window. Its provisional diagonal values are:
+The run `hsweep-l2-slow-pilot-001` completed as top-level Slurm job `117990`.
+Seed 1000 ran as child `117991`; seed 1001 ran as the next sequential child.
+Both children used 30 MPI ranks and 128 GB. Protected finalization verified
+all nine declared outputs before the checkout was released.
+
+At a 0.2-s additional smoothing window, the provisional pooled diagonal is:
 
 ```text
-IT2    26.42 Hz/nA
-PV2   207.50 Hz/nA
-SOM2   92.17 Hz/nA
-VIP2  149.96 Hz/nA
-NGF2   97.60 Hz/nA
+IT2    20.20 Hz/nA
+PV2   193.85 Hz/nA
+SOM2  116.92 Hz/nA
+VIP2  122.99 Hz/nA
+NGF2   63.97 Hz/nA
 ```
 
-These are diagnostics, not the final Q. Rising/falling derivatives differ by
-about 44%, 39%, 20%, 12%, and 195%, respectively. NGF2 in particular has a
-poor pooled fit (`R²` about 0.51) and a branch split of about 132 versus
-1.7 Hz/nA. Inspect branch and seed consistency before accepting a population's
-pooled derivative; the final estimate requires the planned multi-seed run.
-Repeating the fits with 0.1-, 0.2-, and 0.4-s rolling windows leaves the pooled
-values broadly similar and does not remove the NGF2 branch split.
+The rising/falling relative differences are about 5.8%, 1.4%, 8.9%, 0.8%, and
+179%, respectively. The slower probe therefore largely removes the branch
+split for the first four populations. NGF2 remains unsuitable for a pooled
+static derivative: its branch estimates are about 172 and 9.67 Hz/nA, and its
+pooled `R²` is about 0.62. PV2 also has substantial seed-to-seed baseline
+variation and a pooled `R²` of about 0.78.
 
-## Next waveform
+The pooled estimates are stable across the tested fitting windows:
 
-The clean next diagnostic is to keep the common amplitude at `0.1 nA`, double
-the triangle period from `7.5` to `15 s`, and run `35 s`: the unchanged `5 s`
-baseline plus two complete triangles. This halves the sweep speed and tests
-whether the branch split is caused by insufficient settling.
+```text
+smooth (s)   IT2     PV2     SOM2    VIP2    NGF2
+0.1          20.20   193.83  116.21  123.04  64.59
+0.2          20.20   193.85  116.92  122.99  63.97
+0.4          20.23   194.01  118.04  122.78  63.00
+```
+
+These remain pilot diagnostics rather than a final Q. The period change and
+addition of a second seed happened together, so differences from the first
+pilot cannot be attributed exclusively to slower probing.
+
+## Amplitude note
 
 Increasing the amplitude to `0.25 nA` while only doubling the period would not
 slow the probe in current space. Triangle speed is `4 A / T`: it would change
 from about `0.0533` to `0.0667 nA/s`, 25% faster, and would spend less time
 near `h = 0`. At `0.25 nA`, preserving the old speed requires `T = 18.75 s`;
 halving it requires `T = 37.5 s` and an `80 s` run for two post-baseline
-cycles. The timing-only pilot should come first because the present range
-already approaches silence or saturation in several populations.
+cycles. The present range already approaches silence or saturation in several
+populations, so a wider sweep should be treated as a separate diagnostic.

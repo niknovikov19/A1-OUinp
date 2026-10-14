@@ -72,19 +72,22 @@ canonical L2 dataset and should be clearly marked as such.
    `1000`–`1004` to match the existing J sweep. Current amplitudes `A_i` are
    fixed configuration values, not a batch coordinate.
 
-## Pilot and next run
+## Pilot status
 
 The completed one-seed pilot used a common `0.1 nA` amplitude, a `7.5 s`
 triangle period, and a `20 s` simulation with the first `5 s` unperturbed.
 It established measurable pooled slopes, but the rising and falling branches
 differ substantially for several populations.
 
-For the next diagnostic run, keep the common amplitude at `0.1 nA`, double the
-period to `15 s`, and extend the simulation to `35 s` so that two complete
-post-baseline cycles remain available. This isolates the effect of sweep
-speed. A simultaneous increase to `0.25 nA` is deferred: with `T = 15 s`, the
+The next diagnostic run used two seeds, kept the common amplitude at `0.1 nA`,
+doubled the period to `15 s`, and extended the simulation to `35 s`. It
+completed and was processed locally. The slower probe substantially reduced
+the rising/falling disagreement for every population except NGF2; see
+[`h_r_processing.md`](h_r_processing.md) for the values and provenance.
+
+A simultaneous increase to `0.25 nA` remains deferred: with `T = 15 s`, the
 triangle would move 25% faster in current space rather than slower. If the
-wider range is later needed, use `T = 18.75 s` to preserve the present speed,
+wider range is later needed, use `T = 18.75 s` to preserve the original speed,
 or `T = 37.5 s` to halve it. Population-specific amplitudes remain compatible
 with the seed-only batch design and the fitter.
 
