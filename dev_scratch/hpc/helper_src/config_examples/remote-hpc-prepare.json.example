@@ -37,7 +37,7 @@
     ],
     "limits": {
       "max_child_jobs": 10,
-      "max_concurrent_jobs": 4,
+      "max_concurrent_jobs": 5,
       "max_cores_per_job": 30,
       "max_memory_gb_per_job": 128,
       "max_nodes_per_job": 1,

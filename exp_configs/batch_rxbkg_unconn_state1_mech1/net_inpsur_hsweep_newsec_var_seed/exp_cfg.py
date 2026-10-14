@@ -20,7 +20,7 @@ from batch_params import L2_POPS, N_SEEDS, PILOT, PILOT_ATTEMPT
 from sim_data_analyzer.xr_adapters import get_net_rate_dynamics_xr
 
 
-SIM_DURATION = 35 * 1e3
+SIM_DURATION = 45 * 1e3
 T0_CALC = 5 * 1e3
 
 EXP_LABEL = 'L2'
@@ -29,9 +29,13 @@ POPS_USED = L2_POPS
 # Direct-current identification waveform
 H_SWEEP_TYPE = 'tri'
 H_SWEEP_T0 = 5000
-H_SWEEP_PERIOD = 15000
-H_SWEEP_AMP = 0.1
-H_SWEEP_AMPS = {pop: H_SWEEP_AMP for pop in POPS_USED}
+H_SWEEP_PERIOD = 20000
+H_SWEEP_MIN = -0.05
+H_SWEEP_MAX = 0.2
+H_SWEEP_LIMITS = {
+    pop: {'min': H_SWEEP_MIN, 'max': H_SWEEP_MAX}
+    for pop in POPS_USED
+}
 H_STIM_PREFIX = 'hsweep'
 
 # Calibrated baseline inputs
@@ -52,29 +56,39 @@ def _get_h_source(pop):
     return f'{H_STIM_PREFIX}_{pop}'
 
 
-def _triangle_scale(t_ms, t0, period):
-    """Evaluate a zero-centered unit triangle after its onset."""
+def _get_triangle_profile(h_min, h_max):
+    """Return constant-slew triangle phases and currents."""
+    if not h_min < 0 < h_max:
+        raise ValueError(f'Expected h_min < 0 < h_max, got {h_min}, {h_max}')
+
+    path_length = 2 * (h_max - h_min)
+    fraction_max = h_max / path_length
+    fraction_zero = 2 * h_max / path_length
+    fraction_min = (2 * h_max - h_min) / path_length
+    fractions = np.asarray([0, fraction_max, fraction_zero, fraction_min, 1])
+    currents = np.asarray([0, h_max, 0, h_min, 0])
+    return fractions, currents
+
+
+def _triangle_current(t_ms, h_min, h_max, t0, period):
+    """Evaluate an asymmetric triangle after its onset."""
     t_ms = np.asarray(t_ms, dtype=float)
-    scale = np.zeros_like(t_ms)
+    current = np.zeros_like(t_ms)
     active = t_ms >= t0
     phase = ((t_ms[active] - t0) / period) % 1
-    scale[active] = np.interp(
-        phase,
-        [0, 0.25, 0.5, 0.75, 1],
-        [0, 1, 0, -1, 0],
-    )
-    return scale
+    fractions, currents = _get_triangle_profile(h_min, h_max)
+    current[active] = np.interp(phase, fractions, currents)
+    return current
 
 
-def get_hsweep_corners(duration, amp, t0=H_SWEEP_T0,
+def get_hsweep_corners(duration, h_min, h_max, t0=H_SWEEP_T0,
                        period=H_SWEEP_PERIOD):
     """Return sparse time and current knots for one triangular h sweep."""
     if not 0 < t0 < duration:
         raise ValueError(f'Expected 0 < t0 < duration, got {t0}, {duration}')
     if period <= 0:
         raise ValueError(f'Expected a positive period, got {period}')
-    if amp < 0:
-        raise ValueError(f'Expected a non-negative amplitude, got {amp}')
+    fractions, corner_currents = _get_triangle_profile(h_min, h_max)
 
     # Start from the unperturbed operating point
     times = [0, float(t0)]
@@ -82,21 +96,25 @@ def get_hsweep_corners(duration, amp, t0=H_SWEEP_T0,
     n_cycles = int(np.ceil((duration - t0) / period))
 
     # Add the four linear segments of every required cycle
-    fractions = [0.25, 0.5, 0.75, 1]
-    scales = [1, 0, -1, 0]
     for cycle in range(n_cycles):
         cycle_t0 = t0 + cycle * period
-        for fraction, scale in zip(fractions, scales):
+        for fraction, current in zip(fractions[1:], corner_currents[1:]):
             time = cycle_t0 + fraction * period
             if time <= duration:
                 times.append(float(time))
-                currents.append(float(amp * scale))
+                currents.append(float(current))
 
     # Close a partial final segment exactly at simulation end
     if times[-1] < duration:
-        scale = _triangle_scale([duration], t0, period)[0]
+        current = _triangle_current(
+            [duration],
+            h_min,
+            h_max,
+            t0,
+            period,
+        )[0]
         times.append(float(duration))
-        currents.append(float(amp * scale))
+        currents.append(float(current))
     return np.asarray(times), np.asarray(currents)
 
 
@@ -116,7 +134,7 @@ def gen_exp_name_sub(cfg):
         f'_T_{int(cfg.h_sweep_period)}'
     )
 
-    exp_name_sub += f'_amp_{cfg.h_sweep_amp:g}'
+    exp_name_sub += f'_h_{cfg.h_sweep_min:g}_{cfg.h_sweep_max:g}'
     if USE_IBKG_CTRL:
         exp_name_sub += '_ictrl'
     exp_name_sub += f'_wmult_{cfg.wmult}_ee_{cfg.EEGain}'
@@ -153,8 +171,12 @@ def apply_exp_cfg(cfg):
     cfg.h_sweep_type = H_SWEEP_TYPE
     cfg.h_sweep_t0 = H_SWEEP_T0
     cfg.h_sweep_period = H_SWEEP_PERIOD
-    cfg.h_sweep_amp = H_SWEEP_AMP
-    cfg.h_sweep_amps = dict(H_SWEEP_AMPS)
+    cfg.h_sweep_min = H_SWEEP_MIN
+    cfg.h_sweep_max = H_SWEEP_MAX
+    cfg.h_sweep_limits = {
+        pop: dict(limits)
+        for pop, limits in H_SWEEP_LIMITS.items()
+    }
 
     # Keep all active-to-active inputs frozen at their calibrated target rates
     cfg.subnet_build_flag = SURR_INP_ON
@@ -302,8 +324,10 @@ def modify_net_params(cfg, params):
 def modify_network(sim):
     """Attach sparse triangular vectors to the NetPyNE-declared h clamps."""
     expected_pops = set(POPS_USED)
-    if set(sim.cfg.h_sweep_amps) != expected_pops:
-        raise ValueError('h_sweep_amps must contain exactly the active populations')
+    if set(sim.cfg.h_sweep_limits) != expected_pops:
+        raise ValueError(
+            'h_sweep_limits must contain exactly the active populations'
+        )
     if sim.cfg.h_sweep_type != 'tri':
         raise ValueError(f'Unsupported h sweep: {sim.cfg.h_sweep_type!r}')
 
@@ -324,9 +348,11 @@ def modify_network(sim):
         if clamp is None:
             raise ValueError(f'NetPyNE did not instantiate {source} on gid={cell.gid}')
 
+        limits = sim.cfg.h_sweep_limits[pop]
         times, currents = get_hsweep_corners(
             sim.cfg.duration,
-            float(sim.cfg.h_sweep_amps[pop]),
+            float(limits['min']),
+            float(limits['max']),
             sim.cfg.h_sweep_t0,
             sim.cfg.h_sweep_period,
         )
@@ -347,12 +373,15 @@ def _build_hvec_xr(rvec_xr, cfg):
     times_sec = np.asarray(rvec_xr.time.values, dtype=float)
     currents = []
     for pop in POPS_USED:
-        scale = _triangle_scale(
+        limits = cfg.h_sweep_limits[pop]
+        current = _triangle_current(
             times_sec * 1000,
+            float(limits['min']),
+            float(limits['max']),
             cfg.h_sweep_t0,
             cfg.h_sweep_period,
         )
-        currents.append(float(cfg.h_sweep_amps[pop]) * scale)
+        currents.append(current)
 
     hvec_xr = xr.DataArray(
         np.asarray(currents),
@@ -364,7 +393,10 @@ def _build_hvec_xr(rvec_xr, cfg):
     hvec_xr.attrs['waveform'] = cfg.h_sweep_type
     hvec_xr.attrs['t0_ms'] = float(cfg.h_sweep_t0)
     hvec_xr.attrs['period_ms'] = float(cfg.h_sweep_period)
-    hvec_xr.attrs['amps_nA_json'] = json.dumps(cfg.h_sweep_amps, sort_keys=True)
+    hvec_xr.attrs['limits_nA_json'] = json.dumps(
+        cfg.h_sweep_limits,
+        sort_keys=True,
+    )
     return hvec_xr
 
 
@@ -427,8 +459,8 @@ def post_run(sim):
     rvec_xr.attrs['H_SWEEP_TYPE'] = cfg.h_sweep_type
     rvec_xr.attrs['H_SWEEP_T0'] = float(cfg.h_sweep_t0)
     rvec_xr.attrs['H_SWEEP_PERIOD'] = float(cfg.h_sweep_period)
-    rvec_xr.attrs['H_SWEEP_AMPS_NA_JSON'] = json.dumps(
-        cfg.h_sweep_amps,
+    rvec_xr.attrs['H_SWEEP_LIMITS_NA_JSON'] = json.dumps(
+        cfg.h_sweep_limits,
         sort_keys=True,
     )
     rvec_xr.attrs['t_limits'] = [2, float(rvec_xr.time.values[-1])]
@@ -468,6 +500,8 @@ def post_run(sim):
         axes[0].legend(bbox_to_anchor=(1, 1))
         axes[1].set_xlabel('Time (s)')
         axes[1].set_ylabel('h (nA)')
+        for axis in axes:
+            axis.grid(False)
         fpath_fig = dirpath_res_sub / 'rvec_figs' / f'L2_{postfix}.png'
         fig.savefig(fpath_fig, bbox_inches='tight', dpi=200)
         plt.close(fig)

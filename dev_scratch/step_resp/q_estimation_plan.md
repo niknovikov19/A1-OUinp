@@ -60,17 +60,17 @@ canonical L2 dataset and should be clearly marked as such.
    without manually constructing new IClamp objects. Store the play vectors so
    they remain alive for the whole simulation. Use a few linearly interpolated
    triangle corners rather than a timestep-sized vector per cell.
-4. Hold `h_i = 0` for the first 5 s. Then run a continuous, zero-centered
-   triangle: `0 -> +A_i -> 0 -> -A_i -> 0`, repeating with period 7.5 s.
-   Start with a 20 s simulation, matching the presynaptic sweep. The waveform
-   is deterministic and its actual current values are known exactly.
+4. Hold `h_i = 0` for the first 5 s. Then run a continuous triangle:
+   `0 -> h_max -> 0 -> h_min -> 0` at constant absolute sweep speed. The
+   current limits, period, and number of cycles are fixed for a run. The
+   waveform is deterministic and its actual current values are known exactly.
 5. Drive all active populations simultaneously. With active-to-active
    connections frozen and each clamp local to its own population, each output
    rate depends on its own `h_i`; the resulting Q is diagonal. Verify the
    decoupled topology in a pilot run rather than relying on that assumption.
-6. Make `seed_main` the only batch coordinate, provisionally using seeds
-   `1000`–`1004` to match the existing J sweep. Current amplitudes `A_i` are
-   fixed configuration values, not a batch coordinate.
+6. Make `seed_main` the only batch coordinate, using seeds `1000`–`1004` to
+   match the existing J sweep. Current limits are fixed configuration values,
+   not batch coordinates.
 
 ## Pilot status
 
@@ -85,11 +85,11 @@ completed and was processed locally. The slower probe substantially reduced
 the rising/falling disagreement for every population except NGF2; see
 [`h_r_processing.md`](h_r_processing.md) for the values and provenance.
 
-A simultaneous increase to `0.25 nA` remains deferred: with `T = 15 s`, the
-triangle would move 25% faster in current space rather than slower. If the
-wider range is later needed, use `T = 18.75 s` to preserve the original speed,
-or `T = 37.5 s` to halve it. Population-specific amplitudes remain compatible
-with the seed-only batch design and the fitter.
+The next run uses five seeds and an asymmetric range: `h_min = -0.05 nA`,
+`h_max = 0.2 nA`, `T = 20 s`, and `45 s` total duration. Each period follows
+`0 -> 0.2 -> 0 -> -0.05 -> 0`, providing two complete cycles after the 5-s
+baseline. The five children are configured to run concurrently. Population-
+specific limits remain compatible with the seed-only batch design and fitter.
 
 ## Processing and checks
 

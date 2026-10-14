@@ -350,7 +350,7 @@ def plot_population_fit(pop, points, popt, summary, fpath):
             f'{q_falling["dR_dh_at_0"]:.3g}'
         )
     ax.set_title(f'{pop}: dR/dh = {q_value:.3g} Hz/nA{branch_title}')
-    ax.grid(True, alpha=0.3)
+    ax.grid(False)
     ax.legend()
     fig.tight_layout()
     fig.savefig(fpath, dpi=150, bbox_inches='tight')

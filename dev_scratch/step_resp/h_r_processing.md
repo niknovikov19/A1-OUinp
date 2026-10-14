@@ -122,12 +122,9 @@ These remain pilot diagnostics rather than a final Q. The period change and
 addition of a second seed happened together, so differences from the first
 pilot cannot be attributed exclusively to slower probing.
 
-## Amplitude note
+## Next dataset
 
-Increasing the amplitude to `0.25 nA` while only doubling the period would not
-slow the probe in current space. Triangle speed is `4 A / T`: it would change
-from about `0.0533` to `0.0667 nA/s`, 25% faster, and would spend less time
-near `h = 0`. At `0.25 nA`, preserving the old speed requires `T = 18.75 s`;
-halving it requires `T = 37.5 s` and an `80 s` run for two post-baseline
-cycles. The present range already approaches silence or saturation in several
-populations, so a wider sweep should be treated as a separate diagnostic.
+The next five-seed run probes the asymmetric interval `[-0.05, 0.2] nA` with a
+`20 s` period. One cycle is `0 -> 0.2 -> 0 -> -0.05 -> 0`; two cycles plus the
+5-s baseline give a `45 s` simulation. Its planned local dataset name is
+`data/l2_asym_pilot/`. Fit figures no longer draw axes grids.
