@@ -53,7 +53,7 @@ MPLCONFIGDIR=.mplcache \
   dev_scratch/step_resp/code/analyze_h_io.py
 ```
 
-The default dataset is `dev_scratch/step_resp/data/l2_slow_pilot`. Use
+The default dataset is `dev_scratch/step_resp/data/l2_asym_pilot`. Use
 `--data-dir dev_scratch/step_resp/data/<dataset>` for another run.
 `--smooth-win`, `--fit-start`, `--fit-stop`, and `--turn-margin` control the
 fit. `--no-plot` disables figures. Do not install another scientific Python
@@ -122,9 +122,49 @@ These remain pilot diagnostics rather than a final Q. The period change and
 addition of a second seed happened together, so differences from the first
 pilot cannot be attributed exclusively to slower probing.
 
-## Next dataset
+## Asymmetric five-seed pilot
 
-The next five-seed run probes the asymmetric interval `[-0.05, 0.2] nA` with a
-`20 s` period. One cycle is `0 -> 0.2 -> 0 -> -0.05 -> 0`; two cycles plus the
-5-s baseline give a `45 s` simulation. Its planned local dataset name is
-`data/l2_asym_pilot/`. Fit figures no longer draw axes grids.
+The run `hsweep-l2-asym-pilot-001` completed as top-level Slurm job `117997`.
+All five seeds ran concurrently with 30 cores and 128 GB per child. Protected
+finalization verified the 21 declared outputs before the run was released.
+
+The simulation output is under:
+
+```text
+/ddn/niknovikov19/repo/A1_OUinp/exp_results/
+batch_rxbkg_unconn_state1_mech1/net_inpsur_hsweep_newsec_var_seed/
+exp_L2_pilot4_nseed_5_t_5.0_45.0_tri_t0_5000_T_20000_h_-0.05_0.2_ictrl_wmult_0.25_ee_0.5/
+```
+
+Only its five `rvec_xr` and five `hvec_xr` files were copied to the ignored
+local dataset `data/l2_asym_pilot/`; every copy was checked byte-for-byte. The
+probe covers `[-0.05, 0.2] nA` at a constant absolute slew rate. One cycle is
+`0 -> 0.2 -> 0 -> -0.05 -> 0`; two cycles plus the 5-s baseline give a 45-s
+simulation.
+
+All populations fit successfully. The provisional pooled diagonal is stable
+across the tested smoothing windows:
+
+```text
+smooth (s)   IT2     PV2     SOM2    VIP2    NGF2
+0.1          17.11   179.60  115.39  135.42  43.68
+0.2          17.14   179.47  115.30  135.50  43.59
+0.4          17.20   178.96  114.87  135.71  43.32
+```
+
+At 0.2-s smoothing, the fit diagnostics are:
+
+```text
+pop    R²      rising Q   falling Q   branch relative difference
+IT2    0.928      16.66       16.72       0.4%
+PV2    0.892     168.67      189.03      11.4%
+SOM2   0.934     106.78      125.55      16.2%
+VIP2   0.962     126.94      145.55      13.7%
+NGF2   0.725      79.77       16.40     131.8%
+```
+
+The added seeds and wider positive range give stable pooled estimates for the
+first four populations, although PV2, SOM2, and VIP2 retain moderate branch
+separation. NGF2 still has strong hysteresis and should not be represented by
+its pooled static derivative without further treatment. The generated fit
+figures have no axes grid.
