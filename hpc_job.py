@@ -10,6 +10,7 @@ PATH_SEGMENT_RE = re.compile(r'[A-Za-z0-9][A-Za-z0-9_.+-]{0,239}')
 COMMIT_RE = re.compile(r'[0-9a-f]{40}')
 TOKEN_NAME_RE = re.compile(r'[A-Z][A-Z0-9_]*')
 TOKEN_RE = re.compile(r'@@([A-Z][A-Z0-9_]*)@@')
+MAX_COMPLETION_FILES = 64
 RENDER_VALUE_RE = re.compile(r'[A-Za-z0-9_./,:=+%-]+')
 
 RESOURCE_KEYS = {
@@ -233,7 +234,7 @@ def _validate_expected_result_path(value, job_kind, target):
 
 def _validate_completion_files(value):
     """Validate bounded files relative to one scientific result directory."""
-    if not isinstance(value, list) or not value or len(value) > 32:
+    if not isinstance(value, list) or not value or len(value) > MAX_COMPLETION_FILES:
         raise HpcJobValidationError('Invalid completion files')
     files = [
         validate_repo_path(item, 'completion file')

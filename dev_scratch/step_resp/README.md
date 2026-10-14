@@ -8,6 +8,10 @@ for continuity; dynamic step responses are not currently in scope.
   a new sweep, extracting rates on HPC, and fitting locally.
 - [`h_r_processing.md`](h_r_processing.md) describes the current-input fitter
   and its local input/output layout.
+- [`connected_hstep_spec.md`](connected_hstep_spec.md) proposes the connected
+  L2 current-step experiment for validating static J/Q predictions.
+- [`connected_hstep_testing.md`](connected_hstep_testing.md) records the
+  first connected-circuit test settings and validation status.
 - [`inventory.md`](inventory.md) records the existing rate-sweep datasets,
   artifacts, and provenance caveats.
 - [`resp_predictor_outline.md`](resp_predictor_outline.md) summarizes the

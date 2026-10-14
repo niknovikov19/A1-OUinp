@@ -27,7 +27,7 @@
       "cpu.q"
     ],
     "limits": {
-      "max_child_jobs": 10,
+      "max_child_jobs": 12,
       "max_concurrent_jobs": 5,
       "max_nodes_per_job": 1,
       "max_cores_per_job": 30,
