@@ -17,8 +17,10 @@
     "user": "niknovikov19",
     "squeue_path": "/usr/bin/squeue",
     "sacct_path": "/usr/bin/sacct",
-    "query_timeout_sec": 15,
-    "max_job_ids": 11,
+    "query_timeout_sec": 30,
+    "accounting_chunk_size": 25,
+    "observation_timeout_sec": 180,
+    "max_job_ids": 100,
     "accounting_lookback_hours": 168,
     "accounting_grace_sec": 120
   }

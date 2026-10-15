@@ -2,6 +2,14 @@
 
 This directory contains reviewable source candidates for protected HPC helper commands. Files here are not the live security boundary and must never be invoked or sourced in place.
 
+The [chunked monitoring/archive candidate](INSTALL_MONITOR_ARCHIVE.md) adds
+25-ID accounting chunks, five-child incremental log pages, and one compact,
+checksummed archive transfer per completed run. Gate-B installation is pending.
+
+The future [large-batch status and lifecycle refactor plan](../status_scaling_refactor_plan.md)
+separates scheduler-query bounds from total batch size and records temporary
+policy recommendations for the current implementation.
+
 ## Promotion rule
 
 For each capability:

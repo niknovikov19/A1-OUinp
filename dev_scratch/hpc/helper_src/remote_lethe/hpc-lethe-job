@@ -13,6 +13,7 @@ import socket
 import stat
 import subprocess
 import sys
+from collections import Counter
 
 sys.dont_write_bytecode = True
 
@@ -50,13 +51,13 @@ from hpc_job_lifecycle import (
 )
 
 
-HELPER_VERSION = '0.15.0-cancel-tree'
+HELPER_VERSION = '0.16.0-chunked-monitoring'
 EXIT_SUCCESS = 0
 EXIT_REJECTED = 2
 EXIT_UNKNOWN = 3
 EXIT_FAILED = 4
 MAX_COMMAND_BYTES = 1048576
-MAX_CHILD_INDEX_BYTES = 65536
+MAX_CHILD_INDEX_BYTES = 1048576
 
 
 class RejectedInput(ValueError):
@@ -408,7 +409,8 @@ def run_grid_command(config, helper, arguments):
             stdin=subprocess.DEVNULL,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            timeout=config['scheduler']['command_timeout_sec'] + timeout,
+            timeout=(195 if helper == config['scheduler']['status_helper']
+                     else config['scheduler']['command_timeout_sec']) + timeout,
             check=False,
         )
     except (OSError, subprocess.TimeoutExpired) as exc:
@@ -620,6 +622,7 @@ def status_job(config, run_id):
         'slurm_job_id': submission['slurm_job_id'],
         'scheduler': jobs[0],
         'children': children,
+        'state_counts': dict(Counter(job['normalized_state'] for job in jobs)),
         'observed_at_utc': observed,
         'remote_host': socket.gethostname(),
         'helper': helper_identity(),
@@ -713,16 +716,17 @@ def decode_cursors(payload, maximum):
         raise RejectedInput(str(exc)) from exc
 
 
-def log_job(config, run_id, payload, child_key=None):
+def log_job(config, run_id, payload, child_key=None, context=None, page=False):
     """Read new bounded top-level or selected child stdout and stderr. """
-    prepared = load_prepared(config, run_id)
-    submission = load_submission(config, prepared)
+    if context is None:
+        prepared = load_prepared(config, run_id)
+        submission = load_submission(config, prepared)
+        child_records = load_child_records(config, prepared, None) if child_key is not None else []
+    else:
+        prepared, submission, child_records = context
     if submission['status'] != 'submitted':
         raise RejectedInput('Log retrieval requires a submitted receipt')
     cursors = decode_cursors(payload, config['logs']['max_cursor_payload_bytes'])
-    child_records = []
-    if child_key is not None:
-        child_records = load_child_records(config, prepared, None)
     streams = {}
     for name in ('stdout', 'stderr'):
         if child_key is None:
@@ -737,8 +741,8 @@ def log_job(config, run_id, payload, child_key=None):
         streams[name] = read_log_stream(
             fpath,
             cursors[name],
-            config['logs']['max_bytes_per_stream'],
-            config['logs']['max_lines_per_stream'],
+            min(config['logs']['max_bytes_per_stream'], 8192) if page else config['logs']['max_bytes_per_stream'],
+            min(config['logs']['max_lines_per_stream'], 40) if page else config['logs']['max_lines_per_stream'],
         )
     result = {
         'schema_version': 1,
@@ -758,6 +762,52 @@ def log_job(config, run_id, payload, child_key=None):
         ]
         result['slurm_job_id'] = selected[0]['slurm_job_id']
     return result
+
+
+def log_page(config, run_id, payload, offset):
+    """Read at most five recorded child logs with independent incremental cursors. """
+    maximum = config['logs']['max_cursor_payload_bytes']
+    if not isinstance(payload, str) or len(payload) > maximum * 2:
+        raise RejectedInput('Invalid log-page cursor payload size')
+    try:
+        data = base64.b64decode(payload.encode('ascii'), altchars=b'-_', validate=True)
+        if len(data) > maximum:
+            raise ValueError('Decoded log-page cursors are too large')
+        value = json.loads(data.decode())
+    except (UnicodeError, ValueError, binascii.Error) as exc:
+        raise RejectedInput('Invalid log-page cursor encoding') from exc
+    if not isinstance(value, dict) or set(value) != {'schema_version', 'children'}:
+        raise RejectedInput('Invalid log-page cursor keys')
+    if value['schema_version'] != 1 or not isinstance(value['children'], dict) or len(value['children']) > 100:
+        raise RejectedInput('Invalid log-page child cursors')
+    if isinstance(offset, bool) or not isinstance(offset, int) or not 0 <= offset <= 10000:
+        raise RejectedInput('Invalid log-page offset')
+
+    # Resolve child paths once from the approved append-only job index
+    prepared = load_prepared(config, run_id)
+    submission = load_submission(config, prepared)
+    if submission['status'] != 'submitted':
+        raise RejectedInput('Log retrieval requires a submitted receipt')
+    records = load_child_records(config, prepared, None)
+    known = {record['child_key'] for record in records}
+    if set(value['children']) - known:
+        raise RejectedInput('Unknown child key in log-page cursors')
+    if offset > len(records):
+        raise RejectedInput('Log-page offset exceeds recorded children')
+    children = []
+    for record in records[offset:offset + 5]:
+        key = record['child_key']
+        cursors = value['children'].get(key, {})
+        if not isinstance(cursors, dict) or set(cursors) - {'stdout', 'stderr'}:
+            raise RejectedInput('Invalid child stream cursors')
+        pair = {'schema_version': 1, 'streams': {name: cursors.get(name) for name in ('stdout', 'stderr')}}
+        encoded = base64.urlsafe_b64encode(canonical_json(pair).encode()).decode()
+        children.append(log_job(config, run_id, encoded, key, (prepared, submission, records), page=True))
+    next_offset = offset + len(children)
+    return {'schema_version': 1, 'operation': 'job-logs', 'status': 'ok', 'run_id': run_id,
+            'children': children, 'offset': offset, 'recorded_children': len(records),
+            'next_offset': next_offset if next_offset < len(records) else None,
+            'helper': helper_identity()}
 
 
 def write_dual_record(state_path, run_path, record, label):
@@ -981,6 +1031,10 @@ def build_parser():
     log.add_argument('run_id')
     log.add_argument('cursor_payload')
     log.add_argument('child_key', nargs='?')
+    logs = commands.add_parser('logs')
+    logs.add_argument('run_id')
+    logs.add_argument('cursor_payload')
+    logs.add_argument('offset', type=int)
     return parser
 
 
@@ -1001,6 +1055,8 @@ def main():
                 result = submit_job(config, args.run_id, args.expected_commit)
             elif operation == 'status':
                 result = status_job(config, args.run_id)
+            elif operation == 'logs':
+                result = log_page(config, args.run_id, args.cursor_payload, args.offset)
             elif operation == 'cancel':
                 result = cancel_job(config, args.run_id)
             elif operation == 'log':

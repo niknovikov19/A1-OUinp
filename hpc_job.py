@@ -10,7 +10,7 @@ PATH_SEGMENT_RE = re.compile(r'[A-Za-z0-9][A-Za-z0-9_.+-]{0,239}')
 COMMIT_RE = re.compile(r'[0-9a-f]{40}')
 TOKEN_NAME_RE = re.compile(r'[A-Z][A-Z0-9_]*')
 TOKEN_RE = re.compile(r'@@([A-Z][A-Z0-9_]*)@@')
-MAX_COMPLETION_FILES = 64
+MAX_COMPLETION_FILES = 256
 RENDER_VALUE_RE = re.compile(r'[A-Za-z0-9_./,:=+%-]+')
 
 RESOURCE_KEYS = {

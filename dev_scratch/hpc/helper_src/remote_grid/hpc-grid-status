@@ -10,9 +10,15 @@ import re
 import socket
 import stat
 import subprocess
+import sys
+import time
+
+sys.dont_write_bytecode = True
+
+from hpc_bounded import run_bounded
 
 
-HELPER_VERSION = '0.6.2-a5'
+HELPER_VERSION = '0.16.0-chunked-monitoring'
 EXIT_SUCCESS = 0
 EXIT_REJECTED = 2
 EXIT_UNKNOWN = 3
@@ -195,12 +201,16 @@ def validate_config(config):
         'squeue_path',
         'user',
     }
-    require_exact_keys(scheduler, required, 'scheduler')
+    optional = {'accounting_chunk_size', 'observation_timeout_sec'}
+    if not required <= set(scheduler) or set(scheduler) - required - optional:
+        raise StatusFailure('Invalid scheduler configuration keys')
     validate_safe_name(scheduler['user'], 'scheduler user')
     validate_absolute_path(scheduler['squeue_path'], 'squeue path')
     validate_absolute_path(scheduler['sacct_path'], 'sacct path')
     validate_positive_int(scheduler['query_timeout_sec'], 'query timeout', 120)
     validate_positive_int(scheduler['max_job_ids'], 'maximum job IDs', 1000)
+    validate_positive_int(scheduler.get('accounting_chunk_size', 25), 'accounting chunk size', 100)
+    validate_positive_int(scheduler.get('observation_timeout_sec', 180), 'observation timeout', 180)
     validate_positive_int(
         scheduler['accounting_lookback_hours'],
         'accounting lookback hours',
@@ -271,19 +281,13 @@ def run_fixed(command, timeout):
     environment = os.environ.copy()
     environment.update({'LANG': 'C', 'LC_ALL': 'C'})
     try:
-        completed = subprocess.run(
-            command,
-            stdin=subprocess.DEVNULL,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            timeout=timeout,
-            check=False,
-            env=environment,
-        )
+        completed = run_bounded(command, timeout, MAX_COMMAND_BYTES, MAX_COMMAND_BYTES, env=environment)
     except subprocess.TimeoutExpired as exc:
         raise StatusUnavailable(f'Command timed out: {command[0]}') from exc
     except OSError as exc:
         raise StatusUnavailable(f'Cannot run scheduler query: {exc}') from exc
+    except ValueError as exc:
+        raise StatusUnavailable(str(exc)) from exc
     stdout = decode_bounded(completed.stdout, 'Command stdout')
     stderr = decode_bounded(completed.stderr, 'Command stderr')
     if completed.returncode != 0:
@@ -379,9 +383,11 @@ def job_result(job_id, source, row=None, grace_sec=None):
 
 
 def query_scheduler(config, job_ids):
-    """Query all known jobs once through squeue and once through sacct."""
+    """Observe active jobs once and query absent IDs in bounded accounting chunks. """
     scheduler = config['scheduler']
     timeout = scheduler['query_timeout_sec']
+    deadline = time.monotonic() + scheduler.get('observation_timeout_sec', 180)
+    chunk_size = scheduler.get('accounting_chunk_size', 25)
     squeue_command = [
         scheduler['squeue_path'],
         '--noheader',
@@ -391,7 +397,7 @@ def query_scheduler(config, job_ids):
         '%i|%T|%r',
     ]
     squeue = parse_squeue(
-        run_fixed(squeue_command, timeout),
+        run_fixed(squeue_command, min(timeout, max(0.001, deadline - time.monotonic()))),
         set(job_ids),
         allow_unrelated=True,
     )
@@ -399,8 +405,12 @@ def query_scheduler(config, job_ids):
     absent_ids = [job_id for job_id in job_ids if job_id not in squeue]
     sacct = {}
     sacct_queries = 0
-    if absent_ids:
-        absent_text = ','.join(str(job_id) for job_id in absent_ids)
+    for offset in range(0, len(absent_ids), chunk_size):
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            raise StatusUnavailable('Overall scheduler observation budget expired; observation incomplete')
+        chunk = absent_ids[offset:offset + chunk_size]
+        absent_text = ','.join(str(job_id) for job_id in chunk)
         sacct_command = [
             scheduler['sacct_path'],
             '--noheader',
@@ -415,11 +425,8 @@ def query_scheduler(config, job_ids):
             '--format',
             'JobIDRaw,State,ExitCode,Reason',
         ]
-        sacct = parse_sacct(
-            run_fixed(sacct_command, timeout),
-            set(absent_ids),
-        )
-        sacct_queries = 1
+        sacct.update(parse_sacct(run_fixed(sacct_command, min(timeout, remaining)), set(chunk)))
+        sacct_queries += 1
 
     jobs = []
     grace_sec = scheduler['accounting_grace_sec']

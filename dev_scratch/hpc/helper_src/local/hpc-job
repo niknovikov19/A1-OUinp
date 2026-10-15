@@ -34,7 +34,7 @@ SSH_PATH = '/usr/bin/ssh'
 MAX_REMOTE_BYTES = 1048576
 MAX_CURSOR_STATE_BYTES = 1048576
 MAX_CURSOR_RUNS = 1000
-REMOTE_OPERATION_TIMEOUT_SEC = 120
+REMOTE_OPERATION_TIMEOUT_SEC = 240
 IDENTITY_RE = re.compile(r'[0-9]+:[0-9]+')
 
 
@@ -60,6 +60,9 @@ def build_parser():
     log = commands.add_parser('log')
     log.add_argument('run_id')
     log.add_argument('--child', dest='child_key')
+    logs = commands.add_parser('logs')
+    logs.add_argument('run_id')
+    logs.add_argument('--offset', type=int, default=0)
     return parser
 
 
@@ -70,6 +73,8 @@ def validate_args(args):
         args.expected_commit = validate_git_commit(args.expected_commit)
     if args.operation == 'log' and args.child_key is not None:
         args.child_key = validate_request_id(args.child_key)
+    if args.operation == 'logs' and not 0 <= args.offset <= 10000:
+        raise RejectedInput('Log-page offset must be between 0 and 10000')
     return args
 
 
@@ -266,6 +271,8 @@ def build_ssh_command(config, args, cursor_payload=None):
         parts.append(cursor_payload)
         if args.child_key is not None:
             parts.append(args.child_key)
+    elif args.operation == 'logs':
+        parts.extend([cursor_payload, str(args.offset)])
     remote = ' '.join(shlex.quote(item) for item in parts)
     timeout = config['ssh']['connect_timeout_sec']
     return [
@@ -341,15 +348,23 @@ def run_log(config, args):
     lock_id = acquire_cursor_lock(state_dir, lock_path)
     try:
         state = load_cursor_state(state_path)
-        payload = encode_cursors(state, args.run_id, args.child_key)
+        if args.operation == 'logs':
+            children = state['runs'].get(args.run_id, {}).get('children', {})
+            value = {'schema_version': 1, 'children': children}
+            payload = base64.urlsafe_b64encode(canonical_json(value).encode()).decode()
+        else:
+            payload = encode_cursors(state, args.run_id, args.child_key)
         result, exit_code = run_remote(config, args, payload)
         if exit_code == EXIT_SUCCESS:
-            update_cursors(
-                state,
-                args.run_id,
-                result,
-                args.child_key,
-            )
+            if args.operation == 'logs':
+                children = result.get('children')
+                if not isinstance(children, list) or len(children) > 5:
+                    raise RemoteUnavailable('Invalid log page')
+                for child in children:
+                    child_key = validate_request_id(child.get('child_key'))
+                    update_cursors(state, args.run_id, child, child_key)
+            else:
+                update_cursors(state, args.run_id, result, args.child_key)
             write_cursor_state(state_path, state)
         return result, exit_code
     finally:
@@ -383,6 +398,10 @@ def concise_output(result):
                 f'{scheduler["normalized_state"]} '
                 f'({scheduler["raw_state"]})'
             )
+    elif operation == 'job-logs':
+        print(f"Children in page: {len(result['children'])}; next offset: {result['next_offset']}")
+        for child in result['children']:
+            concise_output(child)
     elif operation == 'job-log':
         if result.get('child_key'):
             print(f'Child: {result["child_key"]}')
@@ -442,7 +461,7 @@ def main():
     ):
         return EXIT_FAILED
     try:
-        if args.operation == 'log':
+        if args.operation in {'log', 'logs'}:
             result, exit_code = run_log(config, args)
         else:
             result, exit_code = run_remote(config, args)

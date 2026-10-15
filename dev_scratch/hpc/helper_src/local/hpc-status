@@ -24,7 +24,7 @@ from hpc_common import (
 
 SSH_PATH = '/usr/bin/ssh'
 MAX_REMOTE_BYTES = 131072
-REMOTE_OPERATION_TIMEOUT_SEC = 60
+REMOTE_OPERATION_TIMEOUT_SEC = 240
 
 
 class RemoteUnavailable(RuntimeError):

@@ -18,7 +18,7 @@ EXIT_REJECTED = 2
 EXIT_UNKNOWN = 3
 EXIT_FAILED = 4
 
-REMOTE_TIMEOUT_SEC = 45
+REMOTE_TIMEOUT_SEC = 210
 MAX_COMMAND_BYTES = 131072
 RUN_ID_RE = re.compile(r'[A-Za-z0-9][A-Za-z0-9._-]{0,79}')
 SAFE_NAME_RE = re.compile(r'[A-Za-z0-9][A-Za-z0-9_.-]{0,63}')
@@ -170,12 +170,16 @@ def validate_config(config):
         'squeue_path',
         'user',
     }
-    require_exact_keys(scheduler, required, 'scheduler')
+    optional = {'accounting_chunk_size', 'observation_timeout_sec'}
+    if not required <= set(scheduler) or set(scheduler) - required - optional:
+        raise StatusFailure('Invalid scheduler configuration keys')
     validate_safe_name(scheduler['user'], 'scheduler user')
     validate_absolute_path(scheduler['squeue_path'], 'squeue path')
     validate_absolute_path(scheduler['sacct_path'], 'sacct path')
     validate_positive_int(scheduler['query_timeout_sec'], 'query timeout', 120)
     validate_positive_int(scheduler['max_job_ids'], 'maximum job IDs', 1000)
+    validate_positive_int(scheduler.get('accounting_chunk_size', 25), 'accounting chunk size', 100)
+    validate_positive_int(scheduler.get('observation_timeout_sec', 180), 'observation timeout', 180)
     validate_positive_int(
         scheduler['accounting_lookback_hours'],
         'accounting lookback hours',

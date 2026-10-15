@@ -8,6 +8,7 @@ from pathlib import Path, PurePosixPath
 import stat
 import subprocess
 import sys
+import tempfile
 
 sys.dont_write_bytecode = True
 
@@ -24,6 +25,9 @@ from hpc_common import (
     validate_request_id,
     validate_run_id,
 )
+from hpc_archive import MAX_ARCHIVE_BYTES, hash_path, read_archive, unpack_archive, verify_unpacked
+from hpc_bounded import run_bounded
+from hpc_result import HpcResultError
 
 
 SSH_PATH = '/usr/bin/ssh'
@@ -48,6 +52,9 @@ def build_parser():
     get.add_argument('run_id')
     get.add_argument('child_key')
     get.add_argument('artifact_type', choices=sorted(ALLOWED_ARTIFACT_TYPES))
+    archive = commands.add_parser('archive')
+    archive.add_argument('run_id')
+    archive.add_argument('--unpack', action='store_true')
     return parser
 
 
@@ -98,6 +105,8 @@ def build_ssh_command(config, result_config, args):
     ]
     if args.operation == 'get':
         command.extend([args.child_key, args.artifact_type])
+    elif args.operation == 'archive-stream':
+        command.append(args.checksum)
     return command
 
 
@@ -305,6 +314,66 @@ def get_result(config, result_config, args):
     return transfer, exit_code
 
 
+def get_archive(config, result_config, args):
+    """Download one bounded archive and optionally unpack its verified compact files. """
+    result, exit_code = run_remote(config, result_config, args)
+    if exit_code != EXIT_SUCCESS:
+        return result, exit_code
+    metadata = result.get('archive')
+    required = {'run_id', 'git_commit', 'expected_result_path', 'total_bytes', 'size_bytes',
+                'sha256', 'file_count', 'manifest_sha256'}
+    if not isinstance(metadata, dict) or set(metadata) != required or metadata['run_id'] != args.run_id:
+        raise RemoteUnavailable('Invalid archive metadata')
+    for key in ('size_bytes', 'total_bytes', 'file_count'):
+        if isinstance(metadata[key], bool) or not isinstance(metadata[key], int) or metadata[key] <= 0:
+            raise RemoteUnavailable('Invalid archive size or count')
+    if metadata['size_bytes'] > MAX_ARCHIVE_BYTES or metadata['total_bytes'] > MAX_ARCHIVE_BYTES:
+        raise RemoteUnavailable('Archive exceeds the transfer budget')
+    for key in ('sha256', 'manifest_sha256'):
+        if not isinstance(metadata[key], str) or len(metadata[key]) != 64 or any(c not in '0123456789abcdef' for c in metadata[key]):
+            raise RemoteUnavailable('Invalid archive checksum')
+
+    # Stream binary data directly to a private temporary file rather than buffering JSON
+    root = Path(result_config['cache_root']) / args.run_id
+    require_cache_directory(root)
+    target = root / 'compact.tar.gz'
+    if target.exists() or target.is_symlink():
+        if target.stat().st_size != metadata['size_bytes'] or hash_path(target) != metadata['sha256']:
+            raise RemoteUnavailable('Existing archive differs; cached data were preserved')
+        result['result'] = 'cache-hit'
+    else:
+        descriptor, temporary = tempfile.mkstemp(prefix='.archive-', dir=root)
+        try:
+            stream_args = argparse.Namespace(operation='archive-stream', run_id=args.run_id,
+                                            checksum=metadata['sha256'])
+            command = build_ssh_command(config, result_config, stream_args)
+            with os.fdopen(descriptor, 'wb') as stream:
+                completed = run_bounded(command, 600, metadata['size_bytes'], output=stream)
+                stream.flush()
+                os.fsync(stream.fileno())
+            if completed.returncode != 0:
+                raise RemoteUnavailable('Archive transfer failed; no partial cache was accepted')
+            read_archive(temporary, metadata)
+            os.rename(temporary, target)
+            result['result'] = 'downloaded'
+        except (OSError, ValueError, subprocess.TimeoutExpired) as exc:
+            raise RemoteUnavailable(f'Archive transfer unavailable: {exc}') from exc
+        finally:
+            Path(temporary).unlink(missing_ok=True)
+    if args.unpack:
+        destination = root / 'compact'
+        manifest = read_archive(target, metadata)
+        if destination.exists() or destination.is_symlink():
+            if destination.is_symlink() or not destination.is_dir():
+                raise RemoteUnavailable('Unpacked cache is not a real directory')
+            verify_unpacked(destination, manifest)
+        else:
+            unpack_archive(target, metadata, destination)
+        result['unpacked_path'] = destination.as_posix()
+    result['cache_path'] = target.as_posix()
+    return result, EXIT_SUCCESS
+
+
 def concise_output(result):
     """Print one compact human-readable result-operation response. """
     if result['status'] != 'ok':
@@ -315,6 +384,13 @@ def concise_output(result):
         return
     print('Status: ok')
     print(f'Run: {result["run_id"]}')
+    if result['operation'] == 'result-archive':
+        print(f"Result: {result['result']}")
+        print(f"Archive: {result['cache_path']}")
+        print(f"Files: {result['archive']['file_count']}; source bytes: {result['archive']['total_bytes']}")
+        if result.get('unpacked_path'):
+            print(f"Unpacked: {result['unpacked_path']}")
+        return
     if result['operation'] == 'result-inventory':
         print(f'Artifacts: {result["inventory"]["artifact_count"]}')
         for item in result['inventory']['artifacts']:
@@ -366,6 +442,8 @@ def main():
     try:
         if args.operation == 'get':
             result, exit_code = get_result(config, result_config, args)
+        elif args.operation == 'archive':
+            result, exit_code = get_archive(config, result_config, args)
         else:
             result, exit_code = run_remote(config, result_config, args)
     except RejectedInput as exc:
@@ -377,7 +455,7 @@ def main():
             'details': str(exc)[:500],
         }
         exit_code = EXIT_REJECTED
-    except (RemoteUnavailable, HelperFailure) as exc:
+    except (RemoteUnavailable, HelperFailure, HpcResultError, OSError) as exc:
         result = {
             'schema_version': 1,
             'operation': f'result-{args.operation}',

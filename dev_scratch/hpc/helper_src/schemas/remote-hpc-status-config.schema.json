@@ -101,6 +101,16 @@
           "minimum": 1,
           "maximum": 1000
         },
+        "accounting_chunk_size": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        },
+        "observation_timeout_sec": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 180
+        },
         "accounting_lookback_hours": {
           "type": "integer",
           "minimum": 1,

@@ -7,7 +7,7 @@ import stat
 from datetime import datetime, timezone
 
 
-BUNDLE_VERSION = '0.15.0-cancel-tree'
+BUNDLE_VERSION = '0.16.0-chunked-monitoring-archive'
 CONFIG_SCHEMA_VERSION = 1
 
 EXIT_SUCCESS = 0
@@ -28,6 +28,11 @@ RUNTIME_SOURCE_NAMES = (
     'hpc-status',
     'hpc-submit',
     'hpc_common.py',
+    'hpc_archive.py',
+    'hpc_bounded.py',
+    'hpc_job.py',
+    'hpc_job_lifecycle.py',
+    'hpc_result.py',
 )
 
 RUN_ID_RE = re.compile(r'[A-Za-z0-9][A-Za-z0-9._-]{0,79}')
@@ -49,6 +54,8 @@ SENSITIVE_KEY_PARTS = (
 
 PUBLIC_AUDIT_ARGS = {
     '--child',
+    '--offset',
+    '--unpack',
     '--help',
     '--json',
     '--quarantine-generated',
@@ -61,9 +68,11 @@ PUBLIC_AUDIT_ARGS = {
     'grid',
     'info',
     'inventory',
+    'archive',
     'job-label',
     'lethe',
     'log',
+    'logs',
     'finalize',
     'release',
     'result-json',

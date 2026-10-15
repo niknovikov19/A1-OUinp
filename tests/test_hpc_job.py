@@ -121,17 +121,17 @@ class HpcJobResourceTests(unittest.TestCase):
 
 
 class HpcJobRequestTests(unittest.TestCase):
-    def test_completion_manifest_supports_twelve_children_but_remains_bounded(self):
+    def test_completion_manifest_supports_sixty_children_but_remains_bounded(self):
         """Accept all four outputs per child and reject an oversized manifest. """
         completion_files = ['jobs/index.jsonl']
-        for index in range(12):
+        for index in range(60):
             for directory, suffix in (('cfg', 'json'), ('results', 'json'),
                                       ('rvec_xr', 'nc'), ('hvec_xr', 'nc')):
                 completion_files.append(f'{directory}/job_{index:05d}.{suffix}')
         request = {**make_single_request(), 'completion_files': completion_files}
         self.assertEqual(validate_request(request)['completion_files'], completion_files)
 
-        oversized = [f'results/job_{index:05d}.json' for index in range(65)]
+        oversized = [f'results/job_{index:05d}.json' for index in range(257)]
         with self.assertRaises(HpcJobValidationError):
             validate_request({**request, 'completion_files': oversized})
 

@@ -73,7 +73,7 @@ def _open_known_file(repo_root, relpath):
         if stat.S_ISLNK(current_stat.st_mode) or not stat.S_ISDIR(current_stat.st_mode):
             raise HpcResultError('Artifact path contains a non-directory or symlink')
     fpath = repo_root / relpath
-    flags = os.O_RDONLY | getattr(os, 'O_CLOEXEC', 0)
+    flags = os.O_RDONLY | getattr(os, 'O_CLOEXEC', 0) | getattr(os, 'O_NONBLOCK', 0)
     flags |= getattr(os, 'O_NOFOLLOW', 0)
     try:
         file_id = os.open(fpath, flags)

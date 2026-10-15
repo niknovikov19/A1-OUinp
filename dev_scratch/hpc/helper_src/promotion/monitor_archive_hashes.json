@@ -1,0 +1,90 @@
+{
+  "sources": {
+    "hpc_archive.py": {
+      "new": "6e4e182a45e02b80ba1d4b936521851c8c89a4c583386500fee9af880d9843cc",
+      "previous": []
+    },
+    "hpc_bounded.py": {
+      "new": "4b7e386257228f9dd991f9e06894bfe129a75fba64dd39d9b5b389c05a708d4e",
+      "previous": []
+    },
+    "hpc_job.py": {
+      "new": "ffeab93c9d248d307c44b751315b836dbe19b67a256ac2ad97423fb2050cd55d",
+      "previous": [
+        "e6918280607d813cff1fc03a4f0f917793061aa0f9075d75d025b88fcd7a08f0"
+      ]
+    },
+    "hpc_job_lifecycle.py": {
+      "new": "fe5305e4da158d1de26c926f4257f781a5a35b39bd6a8eac01519fb2562ee593",
+      "previous": [
+        "ac10405e60b2cad369810ed3eb278c309eb50d705cda081c80971d970d8c44fc"
+      ]
+    },
+    "hpc_result.py": {
+      "new": "000a6293454b81f270b310ead840a8a9d3c5033dc0b83930f5ba7db811e698bc",
+      "previous": [
+        "f99a45c010113fd04041cf374143541327f8da0921aa9e087880ecfd376e7684"
+      ]
+    },
+    "dev_scratch/hpc/helper_src/local/hpc-job": {
+      "new": "ad96c3e3b4a9bfdef7879e3cf0dd506152d9cdc0632fc45168d5f547b9b06bb2",
+      "previous": [
+        "16f7eac981667352cc8e0b5d552bcc2205055a5afb916ca4fd483c4590946286"
+      ]
+    },
+    "dev_scratch/hpc/helper_src/local/hpc-result": {
+      "new": "b9d90eda2238f02c1ecafe0fc5cb91bc5d0945ad26e046f4fff163dfa0b8f6b0",
+      "previous": [
+        "8a51b05bb53988703d93a43d24406d9fa98d553920c30d3d0fcbe0998d616e11"
+      ]
+    },
+    "dev_scratch/hpc/helper_src/local/hpc-status": {
+      "new": "556fb91a25a3dd277514aabfe197938bce7c0fa513d46e402a504769dbe7fa73",
+      "previous": [
+        "dde49bb7b565adb96fb38b559e0cbbaa5eb8abbf5fc7353e5f72634871543cd0"
+      ]
+    },
+    "dev_scratch/hpc/helper_src/local/hpc_common.py": {
+      "new": "6b2082b6d7cf02cbb432f854eefe1ab7c14d243a12d78cc950ff4418337e5426",
+      "previous": [
+        "f838d11b469389da7762e335c197358776f5eb2b3c3606498334b2edba81e5b7"
+      ]
+    },
+    "dev_scratch/hpc/helper_src/remote_lethe/hpc-lethe-job": {
+      "new": "71904f27142bd0be7fb139df266439dace971b50e88c60018127ce02e4a2cb26",
+      "previous": [
+        "aa18e56bc7d329809f66d1bc79bf93377693b01f5259a25b0b40f2b2e5a92ff5"
+      ]
+    },
+    "dev_scratch/hpc/helper_src/remote_lethe/hpc-lethe-result": {
+      "new": "a2cd7f22fa38034ca73035637bbae8b43e383f71a77437a5445b9faba1eb3195",
+      "previous": [
+        "159b197a2e3dbe499f77643763f5752100daa45e1cfe4359612341d4357fa903"
+      ]
+    },
+    "dev_scratch/hpc/helper_src/remote_lethe/hpc-lethe-status": {
+      "new": "c59e98616de1e108ffaa82dac2f325f1d44724c0ec1340de48a5036ca0bfe66c",
+      "previous": [
+        "5f5f7ed374d35f9dd1e7d8dc163b276a84d8b86544b3f603d917f977e7171f83"
+      ]
+    },
+    "dev_scratch/hpc/helper_src/remote_grid/hpc-grid-job": {
+      "new": "fa54e6e4ae3922d823c58114354d511bfe7ec48fb315f565dd9fa887ab9d03c2",
+      "previous": [
+        "a290c44462ecc35bc49568cff01152ea28275013eea9aef745ea9921df8b1435"
+      ]
+    },
+    "dev_scratch/hpc/helper_src/remote_grid/hpc-grid-status": {
+      "new": "bf7c623bc37e53c92b84530864d491ea53cdb4b8a510b4aa0918b2ebab27b372",
+      "previous": [
+        "37c76569edd655692cbfad02250f4941d94dc89696e897a172d279678e29290c"
+      ]
+    },
+    "dev_scratch/hpc/helper_src/config_examples/remote-hpc-status.json.example": {
+      "new": "607ad97bf13a0fef8b024a4002e684a13cce441ccc79d3094a61242e5162c095",
+      "previous": [
+        "28f59366c6c05c86c1fb7fbdc3be143293c27fde67c624ced54f66bf20deee7c"
+      ]
+    }
+  }
+}

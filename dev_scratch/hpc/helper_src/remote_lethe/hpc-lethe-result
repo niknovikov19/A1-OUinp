@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 import stat
 import sys
+import tempfile
 
 sys.dont_write_bytecode = True
 
@@ -26,6 +27,7 @@ from hpc_result import (
     validate_artifact_types,
     validate_result_inventory,
 )
+from hpc_archive import MAX_ARCHIVE_BYTES, build_archive, hash_path
 
 
 CONFIG_PATH = Path(
@@ -43,7 +45,7 @@ class ResultFailure(RuntimeError):
 
 def helper_identity():
     """Return the reviewed lethe result-helper identity. """
-    return {'name': 'hpc-lethe-result', 'version': '0.13.0-b5'}
+    return {'name': 'hpc-lethe-result', 'version': '0.16.0-compact-archive'}
 
 
 def require_regular_file(fpath, label, mode=None):
@@ -168,7 +170,7 @@ def load_children(config, prepared):
     require_regular_file(fpath, 'child-job index')
     try:
         with open(fpath, 'rb') as fid:
-            payload = fid.read(65537)
+            payload = fid.read(MAX_RECORD_BYTES + 1)
     except OSError as exc:
         raise ResultFailure(f'Cannot read child-job index: {exc}') from exc
     return parse_child_records(payload, prepared)
@@ -280,6 +282,68 @@ def error_result(operation, status, reason, details):
     }
 
 
+def archive_result(config, run_id):
+    """Create or reuse a compact archive bound to one successfully finalized run. """
+    lock_id = acquire_lock(config)
+    temporary = None
+    try:
+        prepared, final = load_completed_run(config, run_id)
+        root = Path(config['state']['root']) / 'result-archives'
+        if root.is_symlink() or not root.is_dir():
+            raise ResultFailure('Protected archive directory is missing or invalid')
+        archive = root / f'{run_id}.tar.gz'
+        record = root / f'{run_id}.json'
+        if record.exists():
+            metadata = read_json(record, 'archive record')
+            require_regular_file(archive, 'compact archive', mode=0o600)
+            for key in ('run_id', 'git_commit', 'expected_result_path'):
+                if metadata.get(key) != prepared[key]:
+                    raise ResultFailure('Archive binding differs from the completed run')
+            result_value = 'existing'
+        else:
+            if archive.exists() or archive.is_symlink():
+                raise ResultFailure('Archive exists without its record; refusing to replace it')
+            descriptor, temporary = tempfile.mkstemp(prefix=f'.{run_id}-', dir=root)
+            os.close(descriptor)
+            metadata = build_archive(config['git']['automation_checkout'], prepared, final, temporary)
+            os.replace(temporary, archive)
+            temporary = None
+            create_inventory_record(record, metadata)
+            result_value = 'created'
+        return {'schema_version': 1, 'operation': 'result-archive', 'status': 'ok',
+                'run_id': run_id, 'result': result_value, 'archive': metadata,
+                'hpc_archive_path': archive.as_posix(), 'helper': helper_identity()}
+    finally:
+        if temporary is not None:
+            Path(temporary).unlink(missing_ok=True)
+        fcntl.flock(lock_id, fcntl.LOCK_UN)
+        os.close(lock_id)
+
+
+def stream_archive(config, run_id, checksum):
+    """Stream one exact checksummed compact archive without JSON or base64 payloads. """
+    import re
+    if re.fullmatch(r'[0-9a-f]{64}', checksum) is None:
+        raise HpcResultError('Invalid archive checksum selector')
+    result = archive_result(config, run_id)
+    metadata = result['archive']
+    archive = Path(result['hpc_archive_path'])
+    if checksum != metadata['sha256'] or not 0 < metadata['size_bytes'] <= MAX_ARCHIVE_BYTES:
+        raise HpcResultError('Archive transfer binding differs')
+    if archive.stat().st_size != metadata['size_bytes'] or hash_path(archive) != checksum:
+        raise HpcResultError('Stored archive changed')
+    flags = os.O_RDONLY | getattr(os, 'O_NOFOLLOW', 0)
+    with os.fdopen(os.open(archive, flags), 'rb') as stream:
+        remaining = metadata['size_bytes']
+        while remaining:
+            data = stream.read(min(65536, remaining))
+            if not data:
+                raise ResultFailure('Archive changed during transfer')
+            sys.stdout.buffer.write(data)
+            remaining -= len(data)
+    sys.stdout.buffer.flush()
+
+
 def build_parser():
     """Build the fixed lethe result-operation parser. """
     parser = argparse.ArgumentParser(description='Inspect exact completed results.')
@@ -291,6 +355,11 @@ def build_parser():
     get.add_argument('run_id')
     get.add_argument('child_key')
     get.add_argument('artifact_type')
+    archive = commands.add_parser('archive')
+    archive.add_argument('run_id')
+    stream = commands.add_parser('archive-stream')
+    stream.add_argument('run_id')
+    stream.add_argument('checksum')
     return parser
 
 
@@ -309,6 +378,11 @@ def main():
             args.run_id = validate_run_id(args.run_id)
             if operation == 'inventory':
                 result = inventory_result(config, args.run_id)
+            elif operation == 'archive':
+                result = archive_result(config, args.run_id)
+            elif operation == 'archive-stream':
+                stream_archive(config, args.run_id, args.checksum)
+                return EXIT_SUCCESS
             else:
                 result = get_result(
                     config,
