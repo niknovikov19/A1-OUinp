@@ -122,6 +122,61 @@ class BoundedProcessTests(unittest.TestCase):
             run_bounded([sys.executable, '-c', 'import time; time.sleep(2)'], 0.05, 100)
 
 
+class BatchLimitPolicyTests(unittest.TestCase):
+    def setUp(self):
+        """Load the reviewed policies and isolated preparation/promotion functions. """
+        self.root = Path(__file__).resolve().parents[1]
+        prefix = self.root / 'dev_scratch/hpc/helper_src'
+        self.local = json.loads((prefix / 'config_examples/hpc-helper.json.example').read_text())
+        self.remote = json.loads((prefix / 'config_examples/remote-hpc-prepare.json.example').read_text())
+        self.prepare = load_script_module('batch_limit_prepare', 'dev_scratch/hpc/helper_src/remote_lethe/hpc-lethe-prepare')
+        self.promotion = load_script_module('batch_limit_promotion', 'dev_scratch/hpc/helper_src/promotion/promote_batch_limits.py')
+
+    def test_both_policies_validate_and_source_hashes_match(self):
+        """Keep both policy layers aligned and all per-job resource bounds unchanged. """
+        from hpc_common import validate_config
+        validate_config(self.local)
+        self.prepare.validate_config(self.remote)
+        self.assertEqual(self.local['scheduler']['limits'], self.remote['scheduler']['limits'])
+        limits = self.remote['scheduler']['limits']
+        self.assertEqual(limits['max_child_jobs'], 60)
+        self.assertEqual(limits['max_concurrent_jobs'], 10)
+        self.assertEqual(limits['max_cores_per_job'], 30)
+        self.assertEqual(limits['max_memory_gb_per_job'], 128)
+        self.assertEqual(limits['max_nodes_per_job'], 1)
+        self.assertEqual(limits['max_wall_time_min'], 1440)
+        for policy in self.promotion.POLICIES.values():
+            digest = hashlib.sha256((self.root / policy['source']).read_bytes()).hexdigest()
+            self.assertEqual(digest, policy['new'])
+
+    def test_sixty_ten_accepts_and_excess_job_or_resource_requests_reject(self):
+        """Enforce the requested count/concurrency boundary without relaxing per-job ceilings. """
+        request = json.loads((self.root / 'hpc_jobs/requests/hstep-l2-long-pilot.json').read_text())
+        request.update(max_simulation_jobs=60, max_concurrent_simulation_jobs=10)
+        self.prepare.validate_request_policy(request, self.remote)
+        for key, excessive in (('max_simulation_jobs', 61), ('max_concurrent_simulation_jobs', 11)):
+            changed = {**request, key: excessive}
+            with self.assertRaises(self.prepare.RejectedInput):
+                self.prepare.validate_request_policy(changed, self.remote)
+        for key, excessive in (('cores', 31), ('memory_gb', 129), ('nodes', 2), ('wall_time_min', 1441)):
+            changed = deepcopy(request)
+            changed['simulation_job_resources'][key] = excessive
+            with self.assertRaises(self.prepare.RejectedInput):
+                self.prepare.validate_request_policy(changed, self.remote)
+
+    def test_promotion_permits_only_two_limit_changes_and_idempotence(self):
+        """Reject unrelated policy edits while allowing old-to-new and repeat promotions. """
+        for proposed in (self.local, self.remote):
+            old = deepcopy(proposed)
+            old['scheduler']['limits'].update(max_child_jobs=12, max_concurrent_jobs=5)
+            self.promotion.validate_transition(old, proposed)
+            self.promotion.validate_transition(proposed, proposed)
+            changed = deepcopy(proposed)
+            changed['scheduler']['limits']['max_memory_gb_per_job'] = 256
+            with self.assertRaises(ValueError):
+                self.promotion.validate_transition(old, changed)
+
+
 class LogPageTests(unittest.TestCase):
     def test_page_sizes_offsets_and_incremental_streams(self):
         """Page twelve child logs without scheduler calls or repeated prefix reads. """

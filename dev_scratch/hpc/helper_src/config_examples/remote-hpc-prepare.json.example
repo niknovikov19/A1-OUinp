@@ -36,8 +36,8 @@
       "cpu.q"
     ],
     "limits": {
-      "max_child_jobs": 12,
-      "max_concurrent_jobs": 5,
+      "max_child_jobs": 60,
+      "max_concurrent_jobs": 10,
       "max_cores_per_job": 30,
       "max_memory_gb_per_job": 128,
       "max_nodes_per_job": 1,
