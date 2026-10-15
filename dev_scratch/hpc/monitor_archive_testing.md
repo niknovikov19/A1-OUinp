@@ -1,8 +1,76 @@
 # Monitoring/archive capability acceptance test
 
-Status: offline tests pass; live acceptance is waiting for the user's Gate-B
-promotion. The experiment remains paused while these capabilities are tested.
+Status: initial protected installation and core live checks passed. One
+compatibility correction, found during acceptance, is fixed and awaiting remote
+re-promotion. The experiment has not resumed while this gate remains open.
 See [installation and commands](helper_src/INSTALL_MONITOR_ARCHIVE.md).
+
+## Initial promotion and live results
+
+Reviewed revision: `fe323427f6e0e6bf956e48e03c9dbfc5ac7fddeb`.
+The user reported both promotions successful:
+
+- Local: `/tmp/monitor-archive-local-promotion.W4WBug.txt`.
+- Lethe: `/ddn/niknovikov19/hpc_codex/state/A1_OUinp/reports/promotion/monitor-archive-remote-promotion.9ohzdm.txt`.
+
+Protected installed commands were tested against `hstep-l2-long-pilot-001`:
+
+| Check | Result |
+| --- | --- |
+| Local installed bundle | `0.16.0-chunked-monitoring-archive`; installed source hashes match the reviewed initial manifest |
+| Controller and children | All 13 completed; original simulation commit `ba7022adb012d4b0b3c67fa2c1ba1c51bdd8b3d2` retained |
+| Log pages | Offsets 0/5/10 return 5/5/2 children, with next offsets 5/10/null and unique coverage |
+| Log stream bounds | All returned streams within 8192 bytes and 40 lines |
+| Repeated log page | All ten stream identities unchanged; each new start offset equals its preceding end offset |
+| Archive and unpack | Downloaded successfully, 49 compact files plus embedded manifest |
+| Reference comparison | All 49 file sizes, SHA256 hashes, and HPC source paths match the existing local handoff |
+| Repeated archive/unpack | `cache-hit`, identical metadata and checksum; no second binary transfer or source repacking |
+| Protected status parser self-test | 17 cases passed; grid helper hash matches the initial promoted source |
+
+Source bytes: **23,958,898**. Compressed archive: **1,694,850 bytes**
+(1.69 MB), about 14.1× smaller. First archive creation, transfer, checksum
+verification, and unpacking took **11.09 s**, measured between the protected
+local audit intent/completion timestamps. Original scientific data and the
+previous local reference were preserved.
+
+The archive is stored remotely at:
+
+```text
+/ddn/niknovikov19/hpc_codex/state/A1_OUinp/result-archives/hstep-l2-long-pilot-001.tar.gz
+```
+
+The verified local cache and extracted files are under:
+
+```text
+/home/nnovikov/repo/A1-OUinp/exp_results_local/hpc_codex/hstep-l2-long-pilot-001/
+```
+
+Archive SHA256:
+`8ddf3f3df91d6f136bce2dd725ecce8db56dc0dfafcc8719844bb425735cab4d`.
+
+## Compatibility correction found during acceptance
+
+The legacy `hpc-status` path's Lethe validator still accepted only zero or one
+`sacct` call in a grid reply. Grid-side chunking and the main `hpc-job status`
+path worked, but the legacy path would reject successful multi-chunk replies.
+The 13-job live pilot alone cannot expose this because it fits one 25-ID chunk.
+
+A new integration regression passes actual fixture-generated grid replies
+through the Lethe validator for 26 and 61 completed IDs. It reproduced the
+failure before the fix. The validator now accepts nonnegative integer counts
+up to `ceil(requested_IDs / accounting_chunk_size)` and rejects booleans,
+negative values, and excessive counts. Only `hpc-lethe-status` runtime code
+changes in this correction; local runtime files and the other installed
+remote helpers are unchanged.
+
+Its pinned SHA256 is
+`2262c2d143e6a86bd76dbe1d55cf35857354257e78f9c89b5812a649fde73c50`.
+All **115 HPC tests** pass with the correction, including the new multi-hop
+chunk-count regression. Promotion hashes and whitespace checks also pass.
+The promotion manifest accepts both the original predecessor and the initial
+promoted hash. Reuse the remote Gate-B script with the corrective commit;
+no repeat local promotion is necessary. After remote PASS, repeat the protected
+status self-test and a completed-pilot status check before closing acceptance.
 
 ## Baseline before promotion
 

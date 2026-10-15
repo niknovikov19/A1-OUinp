@@ -12,7 +12,7 @@ import stat
 import subprocess
 
 
-HELPER_VERSION = '0.6.0-a5'
+HELPER_VERSION = '0.16.1-chunked-monitoring'
 EXIT_SUCCESS = 0
 EXIT_REJECTED = 2
 EXIT_UNKNOWN = 3
@@ -371,13 +371,23 @@ def run_grid(config, operation, job_ids=None):
         result_jobs = result.get('jobs')
         query_count = result.get('query_count')
         grace_sec = result.get('accounting_grace_sec')
+        # Bound accounting counts by chunk size rather than the former single-call contract
+        chunk_size = config['scheduler'].get('accounting_chunk_size', 25)
+        max_accounting_queries = (len(job_ids) + chunk_size - 1) // chunk_size
+        sacct_queries = query_count.get('sacct') if isinstance(query_count, dict) else None
+        squeue_queries = query_count.get('squeue') if isinstance(query_count, dict) else None
+        valid_queries = (
+            isinstance(sacct_queries, int) and not isinstance(sacct_queries, bool) and
+            0 <= sacct_queries <= max_accounting_queries and
+            isinstance(squeue_queries, int) and not isinstance(squeue_queries, bool) and
+            squeue_queries == 1
+        )
         valid_metadata = (
             isinstance(result.get('observed_at_utc'), str) and
             bool(result['observed_at_utc']) and
             isinstance(result.get('helper'), dict) and
             isinstance(query_count, dict) and
-            query_count.get('squeue') == 1 and
-            query_count.get('sacct') in {0, 1} and
+            valid_queries and
             isinstance(grace_sec, int) and
             not isinstance(grace_sec, bool) and
             1 <= grace_sec <= 3600

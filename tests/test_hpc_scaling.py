@@ -74,6 +74,37 @@ class ChunkedStatusTests(unittest.TestCase):
         with self.assertRaises(GRID_STATUS.StatusFailure):
             GRID_STATUS.validate_config(invalid)
 
+    def test_multi_chunk_reply_survives_the_lethe_status_hop(self):
+        """Accept real grid-parser replies with multiple accounting calls at the next hop. """
+        lethe = load_script_module('chunked_status_transport', 'dev_scratch/hpc/helper_src/remote_lethe/hpc-lethe-status')
+        for count in (26, 61):
+            job_ids = list(range(1, count + 1))
+
+            def query(command, timeout):
+                """Return a completed allocation for each requested accounting ID. """
+                if command[0].endswith('squeue'):
+                    return ''
+                ids = command[command.index('--jobs') + 1].split(',')
+                return ''.join(f'{item}|COMPLETED|0:0|None\n' for item in ids)
+
+            with patch.object(GRID_STATUS, 'run_fixed', side_effect=query):
+                jobs, counts = GRID_STATUS.query_scheduler(self.config, job_ids)
+            reply = {'operation': 'grid-status', 'status': 'ok', 'job_ids': job_ids,
+                     'jobs': jobs, 'query_count': counts, 'accounting_grace_sec': 120,
+                     'observed_at_utc': '2026-10-15T04:00:00+00:00', 'helper': GRID_STATUS.helper_identity()}
+            completed = subprocess.CompletedProcess([], 0, json.dumps(reply).encode(), b'')
+            with patch.object(lethe, 'run_command', return_value=completed):
+                result, code = lethe.run_grid(self.config, 'status', job_ids)
+            self.assertEqual(code, 0)
+            self.assertEqual(result['query_count']['sacct'], (count + 24) // 25)
+            for invalid in (True, -1, (count + 24) // 25 + 1):
+                bad = deepcopy(reply)
+                bad['query_count']['sacct'] = invalid
+                completed = subprocess.CompletedProcess([], 0, json.dumps(bad).encode(), b'')
+                with patch.object(lethe, 'run_command', return_value=completed):
+                    with self.assertRaises(lethe.StatusUnavailable):
+                        lethe.run_grid(self.config, 'status', job_ids)
+
 
 class BoundedProcessTests(unittest.TestCase):
     def test_streaming_limits_and_timeout(self):
