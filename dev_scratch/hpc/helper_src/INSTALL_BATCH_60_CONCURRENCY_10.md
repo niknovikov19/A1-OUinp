@@ -1,7 +1,7 @@
 # Sixty-child batches with concurrency ten
 
-Status: user-authorized policies and Gate-B promotion scripts prepared;
-installation is pending. This changes only two limits in each of the local
+Status: **installed** after both user-run Gate-B promotions passed. This
+changes only two limits in each of the local
 helper and remote preparation policies:
 
 | Policy limit | Before | After |
@@ -49,3 +49,23 @@ the 61 total scheduler IDs and 241 completion files of the proposed experiment.
 
 All **118 HPC tests pass**, including the new policy-boundary and transition
 checks. Both shell wrappers and the Python policy installer pass syntax checks.
+
+## Installed verification
+
+Promoted revision: `b6fbac9b0bb6e791d5c42ed79735c12720a500fc`.
+The user reported both promotions PASS:
+
+- Local report: `/tmp/batch-60-concurrency-10-local-promotion.pVzERh.txt`.
+- Remote report: `/ddn/niknovikov19/hpc_codex/state/A1_OUinp/reports/promotion/batch-60-concurrency-10-remote-promotion.olYZmC.txt`.
+
+The protected `hpc-helper-info --json info` command independently confirms
+60 children and concurrency ten, with all four per-job resource ceilings
+unchanged. The installed local policy raw SHA256 is
+`546fae687acbd5269f94e6d946f24e665259fbc54eab39340a20c3d3ef8ac61b`;
+the normalized configuration digest reported by the helper is
+`e36ed233606ada4ca4ab9e2ba61dfde836c89e36936a90903ac29820b970a035`.
+The remote promotion's PASS verifies the pinned preparation-policy SHA256
+`b44abec6b2ba18ed7e0e1b3a594d80a2016614fe6182dc2401cf9bddb7fedb84`
+and the same 60/10 limits. The automation checkout is clean and idle.
+The next experiment request must explicitly select these values and pass
+protected preparation before submission; historical requests are preserved.

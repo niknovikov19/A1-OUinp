@@ -29,8 +29,9 @@ Local reinstallation was unnecessary. Together with the earlier live log-page,
 cursor, archive, checksum, and cache-hit checks below, this closes acceptance.
 Multi-chunk coverage across the grid/Lethe hop is provided by the 26/61-ID
 integration regression in the 115 passing HPC tests; the thirteen-job live
-pilot fits one accounting chunk. The child submission cap remains twelve
-and concurrency five; larger submission authority is a separate policy change.
+pilot fits one accounting chunk. Submission authority was subsequently raised
+to 60 children and concurrency ten by a separate
+[completed policy promotion](helper_src/INSTALL_BATCH_60_CONCURRENCY_10.md).
 
 ## Initial promotion and live results
 

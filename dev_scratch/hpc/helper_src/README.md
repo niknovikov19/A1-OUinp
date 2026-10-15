@@ -7,8 +7,8 @@ The [chunked monitoring/archive candidate](INSTALL_MONITOR_ARCHIVE.md) adds
 checksummed archive transfer per completed run. Protected installation and live
 acceptance passed, including the `hpc-status` compatibility correction.
 
-The requested [60-child / concurrency-ten policy](INSTALL_BATCH_60_CONCURRENCY_10.md)
-has separate Gate-B scripts; its installation is pending.
+The [60-child / concurrency-ten policy](INSTALL_BATCH_60_CONCURRENCY_10.md)
+is installed after both Gate-B promotions passed; per-job limits are unchanged.
 
 The future [large-batch status and lifecycle refactor plan](../status_scaling_refactor_plan.md)
 separates scheduler-query bounds from total batch size and records temporary

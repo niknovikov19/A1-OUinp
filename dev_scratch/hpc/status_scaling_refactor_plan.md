@@ -6,7 +6,8 @@ and acceptance-tested; [its installation note](helper_src/INSTALL_MONITOR_ARCHIV
 defines behavior, remaining limits, and the completed Gate-B/live tests.
 The original broader refactor below remains a historical/future design:
 terminal caching, paginated status summaries, and thousand-job lifecycle
-support are not implemented. The 60-child submission policy is unchanged.
+support are not implemented. Submission authority was separately promoted
+to [60 children and concurrency ten](helper_src/INSTALL_BATCH_60_CONCURRENCY_10.md).
 
 Original status: refactor postponed, recorded on 2026-10-14. The temporary policy below
 was promoted through Gate B and verified. This document does not authorize

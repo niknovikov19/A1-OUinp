@@ -103,9 +103,10 @@ once. The embedded manifest uses real HPC paths, never mount paths.
 
 ## Bounds and remaining work
 
-- Total recorded scheduler IDs remain capped at 100 by installed policy after
-  promotion; accounting chunk size is independently 25. Total-child submission
-  authority stays at 12 and concurrency stays five until separately promoted.
+- Total recorded scheduler IDs remain capped at 100; accounting chunk size
+  is independently 25. The separately promoted
+  [submission policy](INSTALL_BATCH_60_CONCURRENCY_10.md) now permits 60
+  simulation children with concurrency ten.
 - Shared lifecycle/index byte bounds increase from 64 KiB to 1 MiB, and
   declared completion files from 64 to 256, supporting the planned 241-file
   handoff. The request JSON schema is synchronized with the runtime bound.
@@ -117,8 +118,8 @@ once. The embedded manifest uses real HPC paths, never mount paths.
   for per-file completion declarations remain future work. Finalization's
   existing lifecycle contract is preserved, not redesigned here.
 
-The 60-child authorization increase is a separate future policy promotion.
-There is no need to raise the 100-ID status limit for that batch.
+The 60-child authorization increase was completed by a separate policy
+promotion. There is no need to raise the 100-ID status limit for that batch.
 
 ## Gate-B promotion
 
