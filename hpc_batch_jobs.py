@@ -15,7 +15,7 @@ from hpc_job import (
 from hpc_job_control import parse_sbatch_result
 
 
-MAX_INDEX_BYTES = 65536
+MAX_INDEX_BYTES = 1048576
 MAX_INDEX_LINE_BYTES = 4096
 
 
