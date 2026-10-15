@@ -1,7 +1,7 @@
 # L2 amplitude-scaling test: current evidence and next batch
 
-Status: configured for execution as pilot3, run `hstep-l2-amplitude5-001`;
-local scientific preflight resolves 60 trials and 241 compact output files.
+Status: completed and processed as pilot3, run `hstep-l2-amplitude5-001`,
+controller 118098; all 60 trials and 241 compact output files verified.
 See [the run record](connected_hstep_amplitude5.md) for execution and processing.
 Estimates below use the completed second pilot's
 local timing records and compact-input file sizes; no remote filesystem scan
@@ -11,9 +11,9 @@ was needed. This note is the current follow-up plan after
 Infrastructure update: [chunked monitoring and compact archives](../hpc/helper_src/INSTALL_MONITOR_ARCHIVE.md)
 are installed and acceptance-tested. The user requested a total-child cap of
 60 and concurrency ten; both policy promotions passed and the limits are installed.
-The next handoff should use one checksummed archive transfer followed by local
-unpacking, rather than 241 individual remote downloads. The uncompressed copy
-budget below remains valid; gzip transfer size will be measured after packing.
+The completed handoff used one checksummed archive transfer followed by local
+unpacking: 8.51 MB transferred, 119.81 MB compact outputs unpacked. The estimates
+and planned procedure below are retained as the pre-run specification.
 
 ## What we have
 
