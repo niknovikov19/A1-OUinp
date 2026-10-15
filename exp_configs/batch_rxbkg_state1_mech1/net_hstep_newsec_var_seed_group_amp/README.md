@@ -11,6 +11,7 @@ The specification is
 
 The current configuration is the second pilot: ±0.03 nA, 100 s duration,
 step onset 40 s, response 60–100 s, and the same two seeds and three groups.
+All twelve trials completed and their required outputs passed finalization.
 See [the second-pilot run note](../../../dev_scratch/step_resp/connected_hstep_pilot2.md).
 
 ## Configuration to review
