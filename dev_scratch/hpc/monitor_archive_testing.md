@@ -1,9 +1,36 @@
 # Monitoring/archive capability acceptance test
 
-Status: initial protected installation and core live checks passed. One
-compatibility correction, found during acceptance, is fixed and awaiting remote
-re-promotion. The experiment has not resumed while this gate remains open.
+Status: **acceptance passed**, including the remote compatibility correction.
+All monitoring/archive gates described here are closed. No new simulations
+were submitted during acceptance.
 See [installation and commands](helper_src/INSTALL_MONITOR_ARCHIVE.md).
+
+## Final installed verification
+
+Corrective revision: `0f52d9f5e19328932194a43d91a33ad524d67396`.
+The user reported remote re-promotion PASS in:
+
+```text
+/ddn/niknovikov19/hpc_codex/state/A1_OUinp/reports/promotion/monitor-archive-remote-promotion.sU2xcs.txt
+```
+
+Subsequent protected-command checks passed:
+
+- `hpc-status --json --self-test`: 17 cases passed; installed Lethe status
+  version `0.16.1-chunked-monitoring` and SHA256
+  `2262c2d143e6a86bd76dbe1d55cf35857354257e78f9c89b5812a649fde73c50`
+  match the corrected pinned source. The grid helper identity is unchanged.
+- `hpc-job --json status hstep-l2-long-pilot-001`: controller 118074 and
+  all twelve children completed, with the original simulation commit retained.
+- `hpc-code-status`: automation checkout clean at the corrective revision,
+  with no active run or update lock.
+
+Local reinstallation was unnecessary. Together with the earlier live log-page,
+cursor, archive, checksum, and cache-hit checks below, this closes acceptance.
+Multi-chunk coverage across the grid/Lethe hop is provided by the 26/61-ID
+integration regression in the 115 passing HPC tests; the thirteen-job live
+pilot fits one accounting chunk. The child submission cap remains twelve
+and concurrency five; larger submission authority is a separate policy change.
 
 ## Initial promotion and live results
 
@@ -68,9 +95,8 @@ Its pinned SHA256 is
 All **115 HPC tests** pass with the correction, including the new multi-hop
 chunk-count regression. Promotion hashes and whitespace checks also pass.
 The promotion manifest accepts both the original predecessor and the initial
-promoted hash. Reuse the remote Gate-B script with the corrective commit;
-no repeat local promotion is necessary. After remote PASS, repeat the protected
-status self-test and a completed-pilot status check before closing acceptance.
+promoted hash. The remote Gate-B script was reused with the corrective commit;
+the final installed checks above confirm the correction is now deployed.
 
 ## Baseline before promotion
 
@@ -94,7 +120,7 @@ safe extraction, checksum failures, cache reuse, and preservation of modified
 files. Shell promotion scripts pass syntax checks; all fifteen runtime/policy
 source hashes match the promotion manifest.
 
-## Protected live tests after both promotions pass
+## Completed protected live test procedure
 
 1. Check installed local and remote identities against the pinned hashes;
    confirm the new CLI commands exist and no run is active.

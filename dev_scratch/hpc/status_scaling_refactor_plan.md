@@ -1,9 +1,9 @@
 # Large-batch status and lifecycle refactor
 
 Status update: the user subsequently requested implementation of chunked
-monitoring and result archiving. The first bounded implementation is complete
-as candidate code; [its installation note](helper_src/INSTALL_MONITOR_ARCHIVE.md)
-defines behavior, remaining limits, tests, and pending Gate-B promotion.
+monitoring and result archiving. The first bounded implementation is installed
+and acceptance-tested; [its installation note](helper_src/INSTALL_MONITOR_ARCHIVE.md)
+defines behavior, remaining limits, and the completed Gate-B/live tests.
 The original broader refactor below remains a historical/future design:
 terminal caching, paginated status summaries, and thousand-job lifecycle
 support are not implemented. The 60-child submission policy is unchanged.

@@ -4,8 +4,8 @@ This directory contains reviewable source candidates for protected HPC helper co
 
 The [chunked monitoring/archive candidate](INSTALL_MONITOR_ARCHIVE.md) adds
 25-ID accounting chunks, five-child incremental log pages, and one compact,
-checksummed archive transfer per completed run. Initial installation and live
-tests passed; an `hpc-status` compatibility correction awaits remote re-promotion.
+checksummed archive transfer per completed run. Protected installation and live
+acceptance passed, including the `hpc-status` compatibility correction.
 
 The future [large-batch status and lifecycle refactor plan](../status_scaling_refactor_plan.md)
 separates scheduler-query bounds from total batch size and records temporary

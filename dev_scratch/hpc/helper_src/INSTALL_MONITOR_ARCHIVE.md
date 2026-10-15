@@ -1,11 +1,10 @@
 # Chunked monitoring and compact result archives
 
-Status: initial Gate-B installation and live status/log/archive checks passed.
-An additional compatibility correction for `hpc-status` reply validation is
-awaiting remote re-promotion; local helpers need no reinstall. See the
-[acceptance report](../monitor_archive_testing.md) for results and the remaining
-gate. Do not invoke candidate helper executables in place. No simulation
-submission limits are raised by this work.
+Status: Gate-B installation and live status/log/archive acceptance passed,
+including the corrected `hpc-status` reply validation. See the
+[acceptance report](../monitor_archive_testing.md) for installed identities,
+test results, and compression measurements. Do not invoke candidate helper
+executables in place. No simulation submission limits are raised by this work.
 
 ## Monitoring
 
