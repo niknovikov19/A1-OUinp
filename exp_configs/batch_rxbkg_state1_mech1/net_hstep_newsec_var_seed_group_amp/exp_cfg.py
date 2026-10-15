@@ -24,10 +24,10 @@ from sim_data_analyzer.xr_adapters import get_net_rate_dynamics_xr
 # Define the connected circuit and step timing in milliseconds
 EXP_LABEL = 'L2'
 POPS_USED = batch.L2_POPS
-SIM_DURATION = 40 * 1e3
+SIM_DURATION = 100 * 1e3
 T0_CALC = 10 * 1e3
-H_STEP_T0 = 20 * 1e3
-H_STEP_TRESP = 30 * 1e3
+H_STEP_T0 = 40 * 1e3
+H_STEP_TRESP = 60 * 1e3
 H_STIM_PREFIX = 'hstep'
 
 # Derive half-open windows in seconds and split the response interval in half

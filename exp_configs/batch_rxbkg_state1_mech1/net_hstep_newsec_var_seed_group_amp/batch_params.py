@@ -20,11 +20,11 @@ STEP_GROUPS = {
 # Define the complete seed and amplitude grid used in names and metadata
 N_SEEDS = 2
 GROUP_SET_LABEL = '1pop_v1'
-AMP_VALUES = [-0.005, 0.005]
+AMP_VALUES = [-0.03, 0.03]
 
 # Label pilot datasets and keep revised attempts in separate result folders
 PILOT = 1
-PILOT_ATTEMPT = 1
+PILOT_ATTEMPT = 2
 
 # Restrict batch axes to listed values; None uses the full corresponding axis
 SEEDS_SUBSET = None

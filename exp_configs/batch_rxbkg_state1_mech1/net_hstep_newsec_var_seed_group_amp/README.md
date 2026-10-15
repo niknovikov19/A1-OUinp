@@ -1,11 +1,17 @@
 # Connected L2 current-step experiment
 
-Local configuration tests and real network-parameter construction have passed.
-The twelve-child policy promotion passed; the first controller exposed an
-HPC companion-repository import path, now corrected. Test status is recorded in
+All twelve first-pilot simulations completed and 49 required outputs passed
+protected finalization. Local descriptive analysis is in
+[`connected_hstep_analysis.md`](../../../dev_scratch/step_resp/connected_hstep_analysis.md).
+The same-seed reproducibility issue is documented there and its fix is deferred.
+Test settings and launch status are recorded in
 [`connected_hstep_testing.md`](../../../dev_scratch/step_resp/connected_hstep_testing.md).
 The specification is
 [`connected_hstep_spec.md`](../../../dev_scratch/step_resp/connected_hstep_spec.md).
+
+The current configuration is the second pilot: ±0.03 nA, 100 s duration,
+step onset 40 s, response 60–100 s, and the same two seeds and three groups.
+See [the second-pilot run note](../../../dev_scratch/step_resp/connected_hstep_pilot2.md).
 
 ## Configuration to review
 
@@ -25,7 +31,7 @@ The batch grid has three coordinates:
 ```text
 seed_main:   1000–1001
 step_group:  IT2, PV2, control
-amp:         -0.005, +0.005 nA
+amp:         -0.03, +0.03 nA
 ```
 
 In `post_update(cfg)`, the selected group is expanded into the full current
@@ -47,9 +53,8 @@ the grid or simulation duration.
 Cartesian batches from the full grid. `None` selects the full axis. The same
 selectors apply to every group, including `control`. For the three-job pilot,
 select seed `[1000]`, groups `['control', 'IT2', 'PV2']`, and amplitude
-`[0.005]`. These selectors are for future pilot/chunk preparation; the current
-first test needs twelve children, so a Gate-B promotion raises the protected
-ten-child ceiling to twelve before its ordinary HPC request is prepared.
+`[0.03]`. These selectors are for future pilot/chunk preparation. The current
+grid has twelve children, within the already promoted twelve-child ceiling.
 
 ## Connected circuit and input
 
@@ -59,19 +64,19 @@ is no connection fader. The seven calibration assets in this folder are copies
 of those used in `net_inpsur_hsweep_newsec_var_seed`.
 
 Each population receives one separately named NetPyNE IClamp at `soma(0.5)`.
-Its amplitude is constant, with a 20-s delay and 20-s duration. The baseline
+Its amplitude is constant, with a 40-s delay and 60-s duration. The baseline
 current clamps are separate. No `Vector.play` waveform is needed.
 
 `RATE_WINDOWS` is derived from `T0_CALC`, `H_STEP_T0`, `H_STEP_TRESP`, and
 `SIM_DURATION`. These timing parameters are in milliseconds;
-`H_STEP_TRESP = 30 * 1e3` sets the first test's response start to 30 s.
+`H_STEP_TRESP = 60 * 1e3` sets the current response start to 60 s.
 The baseline runs from `T0_CALC` to step onset; the response runs from
 `H_STEP_TRESP` to simulation end. Early/late windows split the response
 interval equally, so they follow any timing change automatically.
 
-The first simulation lasts 40 s. Window statistics use raw spike counts over
-half-open intervals: baseline 10–20 s, response 30–40 s, and settling checks
-30–35 s and 35–40 s. Saved rate traces have 5-ms bins with no smoothing;
+The current simulation lasts 100 s. Window statistics use raw spike counts over
+half-open intervals: baseline 10–40 s, response 60–100 s, and settling checks
+60–80 s and 80–100 s. Saved rate traces have 5-ms bins with no smoothing;
 figures use a 0.2-s rolling average and have no axes grid.
 
 ## Result naming and outputs
@@ -79,7 +84,7 @@ figures use a 0.2-s rolling average and have no axes grid.
 The default protocol folder is:
 
 ```text
-exp_L2_pilot1_nseed_2_ngroup_3_namp_2_dur_40_step_t0_20_tresp_30_gset_1pop_v1_amin_-0.005_amax_0.005_ictrl_wmult_0.25_ee_0.5
+exp_L2_pilot2_nseed_2_ngroup_3_namp_2_dur_100_step_t0_40_tresp_60_gset_1pop_v1_amin_-0.03_amax_0.03_ictrl_wmult_0.25_ee_0.5
 ```
 
 Path timings use seconds, rounded to at most two decimal places with trailing
@@ -95,7 +100,7 @@ counts and amplitude bounds; use `PILOT_ATTEMPT` for a distinct rerun.
 Each job's postfix includes all batch coordinates, for example:
 
 ```text
-00001_seed_1000_group_IT2_amp_0.005
+00001_seed_1000_group_IT2_amp_0.03
 ```
 
 Required outputs are `cfg/cfg_<postfix>.json`,
