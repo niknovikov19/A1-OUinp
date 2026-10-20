@@ -74,3 +74,58 @@ prefix_rule(
     decision = "allow",
     justification = "Submit only a reviewed A1-OUinp request within protected limits.",
 )
+
+prefix_rule(
+    pattern = ["/opt/a1-hpc/bin/hpc-job-prepare"],
+    decision = "allow",
+    justification = "Prepare a reviewed A1-OUinp job snapshot without submitting it.",
+)
+
+prefix_rule(
+    pattern = ["/opt/a1-hpc/bin/hpc-job"],
+    decision = "allow",
+    justification = "Operate only the protected lifecycle of a prepared A1-OUinp job.",
+)
+
+prefix_rule(
+    pattern = ["/opt/a1-hpc/bin/hpc-result"],
+    decision = "allow",
+    justification = "List and retrieve only bounded inventoried artifacts from completed A1-OUinp runs.",
+)
+
+# Git inspection in A1-OUinp
+prefix_rule(
+    pattern = [
+        "git",
+        [
+            "status",
+            "diff",
+            "log",
+            "show",
+            "rev-parse",
+            "ls-files",
+            "describe",
+            "blame",
+            "merge-base",
+            "diff-tree",
+            "diff-index",
+        ],
+    ],
+    decision = "allow",
+    justification = "Inspect repository state and history without changing the working tree.",
+    match = [
+        "git status --short",
+        "git diff --check",
+        "git diff --cached",
+        "git log --oneline -10",
+        "git show --stat HEAD",
+        "git rev-parse --show-toplevel",
+        "git ls-files dev_scratch",
+    ],
+    not_match = [
+        "git add dev_scratch/step_resp",
+        "git restore README.md",
+        "git reset --hard",
+        "git clean -fd",
+    ],
+)
