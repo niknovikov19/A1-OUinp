@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "request_id": "thal-irem-fade-pilot",
+  "job_kind": "batch",
+  "target": "batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed",
+  "template_path": "hpc_jobs/templates/batch.sh",
+  "expected_result_path": "exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_branch_fade_pilot_nseed_2_t_5.0_6.0_wmult_0.25_ee_0.5",
+  "completion_files": ["jobs/index.jsonl"],
+  "top_level_resources": {
+    "partition": "cpu.q",
+    "nodes": 1,
+    "cores": 2,
+    "memory_gb": 16,
+    "wall_time_min": 120
+  },
+  "simulation_job_resources": {
+    "partition": "cpu.q",
+    "nodes": 1,
+    "cores": 8,
+    "memory_gb": 32,
+    "wall_time_min": 60
+  },
+  "max_concurrent_simulation_jobs": 2,
+  "max_simulation_jobs": 4
+}
