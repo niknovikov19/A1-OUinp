@@ -1,30 +1,26 @@
-# Static response-prediction project
+# Static population-response prediction
 
-This directory develops a predictor of recurrent population-rate responses
-from static open-loop transfer measurements. The directory name is retained
-for continuity; dynamic step responses are not currently in scope.
+Predict connected population-rate changes from open-loop J and Q measured in
+the spiking model. Steps probe static endpoints; transient/oscillatory prediction
+is outside the current scope.
 
-- [`processing.md`](processing.md) is the short operational recipe for running
-  a new sweep, extracting rates on HPC, and fitting locally.
-- [`h_r_processing.md`](h_r_processing.md) describes the current-input fitter
-  and its local input/output layout.
-- [`connected_hstep_spec.md`](connected_hstep_spec.md) proposes the connected
-  L2 current-step experiment for validating static J/Q predictions.
-- [`connected_hstep_testing.md`](connected_hstep_testing.md) records the
-  first connected-circuit test settings and validation status.
-- [`inventory.md`](inventory.md) records the existing rate-sweep datasets,
-  artifacts, and provenance caveats.
-- [`resp_predictor_outline.md`](resp_predictor_outline.md) summarizes the
-  relevant ideas found in the read-only `resp_predictor` repository.
-- [`resp_predictor_reference/`](resp_predictor_reference) contains snapshots
-  of its original description Markdown and notebook.
-- [`code/`](code) contains the local h-r fitter and snapshots of the relevant
-  historical Python analysis files.
-- `data/` is the ignored local workspace for compact HPC inputs and fitted
-  results; its layout and remote provenance are documented in
-  [`h_r_processing.md`](h_r_processing.md).
+- [Experiment registry](data/registry.md): datasets, scientific roles, selected
+  versus preliminary results, figures, source paths, and former local names.
+- [Documentation guide](doc/README.md): current contracts, processing recipes,
+  completed results, open branches, deferred issues, and historical proposals.
+- [Frozen prediction contract](doc/contracts/static_prediction.md): exact J/Q,
+  provisional zeros, rate-change definitions, and plot symbols.
+- [Latest connected results](doc/results/connected_steps_5seeds_15_30pa.md):
+  five seeds, IT2/PV2 steps at ±15/±30 pA, with ordinary zero-input controls.
 
-The existing experiment measures static operating-point gains using a slow
-presynaptic triangular rate sweep. Those gains are the required open-loop
-linear-response measurement; no separate dynamic-response experiment is
-currently planned.
+```text
+step_resp/
+├── code/                 Local processing and tests
+├── data/registry.md      Tracked experiment catalogue
+├── data/<dataset>/       Local inputs/results; ignored by git
+├── data/_old/            Superseded preliminary datasets; retained
+└── doc/                  Project documentation, organized by role
+```
+
+Use registry names rather than pilot numbers when discussing results.
+Original HPC names, run IDs, saved matrix bytes, and provenance remain unchanged.

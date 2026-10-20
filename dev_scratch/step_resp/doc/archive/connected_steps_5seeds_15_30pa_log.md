@@ -1,8 +1,16 @@
-# Connected L2 amplitude-scaling experiment
+# Historical log: five-seed connected L2 step experiment
 
-Protocol: [amplitude-test specification](connected_hstep_amplitude_test.md).
-Request: [`hstep-l2-amplitude5.json`](../../hpc_jobs/requests/hstep-l2-amplitude5.json).
-Run ID: `hstep-l2-amplitude5-001`. Local dataset: `data/l2_hstep_amplitude5/`.
+HISTORICAL LOG — execution and analysis are complete. This is not a plan or a work request.
+Read only when detailed provenance or reproduction is needed; the
+[short hand-off](../results/connected_steps_5seeds_15_30pa.md) contains current essentials.
+
+Paths written as data/ or code/ are relative to dev_scratch/step_resp/, not this document.
+
+Current interface: [connected-step contract](../contracts/connected_current_steps.md).
+The [completed batch design](../archive/step_scaling_batch_design.md) is historical,
+not another pending experiment.
+Request: [`hstep-l2-amplitude5.json`](../../../../hpc_jobs/requests/hstep-l2-amplitude5.json).
+Run ID: `hstep-l2-amplitude5-001`. Local dataset: `data/l2_connected_steps_5seeds_15_30pa_100s/`.
 
 ## Configuration and preflight
 
@@ -58,42 +66,44 @@ definitions and all seeds. The input symlink points to the verified helper
 cache at `exp_results_local/hpc_codex/hstep-l2-amplitude5-001/compact/`.
 Its `archive_manifest.json` records original HPC paths and individual hashes.
 
-Keep exactly the prior pooled J (with its two requested provisional zeros)
-and the slow symmetric Q. Record their byte hashes and compare them with the
-second-pilot prediction manifest before calculating the new-amplitude
-predictions. No refitting or parameter tuning against these new responses.
-Produce signed-amplitude summaries, per-seed central slopes and sign symmetry,
-half-amplitude/full-amplitude comparisons, early/late diagnostics, and smoothed
-rate dynamics with seed overlays and static prediction levels. All figures
-have grids disabled and omit the initial transient from rate-trace scaling.
+Processing retained the prior pooled J (with its two provisional zeros) and
+the slow symmetric Q. Hash checks confirmed the frozen inputs. No refitting
+or parameter tuning used the new responses. The saved outputs include signed
+amplitude summaries, central slopes, sign symmetry, half/full-amplitude checks,
+early/late diagnostics, and rate dynamics with seed overlays/static predictions.
+Figures omit initial-transient scaling and have no grids.
 
-## Local repeat commands
+## Optional reproduction reference — not pending work
 
-After the archive helper creates its verified local `compact/` cache, expose
-that directory as `data/l2_hstep_amplitude5/input/` with a local symlink.
-This avoids a second physical copy of the 120-MB input set. Source paths in
+The completed handoff exposed the verified local `compact/` cache as `data/l2_connected_steps_5seeds_15_30pa_100s/input/` with a local symlink.
+This avoided a second physical copy of the 120-MB input set. Source paths in
 the embedded archive manifest remain real HPC paths.
 
-Run these commands from the repository root in the existing NetPyNE environment:
+The following code documents how the completed analysis can be reproduced.
+It is relevant executable analysis code, not a request to run it. The inputs
+and outputs already exist. If reproduction is explicitly requested, its working
+directory is the repository root and its interpreter is the existing NetPyNE
+environment. These commands write/regenerate analysis files in the named dataset.
 
 ```bash
+# Optional reproduction only; regenerates existing analysis outputs
 MPLCONFIGDIR=.mplcache OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 \
   /home/nnovikov/conda_env/netpyne/bin/python dev_scratch/step_resp/code/analyze_hstep.py \
-  --input-dir dev_scratch/step_resp/data/l2_hstep_amplitude5/input \
-  --output-dir dev_scratch/step_resp/data/l2_hstep_amplitude5/analysis \
-  --qmat dev_scratch/step_resp/data/l2_sym_slow_pilot/processed/tau_0.2/qmat.nc
+  --input-dir dev_scratch/step_resp/data/l2_connected_steps_5seeds_15_30pa_100s/input \
+  --output-dir dev_scratch/step_resp/data/l2_connected_steps_5seeds_15_30pa_100s/analysis \
+  --qmat dev_scratch/step_resp/data/l2_current_sweep_5seeds_pm100pa_t40s/processed/tau_0.2/qmat.nc
 
 MPLCONFIGDIR=.mplcache OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 \
   /home/nnovikov/conda_env/netpyne/bin/python dev_scratch/step_resp/code/predict_hstep_static.py \
-  --data-dir dev_scratch/step_resp/data/l2_hstep_amplitude5
+  --data-dir dev_scratch/step_resp/data/l2_connected_steps_5seeds_15_30pa_100s
 
 MPLCONFIGDIR=.mplcache OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 \
   /home/nnovikov/conda_env/netpyne/bin/python dev_scratch/step_resp/code/summarize_hstep_amplitudes.py \
-  --data-dir dev_scratch/step_resp/data/l2_hstep_amplitude5
+  --data-dir dev_scratch/step_resp/data/l2_connected_steps_5seeds_15_30pa_100s
 
 MPLCONFIGDIR=.mplcache OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 \
   /home/nnovikov/conda_env/netpyne/bin/python dev_scratch/step_resp/code/plot_hstep_dynamics.py \
-  --data-dir dev_scratch/step_resp/data/l2_hstep_amplitude5
+  --data-dir dev_scratch/step_resp/data/l2_connected_steps_5seeds_15_30pa_100s
 ```
 
 The frozen matrix hashes, verified before submission, are:
@@ -114,17 +124,17 @@ earlier pilots, same-seed pre-step traces and zero-input repeats are **not
 identical**. Exact paired-noise cancellation is therefore unavailable; this
 known reproducibility issue remains deferred, not fixed by the new batch.
 
-Outputs under [`data/l2_hstep_amplitude5/analysis/`](data/l2_hstep_amplitude5/analysis/):
+Outputs under [`data/l2_connected_steps_5seeds_15_30pa_100s/analysis/`](../../data/l2_connected_steps_5seeds_15_30pa_100s/analysis):
 
 - `validation.json`: protocol checks and same-seed mismatch diagnostics.
 - `response_estimates.csv`: raw window means and both response definitions.
 - `jq/manifest.json`: unchanged J/Q provenance and provisional zero entries.
-- [`jq/prediction_vs_pilot.png`](data/l2_hstep_amplitude5/analysis/jq/prediction_vs_pilot.png):
+- [`jq/prediction_vs_pilot.png`](../../data/l2_connected_steps_5seeds_15_30pa_100s/analysis/jq/prediction_vs_pilot.png):
   circles are seed means, error bars are seed SD, green stars are J–Q predictions,
   grey crosses are Q-only predictions. Blue circles subtract post-step control
   rates; orange circles subtract the controls' before/after changes from the
   step runs' before/after changes. All are **changes**, not absolute rates.
-- [`jq/amplitude_summary/drift_adjusted_hz.png`](data/l2_hstep_amplitude5/analysis/jq/amplitude_summary/drift_adjusted_hz.png):
+- [`jq/amplitude_summary/drift_adjusted_hz.png`](../../data/l2_connected_steps_5seeds_15_30pa_100s/analysis/jq/amplitude_summary/drift_adjusted_hz.png):
   each colored dot is one seed's before/after change minus the average
   before/after control change for that seed. Dashed lines are the fixed J–Q
   prediction, not fits to these dots. `matched_post_hz.png` instead subtracts
@@ -132,7 +142,7 @@ Outputs under [`data/l2_hstep_amplitude5/analysis/`](data/l2_hstep_amplitude5/an
 - `jq/amplitude_summary/half_amplitude_checks.csv`: per-seed
   `response(A/2) - response(A)/2`, separately for positive/negative input;
   zero is the linear-scaling expectation. The summary reports seed mean/SD.
-- [`jq/rate_dynamics/`](data/l2_hstep_amplitude5/analysis/jq/rate_dynamics/):
+- [`jq/rate_dynamics/`](../../data/l2_connected_steps_5seeds_15_30pa_100s/analysis/jq/rate_dynamics):
   eight figures, one per stimulated group/amplitude, five population panels,
   five seed overlays and the actual applied current. Traces are **absolute
   rates** smoothed with a centered 0.5-s moving average for display only,
@@ -192,8 +202,9 @@ There is no consistent large late PV2 ramp across these five seeds: after
 subtracting the controls' late-minus-early change, condition means range
 −0.294 to +0.363 Hz, with seed SD 0.344–1.179 Hz. This is not proof of a fully
 settled endpoint; slow variability remains visible, including modest SOM2
-early/late differences. Keep both response definitions and the controls visible.
+early/late differences. Both response definitions and control variability
+remain relevant to interpretation.
 
 Overall: a useful independent static-prediction test, with a clear feedback
-signal but a reproducible large-negative-IT2 discrepancy. Inspect these results
-before choosing another batch; no further simulations or fitting are launched.
+signal but a reproducible large-negative-IT2 discrepancy. No subsequent batch
+was selected and no further simulations or fitting were part of this analysis.

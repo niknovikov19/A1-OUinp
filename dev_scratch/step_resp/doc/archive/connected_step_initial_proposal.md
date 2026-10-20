@@ -1,5 +1,9 @@
 # Connected L2 current-step validation: draft specification
 
+HISTORICAL — retained evidence/proposals, not a current contract or pending run.
+
+Paths written as data/ or code/ are relative to dev_scratch/step_resp/, not this document.
+
 ## Purpose
 
 Test whether the measured open-loop J and Q predict the steady population-rate
@@ -14,7 +18,7 @@ mean rate change; the transient is retained to check settling, but predicting
 its time course is outside this experiment's scope. This document proposes
 the first setup. The user has authorized first-test execution; its revised
 parameters and completed local checks are recorded in
-[`connected_hstep_testing.md`](connected_hstep_testing.md). Timings and grid
+[`connected_hstep_testing.md`](connected_steps_2seeds_5pa_execution.md). Timings and grid
 sizes below describe the initial broader proposal; the first test uses the
 reviewed configuration in that status document.
 
@@ -250,7 +254,7 @@ Q[post, h_pop] = Q_saved[h_pop, post]
 The Q source is the completed symmetric slow five-seed identification:
 
 ```text
-dev_scratch/step_resp/data/l2_sym_slow_pilot/processed/
+dev_scratch/step_resp/data/l2_current_sweep_5seeds_pm100pa_t40s/processed/
     tau_0.2/qmat.nc
     tau_0.2/richards_coeffs.json
 ```

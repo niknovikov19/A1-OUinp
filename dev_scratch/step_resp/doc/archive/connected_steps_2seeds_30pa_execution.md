@@ -1,5 +1,9 @@
 # Connected L2 second pilot
 
+HISTORICAL — retained evidence/proposals, not a current contract or pending run.
+
+Paths written as data/ or code/ are relative to dev_scratch/step_resp/, not this document.
+
 Authorized and completed on 2026-10-14. All twelve children and controller
 `118074` completed successfully; protected finalization verified all 49
 required files, and the checkout lock was explicitly released.
@@ -27,7 +31,7 @@ these signs in the linear predictor, not necessarily in the simulation.
 
 ## Request and paths
 
-Tracked request: [`hstep-l2-long-pilot.json`](../../hpc_jobs/requests/hstep-l2-long-pilot.json).
+Tracked request: [`hstep-l2-long-pilot.json`](../../../../hpc_jobs/requests/hstep-l2-long-pilot.json).
 Run ID: `hstep-l2-long-pilot-001`.
 Simulation commit: `ba7022adb012d4b0b3c67fa2c1ba1c51bdd8b3d2`.
 Submission time: 2026-10-14 21:24:17 America/New_York
@@ -72,7 +76,7 @@ Protected finalization passed at 21:41:42 and release passed at 21:42:06.
 Subsequent checkout status was clean with no active-run marker.
 
 Copied only the 49 compact files once to
-`data/l2_hstep_pilot2/input/`: configurations, result JSONs, rate/current
+`data/_old/l2_connected_steps_2seeds_30pa_100s/input/`: configurations, result JSONs, rate/current
 NetCDFs, and the child index (locally named `jobs_index.jsonl`). Total size
 is 23,958,898 bytes. `input_manifest.json` records HPC paths and verified
 source/local SHA256 hashes. Large PKLs, saved network parameters, and remote
@@ -86,6 +90,8 @@ The saved windows are exactly 10–40, 60–100, 60–80, and 80–100 s.
 pre-step treatment/control traces and duplicate zero-input traces are not
 identical. This is reported, not repaired or treated as matched noise.
 
-The dataset is ready for the same descriptive response/J-Q comparison as the
-first pilot. That new comparison is not yet computed; no additional fitting
-or baseline tuning was performed.
+The descriptive response analysis and J-Q comparison are now complete in
+`data/_old/l2_connected_steps_2seeds_30pa_100s/analysis/`, with feedback predictions under `analysis/jq/`.
+See [the analysis note](connected_steps_2seeds_30pa_results.md) for findings,
+figures, output files, and repeat commands. No additional fitting or baseline
+tuning was performed.

@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 
 
-DIR_DATA = Path(__file__).resolve().parents[1] / 'data/l2_hstep_pilot2'
+DIR_DATA = Path(__file__).resolve().parents[1] / 'data/l2_connected_steps_5seeds_15_30pa_100s'
 METRICS = {
     'drift_adjusted_hz': 'Step-run before/after change minus control before/after change',
     'matched_post_hz': 'Post-step rate minus control rate over the same time',

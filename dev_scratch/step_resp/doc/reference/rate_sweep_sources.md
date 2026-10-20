@@ -1,4 +1,12 @@
-# Existing rate-sweep inventory
+# Historical presynaptic-rate sweep sources and artifact audit
+
+REFERENCE — background/source audit; experiment selection is in data/registry.md.
+
+The [registry](../../data/registry.md) is authoritative for current dataset roles.
+The table below audits original remote/local artifacts and is not a list of
+equally preferred matrices for the connected predictor.
+
+Paths written as data/ or code/ are relative to dev_scratch/step_resp/, not this document.
 
 ## Scope
 
@@ -6,7 +14,7 @@ This inventory covers the existing open-loop rate-sweep experiment and its
 post-processing, with emphasis on `results/` and `combined/`.
 
 The experiment configuration is documented in
-[`net_inpsur_rsweep_newsec_var_seed_pre`](../../exp_configs/batch_rxbkg_unconn_state1_mech1/net_inpsur_rsweep_newsec_var_seed_pre/README.md).
+[`net_inpsur_rsweep_newsec_var_seed_pre`](../../../../exp_configs/batch_rxbkg_unconn_state1_mech1/net_inpsur_rsweep_newsec_var_seed_pre/README.md).
 
 The original read-only HPC result root is:
 
@@ -59,7 +67,7 @@ some job IDs and should not be used without de-duplication.
 
 ## Processing
 
-See [`processing.md`](processing.md) for the short, reusable HPC-to-local
+See [`processing.md`](../processing/rate_sweep_hpc_to_local.md) for the short, reusable HPC-to-local
 workflow. It describes the required scripts and outputs without relying on
 the history of the individual experiment folders above.
 
@@ -82,13 +90,13 @@ combined/
 
 ## Code snapshot and provenance
 
-Relevant historical files were copied unchanged into [`code/`](code):
+Relevant historical files were copied unchanged into [`code/`](../../code):
 
 | Copy | Original | Historical role |
 | --- | --- | --- |
-| [`code/extract_rates_batch.py`](code/extract_rates_batch.py) | [`analysis/batch/extract_rates_batch.py`](../../analysis/batch/extract_rates_batch.py) | Pickle-to-spike extraction and spike-to-rate NetCDF construction |
-| [`code/analyze_rate_io.py`](code/analyze_rate_io.py) | [`analysis/batch/analyze_rate_io.py`](../../analysis/batch/analyze_rate_io.py) | Richards fitting and static gain matrix generation |
-| [`code/tau_calculation.py`](code/tau_calculation.py) | [`analysis/batch/tau_calculation.py`](../../analysis/batch/tau_calculation.py) | Experimental L2 synaptic-time-constant matrix; not used in the historical rate-sweep pipeline |
+| [`code/extract_rates_batch.py`](../../code/extract_rates_batch.py) | [`analysis/batch/extract_rates_batch.py`](../../../../analysis/batch/extract_rates_batch.py) | Pickle-to-spike extraction and spike-to-rate NetCDF construction |
+| [`code/analyze_rate_io.py`](../../code/analyze_rate_io.py) | [`analysis/batch/analyze_rate_io.py`](../../../../analysis/batch/analyze_rate_io.py) | Richards fitting and static gain matrix generation |
+| [`code/tau_calculation.py`](../../code/tau_calculation.py) | [`analysis/batch/tau_calculation.py`](../../../../analysis/batch/tau_calculation.py) | Experimental L2 synaptic-time-constant matrix; not used in the historical rate-sweep pipeline |
 
 The copied files have the same SHA-256 hashes as their originals. They retain
 hard-coded experiment paths and execution assumptions. In particular, the

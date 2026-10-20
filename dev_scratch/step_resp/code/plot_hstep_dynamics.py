@@ -12,7 +12,7 @@ import pandas as pd
 from analyze_hstep import is_zero_input, load_trials, validate_trial
 
 
-DIR_DATA = Path(__file__).resolve().parents[1] / 'data/l2_hstep_pilot2'
+DIR_DATA = Path(__file__).resolve().parents[1] / 'data/l2_connected_steps_5seeds_15_30pa_100s'
 
 
 def plot_condition(trials, predictions, colors, output_file, smooth_win, start):

@@ -8,17 +8,15 @@ import numpy as np
 import pandas as pd
 
 from analyze_j_refit import build_predictions, collect_conditions, plot_prediction_comparison
+from dataset_paths import resolve_dataset_path
 
 
 DIR_STEP = Path(__file__).resolve().parents[1]
-DIR_REPO = Path(__file__).resolve().parents[3]
 
 
 def checked_matrix_copy(source, destination, checksum):
     """Copy a frozen matrix only if its bytes match the prior prediction manifest. """
-    source = Path(source)
-    if not source.is_absolute():
-        source = DIR_REPO / source
+    source = resolve_dataset_path(source)
     if hashlib.sha256(source.read_bytes()).hexdigest() != checksum:
         raise ValueError(f'Frozen matrix differs from the reference manifest: {source}')
     if destination.exists():
@@ -93,7 +91,7 @@ def main():
     """Run the local fixed-matrix static predictor for one completed step dataset. """
     parser = argparse.ArgumentParser()
     parser.add_argument('--data-dir', type=Path, required=True)
-    parser.add_argument('--reference-dir', type=Path, default=DIR_STEP / 'data/l2_hstep_pilot2/analysis/jq')
+    parser.add_argument('--reference-dir', type=Path, default=DIR_STEP / 'data/_old/l2_connected_steps_2seeds_30pa_100s/analysis/jq')
     args = parser.parse_args()
     print(json.dumps(predict_dataset(args.data_dir, args.reference_dir), indent=2))
 

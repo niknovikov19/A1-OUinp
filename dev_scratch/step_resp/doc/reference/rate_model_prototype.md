@@ -1,4 +1,8 @@
-# Static response-prediction outline
+# Rate-model prototype: background for static J–Q prediction
+
+REFERENCE — background/source audit; experiment selection is in data/registry.md.
+
+Paths written as data/ or code/ are relative to dev_scratch/step_resp/, not this document.
 
 ## Project idea
 
@@ -42,36 +46,37 @@ It therefore provides the required Jacobian after an orientation change:
 J[post, pre] = W[pre, post]
 ```
 
-No new step-response experiment is needed. The immediate work is to make the
-static fits reliable, define the operating point, define or measure the direct
-forcing term, and validate closed-loop predictions with recurrent simulations.
+No separate dynamic step-response identification is needed to estimate J.
+The spiking-model J/Q sweeps and connected rectangular-step validation have
+since been implemented. Use the [registry](../../data/registry.md) for their
+current status; the toy implementation below is background, not a pending plan.
 
 ## Relevant reference implementation
 
 The useful files in the read-only `external/resp_predictor` repository are:
 
-- [`description.ipynb`](../../external/resp_predictor/description.ipynb):
+- [`description.ipynb`](../../../../external/resp_predictor/description.ipynb):
   clearest derivation and toy numerical demonstration of the first-order
   prediction.
-- [`description.md`](../../external/resp_predictor/description.md): an earlier
+- [`description.md`](../../../../external/resp_predictor/description.md): an earlier
   written derivation; it stops at the empty `Idea` section and is less complete
   than the notebook.
-- [`resp_predictor.py`](../../external/resp_predictor/resp_predictor.py): main
+- [`resp_predictor.py`](../../../../external/resp_predictor/resp_predictor.py): main
   first-order prototype. It estimates `J` and `Q` from open-loop
   one-population probes, forms `(I - J)^-1`, and predicts responses to
   simultaneous perturbations. It also experiments with fitting at several
   perturbation magnitudes and interpolating between them.
-- [`resp_pred.py`](../../external/resp_predictor/resp_pred.py): older
+- [`resp_pred.py`](../../../../external/resp_predictor/resp_pred.py): older
   procedural version of the same first-order idea.
-- [`rate_model/`](../../external/resp_predictor/rate_model): a lightweight
+- [`rate_model/`](../../../../external/resp_predictor/rate_model): a lightweight
   simulation substitute exposing full recurrent `run()` and
   one-population/open-loop `run_1pop()` operations. Its scientific details are
   not part of the planned spiking-simulation implementation.
 
 Snapshots of the two descriptions are kept in
-[`resp_predictor_reference/`](resp_predictor_reference).
+[`resp_predictor_reference/`](resp_predictor).
 
-## Proposed simulation-level calculation
+## Simulation-level calculation underlying the implemented workflow
 
 1. Determine a common operating-point rate vector `r0`.
 2. Fit the triangular-sweep curves locally and evaluate their derivatives at

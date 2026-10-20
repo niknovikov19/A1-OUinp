@@ -1,7 +1,11 @@
 # Static current-rate processing
 
+HISTORICAL — retained evidence/proposals, not a current contract or pending run.
+
+Paths written as data/ or code/ are relative to dev_scratch/step_resp/, not this document.
+
 The h-r fitter is
-[`code/analyze_h_io.py`](code/analyze_h_io.py). It is semantically parallel
+[`code/analyze_h_io.py`](../../code/analyze_h_io.py). It is semantically parallel
 to the r-r fitter:
 
 ```text
@@ -39,8 +43,8 @@ The fitter discovers all pairs and derives the actual current independently
 for each seed and population from `hvec`; it does not assume equal IClamp
 amplitudes. It requires one job per seed because seed is the only batch
 coordinate. Raw PKLs, configurations, and network parameters are not needed.
-The matching local dataset is `data/l2_slow_pilot/`. The earlier one-seed
-dataset remains in `data/l2_pilot2/`. The entire `data/` directory is
+The matching local dataset is `data/_old/l2_current_sweep_2seeds_pm100pa_t15s/`. The earlier one-seed
+dataset remains in `data/_old/l2_current_sweep_1seed_pm100pa_t7p5s/`. The entire `data/` directory is
 git-ignored because it contains copied and generated binary artifacts.
 
 ## Run
@@ -53,7 +57,7 @@ MPLCONFIGDIR=.mplcache \
   dev_scratch/step_resp/code/analyze_h_io.py
 ```
 
-The default dataset is `dev_scratch/step_resp/data/l2_sym_slow_pilot`. Use
+The default dataset is `dev_scratch/step_resp/data/l2_current_sweep_5seeds_pm100pa_t40s`. Use
 `--data-dir dev_scratch/step_resp/data/<dataset>` for another run.
 `--smooth-win`, `--fit-start`, `--fit-stop`, and `--turn-margin` control the
 fit. `--no-plot` disables figures. Do not install another scientific Python
@@ -137,7 +141,7 @@ exp_L2_pilot4_nseed_5_t_5.0_45.0_tri_t0_5000_T_20000_h_-0.05_0.2_ictrl_wmult_0.2
 ```
 
 Only its five `rvec_xr` and five `hvec_xr` files were copied to the ignored
-local dataset `data/l2_asym_pilot/`; every copy was checked byte-for-byte. The
+local dataset `data/_old/l2_current_sweep_5seeds_m50_p200pa_t20s/`; every copy was checked byte-for-byte. The
 probe covers `[-0.05, 0.2] nA` at a constant absolute slew rate. One cycle is
 `0 -> 0.2 -> 0 -> -0.05 -> 0`; two cycles plus the 5-s baseline give a 45-s
 simulation.
@@ -185,7 +189,7 @@ exp_L2_pilot5_nseed_5_t_5.0_85.0_tri_t0_5000_T_40000_h_-0.1_0.1_ictrl_wmult_0.25
 ```
 
 Only its five `rvec_xr` and five `hvec_xr` files were copied to the ignored
-local dataset `data/l2_sym_slow_pilot/`; every copy was checked byte-for-byte.
+local dataset `data/l2_current_sweep_5seeds_pm100pa_t40s/`; every copy was checked byte-for-byte.
 The probe covers `[-0.1, 0.1] nA` with a 40-s period: two symmetric cycles
 after the 5-s baseline give an 85-s simulation. Each leg has a 10-s duration,
 so the sweep speed is `0.01 nA/s`.

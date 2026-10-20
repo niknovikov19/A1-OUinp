@@ -12,7 +12,7 @@ from scipy.optimize import least_squares
 import xarray as xr
 
 
-DIR_DATA = Path(__file__).resolve().parents[1] / 'data' / 'j_l2_refit'
+DIR_DATA = Path(__file__).resolve().parents[1] / 'data' / 'l2_rate_sweep_j_5seeds'
 PARAM_NAMES = ['A', 'K', 'B', 'M', 'nu']
 
 

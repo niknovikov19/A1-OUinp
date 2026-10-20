@@ -1,14 +1,18 @@
 # L2 amplitude-scaling test: current evidence and next batch
 
+HISTORICAL — retained evidence/proposals, not a current contract or pending run.
+
+Paths written as data/ or code/ are relative to dev_scratch/step_resp/, not this document.
+
 Status: completed and processed as pilot3, run `hstep-l2-amplitude5-001`,
 controller 118098; all 60 trials and 241 compact output files verified.
-See [the run record](connected_hstep_amplitude5.md) for execution and processing.
+See [the run record](../results/connected_steps_5seeds_15_30pa.md) for execution and processing.
 Estimates below use the completed second pilot's
 local timing records and compact-input file sizes; no remote filesystem scan
 was needed. This note is the current follow-up plan after
-[the second-pilot analysis](connected_hstep_pilot2_analysis.md).
+[the second-pilot analysis](connected_steps_2seeds_30pa_results.md).
 
-Infrastructure update: [chunked monitoring and compact archives](../hpc/helper_src/INSTALL_MONITOR_ARCHIVE.md)
+Infrastructure update: [chunked monitoring and compact archives](../../../hpc/helper_src/INSTALL_MONITOR_ARCHIVE.md)
 are installed and acceptance-tested. The user requested a total-child cap of
 60 and concurrency ten; both policy promotions passed and the limits are installed.
 The completed handoff used one checksummed archive transfer followed by local
@@ -51,7 +55,7 @@ post-step control subtraction the values are 0.967 versus 1.135 Hz. These
 are descriptive comparisons, not a validation claim.
 
 Current signed-amplitude figures and tables are in
-[`data/l2_hstep_pilot2/analysis/jq/amplitude_summary/`](data/l2_hstep_pilot2/analysis/jq/amplitude_summary/):
+[`data/_old/l2_connected_steps_2seeds_30pa_100s/analysis/jq/amplitude_summary/`](../../data/_old/l2_connected_steps_2seeds_30pa_100s/analysis/jq/amplitude_summary):
 
 - `drift_adjusted_hz.png`: individual-seed before/after changes minus the
   controls' changes, against the fixed predicted line.
@@ -145,7 +149,7 @@ remain on HPC. This estimates transferred compact data, not total HPC storage.
 At effective 1–10 MB/s the payload alone would take roughly 12–120 s;
 SSHFS/per-file overhead and bandwidth determine actual copy duration.
 
-Copy once to a fresh local dataset, proposed `data/l2_hstep_amplitude5/`.
+Copy once to a fresh local dataset, proposed `data/l2_connected_steps_5seeds_15_30pa_100s/`.
 Use HPC paths in its manifest, verify source/local hashes, then run local
 count/waveform checks, response extraction, the fixed J–Q/Q-only comparison,
 signed-amplitude summary, and rate-dynamics figures. Compute new-amplitude
@@ -164,7 +168,7 @@ halved-amplitude responses are lost in variability, record that limitation.
 The installed monitoring/archive infrastructure supports 256 completion files,
 1-MiB index/lifecycle records, 25-ID accounting chunks, and five-child log pages.
 Its 100-ID observation cap accommodates this run's 61 scheduler IDs. The
-separately promoted [60-child / concurrency-ten policy](../hpc/helper_src/INSTALL_BATCH_60_CONCURRENCY_10.md)
+separately promoted [60-child / concurrency-ten policy](../../../hpc/helper_src/INSTALL_BATCH_60_CONCURRENCY_10.md)
 is installed and leaves per-job limits unchanged. Check the real request's count and
 concurrency during protected preparation before submission. The broader
 thousand-job refactor remains deferred.

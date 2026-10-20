@@ -1,4 +1,15 @@
-# Static rate-sweep processing
+# Historical reference: presynaptic rate-sweep extraction and fitting commands
+
+HISTORICAL REPRODUCTION REFERENCE — not a launch, extraction, or fitting request.
+This preserves the earlier procedure, including its command-oriented wording.
+The selected local inputs/results already exist; the
+[short processing description](../processing/rate_sweep_hpc_to_local.md) is sufficient
+for orientation. The commands below are not part of the current hand-off.
+For the selected L2 J, use [the completed refit record](../results/l2_rate_sweep_j.md)
+and [frozen prediction contract](../contracts/static_prediction.md), not a fresh
+run of the historical fitter. No fitting is requested by this document.
+
+Paths written as data/ or code/ are relative to dev_scratch/step_resp/, not this document.
 
 Run simulations and spike extraction on HPC. Copy the rate cache locally and
 do the exploratory curve fitting locally, where plots and fit changes are
@@ -18,9 +29,9 @@ Run all commands from the repository root.
 ## 1. Run the batch on HPC
 
 Configure
-[`batch_params.py`](../../exp_configs/batch_rxbkg_unconn_state1_mech1/net_inpsur_rsweep_newsec_var_seed_pre/batch_params.py)
+[`batch_params.py`](../../../../exp_configs/batch_rxbkg_unconn_state1_mech1/net_inpsur_rsweep_newsec_var_seed_pre/batch_params.py)
 and
-[`exp_cfg.py`](../../exp_configs/batch_rxbkg_unconn_state1_mech1/net_inpsur_rsweep_newsec_var_seed_pre/exp_cfg.py),
+[`exp_cfg.py`](../../../../exp_configs/batch_rxbkg_unconn_state1_mech1/net_inpsur_rsweep_newsec_var_seed_pre/exp_cfg.py),
 then launch through the BatchTools/Slurm entry point:
 
 ```bash
@@ -34,7 +45,7 @@ The transfer analysis uses these files, not the per-job `results/*.json`.
 ## 2. Build the rate cache on HPC
 
 In
-[`analysis/batch/extract_rates_batch.py`](../../analysis/batch/extract_rates_batch.py),
+[`analysis/batch/extract_rates_batch.py`](../../../../analysis/batch/extract_rates_batch.py),
 set `EXP_LABEL` to the complete path below `exp_results/` and check the time
 range, bin size, smoothing, and batch-coordinate fields. Use `spikes` mode for
 a reusable spike cache, or `direct` mode to skip that cache.
@@ -70,7 +81,7 @@ tree because the current fitting script uses hard-coded relative paths.
 ## 4. Fit the transfer matrix locally
 
 In
-[`analysis/batch/analyze_rate_io.py`](../../analysis/batch/analyze_rate_io.py),
+[`analysis/batch/analyze_rate_io.py`](../../../../analysis/batch/analyze_rate_io.py),
 set the experiment label, match the rate-cache time/bin/smoothing values, and
 choose the fitting interval and additional rolling window. Use
 `NEED_PLOT = 1` in the primary local workflow so the per-pair fit figures are
@@ -106,5 +117,7 @@ Large-circuit fitting on HPC should be submitted as a scheduled job rather
 than run directly. After it completes, copy `combined/results/` locally. A
 job-submission wrapper for this analysis has not yet been added here.
 
-In every mode, run the originals under `analysis/batch/`;
-[`code/`](code) contains provenance snapshots only.
+The three historical scripts listed here are provenance snapshots in code/;
+extract_rates_batch.py still assumes its original analysis/batch/ file depth.
+This does not describe the newer executable local scripts: refit_rate_io.py,
+analyze_h_io.py, and connected-step analysis live and run in step_resp/code/.

@@ -1,5 +1,9 @@
 # Plan for estimating the static current-response matrix Q
 
+HISTORICAL — retained evidence/proposals, not a current contract or pending run.
+
+Paths written as data/ or code/ are relative to dev_scratch/step_resp/, not this document.
+
 ## Objective
 
 Measure the direct, open-loop effect of an added current on each population's
@@ -46,7 +50,7 @@ canonical L2 dataset and should be clearly marked as such.
 ## Experiment design
 
 1. Use the five active L2 populations and the fully frozen recurrent-input
-   setup from the [presynaptic triangular sweep](../../exp_configs/batch_rxbkg_unconn_state1_mech1/net_inpsur_rsweep_newsec_var_seed_pre/exp_cfg.py),
+   setup from the [presynaptic triangular sweep](../../../../exp_configs/batch_rxbkg_unconn_state1_mech1/net_inpsur_rsweep_newsec_var_seed_pre/exp_cfg.py),
    including its `newsec` connection targeting. Leave every frozen
    presynaptic population at its constant target rate.
 2. Declare a separate, zero-amplitude somatic IClamp for each population
@@ -56,7 +60,7 @@ canonical L2 dataset and should be clearly marked as such.
 3. After NetPyNE creates the network, use the experiment's `modify_network()`
    hook only to find these declared clamps and attach a triangular waveform to
    each clamp's `_ref_amp` with `Vector.play`. Follow the waveform-driving part
-   of the [existing time-varying current implementation](../../exp_configs/batch_rxbkg_unconn_state1_mech1/net_inpsur_hr_osc_var_seed_f_amp/exp_cfg.py),
+   of the [existing time-varying current implementation](../../../../exp_configs/batch_rxbkg_unconn_state1_mech1/net_inpsur_hr_osc_var_seed_f_amp/exp_cfg.py),
    without manually constructing new IClamp objects. Store the play vectors so
    they remain alive for the whole simulation. Use a few linearly interpolated
    triangle corners rather than a timestep-sized vector per cell.
@@ -83,7 +87,7 @@ The next diagnostic run used two seeds, kept the common amplitude at `0.1 nA`,
 doubled the period to `15 s`, and extended the simulation to `35 s`. It
 completed and was processed locally. The slower probe substantially reduced
 the rising/falling disagreement for every population except NGF2; see
-[`h_r_processing.md`](h_r_processing.md) for the values and provenance.
+[`h_r_processing.md`](current_sweep_development.md) for the values and provenance.
 
 The next run uses five seeds and an asymmetric range: `h_min = -0.05 nA`,
 `h_max = 0.2 nA`, `T = 20 s`, and `45 s` total duration. Each period follows
@@ -110,5 +114,5 @@ specific limits remain compatible with the seed-only batch design and fitter.
 The downstream recurrent-response prediction, `(I - J)^-1 Q delta_h`, and
 closed-loop validation are separate work after Q has been checked. The L2
 pilot and local fitter are now implemented; see
-[`h_r_processing.md`](h_r_processing.md) for the processing command, outputs,
+[`h_r_processing.md`](current_sweep_development.md) for the processing command, outputs,
 and current pilot diagnostics.

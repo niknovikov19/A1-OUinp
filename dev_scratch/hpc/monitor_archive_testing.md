@@ -107,7 +107,7 @@ the final installed checks above confirm the correction is now deployed.
   `e6e6c8116eb810e0565f2302e397f5fb71c1fb86`, no active run or update lock.
 - Existing test run: `hstep-l2-long-pilot-001`, controller 118074, twelve
   children. The installed old status helper reports all thirteen completed.
-- Existing local reference: `../step_resp/data/l2_hstep_pilot2/input/`, 49
+- Existing local reference: `../step_resp/data/_old/l2_connected_steps_2seeds_30pa_100s/input/`, 49
   compact files totaling 23,958,898 bytes. The reference manifest records
   original HPC paths and source/local SHA256 hashes.
 - Rule changes, paper files, and unrelated step-response analysis changes

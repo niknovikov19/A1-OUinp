@@ -167,10 +167,10 @@ def main():
     """Audit the refit and illustrate prediction sensitivity without declaring J final. """
     parser = argparse.ArgumentParser()
     parser.add_argument('--data-dir', type=Path, default=DIR_DATA)
-    parser.add_argument('--hstep-dir', type=Path, default=DIR_STEP / 'data' / 'l2_hstep_pilot1')
+    parser.add_argument('--hstep-dir', type=Path, default=DIR_STEP / 'data/_old/l2_connected_steps_2seeds_5pa_40s')
     parser.add_argument('--output-dir', type=Path,
                         help='Keep comparisons for a new pilot separate from historical outputs')
-    parser.add_argument('--qmat', type=Path, default=DIR_STEP / 'data' / 'l2_sym_slow_pilot/processed/tau_0.2/qmat.nc')
+    parser.add_argument('--qmat', type=Path, default=DIR_STEP / 'data/l2_current_sweep_5seeds_pm100pa_t40s/processed/tau_0.2/qmat.nc')
     parser.add_argument('--zero-missing', action='store_true',
                         help='Explicitly replace missing primary J gains with provisional zeros in a separate file')
     args = parser.parse_args()
