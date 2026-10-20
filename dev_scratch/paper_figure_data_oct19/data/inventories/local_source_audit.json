@@ -1,0 +1,17 @@
+[
+  {
+    "path": "doc/paper/Bkg_paper_Oct19_v2.pdf",
+    "bytes": 1315236,
+    "sha256": "26cb61b0f3ee36c7f47f47c0f38b4f4ab672f3a7db82a216717e959d055c2503"
+  },
+  {
+    "path": "exp_configs/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/compare_rates.ipynb",
+    "bytes": 4144461,
+    "sha256": "915eb847ddf7c372da9cb67e3aed6c193b859d6bc4f874c5736fa428c8d593b8"
+  },
+  {
+    "path": "exp_configs/batch_rxbkg_state1_mech1/net_newsec_ctrl_var_seed/compare_ctrl_res.ipynb",
+    "bytes": 121664,
+    "sha256": "03fbc3f11ef1a9d05adbbfe510764868b1ba1669abdab4e85298a5d009c4c852"
+  }
+]

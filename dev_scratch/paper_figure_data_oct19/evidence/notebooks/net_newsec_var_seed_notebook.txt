@@ -1,0 +1,846 @@
+
+# CELL 0 (code)
+import json
+import os
+from pathlib import Path
+import sys
+
+dirpath_root = Path().resolve().parents[2]
+sys.path.append(str(dirpath_root))
+
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import xarray as xr
+
+from analysis.ou_tuning import netpyne_res_parse_utils as utils
+from analysis.ou_tuning import sim_res_proc_utils as proc
+
+
+# CELL 1 (code)
+# Experiment definition
+exp_group = 'single_rxbkg_state1_mech1'
+exp_name = 'net_newsec_ee_fade'
+
+#exp_name_sub = 'exp_L4_unconn_t_6.0_10.0_wmult_0.25_ee_0.5_seed_1112'
+exp_name_sub = 'exp_ctx_t_5.0_7.0_wmult_0.25_ee_0.5_seed_1113'
+
+dirpath_cfg = dirpath_root / 'exp_configs' / exp_group / exp_name
+
+# Load target firing rates
+fpath_target = dirpath_cfg / 'target_state_1.csv'
+df = pd.read_csv(fpath_target)
+df = df.set_index('pop_name')
+
+# Load simulation result
+dirpath_res = dirpath_root / 'exp_results' / exp_group / exp_name / exp_name_sub
+fpath_res = dirpath_res / f'{exp_name}_result.json'
+with open(fpath_res, 'r') as fid:
+    res = json.load(fid)
+
+# Extract simulated rates from res and align with df
+sim_rates = {pop: res['rates'].get(pop, float('nan'))
+             for pop in df.index}
+
+# Create comparison DataFrame
+df_cmp = pd.DataFrame({
+    'target_rate': df['target_rate'].round(2),
+    'sim_rate': pd.Series(sim_rates).round(2)
+})
+df_cmp['diff'] = (df_cmp['sim_rate'] - df_cmp['target_rate']).round(2)
+df_cmp = df_cmp[~np.isnan(df_cmp['sim_rate'])]
+df_cmp
+
+
+
+# CELL 2 (code)
+# Load sim result
+fpath_pkl = dirpath_res / f'{exp_name}_data.pkl'
+with open(fpath_pkl, 'rb') as fid:
+    sim_res = pd.read_pickle(fid)
+
+target_rates = df.to_dict()['target_rate']
+
+# SAVED OUTPUT
+Warning: no DISPLAY environment variable.
+--No graphics will be displayed.
+
+# SAVED OUTPUT
+Warning: Could not import rxdmath module
+
+
+# CELL 3 (code)
+PYR_POPS = ['IT2', 'IT3', 'ITP4', 'ITS4', 'IT5A', 'IT5B', 'IT6',
+            'CT5A', 'CT5B', 'CT6', 'PT5B']
+PV_POPS = ['PV2', 'PV3', 'PV4', 'PV5A', 'PV5B', 'PV6']
+SOM_POPS = ['SOM2', 'SOM3', 'SOM4', 'SOM5A', 'SOM5B', 'SOM6']
+VIP_POPS = ['VIP2', 'VIP3', 'VIP4', 'VIP5A', 'VIP5B', 'VIP6']
+NGF_POPS = ['NGF1', 'NGF2', 'NGF3', 'NGF4', 'NGF5A', 'NGF5B', 'NGF6']
+
+L2_POPS = ['IT2', 'PV2', 'SOM2', 'VIP2', 'NGF2']
+L4_POPS = ['ITP4', 'ITS4', 'PV4', 'SOM4', 'VIP4', 'NGF4']
+
+pop_groups = {'PYR': PYR_POPS, 'PV': PV_POPS, 'SOM': SOM_POPS,
+              'VIP': VIP_POPS, 'NGF': NGF_POPS}
+
+
+# CELL 4 (code)
+for pop_group_name, pops in pop_groups.items():
+    #print(f'{pop_group_name}: {", ".join(pops)}')
+
+    # Compute rate dynamics
+    r_data = proc.calc_rate_dynamics(
+        sim_res, t_limits=(0, None), tau_smooth=1, pops_used=pops)
+
+    colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
+    plt.figure()
+
+    for n, pop in enumerate(pops):
+        tt, rr = r_data[pop]
+        r0 = target_rates[pop]
+        col = colors[n % len(colors)]
+        plt.plot(tt, rr, label=pop, color=col)
+        plt.plot([tt[0], tt[-1]], [r0, r0], '--', color=col)
+
+    plt.xlabel('Time')
+    plt.ylabel('Firing rate')
+    plt.legend(bbox_to_anchor=(1, 1))
+    #plt.yscale('log')
+    #plt.ylim(0.05, None)
+
+
+# SAVED OUTPUT
+<Figure size 640x480 with 1 Axes>
+# SAVED OUTPUT
+<Figure size 640x480 with 1 Axes>
+# SAVED OUTPUT
+<Figure size 640x480 with 1 Axes>
+# SAVED OUTPUT
+<Figure size 640x480 with 1 Axes>
+# SAVED OUTPUT
+<Figure size 640x480 with 1 Axes>
+
+# CELL 5 (code)
+# Experiment definition
+exp_group = 'single_rxbkg_unconn_state1_mech1'
+exp_name = 'net_newsec'
+
+# exp_name_sub = 'exp_ctx_unconn_sm_21_t_6.0_10.0_wmult_0.25_ee_0.5'
+exp_name_sub = 'exp_L2_unconn_sm_21_t_6.0_10.0_wmult_0.25_ee_0.5'
+exp_name_sub_base = exp_name_sub
+
+seeds = [1111, 1112, 1113, 1114, 1115]
+
+dirpath_cfg = dirpath_root / 'exp_configs' / exp_group / exp_name
+
+# Load target firing rates
+fpath_target = dirpath_cfg / 'target_state_1.csv'
+df = pd.read_csv(fpath_target)
+df = df.set_index('pop_name')
+
+# Create comparison DataFrame
+df_cmp = pd.DataFrame({
+    'target_rate': df['target_rate'].round(2)
+})
+
+# Load simulation result for each seed
+for seed in seeds:
+    exp_name_sub = f'{exp_name_sub_base}_seed_{seed}'
+    dirpath_res = dirpath_root / 'exp_results' / exp_group / exp_name / exp_name_sub
+    fpath_res = dirpath_res / f'{exp_name}_result.json'
+
+    with open(fpath_res, 'r') as fid:
+        res = json.load(fid)
+
+    sim_rates = {
+        pop: res['rates'].get(pop, float('nan'))
+        for pop in df.index
+    }
+
+    sim_col = f'rate_{seed}'
+    diff_col = f'diff_{seed}'
+
+    df_cmp[sim_col] = pd.Series(sim_rates).round(2)
+    df_cmp[diff_col] = (df_cmp[sim_col] - df_cmp['target_rate']).round(2)
+
+# Keep only rows that have at least one simulated value
+sim_cols = [f'rate_{seed}' for seed in seeds]
+df_cmp = df_cmp[~df_cmp[sim_cols].isna().all(axis=1)]
+
+df_cmp
+
+diff_cols = sorted([c for c in df_cmp.columns if c.startswith('diff_')])
+rate_cols = sorted([c for c in df_cmp.columns if c.startswith('rate_')])
+
+#df_cmp = df_cmp[['target_rate'] + diff_cols + rate_cols]
+df_cmp = df_cmp[diff_cols]
+df_cmp
+
+
+# SAVED OUTPUT
+          diff_1111  diff_1112  diff_1113  diff_1114  diff_1115
+pop_name                                                       
+IT2           -0.25      -0.76      -0.21      -0.07      -0.46
+PV2           -2.92      -3.69      -0.60       0.54       0.67
+SOM2          -2.70      -0.85      -2.45      -1.00      -0.40
+VIP2          -1.47      -1.12      -1.23      -0.94      -0.38
+NGF2          -0.05      -0.18      -0.02      -0.11       0.05
+
+# CELL 6 (code)
+# Experiment definition
+exp_group = 'batch_i_ou_full_state1_mech1_nosub_wmult_0.25'
+exp_name = 'ee_nmda_fraction'
+exp_name_sub = 'exp_t_20.0_25.0_ramp_-1_1000ms'
+
+dirpath_cfg = dirpath_root / 'exp_configs' / exp_group / exp_name
+dirpath_res = (dirpath_root / 'exp_results' / exp_group / exp_name /
+               exp_name_sub / 'results')
+
+# Load target firing rates
+fpath_target = dirpath_cfg / 'target_state_1.csv'
+df = pd.read_csv(fpath_target)
+df = df.set_index('pop_name')
+
+# Load simulation result
+fpath_res = dirpath_res / 'result_00003_knmda_0.875.json'
+with open(fpath_res, 'r') as fid:
+    res = json.load(fid)
+
+# Extract simulated rates from res and align with df
+sim_rates = {pop: res['rates'][pop] for pop in df.index}
+
+# Create comparison DataFrame
+df_cmp = pd.DataFrame({
+    'target_rate': df['target_rate'].round(2),
+    'sim_rate': pd.Series(sim_rates).round(2)
+})
+df_cmp['diff'] = (df_cmp['sim_rate'] - df_cmp['target_rate']).round(2)
+df_cmp
+
+
+# SAVED OUTPUT
+       target_rate  sim_rate   diff
+NGF1           3.0      2.25  -0.75
+IT2            2.0      1.41  -0.59
+PV2           12.0     27.54  15.54
+SOM2           6.0     14.52   8.52
+VIP2           7.0      3.98  -3.02
+NGF2           1.0      0.75  -0.25
+IT3            2.0      2.68   0.68
+PV3           12.0     34.41  22.41
+SOM3           6.0     16.09  10.09
+VIP3           7.0      3.79  -3.21
+NGF3           1.0      0.62  -0.38
+ITS4           2.0      0.88  -1.12
+ITP4           2.0      0.08  -1.92
+PV4           10.0      2.80  -7.20
+SOM4           5.0      0.27  -4.73
+VIP4           0.2      0.60   0.40
+NGF4           0.1      0.04  -0.06
+IT5A           5.0      4.09  -0.91
+CT5A           2.0      6.82   4.82
+PV5A           8.0      9.14   1.14
+SOM5A          4.0      6.50   2.50
+VIP5A          0.2      0.22   0.02
+NGF5A          0.5      0.22  -0.28
+IT5B           5.0      4.37  -0.63
+CT5B           2.0      6.08   4.08
+PT5B           5.0      4.44  -0.56
+PV5B           8.0      7.98  -0.02
+SOM5B          4.0      7.00   3.00
+VIP5B          0.2      0.25   0.05
+NGF5B          0.5      0.02  -0.48
+IT6            3.0      4.56   1.56
+CT6            2.0      3.50   1.50
+PV6           15.0    111.25  96.25
+SOM6           7.0     10.73   3.73
+VIP6           0.2     38.58  38.38
+NGF6           0.5      0.23  -0.27
+TC             8.0      9.56   1.56
+HTC            8.0     12.11   4.11
+TCM            2.0      4.94   2.94
+TI            15.0     16.59   1.59
+TIM           10.0     10.55   0.55
+IRE           15.0     10.97  -4.03
+IREM          10.0      7.59  -2.41
+
+# CELL 7 (code)
+import pickle as pkl
+
+fpath_conn = dirpath_root / 'conn' / 'conn.pkl'
+with open(fpath_conn, 'rb') as fid:
+    conn = pkl.load(fid)
+
+conn
+
+
+# SAVED OUTPUT
+{'pmat': {'IT2': {'IT2': np.float64(0.1971161130784888),
+   'IT3': np.float64(0.1971161130784888),
+   'ITP4': np.float64(0.019711611307848882),
+   'ITS4': np.float64(0.015829021201757432),
+   'IT5A': np.float64(0.10225398365946607),
+   'CT5A': np.float64(0.033035902413058274),
+   'IT5B': np.float64(0.10225398365946607),
+   'PT5B': np.float64(0.12899733323194185),
+   'CT5B': np.float64(0.033035902413058274),
+   'IT6': np.float64(0.0),
+   'CT6': np.float64(0.0),
+   'NGF1': np.float64(0.0),
+   'PV2': np.float64(0.5406866917894705),
+   'SOM2': np.float64(0.23449298047141015),
+   'VIP2': np.float64(0.0657305390018572),
+   'NGF2': np.float64(0.1352844118104289),
+   'PV3': np.float64(0.5406866917894705),
+   'SOM3': np.float64(0.23449298047141015),
+   'VIP3': np.float64(0.0657305390018572),
+   'NGF3': np.float64(0.1352844118104289),
+   'PV4': np.float64(0.11361264662917989),
+   'SOM4': np.float64(0.10693910647872001),
+   'VIP4': np.float64(0.11361264662917989),
+   'NGF4': np.float64(0.10693910647872001),
+   'PV5A': np.float64(0.110874992493537),
+   'SOM5A': np.float64(0.1314191429015595),
+   'VIP5A': np.float64(0.032569529044976495),
+   'NGF5A': np.float64(0.0),
+   'PV5B': np.float64(0.110874992493537),
+   'SOM5B': np.float64(0.1314191429015595),
+   'VIP5B': np.float64(0.032569529044976495),
+   'NGF5B': np.float64(0.0),
+   'PV6': np.float64(0.0),
+   'SOM6': np.float64(0.0),
+   'VIP6': np.float64(0.0),
+   'NGF6': np.float64(0.0)},
+  'IT3': {'IT2': np.float64(0.1971161130784888),
+   'IT3': np.float64(0.1971161130784888),
+   'ITP4': np.float64(0.019711611307848882),
+   'ITS4': np.float64(0.015829021201757432),
+   'IT5A': np.float64(0.10225398365946607),
+   'CT5A': np.float64(0.033035902413058274),
+   'IT5B': np.float64(0.10225398365946607),
+   'PT5B': np.float64(0.12899733323194185),
+   'CT5B': np.float64(0.033035902413058274),
+   'IT6': np.float64(0.0),
+   'CT6': np.float64(0.0),
+   'NGF1': np.float64(0.0),
+   'PV2': np.float64(0.5406866917894705),
+   'SOM2': np.float64(0.23449298047141015),
+   'VIP2': np.float64(0.0657305390018572),
+   'NGF2': np.float64(0.1352844118104289),
+   'PV3': np.float64(0.5406866917894705),
+   'SOM3': np.float64(0.23449298047141015),
+   'VIP3': np.float64(0.0657305390018572),
+   'NGF3': np.float64(0.1352844118104289),
+   'PV4': np.float64(0.11361264662917989),
+   'SOM4': np.float64(0.10693910647872001),
+   'VIP4': np.float64(0.11361264662917989),
+   'NGF4': np.float64(0.10693910647872001),
+   'PV5A': np.float64(0.110874992493537),
+   'SOM5A': np.float64(0.1314191429015595),
+   'VIP5A': np.float64(0.032569529044976495),
+   'NGF5A': np.float64(0.0),
+   'PV5B': np.float64(0.110874992493537),
+   'SOM5B': np.float64(0.1314191429015595),
+   'VIP5B': np.float64(0.032569529044976495),
+   'NGF5B': np.float64(0.0),
+   'PV6': np.float64(0.0),
+   'SOM6': np.float64(0.0),
+   'VIP6': np.float64(0.0),
+   'NGF6': np.float64(0.0)},
+  'ITP4': {'IT2': np.float64(0.17247659894367773),
+   'IT3': np.float64(0.17247659894367773),
+   'ITP4': np.float64(0.2993700967379549),
+   'ITS4': np.float64(0.2560402143153562),
+   'IT5A': np.float64(0.12812547350101772),
+   'CT5A': np.float64(0.051250189400407084),
+   'IT5B': np.float64(0.12812547350101772),
+   'PT5B': np.float64(0.12812547350101772),
+   'CT5B': np.float64(0.051250189400407084),
+   'IT6': np.float64(0.039423222615697764),
+   'CT6': np.float64(0.05595554177711941),
+   'NGF1': np.float64(0.0),
+   'PV2': np.float64(0.13688270678214443),
+   'SOM2': np.float64(0.12884229696231328),
+   'VIP2': np.float64(0.13688270678214443),
+   'NGF2': np.float64(0.12884229696231328),
+   'PV3': np.float64(0.13688270678214443),
+   'SOM3': np.float64(0.12884229696231328),
+   'VIP3': np.float64(0.13688270678214443),
+   'NGF3': np.float64(0.12884229696231328),
+   'PV4': np.float64(0.588595639163221),
+   'SOM4': np.float64(0.7356895156548087),
+   'VIP4': np.float64(0.07988083674357999),
+   'NGF4': np.float64(0.7356895156548087),
+   'PV5A': np.float64(0.13825153384996589),
+   'SOM5A': np.float64(0.16491814011176098),
+   'VIP5A': np.float64(0.046083844616655295),
+   'NGF5A': np.float64(0.06442114848115664),
+   'PV5B': np.float64(0.13825153384996589),
+   'SOM5B': np.float64(0.16491814011176098),
+   'VIP5B': np.float64(0.046083844616655295),
+   'NGF5B': np.float64(0.06442114848115664),
+   'PV6': np.float64(0.0),
+   'SOM6': np.float64(0.0),
+   'VIP6': np.float64(0.0),
+   'NGF6': np.float64(0.0)},
+  'ITS4': {'IT2': np.float64(0.2854785085964321),
+   'IT3': np.float64(0.2854785085964321),
+   'ITP4': np.float64(0.24422297365464743),
+   'ITS4': np.float64(0.23489038359439537),
+   'IT5A': np.float64(0.08619350035523009),
+   'CT5A': np.float64(0.051250189400407084),
+   'IT5B': np.float64(0.08619350035523009),
+   'PT5B': np.float64(0.12812547350101772),
+   'CT5B': np.float64(0.051250189400407084),
+   'IT6': np.float64(0.019075752878563435),
+   'CT6': np.float64(0.05595554177711941),
+   'NGF1': np.float64(0.0),
+   'PV2': np.float64(0.3650205514190518),
+   'SOM2': np.float64(0.45590351232818543),
+   'VIP2': np.float64(0.13688270678214443),
+   'NGF2': np.float64(0.12884229696231328),
+   'PV3': np.float64(0.3650205514190518),
+   'SOM3': np.float64(0.45590351232818543),
+   'VIP3': np.float64(0.13688270678214443),
+   'NGF3': np.float64(0.12884229696231328),
+   'PV4': np.float64(0.36436872900580347),
+   'SOM4': np.float64(0.5955581793396071),
+   'VIP4': np.float64(0.07988083674357999),
+   'NGF4': np.float64(0.7356895156548087),
+   'PV5A': np.float64(0.07959936797422278),
+   'SOM5A': np.float64(0.09216013712127819),
+   'VIP5A': np.float64(0.05781427779180391),
+   'NGF5A': np.float64(0.06442114848115664),
+   'PV5B': np.float64(0.07959936797422278),
+   'SOM5B': np.float64(0.09216013712127819),
+   'VIP5B': np.float64(0.05781427779180391),
+   'NGF5B': np.float64(0.06442114848115664),
+   'PV6': np.float64(0.0),
+   'SOM6': np.float64(0.0),
+   'VIP6': np.float64(0.0),
+   'NGF6': np.float64(0.0)},
+  'IT5A': {'IT2': np.float64(0.02587148984155166),
+   'IT3': np.float64(0.02587148984155166),
+   'ITP4': np.float64(0.008623829947183885),
+   'ITS4': np.float64(0.007262172587102219),
+   'IT5A': np.float64(0.1429091819819044),
+   'CT5A': np.float64(0.07002549917113315),
+   'IT5B': np.float64(0.1429091819819044),
+   'PT5B': np.float64(0.18578193657647568),
+   'CT5B': np.float64(0.07002549917113315),
+   'IT6': np.float64(0.05790285821680609),
+   'CT6': np.float64(0.06598232680519765),
+   'NGF1': np.float64(0.021903190483593255),
+   'PV2': np.float64(0.06844135339107221),
+   'SOM2': np.float64(0.06442114848115664),
+   'VIP2': np.float64(0.06844135339107221),
+   'NGF2': np.float64(0.06442114848115664),
+   'PV3': np.float64(0.06844135339107221),
+   'SOM3': np.float64(0.06442114848115664),
+   'VIP3': np.float64(0.06844135339107221),
+   'NGF3': np.float64(0.06442114848115664),
+   'PV4': np.float64(0.06844135339107221),
+   'SOM4': np.float64(0.06442114848115664),
+   'VIP4': np.float64(0.06844135339107221),
+   'NGF4': np.float64(0.06442114848115664),
+   'PV5A': np.float64(0.11361264662917989),
+   'SOM5A': np.float64(0.08117064708625736),
+   'VIP5A': np.float64(0.0450843835830079),
+   'NGF5A': np.float64(0.1352844118104289),
+   'PV5B': np.float64(0.11361264662917989),
+   'SOM5B': np.float64(0.08117064708625736),
+   'VIP5B': np.float64(0.0450843835830079),
+   'NGF5B': np.float64(0.1352844118104289),
+   'PV6': np.float64(0.04106481203464333),
+   'SOM6': np.float64(0.03865268908869398),
+   'VIP6': np.float64(0.008212962406928665),
+   'NGF6': np.float64(0.03865268908869398)},
+  'CT5A': {'IT2': np.float64(0.02587148984155166),
+   'IT3': np.float64(0.02587148984155166),
+   'ITP4': np.float64(0.002087874618791888),
+   'ITS4': np.float64(0.0024254521726454676),
+   'IT5A': np.float64(0.020007285477466615),
+   'CT5A': np.float64(0.16040826548989268),
+   'IT5B': np.float64(0.020007285477466615),
+   'PT5B': np.float64(0.18578193657647568),
+   'CT5B': np.float64(0.07002549917113315),
+   'IT6': np.float64(0.07406179539358919),
+   'CT6': np.float64(0.06598232680519765),
+   'NGF1': np.float64(0.021903190483593255),
+   'PV2': np.float64(0.06844135339107221),
+   'SOM2': np.float64(0.06442114848115664),
+   'VIP2': np.float64(0.06844135339107221),
+   'NGF2': np.float64(0.06442114848115664),
+   'PV3': np.float64(0.06844135339107221),
+   'SOM3': np.float64(0.06442114848115664),
+   'VIP3': np.float64(0.06844135339107221),
+   'NGF3': np.float64(0.06442114848115664),
+   'PV4': np.float64(0.016539993736175786),
+   'SOM4': np.float64(0.013957915504250608),
+   'VIP4': np.float64(0.06844135339107221),
+   'NGF4': np.float64(0.06442114848115664),
+   'PV5A': np.float64(0.11361264662917989),
+   'SOM5A': np.float64(0.08117064708625736),
+   'VIP5A': np.float64(0.0450843835830079),
+   'NGF5A': np.float64(0.1352844118104289),
+   'PV5B': np.float64(0.11361264662917989),
+   'SOM5B': np.float64(0.08117064708625736),
+   'VIP5B': np.float64(0.0450843835830079),
+   'NGF5B': np.float64(0.1352844118104289),
+   'PV6': np.float64(0.04106481203464333),
+   'SOM6': np.float64(0.03865268908869398),
+   'VIP6': np.float64(0.008212962406928665),
+   'NGF6': np.float64(0.03865268908869398),
+   'TC': 0.1,
+   'HTC': 0.1,
+   'IRE': 0.1,
+   'TI': 0.05},
+  'IT5B': {'IT2': np.float64(0.02587148984155166),
+   'IT3': np.float64(0.02587148984155166),
+   'ITP4': np.float64(0.008623829947183885),
+   'ITS4': np.float64(0.007262172587102219),
+   'IT5A': np.float64(0.1429091819819044),
+   'CT5A': np.float64(0.07002549917113315),
+   'IT5B': np.float64(0.1429091819819044),
+   'PT5B': np.float64(0.18578193657647568),
+   'CT5B': np.float64(0.07002549917113315),
+   'IT6': np.float64(0.05790285821680609),
+   'CT6': np.float64(0.06598232680519765),
+   'NGF1': np.float64(0.021903190483593255),
+   'PV2': np.float64(0.06844135339107221),
+   'SOM2': np.float64(0.06442114848115664),
+   'VIP2': np.float64(0.06844135339107221),
+   'NGF2': np.float64(0.06442114848115664),
+   'PV3': np.float64(0.06844135339107221),
+   'SOM3': np.float64(0.06442114848115664),
+   'VIP3': np.float64(0.06844135339107221),
+   'NGF3': np.float64(0.06442114848115664),
+   'PV4': np.float64(0.06844135339107221),
+   'SOM4': np.float64(0.06442114848115664),
+   'VIP4': np.float64(0.06844135339107221),
+   'NGF4': np.float64(0.06442114848115664),
+   'PV5A': np.float64(0.11361264662917989),
+   'SOM5A': np.float64(0.08117064708625736),
+   'VIP5A': np.float64(0.0450843835830079),
+   'NGF5A': np.float64(0.1352844118104289),
+   'PV5B': np.float64(0.11361264662917989),
+   'SOM5B': np.float64(0.08117064708625736),
+   'VIP5B': np.float64(0.0450843835830079),
+   'NGF5B': np.float64(0.1352844118104289),
+   'PV6': np.float64(0.04106481203464333),
+   'SOM6': np.float64(0.03865268908869398),
+   'VIP6': np.float64(0.008212962406928665),
+   'NGF6': np.float64(0.03865268908869398),
+   'TCM': 0.1,
+   'IREM': 0.1,
+   'TIM': 0.05},
+  'PT5B': {'IT2': np.float64(0.01792524653307508),
+   'IT3': np.float64(0.01792524653307508),
+   'ITP4': np.float64(0.006808286800408331),
+   'ITS4': np.float64(0.007006861832086907),
+   'IT5A': np.float64(0.11146916194588541),
+   'CT5A': np.float64(0.1399926680639063),
+   'IT5B': np.float64(0.11146916194588541),
+   'PT5B': np.float64(0.09673852318775067),
+   'CT5B': np.float64(0.1399926680639063),
+   'IT6': np.float64(0.05924943631487135),
+   'CT6': np.float64(0.06598232680519765),
+   'NGF1': np.float64(0.021903190483593255),
+   'PV2': np.float64(0.03238085536781912),
+   'SOM2': np.float64(0.024244518245596584),
+   'VIP2': np.float64(0.06844135339107221),
+   'NGF2': np.float64(0.06442114848115664),
+   'PV3': np.float64(0.03238085536781912),
+   'SOM3': np.float64(0.024244518245596584),
+   'VIP3': np.float64(0.06844135339107221),
+   'NGF3': np.float64(0.06442114848115664),
+   'PV4': np.float64(0.04847929198534283),
+   'SOM4': np.float64(0.0499263900728964),
+   'VIP4': np.float64(0.06844135339107221),
+   'NGF4': np.float64(0.06442114848115664),
+   'PV5A': np.float64(0.07574176441945325),
+   'SOM5A': np.float64(0.05342878036057447),
+   'VIP5A': np.float64(0.09543462316851109),
+   'NGF5A': np.float64(0.
+
+# CELL 8 (code)
+# Experiment definition
+exp_group = 'batch_i_ou_subnet_state1_mech1_nosub_wmult_0.25'
+exp_name = 'full_model_ee_0.5_it6_pv6_split'
+exp_name_sub = 'exp_t_3.0_5.0_wfrac_0_1'
+
+dirpath_cfg = dirpath_root / 'exp_configs' / exp_group / exp_name
+dirpath_res = (dirpath_root / 'exp_results' / exp_group / exp_name /
+               exp_name_sub / 'results')
+
+# Load target firing rates
+fpath_target = dirpath_cfg / 'target_state_1.csv'
+df = pd.read_csv(fpath_target)
+df = df.set_index('pop_name')
+
+# Load simulation results
+json_files = sorted([f for f in os.listdir(dirpath_res) if f.endswith('.json')])
+#print(json_files)
+R = {}
+wfrac_vals = []
+for fname_res in json_files:
+    wfrac = float(fname_res.split('_')[-1].replace('.json', ''))
+    wfrac_vals.append(wfrac)
+    ind = f'wfrac={wfrac}'
+    R[ind] = {}
+    with open(dirpath_res / fname_res, 'r') as fid:
+        res_ = json.load(fid)
+    for pop, r in res_['rates'].items():
+        R[ind][pop] = r
+
+# Extract simulated rates from R and align with df
+
+rates_df = pd.DataFrame(R).reindex(index=df.index).sort_index(axis=1)
+#print(rates_df.round(1))
+
+
+# SAVED OUTPUT
+          wfrac=0.0  wfrac=0.25  wfrac=0.5  wfrac=0.75  wfrac=1.0
+pop_name                                                         
+NGF1            2.5         2.6        2.5         2.6        2.6
+IT2             1.9         2.0        1.9         2.0        1.9
+PV2            23.2        23.2       22.9        22.3       22.6
+SOM2           10.8        10.2       10.4         9.7        9.5
+VIP2            5.4         5.5        5.6         5.6        5.5
+NGF2            0.7         0.8        0.7         0.8        0.7
+IT3             2.2         2.2        2.2         2.2        2.2
+PV3            19.9        19.5       19.0        18.6       18.8
+SOM3            9.7         9.2        9.1         8.6        9.0
+VIP3            6.0         6.1        6.2         6.2        6.1
+NGF3            1.0         1.0        1.0         1.0        1.0
+ITS4            1.9         1.9        1.9         1.9        1.9
+ITP4            1.8         1.8        1.9         1.8        1.8
+PV4             9.3         9.1        9.3         9.0        9.1
+SOM4            4.3         4.1        4.3         4.0        3.9
+VIP4            0.2         0.3        0.2         0.2        0.2
+NGF4            0.1         0.0        0.1         0.1        0.1
+IT5A            5.1         5.2        5.2         5.2        5.1
+CT5A            2.1         2.0        2.1         2.1        2.0
+PV5A            8.5         8.6        8.5         8.5        8.5
+SOM5A           5.2         5.0        5.0         5.0        5.0
+VIP5A           0.3         0.3        0.3         0.3        0.3
+NGF5A           0.2         0.2        0.2         0.2        0.2
+IT5B            5.1         5.1        5.1         5.1        5.1
+CT5B            2.0         2.0        2.0         2.1        2.0
+PT5B            5.4         5.4        5.4         5.4        5.3
+PV5B            7.9         8.0        7.9         7.9        7.9
+SOM5B           5.0         4.9        4.9         4.8        4.8
+VIP5B           0.4         0.4        0.4         0.4        0.4
+NGF5B           0.2         0.2        0.2         0.2        0.2
+IT6             3.7         3.6        3.6         3.6        3.6
+CT6             2.2         2.2        2.2         2.1        2.1
+PV6            19.5        20.6       23.9        24.8       26.9
+SOM6            8.6         8.5        8.5         8.4        8.4
+VIP6            2.6         2.0        1.9         1.7        1.6
+NGF6            0.1         0.1        0.1         0.1        0.1
+TC              9.4         9.3        9.4         9.3        9.4
+HTC            13.0        12.9       13.1        13.1       13.1
+TCM             5.2         5.2        5.2         5.2        5.2
+TI             17.3        17.3       17.3        17.3       17.3
+TIM            10.6        10.7       10.7        10.7       10.6
+IRE            11.8        11.8       11.7        11.7       11.8
+IREM            7.5         7.5        7.5         7.5        7.5
+
+# CELL 9 (code)
+# choose a default wfrac column to use for comparison (first sorted wfrac)
+wfrac_selected = rates_df.columns[0]
+sim_rates = rates_df[wfrac_selected]
+
+# Create comparison DataFrame
+df_cmp = pd.DataFrame({
+    'target_rate': df['target_rate'].round(2),
+    'sim_rate': pd.Series(sim_rates).round(2)
+})
+df_cmp['diff'] = (df_cmp['sim_rate'] - df_cmp['target_rate']).round(2)
+df_cmp
+
+
+# CELL 10 (code)
+# Experiment definition
+exp_group = 'batch_i_ou_subnet_state1_mech1_nosub_wmult_0.25'
+exp_name = 'full_model_ee_off_epv6_single_off'
+exp_name_sub = 'exp_t_8.0_10.0'
+
+dirpath_cfg = dirpath_root / 'exp_configs' / exp_group / exp_name
+dirpath_res = (dirpath_root / 'exp_results' / exp_group / exp_name /
+               exp_name_sub / 'results')
+
+# Load target firing rates
+fpath_target = dirpath_cfg / 'target_state_1.csv'
+df = pd.read_csv(fpath_target)
+df = df.set_index('pop_name')
+
+# Load simulation results
+json_files = sorted([f for f in os.listdir(dirpath_res) if f.endswith('.json')])
+#print(json_files)
+R = {}
+for fname_res in json_files:
+    pop_pre = fname_res.split('_')[-1].replace('.json', '')
+    R[pop_pre] = {}
+    with open(dirpath_res / fname_res, 'r') as fid:
+        res_ = json.load(fid)
+    for pop, r in res_['rates'].items():
+        R[pop_pre][pop] = r
+
+rr = {pop_pre: R_['PV6'] for pop_pre, R_ in R.items()}
+pd.DataFrame(pd.Series(rr).round(1))
+
+# SAVED OUTPUT
+         0
+IT2   36.8
+IT3   38.0
+ITS4  36.7
+ITP4  38.8
+IT5A  37.3
+CT5A  38.0
+IT5B  38.1
+CT5B  37.5
+PT5B  37.5
+IT6   22.4
+CT6   31.6
+
+# CELL 11 (code)
+# Experiment definitions
+exp_group = 'single_i_ou_subnet_state1_mech1_nosub_wmult_0.25'
+exp_name_target = 'full_model_split_ee_conn'
+exp_names_sub = {
+    #'ctrl_off': (
+    #    'full_model_split_ee_conn/exp_t_3.0_5.0_eefrac_0.5'),
+    #'itpv_0.5_ctrl_off': (
+    #    'full_model_split_ee_epv_conn/exp_t_8.0_10.0_ee_0.5_epv_0.5'),
+    'ctrl_on_18': (
+        'full_model_split_ee_conn/exp_t_21.0_25.0_eefrac_0.5_kmu_0.1_'
+        'ksigma_0.0_tau_200_taus_1000_tc0_2000_tlock_18000_kci_0.0005_kcp_0.0'),
+    'ctrl_on_15': (
+        'full_model_split_ee_conn/exp_t_21.0_25.0_eefrac_0.5_kmu_0.1_'
+        'ksigma_0.0_tau_200_taus_1000_tc0_2000_tlock_15000_kci_0.0005_kcp_0.0'),
+    'ctrl_on_18_2500': (
+        'full_model_split_ee_conn/exp_t_23.0_25.0_eefrac_0.5_kmu_0.1_'
+        'ksigma_0.0_tau_200_taus_2500_tc0_2000_tlock_18000_kci_0.0005_kcp_0.0')
+}
+
+# Load target firing rates
+dirpath_cfg = dirpath_root / 'exp_configs' / exp_group / exp_name_target
+fpath_target = dirpath_cfg / 'target_state_1.csv'
+df = pd.read_csv(fpath_target)
+df = df.set_index('pop_name')
+
+df_cmp = {'target': df['target_rate'].round(2)}
+
+for label, exp_name_sub in exp_names_sub.items():
+    # Load simulation results
+    dirpath_res = dirpath_root / 'exp_results' / exp_group
+    exp_name = exp_name_sub.split('/')[0]
+    fpath_res = dirpath_res / exp_name_sub / f'{exp_name}_result.json'
+    with open(fpath_res, 'r') as fid:
+        res = json.load(fid)
+
+    # Extract simulated rates from res and align with df
+    sim_rates = {pop: res['rates'][pop] for pop in df.index}
+    df_cmp[label] =  pd.Series(sim_rates).round(2)
+
+# Create comparison DataFrame
+df_cmp = pd.DataFrame(df_cmp)
+
+# Calculate diffs
+for label in exp_names_sub:
+    df_cmp[f'{label}_err'] = (
+        df_cmp[label] - df_cmp['target']).round(2)
+
+df_cmp
+
+# SAVED OUTPUT
+       target  ctrl_on_18  ctrl_on_15  ctrl_on_18_2500  ctrl_on_18_err  \
+NGF1      3.0        3.06        3.05             2.99            0.06   
+IT2       2.0        1.83        2.31             2.18           -0.17   
+PV2      12.0        5.52        9.19             7.35           -6.48   
+SOM2      6.0        1.15        8.05             2.20           -4.85   
+VIP2      7.0        7.53        7.11             7.31            0.53   
+NGF2      1.0        1.20        0.95             1.27            0.20   
+IT3       2.0        1.35        2.55             1.83           -0.65   
+PV3      12.0        6.57       10.47             8.91           -5.43   
+SOM3      6.0        4.12        5.85             5.64           -1.88   
+VIP3      7.0        6.40        7.58             6.69           -0.60   
+NGF3      1.0        1.27        0.92             1.12            0.27   
+ITS4      2.0        1.90        2.18             1.97           -0.10   
+ITP4      2.0        1.59        2.40             1.79           -0.41   
+PV4      10.0        8.80       11.30             8.69           -1.20   
+SOM4      5.0        3.99        4.98             3.42           -1.01   
+VIP4      0.2        0.02        0.31             0.08           -0.18   
+NGF4      0.1        0.07        0.09             0.04           -0.03   
+IT5A      5.0        5.22        5.26             5.23            0.22   
+CT5A      2.0        1.61        2.31             2.03           -0.39   
+PV5A      8.0        6.90        8.04             7.50           -1.10   
+SOM5A     4.0        3.74        4.04             3.69           -0.26   
+VIP5A     0.2        0.22        0.32             0.25            0.02   
+NGF5A     0.5        0.50        0.56             0.50            0.00   
+IT5B      5.0        4.99        5.21             5.04           -0.01   
+CT5B      2.0        1.71        2.35             2.02           -0.29   
+PT5B      5.0        4.98        5.09             5.08           -0.02   
+PV5B      8.0        6.86        8.22             7.72           -1.14   
+SOM5B     4.0        3.19        3.96             3.61           -0.81   
+VIP5B     0.2        0.21        0.31             0.24            0.01   
+NGF5B     0.5        0.41        0.39             0.42           -0.09   
+IT6       3.0        2.80        2.93             2.98           -0.20   
+CT6       2.0        1.78        2.08             1.97           -0.22   
+PV6      15.0       12.93       12.93            16.17           -2.07   
+SOM6      7.0        7.25        7.15             7.43            0.25   
+VIP6      0.2        0.17        0.46             0.54           -0.03   
+NGF6      0.5        0.50        0.47             0.57            0.00   
+TC        8.0        7.99        8.07             7.85           -0.01   
+HTC       8.0        7.80        7.91             7.92           -0.20   
+TCM       2.0        1.95        2.10             2.10           -0.05   
+TI       15.0       15.25       14.43            15.32            0.25   
+TIM      10.0       10.82       10.57            10.74            0.82   
+IRE      15.0       14.99       15.30            14.69           -0.01   
+IREM     10.0        9.91        9.75             9.45           -0.09   
+
+       ctrl_on_15_err  ctrl_on_18_2500_err  
+NGF1             0.05                -0.01  
+IT2              0.31                 0.18  
+PV2             -2.81                -4.65  
+SOM2             2.05                -3.80  
+VIP2             0.11                 0.31  
+NGF2            -0.05                 0.27  
+IT3              0.55                -0.17  
+PV3             -1.53                -3.09  
+SOM3            -0.15                -0.36  
+VIP3             0.58                -0.31  
+NGF3            -0.08                 0.12  
+ITS4             0.18                -0.03  
+ITP4             0.40                -0.21  
+PV4              1.30                -1.31  
+SOM4            -0.02                -1.58  
+VIP4             0.11                -0.12  
+NGF4            -0.01                -0.06  
+IT5A             0.26                 0.23  
+CT5A             0.31                 0.03  
+PV5A             0.04                -0.50  
+SOM5A            0.04                -0.31  
+VIP5A            0.12                 0.05  
+NGF5A            0.06                 0.00  
+IT5B             0.21                 0.04  
+CT5B             0.35                 0.02  
+PT5B             0.09                 0.08  
+PV5B             0.22                -0.28  
+SOM5B           -0.04                -0.39  
+VIP5B            0.11                 0.04  
+NGF5B           -0.11                -0.08  
+IT6             -0.07                -0.02  
+CT6              0.08                -0.03  
+PV6             -2.07                 1.17  
+SOM6             0.15                 0.43  
+VIP6             0.26                 0.34  
+NGF6            -0.03                 0.07  
+TC               0.07                -0.15  
+HTC             -0.09                -0.08  
+TCM              0.10                 0.10  
+TI              -0.57                 0.32  
+TIM              0.57                 0.74  
+IRE              0.30                -0.31  
+IREM            -0.25                -0.55  

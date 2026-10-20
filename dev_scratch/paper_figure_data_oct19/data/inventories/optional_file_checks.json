@@ -1,0 +1,27 @@
+{
+  "ctx_ee_fade": {
+    "folder": "exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_ctx_ee_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5/wmod_figs",
+    "names": [
+      "wmod_00000_seed_1000.png",
+      "wmod_00001_seed_1001.png",
+      "wmod_00002_seed_1002.png",
+      "wmod_00003_seed_1003.png",
+      "wmod_00004_seed_1004.png",
+      "wmod_00005_seed_1005.png",
+      "wmod_00006_seed_1006.png",
+      "wmod_00007_seed_1007.png",
+      "wmod_00008_seed_1008.png",
+      "wmod_00009_seed_1009.png",
+      "wmod_00010_seed_1010.png",
+      "wmod_00011_seed_1011.png",
+      "wmod_00012_seed_1012.png",
+      "wmod_00013_seed_1013.png",
+      "wmod_00014_seed_1014.png"
+    ],
+    "first_size_bytes": 156891
+  },
+  "a1_example": {
+    "folder": "exp_results/batch_rxbkg_state1_mech1/net_newsec_var_seed/exp_a1_ee_fade_nseed_3_t_15.0_20.0_ictrl_wmult_0.25_ee_0.5/rvec_xr",
+    "names": []
+  }
+}

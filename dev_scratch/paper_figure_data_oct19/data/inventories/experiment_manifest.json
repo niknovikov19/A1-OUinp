@@ -1,0 +1,512 @@
+{
+  "ctx_surr": {
+    "path": "exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_ctx_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5",
+    "exists": true,
+    "children": [
+      "cfg",
+      "netpar",
+      "pkl",
+      "rasters",
+      "results",
+      "rvec_figs",
+      "traces",
+      "wmod_figs"
+    ],
+    "files": {
+      "results": [
+        "result_00000_seed_1000.json",
+        "result_00001_seed_1001.json",
+        "result_00002_seed_1002.json",
+        "result_00003_seed_1003.json",
+        "result_00004_seed_1004.json",
+        "result_00005_seed_1005.json",
+        "result_00006_seed_1006.json",
+        "result_00007_seed_1007.json",
+        "result_00008_seed_1008.json",
+        "result_00009_seed_1009.json",
+        "result_00010_seed_1010.json",
+        "result_00011_seed_1011.json",
+        "result_00012_seed_1012.json",
+        "result_00013_seed_1013.json",
+        "result_00014_seed_1014.json"
+      ],
+      "cfg": [
+        "cfg_00000_seed_1000.json",
+        "cfg_00001_seed_1001.json",
+        "cfg_00002_seed_1002.json",
+        "cfg_00003_seed_1003.json",
+        "cfg_00004_seed_1004.json",
+        "cfg_00005_seed_1005.json",
+        "cfg_00006_seed_1006.json",
+        "cfg_00007_seed_1007.json",
+        "cfg_00008_seed_1008.json",
+        "cfg_00009_seed_1009.json",
+        "cfg_00010_seed_1010.json",
+        "cfg_00011_seed_1011.json",
+        "cfg_00012_seed_1012.json",
+        "cfg_00013_seed_1013.json",
+        "cfg_00014_seed_1014.json"
+      ]
+    },
+    "results_first_size": 5984,
+    "cfg_first_size": 80162
+  },
+  "ctx_full": {
+    "path": "exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_ctx_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5",
+    "exists": true,
+    "children": [
+      "cfg",
+      "netpar",
+      "pkl",
+      "rasters",
+      "results",
+      "rvec_figs",
+      "traces",
+      "wmod_figs"
+    ],
+    "files": {
+      "results": [
+        "result_00000_seed_1000.json",
+        "result_00001_seed_1001.json",
+        "result_00002_seed_1002.json",
+        "result_00003_seed_1003.json",
+        "result_00004_seed_1004.json",
+        "result_00005_seed_1005.json",
+        "result_00006_seed_1006.json",
+        "result_00007_seed_1007.json",
+        "result_00008_seed_1008.json",
+        "result_00009_seed_1009.json",
+        "result_00010_seed_1010.json",
+        "result_00011_seed_1011.json",
+        "result_00012_seed_1012.json",
+        "result_00013_seed_1013.json",
+        "result_00014_seed_1014.json"
+      ],
+      "cfg": [
+        "cfg_00000_seed_1000.json",
+        "cfg_00001_seed_1001.json",
+        "cfg_00002_seed_1002.json",
+        "cfg_00003_seed_1003.json",
+        "cfg_00004_seed_1004.json",
+        "cfg_00005_seed_1005.json",
+        "cfg_00006_seed_1006.json",
+        "cfg_00007_seed_1007.json",
+        "cfg_00008_seed_1008.json",
+        "cfg_00009_seed_1009.json",
+        "cfg_00010_seed_1010.json",
+        "cfg_00011_seed_1011.json",
+        "cfg_00012_seed_1012.json",
+        "cfg_00013_seed_1013.json",
+        "cfg_00014_seed_1014.json"
+      ]
+    },
+    "results_first_size": 3274,
+    "cfg_first_size": 80159
+  },
+  "ctx_ee_surr": {
+    "path": "exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_ctx_ee_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5",
+    "exists": true,
+    "children": [
+      "cfg",
+      "netpar",
+      "pkl",
+      "rasters",
+      "results",
+      "rvec_figs",
+      "traces",
+      "wmod_figs"
+    ],
+    "files": {
+      "results": [
+        "result_00000_seed_1000.json",
+        "result_00001_seed_1001.json",
+        "result_00002_seed_1002.json",
+        "result_00003_seed_1003.json",
+        "result_00004_seed_1004.json",
+        "result_00005_seed_1005.json",
+        "result_00006_seed_1006.json",
+        "result_00007_seed_1007.json",
+        "result_00008_seed_1008.json",
+        "result_00009_seed_1009.json",
+        "result_00010_seed_1010.json",
+        "result_00011_seed_1011.json",
+        "result_00012_seed_1012.json",
+        "result_00013_seed_1013.json",
+        "result_00014_seed_1014.json"
+      ],
+      "cfg": [
+        "cfg_00000_seed_1000.json",
+        "cfg_00001_seed_1001.json",
+        "cfg_00002_seed_1002.json",
+        "cfg_00003_seed_1003.json",
+        "cfg_00004_seed_1004.json",
+        "cfg_00005_seed_1005.json",
+        "cfg_00006_seed_1006.json",
+        "cfg_00007_seed_1007.json",
+        "cfg_00008_seed_1008.json",
+        "cfg_00009_seed_1009.json",
+        "cfg_00010_seed_1010.json",
+        "cfg_00011_seed_1011.json",
+        "cfg_00012_seed_1012.json",
+        "cfg_00013_seed_1013.json",
+        "cfg_00014_seed_1014.json"
+      ]
+    },
+    "results_first_size": 4119,
+    "cfg_first_size": 91215
+  },
+  "ctx_ee_fade": {
+    "path": "exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_ctx_ee_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5",
+    "exists": true,
+    "children": [
+      "cfg",
+      "netpar",
+      "pkl",
+      "rasters",
+      "results",
+      "rvec_figs",
+      "traces",
+      "wmod_figs"
+    ],
+    "files": {
+      "results": [
+        "result_00000_seed_1000.json",
+        "result_00001_seed_1001.json",
+        "result_00002_seed_1002.json",
+        "result_00003_seed_1003.json",
+        "result_00004_seed_1004.json",
+        "result_00005_seed_1005.json",
+        "result_00006_seed_1006.json",
+        "result_00007_seed_1007.json",
+        "result_00008_seed_1008.json",
+        "result_00009_seed_1009.json",
+        "result_00010_seed_1010.json",
+        "result_00011_seed_1011.json",
+        "result_00012_seed_1012.json",
+        "result_00013_seed_1013.json",
+        "result_00014_seed_1014.json"
+      ],
+      "cfg": [
+        "cfg_00000_seed_1000.json",
+        "cfg_00001_seed_1001.json",
+        "cfg_00002_seed_1002.json",
+        "cfg_00003_seed_1003.json",
+        "cfg_00004_seed_1004.json",
+        "cfg_00005_seed_1005.json",
+        "cfg_00006_seed_1006.json",
+        "cfg_00007_seed_1007.json",
+        "cfg_00008_seed_1008.json",
+        "cfg_00009_seed_1009.json",
+        "cfg_00010_seed_1010.json",
+        "cfg_00011_seed_1011.json",
+        "cfg_00012_seed_1012.json",
+        "cfg_00013_seed_1013.json",
+        "cfg_00014_seed_1014.json"
+      ]
+    },
+    "results_first_size": 4092,
+    "cfg_first_size": 84345
+  },
+  "thal_surr": {
+    "path": "exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5",
+    "exists": true,
+    "children": [
+      "cfg",
+      "netpar",
+      "pkl",
+      "rasters",
+      "results",
+      "rvec_figs",
+      "traces",
+      "wmod_figs"
+    ],
+    "files": {
+      "results": [
+        "result_00000_seed_1000.json",
+        "result_00001_seed_1001.json",
+        "result_00002_seed_1002.json",
+        "result_00003_seed_1003.json",
+        "result_00004_seed_1004.json",
+        "result_00005_seed_1005.json",
+        "result_00006_seed_1006.json",
+        "result_00007_seed_1007.json",
+        "result_00008_seed_1008.json",
+        "result_00009_seed_1009.json",
+        "result_00010_seed_1010.json",
+        "result_00011_seed_1011.json",
+        "result_00012_seed_1012.json",
+        "result_00013_seed_1013.json",
+        "result_00014_seed_1014.json"
+      ],
+      "cfg": [
+        "cfg_00000_seed_1000.json",
+        "cfg_00001_seed_1001.json",
+        "cfg_00002_seed_1002.json",
+        "cfg_00003_seed_1003.json",
+        "cfg_00004_seed_1004.json",
+        "cfg_00005_seed_1005.json",
+        "cfg_00006_seed_1006.json",
+        "cfg_00007_seed_1007.json",
+        "cfg_00008_seed_1008.json",
+        "cfg_00009_seed_1009.json",
+        "cfg_00010_seed_1010.json",
+        "cfg_00011_seed_1011.json",
+        "cfg_00012_seed_1012.json",
+        "cfg_00013_seed_1013.json",
+        "cfg_00014_seed_1014.json"
+      ]
+    },
+    "results_first_size": 1951,
+    "cfg_first_size": 64941
+  },
+  "a1_errors": {
+    "path": "exp_results/batch_rxbkg_state1_mech1/net_newsec_var_seed/exp_a1_ee_fade_nseed_15_t_15.0_20.0_ictrl_wmult_0.25_ee_0.5",
+    "exists": true,
+    "children": [
+      "cfg",
+      "csd_figs",
+      "lfp_xr",
+      "netpar",
+      "pkl",
+      "rasters",
+      "results",
+      "rvec_figs",
+      "rvec_xr",
+      "traces",
+      "wmod_figs"
+    ],
+    "files": {
+      "results": [
+        "result_00000_seed_1000.json",
+        "result_00001_seed_1001.json",
+        "result_00002_seed_1002.json",
+        "result_00003_seed_1003.json",
+        "result_00004_seed_1004.json",
+        "result_00005_seed_1005.json",
+        "result_00006_seed_1006.json",
+        "result_00007_seed_1007.json",
+        "result_00008_seed_1008.json",
+        "result_00009_seed_1009.json",
+        "result_00010_seed_1010.json",
+        "result_00011_seed_1011.json",
+        "result_00012_seed_1012.json",
+        "result_00013_seed_1013.json",
+        "result_00014_seed_1014.json"
+      ],
+      "cfg": [
+        "cfg_00000_seed_1000.json",
+        "cfg_00001_seed_1001.json",
+        "cfg_00002_seed_1002.json",
+        "cfg_00003_seed_1003.json",
+        "cfg_00004_seed_1004.json",
+        "cfg_00005_seed_1005.json",
+        "cfg_00006_seed_1006.json",
+        "cfg_00007_seed_1007.json",
+        "cfg_00008_seed_1008.json",
+        "cfg_00009_seed_1009.json",
+        "cfg_00010_seed_1010.json",
+        "cfg_00011_seed_1011.json",
+        "cfg_00012_seed_1012.json",
+        "cfg_00013_seed_1013.json",
+        "cfg_00014_seed_1014.json"
+      ]
+    },
+    "results_first_size": 4520,
+    "cfg_first_size": 110720
+  },
+  "a1_example": {
+    "path": "exp_results/batch_rxbkg_state1_mech1/net_newsec_var_seed/exp_a1_ee_fade_nseed_3_t_15.0_20.0_ictrl_wmult_0.25_ee_0.5",
+    "exists": true,
+    "children": [
+      "cfg",
+      "csd_figs",
+      "lfp_xr",
+      "netpar",
+      "pkl",
+      "rasters",
+      "results",
+      "rvec_figs",
+      "rvec_xr",
+      "traces",
+      "wmod_figs"
+    ],
+    "files": {
+      "results": [
+        "result_00000_seed_1000.json",
+        "result_00001_seed_1001.json",
+        "result_00002_seed_1002.json"
+      ],
+      "cfg": [
+        "cfg_00000_seed_1000.json",
+        "cfg_00001_seed_1001.json",
+        "cfg_00002_seed_1002.json"
+      ]
+    },
+    "results_first_size": 4538,
+    "cfg_first_size": 110720,
+    "example_pkl_size": 78647384
+  },
+  "thal_orig": {
+    "path": "exp_results/batch_rxbkg_state1_mech1/net_newsec_ctrl_var_seed/exp_thal_nseed_15_t_200.0_220.0_wmult_0.25_ee_0.5",
+    "exists": true,
+    "children": [
+      "cfg",
+      "ctrl",
+      "ctrl_figs",
+      "netpar",
+      "pkl",
+      "rasters",
+      "results",
+      "rvec_figs",
+      "traces",
+      "wmod_figs"
+    ],
+    "files": {
+      "results": [
+        "result_00000_seed_1000.json",
+        "result_00001_seed_1001.json",
+        "result_00002_seed_1002.json",
+        "result_00003_seed_1003.json",
+        "result_00004_seed_1004.json",
+        "result_00005_seed_1005.json",
+        "result_00006_seed_1006.json",
+        "result_00007_seed_1007.json",
+        "result_00008_seed_1008.json",
+        "result_00009_seed_1009.json",
+        "result_00010_seed_1010.json",
+        "result_00011_seed_1011.json",
+        "result_00012_seed_1012.json",
+        "result_00013_seed_1013.json",
+        "result_00014_seed_1014.json"
+      ],
+      "cfg": [
+        "cfg_00000_seed_1000.json",
+        "cfg_00001_seed_1001.json",
+        "cfg_00002_seed_1002.json",
+        "cfg_00003_seed_1003.json",
+        "cfg_00004_seed_1004.json",
+        "cfg_00005_seed_1005.json",
+        "cfg_00006_seed_1006.json",
+        "cfg_00007_seed_1007.json",
+        "cfg_00008_seed_1008.json",
+        "cfg_00009_seed_1009.json",
+        "cfg_00010_seed_1010.json",
+        "cfg_00011_seed_1011.json",
+        "cfg_00012_seed_1012.json",
+        "cfg_00013_seed_1013.json",
+        "cfg_00014_seed_1014.json"
+      ]
+    },
+    "results_first_size": 1425,
+    "cfg_first_size": 65194
+  },
+  "thal_own": {
+    "path": "exp_results/batch_rxbkg_state1_mech1/net_newsec_ctrl_var_seed/exp_thal_nseed_15_t_200.0_220.0_kmu_0.005_ksigma_0.0_taur_100_taum_2500_tauu_100_tc0_10000_tlock_160000_ks_0.0001_ku_0.001_epsm_0.1_wmult_0.25_ee_0.5",
+    "exists": true,
+    "children": [
+      "cfg",
+      "ctrl",
+      "ctrl_figs",
+      "ibkg_ctrl_1.json",
+      "netpar",
+      "pkl",
+      "rasters",
+      "results",
+      "rvec_figs",
+      "traces",
+      "wmod_figs"
+    ],
+    "files": {
+      "results": [
+        "result_00000_seed_1000.json",
+        "result_00001_seed_1001.json",
+        "result_00002_seed_1002.json",
+        "result_00003_seed_1003.json",
+        "result_00004_seed_1004.json",
+        "result_00005_seed_1005.json",
+        "result_00006_seed_1006.json",
+        "result_00007_seed_1007.json",
+        "result_00008_seed_1008.json",
+        "result_00009_seed_1009.json",
+        "result_00010_seed_1010.json",
+        "result_00011_seed_1011.json",
+        "result_00012_seed_1012.json",
+        "result_00013_seed_1013.json",
+        "result_00014_seed_1014.json"
+      ],
+      "cfg": [
+        "cfg_00000_seed_1000.json",
+        "cfg_00001_seed_1001.json",
+        "cfg_00002_seed_1002.json",
+        "cfg_00003_seed_1003.json",
+        "cfg_00004_seed_1004.json",
+        "cfg_00005_seed_1005.json",
+        "cfg_00006_seed_1006.json",
+        "cfg_00007_seed_1007.json",
+        "cfg_00008_seed_1008.json",
+        "cfg_00009_seed_1009.json",
+        "cfg_00010_seed_1010.json",
+        "cfg_00011_seed_1011.json",
+        "cfg_00012_seed_1012.json",
+        "cfg_00013_seed_1013.json",
+        "cfg_00014_seed_1014.json"
+      ]
+    },
+    "results_first_size": 1429,
+    "cfg_first_size": 67558
+  },
+  "thal_med": {
+    "path": "exp_results/batch_rxbkg_state1_mech1/net_newsec_ctrl_var_seed/exp_thal_nseed_15_t_200.0_220.0_ictrl_wmult_0.25_ee_0.5",
+    "exists": true,
+    "children": [
+      "cfg",
+      "ctrl",
+      "ctrl_figs",
+      "netpar",
+      "pkl",
+      "rasters",
+      "results",
+      "rvec_figs",
+      "traces",
+      "wmod_figs"
+    ],
+    "files": {
+      "results": [
+        "result_00000_seed_1000.json",
+        "result_00001_seed_1001.json",
+        "result_00002_seed_1002.json",
+        "result_00003_seed_1003.json",
+        "result_00004_seed_1004.json",
+        "result_00005_seed_1005.json",
+        "result_00006_seed_1006.json",
+        "result_00007_seed_1007.json",
+        "result_00008_seed_1008.json",
+        "result_00009_seed_1009.json",
+        "result_00010_seed_1010.json",
+        "result_00011_seed_1011.json",
+        "result_00012_seed_1012.json",
+        "result_00013_seed_1013.json",
+        "result_00014_seed_1014.json"
+      ],
+      "cfg": [
+        "cfg_00000_seed_1000.json",
+        "cfg_00001_seed_1001.json",
+        "cfg_00002_seed_1002.json",
+        "cfg_00003_seed_1003.json",
+        "cfg_00004_seed_1004.json",
+        "cfg_00005_seed_1005.json",
+        "cfg_00006_seed_1006.json",
+        "cfg_00007_seed_1007.json",
+        "cfg_00008_seed_1008.json",
+        "cfg_00009_seed_1009.json",
+        "cfg_00010_seed_1010.json",
+        "cfg_00011_seed_1011.json",
+        "cfg_00012_seed_1012.json",
+        "cfg_00013_seed_1013.json",
+        "cfg_00014_seed_1014.json"
+      ]
+    },
+    "results_first_size": 1428,
+    "cfg_first_size": 66361
+  }
+}

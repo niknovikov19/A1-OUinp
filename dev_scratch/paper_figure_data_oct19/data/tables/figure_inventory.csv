@@ -1,0 +1,18 @@
+page_figure,panel_series,source_alias,measurement_selection,status
+"8, FIG_CMP_SURR_FULL",A,ctx_surr,All-surrogate cortex schematic,Saved cfg verifies all connections frozen
+"8, FIG_CMP_SURR_FULL",B,ctx_full,"Recurrent cortex, surrogate thalamus schematic",Saved cfg verifies 36 active cortical populations
+"8, FIG_CMP_SURR_FULL","C, blue “Surr.”",ctx_surr,"Population rate minus target, 7–10 s, 15 seeds","Verified, all summaries preserved locally"
+"8, FIG_CMP_SURR_FULL","C, orange “Full”",ctx_full,"Population rate minus target, 7–10 s, 15 seeds","Verified, all summaries preserved locally"
+"9, FIG_CMP_EE_SURR_FADE",A,ctx_ee_surr,All 11 × 11 cortical E–E population pairs frozen,Saved cfg verifies the 121 pairs
+"9, FIG_CMP_EE_SURR_FADE",B,ctx_ee_fade,Same 121 pairs split into surrogate/recurrent inputs; fading 3–5 s,Split pairs verified in cfg; timing supported by saved modulation figure
+"9, FIG_CMP_EE_SURR_FADE","C, green “ee_surr”",ctx_ee_surr,"Rate error, 7–10 s, 15 seeds","Verified, all summaries preserved locally"
+"9, FIG_CMP_EE_SURR_FADE","C, red “ee_fade”",ctx_ee_fade,"Rate error, 7–10 s, 15 seeds","Verified, all summaries preserved locally"
+"11, FIG_THAL",A / D blue “Surr.”,thal_surr,"All-surrogate thalamus; rate error 7–10 s, 15 seeds","Verified, all summaries preserved locally"
+"11, FIG_THAL",B / D orange “Full”,thal_orig,Recurrent thalamus with surrogate cortex; rate error 200–220 s,"Verified, all summaries preserved locally"
+"11, FIG_THAL",C / D green “corr_own”,thal_own,Learned per-realization constant correction; rate error 200–220 s after feedback locks at 160 s,"Verified, all summaries and representative controller cfg preserved"
+"11, FIG_THAL",C / D red “corr_med”,thal_med,Same median constant correction for all realizations; rate error 200–220 s,"Verified, all summaries and median IClamp cfg preserved"
+"11, FIG_THAL","E, green distributions and points",thal_own/ibkg_ctrl_1.json,Final locked controller output z for each of 15 trials,Source export preserved; controller files inventoried but not loaded
+"11, FIG_THAL","E, red horizontal marks",Local correction JSON,Per-population median of those 15 values,Numerically verified locally
+"12, FIG_A1",A,a1_errors,"Rate error, 15–20 s, seeds 1000–1014","Verified, all summaries preserved locally"
+"12, FIG_A1","B, left / right",a1_example,"Seed 1000 spike raster, 6–7.5 s / 13–14.5 s","Explicit notebook path and saved raster; raw file exists, contents not loaded"
+"12, FIG_A1","C, left / right",a1_example,"Same seed and intervals, IT3 rate; 5 ms bins, Gaussian smoothing σ = 5 ms",Explicit notebook path/settings and saved left trace; raw file not loaded

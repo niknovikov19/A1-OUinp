@@ -1,0 +1,12 @@
+[
+  {
+    "path": "exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_ctx_ee_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5/wmod_figs/wmod_00000_seed_1000.png",
+    "bytes": 156891,
+    "sha256": "702fa40581f2e58d39fc688e1b1184d3dd677119d829e2e9889965557ccf5ecc"
+  },
+  {
+    "path": "exp_results/batch_rxbkg_state1_mech1/net_newsec_ctrl_var_seed/exp_thal_nseed_15_t_200.0_220.0_kmu_0.005_ksigma_0.0_taur_100_taum_2500_tauu_100_tc0_10000_tlock_160000_ks_0.0001_ku_0.001_epsm_0.1_wmult_0.25_ee_0.5/ibkg_ctrl_1.json",
+    "bytes": 8407,
+    "sha256": "cda11cf60b7dba4eb373c45fa6b3462a71257560cf3a47a88af95f91c530b591"
+  }
+]

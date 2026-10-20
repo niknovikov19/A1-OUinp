@@ -1,0 +1,106 @@
+PYR_POPS = ['IT2', 'IT3', 'ITP4', 'ITS4', 'IT5A', 'IT5B', 'IT6',
+            'CT5A', 'CT5B', 'CT6', 'PT5B']
+PV_POPS = ['PV2', 'PV3', 'PV4', 'PV5A', 'PV5B', 'PV6']
+SOM_POPS = ['SOM2', 'SOM3', 'SOM4', 'SOM5A', 'SOM5B', 'SOM6']
+VIP_POPS = ['VIP2', 'VIP3', 'VIP4', 'VIP5A', 'VIP5B', 'VIP6']
+VIP23_POPS = ['VIP2', 'VIP3']
+NGF_POPS = ['NGF1', 'NGF2', 'NGF3', 'NGF4', 'NGF5A', 'NGF5B', 'NGF6']
+
+THAL_E_POPS = ['TC', 'HTC', 'TCM']
+THAL_I_POPS = ['TI', 'TIM', 'IRE', 'IREM']
+CORE_POPS = ['TC', 'HTC', 'TI', 'IRE']
+MATX_POPS = ['TCM', 'TIM', 'IREM']
+#THAL_POPS = THAL_E_POPS + THAL_I_POPS
+THAL_POPS = CORE_POPS + MATX_POPS
+
+groups_vis = [
+    PYR_POPS + NGF_POPS,
+    PV_POPS + SOM_POPS,
+    SOM_POPS + NGF_POPS,
+    VIP23_POPS,
+    THAL_POPS
+    #['IT2', 'IT3', 'ITP4', 'ITS4', 'IT6', 'CT5A', 'CT5B', 'CT6', 'PT5B'],
+    #['IT5A', 'IT5B']    
+]
+
+def plot_rates(
+        pops_vis,
+        exp_labels=None,
+        figsize=(10, 3),
+        box_w=0.12, d=0.2,
+        target_alpha=1, box_alpha=0.8, 
+        normalize=False, center=False,
+        legend=True, title=True, ylabel=True
+        ):
+    fig, ax = plt.subplots(figsize=figsize)
+
+    if center and normalize:
+        raise ValueError("Cannot center and normalize simultaneously.")
+
+    exp_labels = exp_labels or list(R_all.keys())
+    x_base = np.arange(len(pops_vis))
+    colors = dict(zip(exp_labels, plt.cm.tab10.colors[:len(exp_labels)]))
+
+    exp_labels = [l for l in exp_labels if l is not None]
+    offsets = np.linspace(-d, d, len(exp_labels))
+
+    # Target horizontal markers
+    d1 = d * 2
+    for ix, pop in enumerate(pops_vis):
+        if center: target = 0
+        elif normalize: target = 1
+        else: target = df.loc[pop, 'target_rate']
+        ax.plot([x_base[ix] - d1, x_base[ix] + d1], [target, target],
+                color='black', linewidth=2, linestyle='-', zorder=0, alpha=target_alpha)
+
+    # Grouped boxplots
+    box_props = lambda c: dict(
+        patch_artist=True, showmeans=True, meanline=False, whis=1.5, vert=True,
+        boxprops=dict(facecolor=(*c, 0.45), edgecolor=c),
+        medianprops=dict(color=c, linewidth=1.5),
+        whiskerprops=dict(color=c, linewidth=1.2),
+        capprops=dict(color=c, linewidth=1.2),
+        meanprops=dict(marker='o', markerfacecolor='white', markeredgecolor='black', markersize=4),
+        flierprops=dict(marker='.', markerfacecolor=c, markeredgecolor=c, alpha=box_alpha),
+    )
+
+    for offset, exp_label in zip(offsets, exp_labels):
+        if exp_label is None:
+            continue
+        R_exp = R_all[exp_label].reindex(pop=pops_vis)
+        data = [R_exp.sel(pop=pop).values for pop in pops_vis]
+        data = [y[~np.isnan(y)] for y in data]
+        positions = [x_base[ix] + offset for ix, y in enumerate(data) if len(y) > 0]
+        data_valid = np.asarray([y for y in data if len(y) > 0])
+        if center:
+            data_valid = [y - df.loc[pop, 'target_rate']
+                          for pop, y in zip(pops_vis, data) if len(y) > 0]
+        elif normalize:
+            data_valid = [y / df.loc[pop, 'target_rate']
+                          for pop, y in zip(pops_vis, data) if len(y) > 0]
+        else:
+            data_valid = [y for y in data if len(y) > 0]
+        
+        try:
+            ax.boxplot(data_valid, positions=positions, widths=box_w,
+                    **box_props(colors[exp_label]))
+        except:
+            pass
+
+    # Simple legend
+    if legend:
+        handles = [plt.Line2D([0], [0], color=colors[k], lw=6, alpha=box_alpha, label=k) for k in exp_labels]
+        ax.legend(handles=handles)
+
+    ax.set_xticks(x_base)
+    ax.set_xticklabels(pops_vis, rotation=90)
+    if ylabel:
+        if center: ax.set_ylabel('r - r0, Hz')
+        elif normalize: ax.set_ylabel('r / r0')
+        else: ax.set_ylabel('Rate, Hz')
+    if title:
+        ax.set_title('Rates by population and trial')
+
+for group in groups_vis:
+    w = len(group)
+    plot_rates(group, center=True, figsize=(w, 3), legend=1)

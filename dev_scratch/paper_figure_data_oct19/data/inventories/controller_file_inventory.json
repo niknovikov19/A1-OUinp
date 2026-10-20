@@ -1,0 +1,21 @@
+{
+  "path": "exp_results/batch_rxbkg_state1_mech1/net_newsec_ctrl_var_seed/exp_thal_nseed_15_t_200.0_220.0_kmu_0.005_ksigma_0.0_taur_100_taum_2500_tauu_100_tc0_10000_tlock_160000_ks_0.0001_ku_0.001_epsm_0.1_wmult_0.25_ee_0.5/ctrl",
+  "files": [
+    "ctrl_00000_seed_1000.pkl",
+    "ctrl_00001_seed_1001.pkl",
+    "ctrl_00002_seed_1002.pkl",
+    "ctrl_00003_seed_1003.pkl",
+    "ctrl_00004_seed_1004.pkl",
+    "ctrl_00005_seed_1005.pkl",
+    "ctrl_00006_seed_1006.pkl",
+    "ctrl_00007_seed_1007.pkl",
+    "ctrl_00008_seed_1008.pkl",
+    "ctrl_00009_seed_1009.pkl",
+    "ctrl_00010_seed_1010.pkl",
+    "ctrl_00011_seed_1011.pkl",
+    "ctrl_00012_seed_1012.pkl",
+    "ctrl_00013_seed_1013.pkl",
+    "ctrl_00014_seed_1014.pkl"
+  ],
+  "first_size_bytes": 4437798
+}

@@ -76,3 +76,11 @@ dev_scratch/thal_frz/**/*.png
 dev_scratch/thal_frz/**/*.nc
 dev_scratch/thal_frz_2/**/*.png
 dev_scratch/thal_frz_2/**/*.nc
+
+# Paper figure investigation: dependencies and generated images
+/dev_scratch/paper_figure_data_oct19/.runtime/
+/dev_scratch/paper_figure_data_oct19/plots/
+/dev_scratch/paper_figure_data_oct19/evidence/**/*.png
+
+# Dated manuscript draft
+/doc/paper/Bkg_paper_Oct19_v2.pdf

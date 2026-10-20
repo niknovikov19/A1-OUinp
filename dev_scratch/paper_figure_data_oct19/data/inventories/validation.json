@@ -1,0 +1,280 @@
+{
+  "ctx_surr": {
+    "seeds_in_summary_filenames": [
+      1000,
+      1001,
+      1002,
+      1003,
+      1004,
+      1005,
+      1006,
+      1007,
+      1008,
+      1009,
+      1010,
+      1011,
+      1012,
+      1013,
+      1014
+    ],
+    "modeled_populations": 36,
+    "summary_windows_s": [
+      [
+        7.0,
+        10.0
+      ]
+    ],
+    "targets_match_local_csv": true,
+    "background_inputs_match_local_csv": true,
+    "seed1000_cfg_has_expected_seeds": true
+  },
+  "ctx_full": {
+    "seeds_in_summary_filenames": [
+      1000,
+      1001,
+      1002,
+      1003,
+      1004,
+      1005,
+      1006,
+      1007,
+      1008,
+      1009,
+      1010,
+      1011,
+      1012,
+      1013,
+      1014
+    ],
+    "modeled_populations": 36,
+    "summary_windows_s": [
+      [
+        7.0,
+        10.0
+      ]
+    ],
+    "targets_match_local_csv": true,
+    "background_inputs_match_local_csv": true,
+    "seed1000_cfg_has_expected_seeds": true
+  },
+  "ctx_ee_surr": {
+    "seeds_in_summary_filenames": [
+      1000,
+      1001,
+      1002,
+      1003,
+      1004,
+      1005,
+      1006,
+      1007,
+      1008,
+      1009,
+      1010,
+      1011,
+      1012,
+      1013,
+      1014
+    ],
+    "modeled_populations": 36,
+    "summary_windows_s": [
+      [
+        7.0,
+        10.0
+      ]
+    ],
+    "targets_match_local_csv": true,
+    "background_inputs_match_local_csv": true,
+    "seed1000_cfg_has_expected_seeds": true
+  },
+  "ctx_ee_fade": {
+    "seeds_in_summary_filenames": [
+      1000,
+      1001,
+      1002,
+      1003,
+      1004,
+      1005,
+      1006,
+      1007,
+      1008,
+      1009,
+      1010,
+      1011,
+      1012,
+      1013,
+      1014
+    ],
+    "modeled_populations": 36,
+    "summary_windows_s": [
+      [
+        7.0,
+        10.0
+      ]
+    ],
+    "targets_match_local_csv": true,
+    "background_inputs_match_local_csv": true,
+    "seed1000_cfg_has_expected_seeds": true
+  },
+  "thal_surr": {
+    "seeds_in_summary_filenames": [
+      1000,
+      1001,
+      1002,
+      1003,
+      1004,
+      1005,
+      1006,
+      1007,
+      1008,
+      1009,
+      1010,
+      1011,
+      1012,
+      1013,
+      1014
+    ],
+    "modeled_populations": 7,
+    "summary_windows_s": [
+      [
+        7.0,
+        10.0
+      ]
+    ],
+    "targets_match_local_csv": true,
+    "background_inputs_match_local_csv": true,
+    "seed1000_cfg_has_expected_seeds": true
+  },
+  "a1_errors": {
+    "seeds_in_summary_filenames": [
+      1000,
+      1001,
+      1002,
+      1003,
+      1004,
+      1005,
+      1006,
+      1007,
+      1008,
+      1009,
+      1010,
+      1011,
+      1012,
+      1013,
+      1014
+    ],
+    "modeled_populations": 43,
+    "summary_windows_s": [
+      [
+        15.0,
+        20.0
+      ]
+    ],
+    "targets_match_local_csv": true,
+    "background_inputs_match_local_csv": true,
+    "seed1000_cfg_has_expected_seeds": true
+  },
+  "a1_example": {
+    "seeds_in_summary_filenames": [
+      1000,
+      1001,
+      1002
+    ],
+    "modeled_populations": 43,
+    "summary_windows_s": [
+      [
+        15.0,
+        20.0
+      ]
+    ],
+    "targets_match_local_csv": true,
+    "background_inputs_match_local_csv": true,
+    "seed1000_cfg_has_expected_seeds": true
+  },
+  "thal_orig": {
+    "seeds_in_summary_filenames": [
+      1000,
+      1001,
+      1002,
+      1003,
+      1004,
+      1005,
+      1006,
+      1007,
+      1008,
+      1009,
+      1010,
+      1011,
+      1012,
+      1013,
+      1014
+    ],
+    "modeled_populations": 7,
+    "summary_windows_s": [
+      [
+        200.0,
+        220.0
+      ]
+    ],
+    "targets_match_local_csv": true,
+    "background_inputs_match_local_csv": true,
+    "seed1000_cfg_has_expected_seeds": true
+  },
+  "thal_own": {
+    "seeds_in_summary_filenames": [
+      1000,
+      1001,
+      1002,
+      1003,
+      1004,
+      1005,
+      1006,
+      1007,
+      1008,
+      1009,
+      1010,
+      1011,
+      1012,
+      1013,
+      1014
+    ],
+    "modeled_populations": 7,
+    "summary_windows_s": [
+      [
+        200.0,
+        220.0
+      ]
+    ],
+    "targets_match_local_csv": true,
+    "background_inputs_match_local_csv": true,
+    "seed1000_cfg_has_expected_seeds": true
+  },
+  "thal_med": {
+    "seeds_in_summary_filenames": [
+      1000,
+      1001,
+      1002,
+      1003,
+      1004,
+      1005,
+      1006,
+      1007,
+      1008,
+      1009,
+      1010,
+      1011,
+      1012,
+      1013,
+      1014
+    ],
+    "modeled_populations": 7,
+    "summary_windows_s": [
+      [
+        200.0,
+        220.0
+      ]
+    ],
+    "targets_match_local_csv": true,
+    "background_inputs_match_local_csv": true,
+    "seed1000_cfg_has_expected_seeds": true
+  }
+}

@@ -1,0 +1,4262 @@
+{
+  "ctx_surr": {
+    "duration": 10000.0,
+    "t0_calc": 7000.0,
+    "seed_main": 1000,
+    "seeds": {
+      "cell": 1,
+      "conn": 2000,
+      "loc": 1,
+      "stim": 1000
+    },
+    "wmult": 0.25,
+    "EEGain": 0.5,
+    "subnet_params": {
+      "conns_frozen": "all",
+      "fpath_frozen_rates": "/ddn/niknovikov19/repo/A1_OUinp/exp_configs/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/target_state_1.csv",
+      "global_seed": 3000,
+      "pops_active": [
+        "IT2",
+        "IT3",
+        "ITP4",
+        "ITS4",
+        "IT5A",
+        "IT5B",
+        "IT6",
+        "CT5A",
+        "CT5B",
+        "CT6",
+        "PT5B",
+        "PV2",
+        "PV3",
+        "PV4",
+        "PV5A",
+        "PV5B",
+        "PV6",
+        "SOM2",
+        "SOM3",
+        "SOM4",
+        "SOM5A",
+        "SOM5B",
+        "SOM6",
+        "VIP2",
+        "VIP3",
+        "VIP4",
+        "VIP5A",
+        "VIP5B",
+        "VIP6",
+        "NGF1",
+        "NGF2",
+        "NGF3",
+        "NGF4",
+        "NGF5A",
+        "NGF5B",
+        "NGF6"
+      ]
+    },
+    "IClamp": {
+      "CT5A": {
+        "amp": 0.2811061829853486
+      },
+      "CT5B": {
+        "amp": 0.2811521746117064
+      },
+      "CT6": {
+        "amp": 0.28108070843753286
+      },
+      "IT2": {
+        "amp": 0.1826028861538529
+      },
+      "IT3": {
+        "amp": 0.20736533596853907
+      },
+      "IT5A": {
+        "amp": 0.09949009140570944
+      },
+      "IT5B": {
+        "amp": 0.10708485376197718
+      },
+      "IT6": {
+        "amp": 0.09601067195088177
+      },
+      "ITP4": {
+        "amp": 0.214754445093032
+      },
+      "ITS4": {
+        "amp": 0.2146776587814983
+      },
+      "PT5B": {
+        "amp": 0.14307249038537465
+      }
+    },
+    "target_rates": {
+      "CT5A": 2.0,
+      "CT5B": 2.0,
+      "CT6": 2.0,
+      "HTC": 8.0,
+      "IRE": 15.0,
+      "IREM": 10.0,
+      "IT2": 2.0,
+      "IT3": 2.0,
+      "IT5A": 5.0,
+      "IT5B": 5.0,
+      "IT6": 3.0,
+      "ITP4": 2.0,
+      "ITS4": 2.0,
+      "NGF1": 3.0,
+      "NGF2": 1.0,
+      "NGF3": 1.0,
+      "NGF4": 0.1,
+      "NGF5A": 0.5,
+      "NGF5B": 0.5,
+      "NGF6": 0.5,
+      "PT5B": 5.0,
+      "PV2": 12.0,
+      "PV3": 12.0,
+      "PV4": 10.0,
+      "PV5A": 8.0,
+      "PV5B": 8.0,
+      "PV6": 15.0,
+      "SOM2": 6.0,
+      "SOM3": 6.0,
+      "SOM4": 5.0,
+      "SOM5A": 4.0,
+      "SOM5B": 4.0,
+      "SOM6": 7.0,
+      "TC": 8.0,
+      "TCM": 2.0,
+      "TI": 15.0,
+      "TIM": 10.0,
+      "VIP2": 7.0,
+      "VIP3": 7.0,
+      "VIP4": 0.2,
+      "VIP5A": 0.2,
+      "VIP5B": 0.2,
+      "VIP6": 0.2
+    }
+  },
+  "ctx_full": {
+    "duration": 10000.0,
+    "t0_calc": 7000.0,
+    "seed_main": 1000,
+    "seeds": {
+      "cell": 1,
+      "conn": 2000,
+      "loc": 1,
+      "stim": 1000
+    },
+    "wmult": 0.25,
+    "EEGain": 0.5,
+    "subnet_params": {
+      "conns_frozen": [],
+      "fpath_frozen_rates": "/ddn/niknovikov19/repo/A1_OUinp/exp_configs/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/target_state_1.csv",
+      "global_seed": 3000,
+      "pops_active": [
+        "IT2",
+        "IT3",
+        "ITP4",
+        "ITS4",
+        "IT5A",
+        "IT5B",
+        "IT6",
+        "CT5A",
+        "CT5B",
+        "CT6",
+        "PT5B",
+        "PV2",
+        "PV3",
+        "PV4",
+        "PV5A",
+        "PV5B",
+        "PV6",
+        "SOM2",
+        "SOM3",
+        "SOM4",
+        "SOM5A",
+        "SOM5B",
+        "SOM6",
+        "VIP2",
+        "VIP3",
+        "VIP4",
+        "VIP5A",
+        "VIP5B",
+        "VIP6",
+        "NGF1",
+        "NGF2",
+        "NGF3",
+        "NGF4",
+        "NGF5A",
+        "NGF5B",
+        "NGF6"
+      ]
+    },
+    "IClamp": {
+      "CT5A": {
+        "amp": 0.2811061829853486
+      },
+      "CT5B": {
+        "amp": 0.2811521746117064
+      },
+      "CT6": {
+        "amp": 0.28108070843753286
+      },
+      "IT2": {
+        "amp": 0.1826028861538529
+      },
+      "IT3": {
+        "amp": 0.20736533596853907
+      },
+      "IT5A": {
+        "amp": 0.09949009140570944
+      },
+      "IT5B": {
+        "amp": 0.10708485376197718
+      },
+      "IT6": {
+        "amp": 0.09601067195088177
+      },
+      "ITP4": {
+        "amp": 0.214754445093032
+      },
+      "ITS4": {
+        "amp": 0.2146776587814983
+      },
+      "PT5B": {
+        "amp": 0.14307249038537465
+      }
+    },
+    "target_rates": {
+      "CT5A": 2.0,
+      "CT5B": 2.0,
+      "CT6": 2.0,
+      "HTC": 8.0,
+      "IRE": 15.0,
+      "IREM": 10.0,
+      "IT2": 2.0,
+      "IT3": 2.0,
+      "IT5A": 5.0,
+      "IT5B": 5.0,
+      "IT6": 3.0,
+      "ITP4": 2.0,
+      "ITS4": 2.0,
+      "NGF1": 3.0,
+      "NGF2": 1.0,
+      "NGF3": 1.0,
+      "NGF4": 0.1,
+      "NGF5A": 0.5,
+      "NGF5B": 0.5,
+      "NGF6": 0.5,
+      "PT5B": 5.0,
+      "PV2": 12.0,
+      "PV3": 12.0,
+      "PV4": 10.0,
+      "PV5A": 8.0,
+      "PV5B": 8.0,
+      "PV6": 15.0,
+      "SOM2": 6.0,
+      "SOM3": 6.0,
+      "SOM4": 5.0,
+      "SOM5A": 4.0,
+      "SOM5B": 4.0,
+      "SOM6": 7.0,
+      "TC": 8.0,
+      "TCM": 2.0,
+      "TI": 15.0,
+      "TIM": 10.0,
+      "VIP2": 7.0,
+      "VIP3": 7.0,
+      "VIP4": 0.2,
+      "VIP5A": 0.2,
+      "VIP5B": 0.2,
+      "VIP6": 0.2
+    }
+  },
+  "ctx_ee_surr": {
+    "duration": 10000.0,
+    "t0_calc": 7000.0,
+    "seed_main": 1000,
+    "seeds": {
+      "cell": 1,
+      "conn": 2000,
+      "loc": 1,
+      "stim": 1000
+    },
+    "wmult": 0.25,
+    "EEGain": 0.5,
+    "subnet_params": {
+      "conns_frozen": [
+        [
+          "IT2",
+          "IT2"
+        ],
+        [
+          "IT2",
+          "IT3"
+        ],
+        [
+          "IT2",
+          "ITP4"
+        ],
+        [
+          "IT2",
+          "ITS4"
+        ],
+        [
+          "IT2",
+          "IT5A"
+        ],
+        [
+          "IT2",
+          "IT5B"
+        ],
+        [
+          "IT2",
+          "IT6"
+        ],
+        [
+          "IT2",
+          "CT5A"
+        ],
+        [
+          "IT2",
+          "CT5B"
+        ],
+        [
+          "IT2",
+          "CT6"
+        ],
+        [
+          "IT2",
+          "PT5B"
+        ],
+        [
+          "IT3",
+          "IT2"
+        ],
+        [
+          "IT3",
+          "IT3"
+        ],
+        [
+          "IT3",
+          "ITP4"
+        ],
+        [
+          "IT3",
+          "ITS4"
+        ],
+        [
+          "IT3",
+          "IT5A"
+        ],
+        [
+          "IT3",
+          "IT5B"
+        ],
+        [
+          "IT3",
+          "IT6"
+        ],
+        [
+          "IT3",
+          "CT5A"
+        ],
+        [
+          "IT3",
+          "CT5B"
+        ],
+        [
+          "IT3",
+          "CT6"
+        ],
+        [
+          "IT3",
+          "PT5B"
+        ],
+        [
+          "ITP4",
+          "IT2"
+        ],
+        [
+          "ITP4",
+          "IT3"
+        ],
+        [
+          "ITP4",
+          "ITP4"
+        ],
+        [
+          "ITP4",
+          "ITS4"
+        ],
+        [
+          "ITP4",
+          "IT5A"
+        ],
+        [
+          "ITP4",
+          "IT5B"
+        ],
+        [
+          "ITP4",
+          "IT6"
+        ],
+        [
+          "ITP4",
+          "CT5A"
+        ],
+        [
+          "ITP4",
+          "CT5B"
+        ],
+        [
+          "ITP4",
+          "CT6"
+        ],
+        [
+          "ITP4",
+          "PT5B"
+        ],
+        [
+          "ITS4",
+          "IT2"
+        ],
+        [
+          "ITS4",
+          "IT3"
+        ],
+        [
+          "ITS4",
+          "ITP4"
+        ],
+        [
+          "ITS4",
+          "ITS4"
+        ],
+        [
+          "ITS4",
+          "IT5A"
+        ],
+        [
+          "ITS4",
+          "IT5B"
+        ],
+        [
+          "ITS4",
+          "IT6"
+        ],
+        [
+          "ITS4",
+          "CT5A"
+        ],
+        [
+          "ITS4",
+          "CT5B"
+        ],
+        [
+          "ITS4",
+          "CT6"
+        ],
+        [
+          "ITS4",
+          "PT5B"
+        ],
+        [
+          "IT5A",
+          "IT2"
+        ],
+        [
+          "IT5A",
+          "IT3"
+        ],
+        [
+          "IT5A",
+          "ITP4"
+        ],
+        [
+          "IT5A",
+          "ITS4"
+        ],
+        [
+          "IT5A",
+          "IT5A"
+        ],
+        [
+          "IT5A",
+          "IT5B"
+        ],
+        [
+          "IT5A",
+          "IT6"
+        ],
+        [
+          "IT5A",
+          "CT5A"
+        ],
+        [
+          "IT5A",
+          "CT5B"
+        ],
+        [
+          "IT5A",
+          "CT6"
+        ],
+        [
+          "IT5A",
+          "PT5B"
+        ],
+        [
+          "IT5B",
+          "IT2"
+        ],
+        [
+          "IT5B",
+          "IT3"
+        ],
+        [
+          "IT5B",
+          "ITP4"
+        ],
+        [
+          "IT5B",
+          "ITS4"
+        ],
+        [
+          "IT5B",
+          "IT5A"
+        ],
+        [
+          "IT5B",
+          "IT5B"
+        ],
+        [
+          "IT5B",
+          "IT6"
+        ],
+        [
+          "IT5B",
+          "CT5A"
+        ],
+        [
+          "IT5B",
+          "CT5B"
+        ],
+        [
+          "IT5B",
+          "CT6"
+        ],
+        [
+          "IT5B",
+          "PT5B"
+        ],
+        [
+          "IT6",
+          "IT2"
+        ],
+        [
+          "IT6",
+          "IT3"
+        ],
+        [
+          "IT6",
+          "ITP4"
+        ],
+        [
+          "IT6",
+          "ITS4"
+        ],
+        [
+          "IT6",
+          "IT5A"
+        ],
+        [
+          "IT6",
+          "IT5B"
+        ],
+        [
+          "IT6",
+          "IT6"
+        ],
+        [
+          "IT6",
+          "CT5A"
+        ],
+        [
+          "IT6",
+          "CT5B"
+        ],
+        [
+          "IT6",
+          "CT6"
+        ],
+        [
+          "IT6",
+          "PT5B"
+        ],
+        [
+          "CT5A",
+          "IT2"
+        ],
+        [
+          "CT5A",
+          "IT3"
+        ],
+        [
+          "CT5A",
+          "ITP4"
+        ],
+        [
+          "CT5A",
+          "ITS4"
+        ],
+        [
+          "CT5A",
+          "IT5A"
+        ],
+        [
+          "CT5A",
+          "IT5B"
+        ],
+        [
+          "CT5A",
+          "IT6"
+        ],
+        [
+          "CT5A",
+          "CT5A"
+        ],
+        [
+          "CT5A",
+          "CT5B"
+        ],
+        [
+          "CT5A",
+          "CT6"
+        ],
+        [
+          "CT5A",
+          "PT5B"
+        ],
+        [
+          "CT5B",
+          "IT2"
+        ],
+        [
+          "CT5B",
+          "IT3"
+        ],
+        [
+          "CT5B",
+          "ITP4"
+        ],
+        [
+          "CT5B",
+          "ITS4"
+        ],
+        [
+          "CT5B",
+          "IT5A"
+        ],
+        [
+          "CT5B",
+          "IT5B"
+        ],
+        [
+          "CT5B",
+          "IT6"
+        ],
+        [
+          "CT5B",
+          "CT5A"
+        ],
+        [
+          "CT5B",
+          "CT5B"
+        ],
+        [
+          "CT5B",
+          "CT6"
+        ],
+        [
+          "CT5B",
+          "PT5B"
+        ],
+        [
+          "CT6",
+          "IT2"
+        ],
+        [
+          "CT6",
+          "IT3"
+        ],
+        [
+          "CT6",
+          "ITP4"
+        ],
+        [
+          "CT6",
+          "ITS4"
+        ],
+        [
+          "CT6",
+          "IT5A"
+        ],
+        [
+          "CT6",
+          "IT5B"
+        ],
+        [
+          "CT6",
+          "IT6"
+        ],
+        [
+          "CT6",
+          "CT5A"
+        ],
+        [
+          "CT6",
+          "CT5B"
+        ],
+        [
+          "CT6",
+          "CT6"
+        ],
+        [
+          "CT6",
+          "PT5B"
+        ],
+        [
+          "PT5B",
+          "IT2"
+        ],
+        [
+          "PT5B",
+          "IT3"
+        ],
+        [
+          "PT5B",
+          "ITP4"
+        ],
+        [
+          "PT5B",
+          "ITS4"
+        ],
+        [
+          "PT5B",
+          "IT5A"
+        ],
+        [
+          "PT5B",
+          "IT5B"
+        ],
+        [
+          "PT5B",
+          "IT6"
+        ],
+        [
+          "PT5B",
+          "CT5A"
+        ],
+        [
+          "PT5B",
+          "CT5B"
+        ],
+        [
+          "PT5B",
+          "CT6"
+        ],
+        [
+          "PT5B",
+          "PT5B"
+        ]
+      ],
+      "fpath_frozen_rates": "/ddn/niknovikov19/repo/A1_OUinp/exp_configs/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/target_state_1.csv",
+      "global_seed": 3000,
+      "pops_active": [
+        "IT2",
+        "IT3",
+        "ITP4",
+        "ITS4",
+        "IT5A",
+        "IT5B",
+        "IT6",
+        "CT5A",
+        "CT5B",
+        "CT6",
+        "PT5B",
+        "PV2",
+        "PV3",
+        "PV4",
+        "PV5A",
+        "PV5B",
+        "PV6",
+        "SOM2",
+        "SOM3",
+        "SOM4",
+        "SOM5A",
+        "SOM5B",
+        "SOM6",
+        "VIP2",
+        "VIP3",
+        "VIP4",
+        "VIP5A",
+        "VIP5B",
+        "VIP6",
+        "NGF1",
+        "NGF2",
+        "NGF3",
+        "NGF4",
+        "NGF5A",
+        "NGF5B",
+        "NGF6"
+      ]
+    },
+    "IClamp": {
+      "CT5A": {
+        "amp": 0.2811061829853486
+      },
+      "CT5B": {
+        "amp": 0.2811521746117064
+      },
+      "CT6": {
+        "amp": 0.28108070843753286
+      },
+      "IT2": {
+        "amp": 0.1826028861538529
+      },
+      "IT3": {
+        "amp": 0.20736533596853907
+      },
+      "IT5A": {
+        "amp": 0.09949009140570944
+      },
+      "IT5B": {
+        "amp": 0.10708485376197718
+      },
+      "IT6": {
+        "amp": 0.09601067195088177
+      },
+      "ITP4": {
+        "amp": 0.214754445093032
+      },
+      "ITS4": {
+        "amp": 0.2146776587814983
+      },
+      "PT5B": {
+        "amp": 0.14307249038537465
+      }
+    },
+    "target_rates": {
+      "CT5A": 2.0,
+      "CT5B": 2.0,
+      "CT6": 2.0,
+      "HTC": 8.0,
+      "IRE": 15.0,
+      "IREM": 10.0,
+      "IT2": 2.0,
+      "IT3": 2.0,
+      "IT5A": 5.0,
+      "IT5B": 5.0,
+      "IT6": 3.0,
+      "ITP4": 2.0,
+      "ITS4": 2.0,
+      "NGF1": 3.0,
+      "NGF2": 1.0,
+      "NGF3": 1.0,
+      "NGF4": 0.1,
+      "NGF5A": 0.5,
+      "NGF5B": 0.5,
+      "NGF6": 0.5,
+      "PT5B": 5.0,
+      "PV2": 12.0,
+      "PV3": 12.0,
+      "PV4": 10.0,
+      "PV5A": 8.0,
+      "PV5B": 8.0,
+      "PV6": 15.0,
+      "SOM2": 6.0,
+      "SOM3": 6.0,
+      "SOM4": 5.0,
+      "SOM5A": 4.0,
+      "SOM5B": 4.0,
+      "SOM6": 7.0,
+      "TC": 8.0,
+      "TCM": 2.0,
+      "TI": 15.0,
+      "TIM": 10.0,
+      "VIP2": 7.0,
+      "VIP3": 7.0,
+      "VIP4": 0.2,
+      "VIP5A": 0.2,
+      "VIP5B": 0.2,
+      "VIP6": 0.2
+    }
+  },
+  "ctx_ee_fade": {
+    "duration": 10000.0,
+    "t0_calc": 7000.0,
+    "seed_main": 1000,
+    "seeds": {
+      "cell": 1,
+      "conn": 2000,
+      "loc": 1,
+      "stim": 1000
+    },
+    "wmult": 0.25,
+    "EEGain": 0.5,
+    "subnet_params": {
+      "conns_frozen": [],
+      "conns_split": {
+        "CT5A, CT5A": 0.5,
+        "CT5A, CT5B": 0.5,
+        "CT5A, CT6": 0.5,
+        "CT5A, IT2": 0.5,
+        "CT5A, IT3": 0.5,
+        "CT5A, IT5A": 0.5,
+        "CT5A, IT5B": 0.5,
+        "CT5A, IT6": 0.5,
+        "CT5A, ITP4": 0.5,
+        "CT5A, ITS4": 0.5,
+        "CT5A, PT5B": 0.5,
+        "CT5B, CT5A": 0.5,
+        "CT5B, CT5B": 0.5,
+        "CT5B, CT6": 0.5,
+        "CT5B, IT2": 0.5,
+        "CT5B, IT3": 0.5,
+        "CT5B, IT5A": 0.5,
+        "CT5B, IT5B": 0.5,
+        "CT5B, IT6": 0.5,
+        "CT5B, ITP4": 0.5,
+        "CT5B, ITS4": 0.5,
+        "CT5B, PT5B": 0.5,
+        "CT6, CT5A": 0.5,
+        "CT6, CT5B": 0.5,
+        "CT6, CT6": 0.5,
+        "CT6, IT2": 0.5,
+        "CT6, IT3": 0.5,
+        "CT6, IT5A": 0.5,
+        "CT6, IT5B": 0.5,
+        "CT6, IT6": 0.5,
+        "CT6, ITP4": 0.5,
+        "CT6, ITS4": 0.5,
+        "CT6, PT5B": 0.5,
+        "IT2, CT5A": 0.5,
+        "IT2, CT5B": 0.5,
+        "IT2, CT6": 0.5,
+        "IT2, IT2": 0.5,
+        "IT2, IT3": 0.5,
+        "IT2, IT5A": 0.5,
+        "IT2, IT5B": 0.5,
+        "IT2, IT6": 0.5,
+        "IT2, ITP4": 0.5,
+        "IT2, ITS4": 0.5,
+        "IT2, PT5B": 0.5,
+        "IT3, CT5A": 0.5,
+        "IT3, CT5B": 0.5,
+        "IT3, CT6": 0.5,
+        "IT3, IT2": 0.5,
+        "IT3, IT3": 0.5,
+        "IT3, IT5A": 0.5,
+        "IT3, IT5B": 0.5,
+        "IT3, IT6": 0.5,
+        "IT3, ITP4": 0.5,
+        "IT3, ITS4": 0.5,
+        "IT3, PT5B": 0.5,
+        "IT5A, CT5A": 0.5,
+        "IT5A, CT5B": 0.5,
+        "IT5A, CT6": 0.5,
+        "IT5A, IT2": 0.5,
+        "IT5A, IT3": 0.5,
+        "IT5A, IT5A": 0.5,
+        "IT5A, IT5B": 0.5,
+        "IT5A, IT6": 0.5,
+        "IT5A, ITP4": 0.5,
+        "IT5A, ITS4": 0.5,
+        "IT5A, PT5B": 0.5,
+        "IT5B, CT5A": 0.5,
+        "IT5B, CT5B": 0.5,
+        "IT5B, CT6": 0.5,
+        "IT5B, IT2": 0.5,
+        "IT5B, IT3": 0.5,
+        "IT5B, IT5A": 0.5,
+        "IT5B, IT5B": 0.5,
+        "IT5B, IT6": 0.5,
+        "IT5B, ITP4": 0.5,
+        "IT5B, ITS4": 0.5,
+        "IT5B, PT5B": 0.5,
+        "IT6, CT5A": 0.5,
+        "IT6, CT5B": 0.5,
+        "IT6, CT6": 0.5,
+        "IT6, IT2": 0.5,
+        "IT6, IT3": 0.5,
+        "IT6, IT5A": 0.5,
+        "IT6, IT5B": 0.5,
+        "IT6, IT6": 0.5,
+        "IT6, ITP4": 0.5,
+        "IT6, ITS4": 0.5,
+        "IT6, PT5B": 0.5,
+        "ITP4, CT5A": 0.5,
+        "ITP4, CT5B": 0.5,
+        "ITP4, CT6": 0.5,
+        "ITP4, IT2": 0.5,
+        "ITP4, IT3": 0.5,
+        "ITP4, IT5A": 0.5,
+        "ITP4, IT5B": 0.5,
+        "ITP4, IT6": 0.5,
+        "ITP4, ITP4": 0.5,
+        "ITP4, ITS4": 0.5,
+        "ITP4, PT5B": 0.5,
+        "ITS4, CT5A": 0.5,
+        "ITS4, CT5B": 0.5,
+        "ITS4, CT6": 0.5,
+        "ITS4, IT2": 0.5,
+        "ITS4, IT3": 0.5,
+        "ITS4, IT5A": 0.5,
+        "ITS4, IT5B": 0.5,
+        "ITS4, IT6": 0.5,
+        "ITS4, ITP4": 0.5,
+        "ITS4, ITS4": 0.5,
+        "ITS4, PT5B": 0.5,
+        "PT5B, CT5A": 0.5,
+        "PT5B, CT5B": 0.5,
+        "PT5B, CT6": 0.5,
+        "PT5B, IT2": 0.5,
+        "PT5B, IT3": 0.5,
+        "PT5B, IT5A": 0.5,
+        "PT5B, IT5B": 0.5,
+        "PT5B, IT6": 0.5,
+        "PT5B, ITP4": 0.5,
+        "PT5B, ITS4": 0.5,
+        "PT5B, PT5B": 0.5
+      },
+      "fpath_frozen_rates": "/ddn/niknovikov19/repo/A1_OUinp/exp_configs/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/target_state_1.csv",
+      "global_seed": 3000,
+      "pops_active": [
+        "IT2",
+        "IT3",
+        "ITP4",
+        "ITS4",
+        "IT5A",
+        "IT5B",
+        "IT6",
+        "CT5A",
+        "CT5B",
+        "CT6",
+        "PT5B",
+        "PV2",
+        "PV3",
+        "PV4",
+        "PV5A",
+        "PV5B",
+        "PV6",
+        "SOM2",
+        "SOM3",
+        "SOM4",
+        "SOM5A",
+        "SOM5B",
+        "SOM6",
+        "VIP2",
+        "VIP3",
+        "VIP4",
+        "VIP5A",
+        "VIP5B",
+        "VIP6",
+        "NGF1",
+        "NGF2",
+        "NGF3",
+        "NGF4",
+        "NGF5A",
+        "NGF5B",
+        "NGF6"
+      ]
+    },
+    "IClamp": {
+      "CT5A": {
+        "amp": 0.2811061829853486
+      },
+      "CT5B": {
+        "amp": 0.2811521746117064
+      },
+      "CT6": {
+        "amp": 0.28108070843753286
+      },
+      "IT2": {
+        "amp": 0.1826028861538529
+      },
+      "IT3": {
+        "amp": 0.20736533596853907
+      },
+      "IT5A": {
+        "amp": 0.09949009140570944
+      },
+      "IT5B": {
+        "amp": 0.10708485376197718
+      },
+      "IT6": {
+        "amp": 0.09601067195088177
+      },
+      "ITP4": {
+        "amp": 0.214754445093032
+      },
+      "ITS4": {
+        "amp": 0.2146776587814983
+      },
+      "PT5B": {
+        "amp": 0.14307249038537465
+      }
+    },
+    "target_rates": {
+      "CT5A": 2.0,
+      "CT5B": 2.0,
+      "CT6": 2.0,
+      "HTC": 8.0,
+      "IRE": 15.0,
+      "IREM": 10.0,
+      "IT2": 2.0,
+      "IT3": 2.0,
+      "IT5A": 5.0,
+      "IT5B": 5.0,
+      "IT6": 3.0,
+      "ITP4": 2.0,
+      "ITS4": 2.0,
+      "NGF1": 3.0,
+      "NGF2": 1.0,
+      "NGF3": 1.0,
+      "NGF4": 0.1,
+      "NGF5A": 0.5,
+      "NGF5B": 0.5,
+      "NGF6": 0.5,
+      "PT5B": 5.0,
+      "PV2": 12.0,
+      "PV3": 12.0,
+      "PV4": 10.0,
+      "PV5A": 8.0,
+      "PV5B": 8.0,
+      "PV6": 15.0,
+      "SOM2": 6.0,
+      "SOM3": 6.0,
+      "SOM4": 5.0,
+      "SOM5A": 4.0,
+      "SOM5B": 4.0,
+      "SOM6": 7.0,
+      "TC": 8.0,
+      "TCM": 2.0,
+      "TI": 15.0,
+      "TIM": 10.0,
+      "VIP2": 7.0,
+      "VIP3": 7.0,
+      "VIP4": 0.2,
+      "VIP5A": 0.2,
+      "VIP5B": 0.2,
+      "VIP6": 0.2
+    }
+  },
+  "thal_surr": {
+    "duration": 10000.0,
+    "t0_calc": 7000.0,
+    "seed_main": 1000,
+    "seeds": {
+      "cell": 1,
+      "conn": 2000,
+      "loc": 1,
+      "stim": 1000
+    },
+    "wmult": 0.25,
+    "EEGain": 0.5,
+    "subnet_params": {
+      "conns_frozen": "all",
+      "fpath_frozen_rates": "/ddn/niknovikov19/repo/A1_OUinp/exp_configs/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/target_state_1.csv",
+      "global_seed": 3000,
+      "pops_active": [
+        "TC",
+        "HTC",
+        "TCM",
+        "TI",
+        "TIM",
+        "IRE",
+        "IREM"
+      ]
+    },
+    "IClamp": {
+      "HTC": {
+        "amp": 4
+      },
+      "IRE": {
+        "amp": 0.2
+      },
+      "IREM": {
+        "amp": 0.2
+      },
+      "TC": {
+        "amp": 4
+      },
+      "TCM": {
+        "amp": 6
+      },
+      "TI": {
+        "amp": 0.03
+      },
+      "TIM": {
+        "amp": 0.03
+      }
+    },
+    "target_rates": {
+      "CT5A": 2.0,
+      "CT5B": 2.0,
+      "CT6": 2.0,
+      "HTC": 8.0,
+      "IRE": 15.0,
+      "IREM": 10.0,
+      "IT2": 2.0,
+      "IT3": 2.0,
+      "IT5A": 5.0,
+      "IT5B": 5.0,
+      "IT6": 3.0,
+      "ITP4": 2.0,
+      "ITS4": 2.0,
+      "NGF1": 3.0,
+      "NGF2": 1.0,
+      "NGF3": 1.0,
+      "NGF4": 0.1,
+      "NGF5A": 0.5,
+      "NGF5B": 0.5,
+      "NGF6": 0.5,
+      "PT5B": 5.0,
+      "PV2": 12.0,
+      "PV3": 12.0,
+      "PV4": 10.0,
+      "PV5A": 8.0,
+      "PV5B": 8.0,
+      "PV6": 15.0,
+      "SOM2": 6.0,
+      "SOM3": 6.0,
+      "SOM4": 5.0,
+      "SOM5A": 4.0,
+      "SOM5B": 4.0,
+      "SOM6": 7.0,
+      "TC": 8.0,
+      "TCM": 2.0,
+      "TI": 15.0,
+      "TIM": 10.0,
+      "VIP2": 7.0,
+      "VIP3": 7.0,
+      "VIP4": 0.2,
+      "VIP5A": 0.2,
+      "VIP5B": 0.2,
+      "VIP6": 0.2
+    }
+  },
+  "a1_errors": {
+    "duration": 20000.0,
+    "t0_calc": 15000.0,
+    "seed_main": 1000,
+    "seeds": {
+      "cell": 1,
+      "conn": 2000,
+      "loc": 1,
+      "stim": 1000
+    },
+    "wmult": 0.25,
+    "EEGain": 0.5,
+    "subnet_params": {
+      "conns_frozen": [],
+      "conns_split": {
+        "CT5A, CT5A": 0.5,
+        "CT5A, CT5B": 0.5,
+        "CT5A, CT6": 0.5,
+        "CT5A, HTC": 0.5,
+        "CT5A, IT2": 0.5,
+        "CT5A, IT3": 0.5,
+        "CT5A, IT5A": 0.5,
+        "CT5A, IT5B": 0.5,
+        "CT5A, IT6": 0.5,
+        "CT5A, ITP4": 0.5,
+        "CT5A, ITS4": 0.5,
+        "CT5A, PT5B": 0.5,
+        "CT5A, TC": 0.5,
+        "CT5A, TCM": 0.5,
+        "CT5B, CT5A": 0.5,
+        "CT5B, CT5B": 0.5,
+        "CT5B, CT6": 0.5,
+        "CT5B, HTC": 0.5,
+        "CT5B, IT2": 0.5,
+        "CT5B, IT3": 0.5,
+        "CT5B, IT5A": 0.5,
+        "CT5B, IT5B": 0.5,
+        "CT5B, IT6": 0.5,
+        "CT5B, ITP4": 0.5,
+        "CT5B, ITS4": 0.5,
+        "CT5B, PT5B": 0.5,
+        "CT5B, TC": 0.5,
+        "CT5B, TCM": 0.5,
+        "CT6, CT5A": 0.5,
+        "CT6, CT5B": 0.5,
+        "CT6, CT6": 0.5,
+        "CT6, HTC": 0.5,
+        "CT6, IT2": 0.5,
+        "CT6, IT3": 0.5,
+        "CT6, IT5A": 0.5,
+        "CT6, IT5B": 0.5,
+        "CT6, IT6": 0.5,
+        "CT6, ITP4": 0.5,
+        "CT6, ITS4": 0.5,
+        "CT6, PT5B": 0.5,
+        "CT6, TC": 0.5,
+        "CT6, TCM": 0.5,
+        "HTC, CT5A": 0.5,
+        "HTC, CT5B": 0.5,
+        "HTC, CT6": 0.5,
+        "HTC, HTC": 0.5,
+        "HTC, IT2": 0.5,
+        "HTC, IT3": 0.5,
+        "HTC, IT5A": 0.5,
+        "HTC, IT5B": 0.5,
+        "HTC, IT6": 0.5,
+        "HTC, ITP4": 0.5,
+        "HTC, ITS4": 0.5,
+        "HTC, PT5B": 0.5,
+        "HTC, TC": 0.5,
+        "HTC, TCM": 0.5,
+        "IT2, CT5A": 0.5,
+        "IT2, CT5B": 0.5,
+        "IT2, CT6": 0.5,
+        "IT2, HTC": 0.5,
+        "IT2, IT2": 0.5,
+        "IT2, IT3": 0.5,
+        "IT2, IT5A": 0.5,
+        "IT2, IT5B": 0.5,
+        "IT2, IT6": 0.5,
+        "IT2, ITP4": 0.5,
+        "IT2, ITS4": 0.5,
+        "IT2, PT5B": 0.5,
+        "IT2, TC": 0.5,
+        "IT2, TCM": 0.5,
+        "IT3, CT5A": 0.5,
+        "IT3, CT5B": 0.5,
+        "IT3, CT6": 0.5,
+        "IT3, HTC": 0.5,
+        "IT3, IT2": 0.5,
+        "IT3, IT3": 0.5,
+        "IT3, IT5A": 0.5,
+        "IT3, IT5B": 0.5,
+        "IT3, IT6": 0.5,
+        "IT3, ITP4": 0.5,
+        "IT3, ITS4": 0.5,
+        "IT3, PT5B": 0.5,
+        "IT3, TC": 0.5,
+        "IT3, TCM": 0.5,
+        "IT5A, CT5A": 0.5,
+        "IT5A, CT5B": 0.5,
+        "IT5A, CT6": 0.5,
+        "IT5A, HTC": 0.5,
+        "IT5A, IT2": 0.5,
+        "IT5A, IT3": 0.5,
+        "IT5A, IT5A": 0.5,
+        "IT5A, IT5B": 0.5,
+        "IT5A, IT6": 0.5,
+        "IT5A, ITP4": 0.5,
+        "IT5A, ITS4": 0.5,
+        "IT5A, PT5B": 0.5,
+        "IT5A, TC": 0.5,
+        "IT5A, TCM": 0.5,
+        "IT5B, CT5A": 0.5,
+        "IT5B, CT5B": 0.5,
+        "IT5B, CT6": 0.5,
+        "IT5B, HTC": 0.5,
+        "IT5B, IT2": 0.5,
+        "IT5B, IT3": 0.5,
+        "IT5B, IT5A": 0.5,
+        "IT5B, IT5B": 0.5,
+        "IT5B, IT6": 0.5,
+        "IT5B, ITP4": 0.5,
+        "IT5B, ITS4": 0.5,
+        "IT5B, PT5B": 0.5,
+        "IT5B, TC": 0.5,
+        "IT5B, TCM": 0.5,
+        "IT6, CT5A": 0.5,
+        "IT6, CT5B": 0.5,
+        "IT6, CT6": 0.5,
+        "IT6, HTC": 0.5,
+        "IT6, IT2": 0.5,
+        "IT6, IT3": 0.5,
+        "IT6, IT5A": 0.5,
+        "IT6, IT5B": 0.5,
+        "IT6, IT6": 0.5,
+        "IT6, ITP4": 0.5,
+        "IT6, ITS4": 0.5,
+        "IT6, PT5B": 0.5,
+        "IT6, TC": 0.5,
+        "IT6, TCM": 0.5,
+        "ITP4, CT5A": 0.5,
+        "ITP4, CT5B": 0.5,
+        "ITP4, CT6": 0.5,
+        "ITP4, HTC": 0.5,
+        "ITP4, IT2": 0.5,
+        "ITP4, IT3": 0.5,
+        "ITP4, IT5A": 0.5,
+        "ITP4, IT5B": 0.5,
+        "ITP4, IT6": 0.5,
+        "ITP4, ITP4": 0.5,
+        "ITP4, ITS4": 0.5,
+        "ITP4, PT5B": 0.5,
+        "ITP4, TC": 0.5,
+        "ITP4, TCM": 0.5,
+        "ITS4, CT5A": 0.5,
+        "ITS4, CT5B": 0.5,
+        "ITS4, CT6": 0.5,
+        "ITS4, HTC": 0.5,
+        "ITS4, IT2": 0.5,
+        "ITS4, IT3": 0.5,
+        "ITS4, IT5A": 0.5,
+        "ITS4, IT5B": 0.5,
+        "ITS4, IT6": 0.5,
+        "ITS4, ITP4": 0.5,
+        "ITS4, ITS4": 0.5,
+        "ITS4, PT5B": 0.5,
+        "ITS4, TC": 0.5,
+        "ITS4, TCM": 0.5,
+        "PT5B, CT5A": 0.5,
+        "PT5B, CT5B": 0.5,
+        "PT5B, CT6": 0.5,
+        "PT5B, HTC": 0.5,
+        "PT5B, IT2": 0.5,
+        "PT5B, IT3": 0.5,
+        "PT5B, IT5A": 0.5,
+        "PT5B, IT5B": 0.5,
+        "PT5B, IT6": 0.5,
+        "PT5B, ITP4": 0.5,
+        "PT5B, ITS4": 0.5,
+        "PT5B, PT5B": 0.5,
+        "PT5B, TC": 0.5,
+        "PT5B, TCM": 0.5,
+        "TC, CT5A": 0.5,
+        "TC, CT5B": 0.5,
+        "TC, CT6": 0.5,
+        "TC, HTC": 0.5,
+        "TC, IT2": 0.5,
+        "TC, IT3": 0.5,
+        "TC, IT5A": 0.5,
+        "TC, IT5B": 0.5,
+        "TC, IT6": 0.5,
+        "TC, ITP4": 0.5,
+        "TC, ITS4": 0.5,
+        "TC, PT5B": 0.5,
+        "TC, TC": 0.5,
+        "TC, TCM": 0.5,
+        "TCM, CT5A": 0.5,
+        "TCM, CT5B": 0.5,
+        "TCM, CT6": 0.5,
+        "TCM, HTC": 0.5,
+        "TCM, IT2": 0.5,
+        "TCM, IT3": 0.5,
+        "TCM, IT5A": 0.5,
+        "TCM, IT5B": 0.5,
+        "TCM, IT6": 0.5,
+        "TCM, ITP4": 0.5,
+        "TCM, ITS4": 0.5,
+        "TCM, PT5B": 0.5,
+        "TCM, TC": 0.5,
+        "TCM, TCM": 0.5
+      },
+      "fpath_frozen_rates": "/ddn/niknovikov19/repo/A1_OUinp/exp_configs/batch_rxbkg_state1_mech1/net_newsec_var_seed/target_state_1.csv",
+      "global_seed": 3000,
+      "pops_active": [
+        "IT2",
+        "IT3",
+        "ITP4",
+        "ITS4",
+        "IT5A",
+        "IT5B",
+        "IT6",
+        "CT5A",
+        "CT5B",
+        "CT6",
+        "PT5B",
+        "PV2",
+        "PV3",
+        "PV4",
+        "PV5A",
+        "PV5B",
+        "PV6",
+        "SOM2",
+        "SOM3",
+        "SOM4",
+        "SOM5A",
+        "SOM5B",
+        "SOM6",
+        "VIP2",
+        "VIP3",
+        "VIP4",
+        "VIP5A",
+        "VIP5B",
+        "VIP6",
+        "NGF1",
+        "NGF2",
+        "NGF3",
+        "NGF4",
+        "NGF5A",
+        "NGF5B",
+        "NGF6",
+        "TC",
+        "HTC",
+        "TI",
+        "IRE",
+        "TCM",
+        "TIM",
+        "IREM"
+      ]
+    },
+    "runtime_params": {
+      "conn": {
+        "ee_fader_on": 1,
+        "fader_pts": [
+          [
+            0,
+            0
+          ],
+          [
+            8000,
+            0
+          ],
+          [
+            10000,
+            1
+          ],
+          [
+            20000.0,
+            1
+          ]
+        ],
+        "wmat_multipliers": []
+      },
+      "inp": {
+        "add_pulses": 0,
+        "ibkg_corrections": {}
+      },
+      "out": {
+        "plot_csd": 0,
+        "plot_rate_dynamics": 1,
+        "plot_traces": 0,
+        "save_lfp_xr": false,
+        "save_pkl": true,
+        "save_rate_xr": false
+      },
+      "pops_used": [
+        "IT2",
+        "IT3",
+        "ITP4",
+        "ITS4",
+        "IT5A",
+        "IT5B",
+        "IT6",
+        "CT5A",
+        "CT5B",
+        "CT6",
+        "PT5B",
+        "PV2",
+        "PV3",
+        "PV4",
+        "PV5A",
+        "PV5B",
+        "PV6",
+        "SOM2",
+        "SOM3",
+        "SOM4",
+        "SOM5A",
+        "SOM5B",
+        "SOM6",
+        "VIP2",
+        "VIP3",
+        "VIP4",
+        "VIP5A",
+        "VIP5B",
+        "VIP6",
+        "NGF1",
+        "NGF2",
+        "NGF3",
+        "NGF4",
+        "NGF5A",
+        "NGF5B",
+        "NGF6",
+        "TC",
+        "HTC",
+        "TI",
+        "IRE",
+        "TCM",
+        "TIM",
+        "IREM"
+      ],
+      "proc": {
+        "rate_dt_bin": 0.005,
+        "rate_t_limits": null,
+        "rate_tau_smooth": 0.05
+      },
+      "rec": {
+        "lfp": 0,
+        "traces": 0
+      },
+      "time": {
+        "duration": 20000.0,
+        "t0_calc": 15000.0
+      }
+    },
+    "IClamp": {
+      "CT5A": {
+        "amp": 0.2811061829853486,
+        "dur": 20000.0
+      },
+      "CT5B": {
+        "amp": 0.2811521746117064,
+        "dur": 20000.0
+      },
+      "CT6": {
+        "amp": 0.28108070843753286,
+        "dur": 20000.0
+      },
+      "HTC": [
+        {
+          "amp": 4,
+          "dur": 20000.0
+        },
+        {
+          "amp": -0.15799162850300966,
+          "dur": 20000.0
+        }
+      ],
+      "IRE": [
+        {
+          "amp": 0.2,
+          "dur": 20000.0
+        },
+        {
+          "amp": -0.019262143816851655,
+          "dur": 20000.0
+        }
+      ],
+      "IREM": [
+        {
+          "amp": 0.2,
+          "dur": 20000.0
+        },
+        {
+          "amp": -0.03076673928626604,
+          "dur": 20000.0
+        }
+      ],
+      "IT2": {
+        "amp": 0.1826028861538529,
+        "dur": 20000.0
+      },
+      "IT3": {
+        "amp": 0.20736533596853907,
+        "dur": 20000.0
+      },
+      "IT5A": {
+        "amp": 0.09949009140570944,
+        "dur": 20000.0
+      },
+      "IT5B": {
+        "amp": 0.10708485376197718,
+        "dur": 20000.0
+      },
+      "IT6": {
+        "amp": 0.09601067195088177,
+        "dur": 20000.0
+      },
+      "ITP4": {
+        "amp": 0.214754445093032,
+        "dur": 20000.0
+      },
+      "ITS4": {
+        "amp": 0.2146776587814983,
+        "dur": 20000.0
+      },
+      "PT5B": {
+        "amp": 0.14307249038537465,
+        "dur": 20000.0
+      },
+      "TC": [
+        {
+          "amp": 4,
+          "dur": 20000.0
+        },
+        {
+          "amp": -0.23506264738553814,
+          "dur": 20000.0
+        }
+      ],
+      "TCM": [
+        {
+          "amp": 6,
+          "dur": 20000.0
+        },
+        {
+          "amp": -0.20883876990917746,
+          "dur": 20000.0
+        }
+      ],
+      "TI": [
+        {
+          "amp": 0.03,
+          "dur": 20000.0
+        },
+        {
+          "amp": -0.0004659604456170393,
+          "dur": 20000.0
+        }
+      ],
+      "TIM": [
+        {
+          "amp": 0.03,
+          "dur": 20000.0
+        },
+        {
+          "amp": -0.0008936951682445695,
+          "dur": 20000.0
+        }
+      ]
+    },
+    "target_rates": {
+      "CT5A": 2.0,
+      "CT5B": 2.0,
+      "CT6": 2.0,
+      "HTC": 8.0,
+      "IRE": 15.0,
+      "IREM": 10.0,
+      "IT2": 2.0,
+      "IT3": 2.0,
+      "IT5A": 5.0,
+      "IT5B": 5.0,
+      "IT6": 3.0,
+      "ITP4": 2.0,
+      "ITS4": 2.0,
+      "NGF1": 3.0,
+      "NGF2": 1.0,
+      "NGF3": 1.0,
+      "NGF4": 0.1,
+      "NGF5A": 0.5,
+      "NGF5B": 0.5,
+      "NGF6": 0.5,
+      "PT5B": 5.0,
+      "PV2": 12.0,
+      "PV3": 12.0,
+      "PV4": 10.0,
+      "PV5A": 8.0,
+      "PV5B": 8.0,
+      "PV6": 15.0,
+      "SOM2": 6.0,
+      "SOM3": 6.0,
+      "SOM4": 5.0,
+      "SOM5A": 4.0,
+      "SOM5B": 4.0,
+      "SOM6": 7.0,
+      "TC": 8.0,
+      "TCM": 2.0,
+      "TI": 15.0,
+      "TIM": 10.0,
+      "VIP2": 7.0,
+      "VIP3": 7.0,
+      "VIP4": 0.2,
+      "VIP5A": 0.2,
+      "VIP5B": 0.2,
+      "VIP6": 0.2
+    },
+    "ee_fader_on": true,
+    "conns_split": [
+      [
+        "IT2",
+        "IT2"
+      ],
+      [
+        "IT2",
+        "IT3"
+      ],
+      [
+        "IT2",
+        "ITP4"
+      ],
+      [
+        "IT2",
+        "ITS4"
+      ],
+      [
+        "IT2",
+        "IT5A"
+      ],
+      [
+        "IT2",
+        "IT5B"
+      ],
+      [
+        "IT2",
+        "IT6"
+      ],
+      [
+        "IT2",
+        "CT5A"
+      ],
+      [
+        "IT2",
+        "CT5B"
+      ],
+      [
+        "IT2",
+        "CT6"
+      ],
+      [
+        "IT2",
+        "PT5B"
+      ],
+      [
+        "IT2",
+        "TC"
+      ],
+      [
+        "IT2",
+        "HTC"
+      ],
+      [
+        "IT2",
+        "TCM"
+      ],
+      [
+        "IT3",
+        "IT2"
+      ],
+      [
+        "IT3",
+        "IT3"
+      ],
+      [
+        "IT3",
+        "ITP4"
+      ],
+      [
+        "IT3",
+        "ITS4"
+      ],
+      [
+        "IT3",
+        "IT5A"
+      ],
+      [
+        "IT3",
+        "IT5B"
+      ],
+      [
+        "IT3",
+        "IT6"
+      ],
+      [
+        "IT3",
+        "CT5A"
+      ],
+      [
+        "IT3",
+        "CT5B"
+      ],
+      [
+        "IT3",
+        "CT6"
+      ],
+      [
+        "IT3",
+        "PT5B"
+      ],
+      [
+        "IT3",
+        "TC"
+      ],
+      [
+        "IT3",
+        "HTC"
+      ],
+      [
+        "IT3",
+        "TCM"
+      ],
+      [
+        "ITP4",
+        "IT2"
+      ],
+      [
+        "ITP4",
+        "IT3"
+      ],
+      [
+        "ITP4",
+        "ITP4"
+      ],
+      [
+        "ITP4",
+        "ITS4"
+      ],
+      [
+        "ITP4",
+        "IT5A"
+      ],
+      [
+        "ITP4",
+        "IT5B"
+      ],
+      [
+        "ITP4",
+        "IT6"
+      ],
+      [
+        "ITP4",
+        "CT5A"
+      ],
+      [
+        "ITP4",
+        "CT5B"
+      ],
+      [
+        "ITP4",
+        "CT6"
+      ],
+      [
+        "ITP4",
+        "PT5B"
+      ],
+      [
+        "ITP4",
+        "TC"
+      ],
+      [
+        "ITP4",
+        "HTC"
+      ],
+      [
+        "ITP4",
+        "TCM"
+      ],
+      [
+        "ITS4",
+        "IT2"
+      ],
+      [
+        "ITS4",
+        "IT3"
+      ],
+      [
+        "ITS4",
+        "ITP4"
+      ],
+      [
+        "ITS4",
+        "ITS4"
+      ],
+      [
+        "ITS4",
+        "IT5A"
+      ],
+      [
+        "ITS4",
+        "IT5B"
+      ],
+      [
+        "ITS4",
+        "IT6"
+      ],
+      [
+        "ITS4",
+        "CT5A"
+      ],
+      [
+        "ITS4",
+        "CT5B"
+      ],
+      [
+        "ITS4",
+        "CT6"
+      ],
+      [
+        "ITS4",
+        "PT5B"
+      ],
+      [
+        "ITS4",
+        "TC"
+      ],
+      [
+        "ITS4",
+        "HTC"
+      ],
+      [
+        "ITS4",
+        "TCM"
+      ],
+      [
+        "IT5A",
+        "IT2"
+      ],
+      [
+        "IT5A",
+        "IT3"
+      ],
+      [
+        "IT5A",
+        "ITP4"
+      ],
+      [
+        "IT5A",
+        "ITS4"
+      ],
+      [
+        "IT5A",
+        "IT5A"
+      ],
+      [
+        "IT5A",
+        "IT5B"
+      ],
+      [
+        "IT5A",
+        "IT6"
+      ],
+      [
+        "IT5A",
+        "CT5A"
+      ],
+      [
+        "IT5A",
+        "CT5B"
+      ],
+      [
+        "IT5A",
+        "CT6"
+      ],
+      [
+        "IT5A",
+        "PT5B"
+      ],
+      [
+        "IT5A",
+        "TC"
+      ],
+      [
+        "IT5A",
+        "HTC"
+      ],
+      [
+        "IT5A",
+        "TCM"
+      ],
+      [
+        "IT5B",
+        "IT2"
+      ],
+      [
+        "IT5B",
+        "IT3"
+      ],
+      [
+        "IT5B",
+        "ITP4"
+      ],
+      [
+        "IT5B",
+        "ITS4"
+      ],
+      [
+        "IT5B",
+        "IT5A"
+      ],
+      [
+        "IT5B",
+        "IT5B"
+      ],
+      [
+        "IT5B",
+        "IT6"
+      ],
+      [
+        "IT5B",
+        "CT5A"
+      ],
+      [
+        "IT5B",
+        "CT5B"
+      ],
+      [
+        "IT5B",
+        "CT6"
+      ],
+      [
+        "IT5B",
+        "PT5B"
+      ],
+      [
+        "IT5B",
+        "TC"
+      ],
+      [
+        "IT5B",
+        "HTC"
+      ],
+      [
+        "IT5B",
+        "TCM"
+      ],
+      [
+        "IT6",
+        "IT2"
+      ],
+      [
+        "IT6",
+        "IT3"
+      ],
+      [
+        "IT6",
+        "ITP4"
+      ],
+      [
+        "IT6",
+        "ITS4"
+      ],
+      [
+        "IT6",
+        "IT5A"
+      ],
+      [
+        "IT6",
+        "IT5B"
+      ],
+      [
+        "IT6",
+        "IT6"
+      ],
+      [
+        "IT6",
+        "CT5A"
+      ],
+      [
+        "IT6",
+        "CT5B"
+      ],
+      [
+        "IT6",
+        "CT6"
+      ],
+      [
+        "IT6",
+        "PT5B"
+      ],
+      [
+        "IT6",
+        "TC"
+      ],
+      [
+        "IT6",
+        "HTC"
+      ],
+      [
+        "IT6",
+        "TCM"
+      ],
+      [
+        "CT5A",
+        "IT2"
+      ],
+      [
+        "CT5A",
+        "IT3"
+      ],
+      [
+        "CT5A",
+        "ITP4"
+      ],
+      [
+        "CT5A",
+        "ITS4"
+      ],
+      [
+        "CT5A",
+        "IT5A"
+      ],
+      [
+        "CT5A",
+        "IT5B"
+      ],
+      [
+        "CT5A",
+        "IT6"
+      ],
+      [
+        "CT5A",
+        "CT5A"
+      ],
+      [
+        "CT5A",
+        "CT5B"
+      ],
+      [
+        "CT5A",
+        "CT6"
+      ],
+      [
+        "CT5A",
+        "PT5B"
+      ],
+      [
+        "CT5A",
+        "TC"
+      ],
+      [
+        "CT5A",
+        "HTC"
+      ],
+      [
+        "CT5A",
+        "TCM"
+      ],
+      [
+        "CT5B",
+        "IT2"
+      ],
+      [
+        "CT5B",
+        "IT3"
+      ],
+      [
+        "CT5B",
+        "ITP4"
+      ],
+      [
+        "CT5B",
+        "ITS4"
+      ],
+      [
+        "CT5B",
+        "IT5A"
+      ],
+      [
+        "CT5B",
+        "IT5B"
+      ],
+      [
+        "CT5B",
+        "IT6"
+      ],
+      [
+        "CT5B",
+        "CT5A"
+      ],
+      [
+        "CT5B",
+        "CT5B"
+      ],
+      [
+        "CT5B",
+        "CT6"
+      ],
+      [
+        "CT5B",
+        "PT5B"
+      ],
+      [
+        "CT5B",
+        "TC"
+      ],
+      [
+        "CT5B",
+        "HTC"
+      ],
+      [
+        "CT5B",
+        "TCM"
+      ],
+      [
+        "CT6",
+        "IT2"
+      ],
+      [
+        "CT6",
+        "IT3"
+      ],
+      [
+        "CT6",
+        "ITP4"
+      ],
+      [
+        "CT6",
+        "ITS4"
+      ],
+      [
+        "CT6",
+        "IT5A"
+      ],
+      [
+        "CT6",
+        "IT5B"
+      ],
+      [
+        "CT6",
+        "IT6"
+      ],
+      [
+        "CT6",
+        "CT5A"
+      ],
+      [
+        "CT6",
+        "CT5B"
+      ],
+      [
+        "CT6",
+        "CT6"
+      ],
+      [
+        "CT6",
+        "PT5B"
+      ],
+      [
+        "CT6",
+        "TC"
+      ],
+      [
+        "CT6",
+        "HTC"
+      ],
+      [
+        "CT6",
+        "TCM"
+      ],
+      [
+        "PT5B",
+        "IT2"
+      ],
+      [
+        "PT5B",
+        "IT3"
+      ],
+      [
+        "PT5B",
+        "ITP4"
+      ],
+      [
+        "PT5B",
+        "ITS4"
+      ],
+      [
+        "PT5B",
+        "IT5A"
+      ],
+      [
+        "PT5B",
+        "IT5B"
+      ],
+      [
+        "PT5B",
+        "IT6"
+      ],
+      [
+        "PT5B",
+        "CT5A"
+      ],
+      [
+        "PT5B",
+        "CT5B"
+      ],
+      [
+        "PT5B",
+        "CT6"
+      ],
+      [
+        "PT5B",
+        "PT5B"
+      ],
+      [
+        "PT5B",
+        "TC"
+      ],
+      [
+        "PT5B",
+        "HTC"
+      ],
+      [
+        "PT5B",
+        "TCM"
+      ],
+      [
+        "TC",
+        "IT2"
+      ],
+      [
+        "TC",
+        "IT3"
+      ],
+      [
+        "TC",
+        "ITP4"
+      ],
+      [
+        "TC",
+        "ITS4"
+      ],
+      [
+        "TC",
+        "IT5A"
+      ],
+      [
+        "TC",
+        "IT5B"
+      ],
+      [
+        "TC",
+        "IT6"
+      ],
+      [
+        "TC",
+        "CT5A"
+      ],
+      [
+        "TC",
+        "CT5B"
+      ],
+      [
+        "TC",
+        "CT6"
+      ],
+      [
+        "TC",
+        "PT5B"
+      ],
+      [
+        "TC",
+        "TC"
+      ],
+      [
+        "TC",
+        "HTC"
+      ],
+      [
+        "TC",
+        "TCM"
+      ],
+      [
+        "HTC",
+        "IT2"
+      ],
+      [
+        "HTC",
+        "IT3"
+      ],
+      [
+        "HTC",
+        "ITP4"
+      ],
+      [
+        "HTC",
+        "ITS4"
+      ],
+      [
+        "HTC",
+        "IT5A"
+      ],
+      [
+        "HTC",
+        "IT5B"
+      ],
+      [
+        "HTC",
+        "IT6"
+      ],
+      [
+        "HTC",
+        "CT5A"
+      ],
+      [
+        "HTC",
+        "CT5B"
+      ],
+      [
+        "HTC",
+        "CT6"
+      ],
+      [
+        "HTC",
+        "PT5B"
+      ],
+      [
+        "HTC",
+        "TC"
+      ],
+      [
+        "HTC",
+        "HTC"
+      ],
+      [
+        "HTC",
+        "TCM"
+      ],
+      [
+        "TCM",
+        "IT2"
+      ],
+      [
+        "TCM",
+        "IT3"
+      ],
+      [
+        "TCM",
+        "ITP4"
+      ],
+      [
+        "TCM",
+        "ITS4"
+      ],
+      [
+        "TCM",
+        "IT5A"
+      ],
+      [
+        "TCM",
+        "IT5B"
+      ],
+      [
+        "TCM",
+        "IT6"
+      ],
+      [
+        "TCM",
+        "CT5A"
+      ],
+      [
+        "TCM",
+        "CT5B"
+      ],
+      [
+        "TCM",
+        "CT6"
+      ],
+      [
+        "TCM",
+        "PT5B"
+      ],
+      [
+        "TCM",
+        "TC"
+      ],
+      [
+        "TCM",
+        "HTC"
+      ],
+      [
+        "TCM",
+        "TCM"
+      ]
+    ]
+  },
+  "a1_example": {
+    "duration": 20000.0,
+    "t0_calc": 15000.0,
+    "seed_main": 1000,
+    "seeds": {
+      "cell": 1,
+      "conn": 2000,
+      "loc": 1,
+      "stim": 1000
+    },
+    "wmult": 0.25,
+    "EEGain": 0.5,
+    "subnet_params": {
+      "conns_frozen": [],
+      "conns_split": {
+        "CT5A, CT5A": 0.5,
+        "CT5A, CT5B": 0.5,
+        "CT5A, CT6": 0.5,
+        "CT5A, HTC": 0.5,
+        "CT5A, IT2": 0.5,
+        "CT5A, IT3": 0.5,
+        "CT5A, IT5A": 0.5,
+        "CT5A, IT5B": 0.5,
+        "CT5A, IT6": 0.5,
+        "CT5A, ITP4": 0.5,
+        "CT5A, ITS4": 0.5,
+        "CT5A, PT5B": 0.5,
+        "CT5A, TC": 0.5,
+        "CT5A, TCM": 0.5,
+        "CT5B, CT5A": 0.5,
+        "CT5B, CT5B": 0.5,
+        "CT5B, CT6": 0.5,
+        "CT5B, HTC": 0.5,
+        "CT5B, IT2": 0.5,
+        "CT5B, IT3": 0.5,
+        "CT5B, IT5A": 0.5,
+        "CT5B, IT5B": 0.5,
+        "CT5B, IT6": 0.5,
+        "CT5B, ITP4": 0.5,
+        "CT5B, ITS4": 0.5,
+        "CT5B, PT5B": 0.5,
+        "CT5B, TC": 0.5,
+        "CT5B, TCM": 0.5,
+        "CT6, CT5A": 0.5,
+        "CT6, CT5B": 0.5,
+        "CT6, CT6": 0.5,
+        "CT6, HTC": 0.5,
+        "CT6, IT2": 0.5,
+        "CT6, IT3": 0.5,
+        "CT6, IT5A": 0.5,
+        "CT6, IT5B": 0.5,
+        "CT6, IT6": 0.5,
+        "CT6, ITP4": 0.5,
+        "CT6, ITS4": 0.5,
+        "CT6, PT5B": 0.5,
+        "CT6, TC": 0.5,
+        "CT6, TCM": 0.5,
+        "HTC, CT5A": 0.5,
+        "HTC, CT5B": 0.5,
+        "HTC, CT6": 0.5,
+        "HTC, HTC": 0.5,
+        "HTC, IT2": 0.5,
+        "HTC, IT3": 0.5,
+        "HTC, IT5A": 0.5,
+        "HTC, IT5B": 0.5,
+        "HTC, IT6": 0.5,
+        "HTC, ITP4": 0.5,
+        "HTC, ITS4": 0.5,
+        "HTC, PT5B": 0.5,
+        "HTC, TC": 0.5,
+        "HTC, TCM": 0.5,
+        "IT2, CT5A": 0.5,
+        "IT2, CT5B": 0.5,
+        "IT2, CT6": 0.5,
+        "IT2, HTC": 0.5,
+        "IT2, IT2": 0.5,
+        "IT2, IT3": 0.5,
+        "IT2, IT5A": 0.5,
+        "IT2, IT5B": 0.5,
+        "IT2, IT6": 0.5,
+        "IT2, ITP4": 0.5,
+        "IT2, ITS4": 0.5,
+        "IT2, PT5B": 0.5,
+        "IT2, TC": 0.5,
+        "IT2, TCM": 0.5,
+        "IT3, CT5A": 0.5,
+        "IT3, CT5B": 0.5,
+        "IT3, CT6": 0.5,
+        "IT3, HTC": 0.5,
+        "IT3, IT2": 0.5,
+        "IT3, IT3": 0.5,
+        "IT3, IT5A": 0.5,
+        "IT3, IT5B": 0.5,
+        "IT3, IT6": 0.5,
+        "IT3, ITP4": 0.5,
+        "IT3, ITS4": 0.5,
+        "IT3, PT5B": 0.5,
+        "IT3, TC": 0.5,
+        "IT3, TCM": 0.5,
+        "IT5A, CT5A": 0.5,
+        "IT5A, CT5B": 0.5,
+        "IT5A, CT6": 0.5,
+        "IT5A, HTC": 0.5,
+        "IT5A, IT2": 0.5,
+        "IT5A, IT3": 0.5,
+        "IT5A, IT5A": 0.5,
+        "IT5A, IT5B": 0.5,
+        "IT5A, IT6": 0.5,
+        "IT5A, ITP4": 0.5,
+        "IT5A, ITS4": 0.5,
+        "IT5A, PT5B": 0.5,
+        "IT5A, TC": 0.5,
+        "IT5A, TCM": 0.5,
+        "IT5B, CT5A": 0.5,
+        "IT5B, CT5B": 0.5,
+        "IT5B, CT6": 0.5,
+        "IT5B, HTC": 0.5,
+        "IT5B, IT2": 0.5,
+        "IT5B, IT3": 0.5,
+        "IT5B, IT5A": 0.5,
+        "IT5B, IT5B": 0.5,
+        "IT5B, IT6": 0.5,
+        "IT5B, ITP4": 0.5,
+        "IT5B, ITS4": 0.5,
+        "IT5B, PT5B": 0.5,
+        "IT5B, TC": 0.5,
+        "IT5B, TCM": 0.5,
+        "IT6, CT5A": 0.5,
+        "IT6, CT5B": 0.5,
+        "IT6, CT6": 0.5,
+        "IT6, HTC": 0.5,
+        "IT6, IT2": 0.5,
+        "IT6, IT3": 0.5,
+        "IT6, IT5A": 0.5,
+        "IT6, IT5B": 0.5,
+        "IT6, IT6": 0.5,
+        "IT6, ITP4": 0.5,
+        "IT6, ITS4": 0.5,
+        "IT6, PT5B": 0.5,
+        "IT6, TC": 0.5,
+        "IT6, TCM": 0.5,
+        "ITP4, CT5A": 0.5,
+        "ITP4, CT5B": 0.5,
+        "ITP4, CT6": 0.5,
+        "ITP4, HTC": 0.5,
+        "ITP4, IT2": 0.5,
+        "ITP4, IT3": 0.5,
+        "ITP4, IT5A": 0.5,
+        "ITP4, IT5B": 0.5,
+        "ITP4, IT6": 0.5,
+        "ITP4, ITP4": 0.5,
+        "ITP4, ITS4": 0.5,
+        "ITP4, PT5B": 0.5,
+        "ITP4, TC": 0.5,
+        "ITP4, TCM": 0.5,
+        "ITS4, CT5A": 0.5,
+        "ITS4, CT5B": 0.5,
+        "ITS4, CT6": 0.5,
+        "ITS4, HTC": 0.5,
+        "ITS4, IT2": 0.5,
+        "ITS4, IT3": 0.5,
+        "ITS4, IT5A": 0.5,
+        "ITS4, IT5B": 0.5,
+        "ITS4, IT6": 0.5,
+        "ITS4, ITP4": 0.5,
+        "ITS4, ITS4": 0.5,
+        "ITS4, PT5B": 0.5,
+        "ITS4, TC": 0.5,
+        "ITS4, TCM": 0.5,
+        "PT5B, CT5A": 0.5,
+        "PT5B, CT5B": 0.5,
+        "PT5B, CT6": 0.5,
+        "PT5B, HTC": 0.5,
+        "PT5B, IT2": 0.5,
+        "PT5B, IT3": 0.5,
+        "PT5B, IT5A": 0.5,
+        "PT5B, IT5B": 0.5,
+        "PT5B, IT6": 0.5,
+        "PT5B, ITP4": 0.5,
+        "PT5B, ITS4": 0.5,
+        "PT5B, PT5B": 0.5,
+        "PT5B, TC": 0.5,
+        "PT5B, TCM": 0.5,
+        "TC, CT5A": 0.5,
+        "TC, CT5B": 0.5,
+        "TC, CT6": 0.5,
+        "TC, HTC": 0.5,
+        "TC, IT2": 0.5,
+        "TC, IT3": 0.5,
+        "TC, IT5A": 0.5,
+        "TC, IT5B": 0.5,
+        "TC, IT6": 0.5,
+        "TC, ITP4": 0.5,
+        "TC, ITS4": 0.5,
+        "TC, PT5B": 0.5,
+        "TC, TC": 0.5,
+        "TC, TCM": 0.5,
+        "TCM, CT5A": 0.5,
+        "TCM, CT5B": 0.5,
+        "TCM, CT6": 0.5,
+        "TCM, HTC": 0.5,
+        "TCM, IT2": 0.5,
+        "TCM, IT3": 0.5,
+        "TCM, IT5A": 0.5,
+        "TCM, IT5B": 0.5,
+        "TCM, IT6": 0.5,
+        "TCM, ITP4": 0.5,
+        "TCM, ITS4": 0.5,
+        "TCM, PT5B": 0.5,
+        "TCM, TC": 0.5,
+        "TCM, TCM": 0.5
+      },
+      "fpath_frozen_rates": "/ddn/niknovikov19/repo/A1_OUinp/exp_configs/batch_rxbkg_state1_mech1/net_newsec_var_seed/target_state_1.csv",
+      "global_seed": 3000,
+      "pops_active": [
+        "IT2",
+        "IT3",
+        "ITP4",
+        "ITS4",
+        "IT5A",
+        "IT5B",
+        "IT6",
+        "CT5A",
+        "CT5B",
+        "CT6",
+        "PT5B",
+        "PV2",
+        "PV3",
+        "PV4",
+        "PV5A",
+        "PV5B",
+        "PV6",
+        "SOM2",
+        "SOM3",
+        "SOM4",
+        "SOM5A",
+        "SOM5B",
+        "SOM6",
+        "VIP2",
+        "VIP3",
+        "VIP4",
+        "VIP5A",
+        "VIP5B",
+        "VIP6",
+        "NGF1",
+        "NGF2",
+        "NGF3",
+        "NGF4",
+        "NGF5A",
+        "NGF5B",
+        "NGF6",
+        "TC",
+        "HTC",
+        "TI",
+        "IRE",
+        "TCM",
+        "TIM",
+        "IREM"
+      ]
+    },
+    "runtime_params": {
+      "conn": {
+        "ee_fader_on": 1,
+        "fader_pts": [
+          [
+            0,
+            0
+          ],
+          [
+            8000,
+            0
+          ],
+          [
+            10000,
+            1
+          ],
+          [
+            20000.0,
+            1
+          ]
+        ],
+        "wmat_multipliers": []
+      },
+      "inp": {
+        "add_pulses": 0,
+        "ibkg_corrections": {}
+      },
+      "out": {
+        "plot_csd": 0,
+        "plot_rate_dynamics": 1,
+        "plot_traces": 0,
+        "save_lfp_xr": false,
+        "save_pkl": true,
+        "save_rate_xr": false
+      },
+      "pops_used": [
+        "IT2",
+        "IT3",
+        "ITP4",
+        "ITS4",
+        "IT5A",
+        "IT5B",
+        "IT6",
+        "CT5A",
+        "CT5B",
+        "CT6",
+        "PT5B",
+        "PV2",
+        "PV3",
+        "PV4",
+        "PV5A",
+        "PV5B",
+        "PV6",
+        "SOM2",
+        "SOM3",
+        "SOM4",
+        "SOM5A",
+        "SOM5B",
+        "SOM6",
+        "VIP2",
+        "VIP3",
+        "VIP4",
+        "VIP5A",
+        "VIP5B",
+        "VIP6",
+        "NGF1",
+        "NGF2",
+        "NGF3",
+        "NGF4",
+        "NGF5A",
+        "NGF5B",
+        "NGF6",
+        "TC",
+        "HTC",
+        "TI",
+        "IRE",
+        "TCM",
+        "TIM",
+        "IREM"
+      ],
+      "proc": {
+        "rate_dt_bin": 0.005,
+        "rate_t_limits": null,
+        "rate_tau_smooth": 0.05
+      },
+      "rec": {
+        "lfp": 0,
+        "traces": 0
+      },
+      "time": {
+        "duration": 20000.0,
+        "t0_calc": 15000.0
+      }
+    },
+    "IClamp": {
+      "CT5A": {
+        "amp": 0.2811061829853486,
+        "dur": 20000.0
+      },
+      "CT5B": {
+        "amp": 0.2811521746117064,
+        "dur": 20000.0
+      },
+      "CT6": {
+        "amp": 0.28108070843753286,
+        "dur": 20000.0
+      },
+      "HTC": [
+        {
+          "amp": 4,
+          "dur": 20000.0
+        },
+        {
+          "amp": -0.15799162850300966,
+          "dur": 20000.0
+        }
+      ],
+      "IRE": [
+        {
+          "amp": 0.2,
+          "dur": 20000.0
+        },
+        {
+          "amp": -0.019262143816851655,
+          "dur": 20000.0
+        }
+      ],
+      "IREM": [
+        {
+          "amp": 0.2,
+          "dur": 20000.0
+        },
+        {
+          "amp": -0.03076673928626604,
+          "dur": 20000.0
+        }
+      ],
+      "IT2": {
+        "amp": 0.1826028861538529,
+        "dur": 20000.0
+      },
+      "IT3": {
+        "amp": 0.20736533596853907,
+        "dur": 20000.0
+      },
+      "IT5A": {
+        "amp": 0.09949009140570944,
+        "dur": 20000.0
+      },
+      "IT5B": {
+        "amp": 0.10708485376197718,
+        "dur": 20000.0
+      },
+      "IT6": {
+        "amp": 0.09601067195088177,
+        "dur": 20000.0
+      },
+      "ITP4": {
+        "amp": 0.214754445093032,
+        "dur": 20000.0
+      },
+      "ITS4": {
+        "amp": 0.2146776587814983,
+        "dur": 20000.0
+      },
+      "PT5B": {
+        "amp": 0.14307249038537465,
+        "dur": 20000.0
+      },
+      "TC": [
+        {
+          "amp": 4,
+          "dur": 20000.0
+        },
+        {
+          "amp": -0.23506264738553814,
+          "dur": 20000.0
+        }
+      ],
+      "TCM": [
+        {
+          "amp": 6,
+          "dur": 20000.0
+        },
+        {
+          "amp": -0.20883876990917746,
+          "dur": 20000.0
+        }
+      ],
+      "TI": [
+        {
+          "amp": 0.03,
+          "dur": 20000.0
+        },
+        {
+          "amp": -0.0004659604456170393,
+          "dur": 20000.0
+        }
+      ],
+      "TIM": [
+        {
+          "amp": 0.03,
+          "dur": 20000.0
+        },
+        {
+          "amp": -0.0008936951682445695,
+          "dur": 20000.0
+        }
+      ]
+    },
+    "target_rates": {
+      "CT5A": 2.0,
+      "CT5B": 2.0,
+      "CT6": 2.0,
+      "HTC": 8.0,
+      "IRE": 15.0,
+      "IREM": 10.0,
+      "IT2": 2.0,
+      "IT3": 2.0,
+      "IT5A": 5.0,
+      "IT5B": 5.0,
+      "IT6": 3.0,
+      "ITP4": 2.0,
+      "ITS4": 2.0,
+      "NGF1": 3.0,
+      "NGF2": 1.0,
+      "NGF3": 1.0,
+      "NGF4": 0.1,
+      "NGF5A": 0.5,
+      "NGF5B": 0.5,
+      "NGF6": 0.5,
+      "PT5B": 5.0,
+      "PV2": 12.0,
+      "PV3": 12.0,
+      "PV4": 10.0,
+      "PV5A": 8.0,
+      "PV5B": 8.0,
+      "PV6": 15.0,
+      "SOM2": 6.0,
+      "SOM3": 6.0,
+      "SOM4": 5.0,
+      "SOM5A": 4.0,
+      "SOM5B": 4.0,
+      "SOM6": 7.0,
+      "TC": 8.0,
+      "TCM": 2.0,
+      "TI": 15.0,
+      "TIM": 10.0,
+      "VIP2": 7.0,
+      "VIP3": 7.0,
+      "VIP4": 0.2,
+      "VIP5A": 0.2,
+      "VIP5B": 0.2,
+      "VIP6": 0.2
+    },
+    "ee_fader_on": true,
+    "conns_split": [
+      [
+        "IT2",
+        "IT2"
+      ],
+      [
+        "IT2",
+        "IT3"
+      ],
+      [
+        "IT2",
+        "ITP4"
+      ],
+      [
+        "IT2",
+        "ITS4"
+      ],
+      [
+        "IT2",
+        "IT5A"
+      ],
+      [
+        "IT2",
+        "IT5B"
+      ],
+      [
+        "IT2",
+        "IT6"
+      ],
+      [
+        "IT2",
+        "CT5A"
+      ],
+      [
+        "IT2",
+        "CT5B"
+      ],
+      [
+        "IT2",
+        "CT6"
+      ],
+      [
+        "IT2",
+        "PT5B"
+      ],
+      [
+        "IT2",
+        "TC"
+      ],
+      [
+        "IT2",
+        "HTC"
+      ],
+      [
+        "IT2",
+        "TCM"
+      ],
+      [
+        "IT3",
+        "IT2"
+      ],
+      [
+        "IT3",
+        "IT3"
+      ],
+      [
+        "IT3",
+        "ITP4"
+      ],
+      [
+        "IT3",
+        "ITS4"
+      ],
+      [
+        "IT3",
+        "IT5A"
+      ],
+      [
+        "IT3",
+        "IT5B"
+      ],
+      [
+        "IT3",
+        "IT6"
+      ],
+      [
+        "IT3",
+        "CT5A"
+      ],
+      [
+        "IT3",
+        "CT5B"
+      ],
+      [
+        "IT3",
+        "CT6"
+      ],
+      [
+        "IT3",
+        "PT5B"
+      ],
+      [
+        "IT3",
+        "TC"
+      ],
+      [
+        "IT3",
+        "HTC"
+      ],
+      [
+        "IT3",
+        "TCM"
+      ],
+      [
+        "ITP4",
+        "IT2"
+      ],
+      [
+        "ITP4",
+        "IT3"
+      ],
+      [
+        "ITP4",
+        "ITP4"
+      ],
+      [
+        "ITP4",
+        "ITS4"
+      ],
+      [
+        "ITP4",
+        "IT5A"
+      ],
+      [
+        "ITP4",
+        "IT5B"
+      ],
+      [
+        "ITP4",
+        "IT6"
+      ],
+      [
+        "ITP4",
+        "CT5A"
+      ],
+      [
+        "ITP4",
+        "CT5B"
+      ],
+      [
+        "ITP4",
+        "CT6"
+      ],
+      [
+        "ITP4",
+        "PT5B"
+      ],
+      [
+        "ITP4",
+        "TC"
+      ],
+      [
+        "ITP4",
+        "HTC"
+      ],
+      [
+        "ITP4",
+        "TCM"
+      ],
+      [
+        "ITS4",
+        "IT2"
+      ],
+      [
+        "ITS4",
+        "IT3"
+      ],
+      [
+        "ITS4",
+        "ITP4"
+      ],
+      [
+        "ITS4",
+        "ITS4"
+      ],
+      [
+        "ITS4",
+        "IT5A"
+      ],
+      [
+        "ITS4",
+        "IT5B"
+      ],
+      [
+        "ITS4",
+        "IT6"
+      ],
+      [
+        "ITS4",
+        "CT5A"
+      ],
+      [
+        "ITS4",
+        "CT5B"
+      ],
+      [
+        "ITS4",
+        "CT6"
+      ],
+      [
+        "ITS4",
+        "PT5B"
+      ],
+      [
+        "ITS4",
+        "TC"
+      ],
+      [
+        "ITS4",
+        "HTC"
+      ],
+      [
+        "ITS4",
+        "TCM"
+      ],
+      [
+        "IT5A",
+        "IT2"
+      ],
+      [
+        "IT5A",
+        "IT3"
+      ],
+      [
+        "IT5A",
+        "ITP4"
+      ],
+      [
+        "IT5A",
+        "ITS4"
+      ],
+      [
+        "IT5A",
+        "IT5A"
+      ],
+      [
+        "IT5A",
+        "IT5B"
+      ],
+      [
+        "IT5A",
+        "IT6"
+      ],
+      [
+        "IT5A",
+        "CT5A"
+      ],
+      [
+        "IT5A",
+        "CT5B"
+      ],
+      [
+        "IT5A",
+        "CT6"
+      ],
+      [
+        "IT5A",
+        "PT5B"
+      ],
+      [
+        "IT5A",
+        "TC"
+      ],
+      [
+        "IT5A",
+        "HTC"
+      ],
+      [
+        "IT5A",
+        "TCM"
+      ],
+      [
+        "IT5B",
+        "IT2"
+      ],
+      [
+        "IT5B",
+        "IT3"
+      ],
+      [
+        "IT5B",
+        "ITP4"
+      ],
+      [
+        "IT5B",
+        "ITS4"
+      ],
+      [
+        "IT5B",
+        "IT5A"
+      ],
+      [
+        "IT5B",
+        "IT5B"
+      ],
+      [
+        "IT5B",
+        "IT6"
+      ],
+      [
+        "IT5B",
+        "CT5A"
+      ],
+      [
+        "IT5B",
+        "CT5B"
+      ],
+      [
+        "IT5B",
+        "CT6"
+      ],
+      [
+        "IT5B",
+        "PT5B"
+      ],
+      [
+        "IT5B",
+        "TC"
+      ],
+      [
+        "IT5B",
+        "HTC"
+      ],
+      [
+        "IT5B",
+        "TCM"
+      ],
+      [
+        "IT6",
+        "IT2"
+      ],
+      [
+        "IT6",
+        "IT3"
+      ],
+      [
+        "IT6",
+        "ITP4"
+      ],
+      [
+        "IT6",
+        "ITS4"
+      ],
+      [
+        "IT6",
+        "IT5A"
+      ],
+      [
+        "IT6",
+        "IT5B"
+      ],
+      [
+        "IT6",
+        "IT6"
+      ],
+      [
+        "IT6",
+        "CT5A"
+      ],
+      [
+        "IT6",
+        "CT5B"
+      ],
+      [
+        "IT6",
+        "CT6"
+      ],
+      [
+        "IT6",
+        "PT5B"
+      ],
+      [
+        "IT6",
+        "TC"
+      ],
+      [
+        "IT6",
+        "HTC"
+      ],
+      [
+        "IT6",
+        "TCM"
+      ],
+      [
+        "CT5A",
+        "IT2"
+      ],
+      [
+        "CT5A",
+        "IT3"
+      ],
+      [
+        "CT5A",
+        "ITP4"
+      ],
+      [
+        "CT5A",
+        "ITS4"
+      ],
+      [
+        "CT5A",
+        "IT5A"
+      ],
+      [
+        "CT5A",
+        "IT5B"
+      ],
+      [
+        "CT5A",
+        "IT6"
+      ],
+      [
+        "CT5A",
+        "CT5A"
+      ],
+      [
+        "CT5A",
+        "CT5B"
+      ],
+      [
+        "CT5A",
+        "CT6"
+      ],
+      [
+        "CT5A",
+        "PT5B"
+      ],
+      [
+        "CT5A",
+        "TC"
+      ],
+      [
+        "CT5A",
+        "HTC"
+      ],
+      [
+        "CT5A",
+        "TCM"
+      ],
+      [
+        "CT5B",
+        "IT2"
+      ],
+      [
+        "CT5B",
+        "IT3"
+      ],
+      [
+        "CT5B",
+        "ITP4"
+      ],
+      [
+        "CT5B",
+        "ITS4"
+      ],
+      [
+        "CT5B",
+        "IT5A"
+      ],
+      [
+        "CT5B",
+        "IT5B"
+      ],
+      [
+        "CT5B",
+        "IT6"
+      ],
+      [
+        "CT5B",
+        "CT5A"
+      ],
+      [
+        "CT5B",
+        "CT5B"
+      ],
+      [
+        "CT5B",
+        "CT6"
+      ],
+      [
+        "CT5B",
+        "PT5B"
+      ],
+      [
+        "CT5B",
+        "TC"
+      ],
+      [
+        "CT5B",
+        "HTC"
+      ],
+      [
+        "CT5B",
+        "TCM"
+      ],
+      [
+        "CT6",
+        "IT2"
+      ],
+      [
+        "CT6",
+        "IT3"
+      ],
+      [
+        "CT6",
+        "ITP4"
+      ],
+      [
+        "CT6",
+        "ITS4"
+      ],
+      [
+        "CT6",
+        "IT5A"
+      ],
+      [
+        "CT6",
+        "IT5B"
+      ],
+      [
+        "CT6",
+        "IT6"
+      ],
+      [
+        "CT6",
+        "CT5A"
+      ],
+      [
+        "CT6",
+        "CT5B"
+      ],
+      [
+        "CT6",
+        "CT6"
+      ],
+      [
+        "CT6",
+        "PT5B"
+      ],
+      [
+        "CT6",
+        "TC"
+      ],
+      [
+        "CT6",
+        "HTC"
+      ],
+      [
+        "CT6",
+        "TCM"
+      ],
+      [
+        "PT5B",
+        "IT2"
+      ],
+      [
+        "PT5B",
+        "IT3"
+      ],
+      [
+        "PT5B",
+        "ITP4"
+      ],
+      [
+        "PT5B",
+        "ITS4"
+      ],
+      [
+        "PT5B",
+        "IT5A"
+      ],
+      [
+        "PT5B",
+        "IT5B"
+      ],
+      [
+        "PT5B",
+        "IT6"
+      ],
+      [
+        "PT5B",
+        "CT5A"
+      ],
+      [
+        "PT5B",
+        "CT5B"
+      ],
+      [
+        "PT5B",
+        "CT6"
+      ],
+      [
+        "PT5B",
+        "PT5B"
+      ],
+      [
+        "PT5B",
+        "TC"
+      ],
+      [
+        "PT5B",
+        "HTC"
+      ],
+      [
+        "PT5B",
+        "TCM"
+      ],
+      [
+        "TC",
+        "IT2"
+      ],
+      [
+        "TC",
+        "IT3"
+      ],
+      [
+        "TC",
+        "ITP4"
+      ],
+      [
+        "TC",
+        "ITS4"
+      ],
+      [
+        "TC",
+        "IT5A"
+      ],
+      [
+        "TC",
+        "IT5B"
+      ],
+      [
+        "TC",
+        "IT6"
+      ],
+      [
+        "TC",
+        "CT5A"
+      ],
+      [
+        "TC",
+        "CT5B"
+      ],
+      [
+        "TC",
+        "CT6"
+      ],
+      [
+        "TC",
+        "PT5B"
+      ],
+      [
+        "TC",
+        "TC"
+      ],
+      [
+        "TC",
+        "HTC"
+      ],
+      [
+        "TC",
+        "TCM"
+      ],
+      [
+        "HTC",
+        "IT2"
+      ],
+      [
+        "HTC",
+        "IT3"
+      ],
+      [
+        "HTC",
+        "ITP4"
+      ],
+      [
+        "HTC",
+        "ITS4"
+      ],
+      [
+        "HTC",
+        "IT5A"
+      ],
+      [
+        "HTC",
+        "IT5B"
+      ],
+      [
+        "HTC",
+        "IT6"
+      ],
+      [
+        "HTC",
+        "CT5A"
+      ],
+      [
+        "HTC",
+        "CT5B"
+      ],
+      [
+        "HTC",
+        "CT6"
+      ],
+      [
+        "HTC",
+        "PT5B"
+      ],
+      [
+        "HTC",
+        "TC"
+      ],
+      [
+        "HTC",
+        "HTC"
+      ],
+      [
+        "HTC",
+        "TCM"
+      ],
+      [
+        "TCM",
+        "IT2"
+      ],
+      [
+        "TCM",
+        "IT3"
+      ],
+      [
+        "TCM",
+        "ITP4"
+      ],
+      [
+        "TCM",
+        "ITS4"
+      ],
+      [
+        "TCM",
+        "IT5A"
+      ],
+      [
+        "TCM",
+        "IT5B"
+      ],
+      [
+        "TCM",
+        "IT6"
+      ],
+      [
+        "TCM",
+        "CT5A"
+      ],
+      [
+        "TCM",
+        "CT5B"
+      ],
+      [
+        "TCM",
+        "CT6"
+      ],
+      [
+        "TCM",
+        "PT5B"
+      ],
+      [
+        "TCM",
+        "TC"
+      ],
+      [
+        "TCM",
+        "HTC"
+      ],
+      [
+        "TCM",
+        "TCM"
+      ]
+    ]
+  },
+  "thal_orig": {
+    "duration": 220000.0,
+    "t0_calc": 200000.0,
+    "seed_main": 1000,
+    "seeds": {
+      "cell": 1,
+      "conn": 2000,
+      "loc": 1,
+      "stim": 1000
+    },
+    "wmult": 0.25,
+    "EEGain": 0.5,
+    "subnet_params": {
+      "conns_frozen": [],
+      "fpath_frozen_rates": "/ddn/niknovikov19/repo/A1_OUinp/exp_configs/batch_rxbkg_state1_mech1/net_newsec_ctrl_var_seed/target_state_1.csv",
+      "global_seed": 3000,
+      "pops_active": [
+        "TC",
+        "HTC",
+        "TI",
+        "IRE",
+        "TCM",
+        "TIM",
+        "IREM"
+      ]
+    },
+    "IClamp": {
+      "HTC": {
+        "amp": 4,
+        "dur": 220000.0
+      },
+      "IRE": {
+        "amp": 0.2,
+        "dur": 220000.0
+      },
+      "IREM": {
+        "amp": 0.2,
+        "dur": 220000.0
+      },
+      "TC": {
+        "amp": 4,
+        "dur": 220000.0
+      },
+      "TCM": {
+        "amp": 6,
+        "dur": 220000.0
+      },
+      "TI": {
+        "amp": 0.03,
+        "dur": 220000.0
+      },
+      "TIM": {
+        "amp": 0.03,
+        "dur": 220000.0
+      }
+    },
+    "target_rates": {
+      "CT5A": 2.0,
+      "CT5B": 2.0,
+      "CT6": 2.0,
+      "HTC": 8.0,
+      "IRE": 15.0,
+      "IREM": 10.0,
+      "IT2": 2.0,
+      "IT3": 2.0,
+      "IT5A": 5.0,
+      "IT5B": 5.0,
+      "IT6": 3.0,
+      "ITP4": 2.0,
+      "ITS4": 2.0,
+      "NGF1": 3.0,
+      "NGF2": 1.0,
+      "NGF3": 1.0,
+      "NGF4": 0.1,
+      "NGF5A": 0.5,
+      "NGF5B": 0.5,
+      "NGF6": 0.5,
+      "PT5B": 5.0,
+      "PV2": 12.0,
+      "PV3": 12.0,
+      "PV4": 10.0,
+      "PV5A": 8.0,
+      "PV5B": 8.0,
+      "PV6": 15.0,
+      "SOM2": 6.0,
+      "SOM3": 6.0,
+      "SOM4": 5.0,
+      "SOM5A": 4.0,
+      "SOM5B": 4.0,
+      "SOM6": 7.0,
+      "TC": 8.0,
+      "TCM": 2.0,
+      "TI": 15.0,
+      "TIM": 10.0,
+      "VIP2": 7.0,
+      "VIP3": 7.0,
+      "VIP4": 0.2,
+      "VIP5A": 0.2,
+      "VIP5B": 0.2,
+      "VIP6": 0.2
+    }
+  },
+  "thal_own": {
+    "duration": 220000.0,
+    "t0_calc": 200000.0,
+    "seed_main": 1000,
+    "seeds": {
+      "cell": 1,
+      "conn": 2000,
+      "loc": 1,
+      "stim": 1000
+    },
+    "wmult": 0.25,
+    "EEGain": 0.5,
+    "subnet_params": {
+      "conns_frozen": [],
+      "fpath_frozen_rates": "/ddn/niknovikov19/repo/A1_OUinp/exp_configs/batch_rxbkg_state1_mech1/net_newsec_ctrl_var_seed/target_state_1.csv",
+      "global_seed": 3000,
+      "pops_active": [
+        "TC",
+        "HTC",
+        "TI",
+        "IRE",
+        "TCM",
+        "TIM",
+        "IREM"
+      ]
+    },
+    "IClamp": {
+      "HTC": {
+        "amp": 4,
+        "dur": 220000.0
+      },
+      "IRE": {
+        "amp": 0.2,
+        "dur": 220000.0
+      },
+      "IREM": {
+        "amp": 0.2,
+        "dur": 220000.0
+      },
+      "TC": {
+        "amp": 4,
+        "dur": 220000.0
+      },
+      "TCM": {
+        "amp": 6,
+        "dur": 220000.0
+      },
+      "TI": {
+        "amp": 0.03,
+        "dur": 220000.0
+      },
+      "TIM": {
+        "amp": 0.03,
+        "dur": 220000.0
+      }
+    },
+    "target_rates": {
+      "CT5A": 2.0,
+      "CT5B": 2.0,
+      "CT6": 2.0,
+      "HTC": 8.0,
+      "IRE": 15.0,
+      "IREM": 10.0,
+      "IT2": 2.0,
+      "IT3": 2.0,
+      "IT5A": 5.0,
+      "IT5B": 5.0,
+      "IT6": 3.0,
+      "ITP4": 2.0,
+      "ITS4": 2.0,
+      "NGF1": 3.0,
+      "NGF2": 1.0,
+      "NGF3": 1.0,
+      "NGF4": 0.1,
+      "NGF5A": 0.5,
+      "NGF5B": 0.5,
+      "NGF6": 0.5,
+      "PT5B": 5.0,
+      "PV2": 12.0,
+      "PV3": 12.0,
+      "PV4": 10.0,
+      "PV5A": 8.0,
+      "PV5B": 8.0,
+      "PV6": 15.0,
+      "SOM2": 6.0,
+      "SOM3": 6.0,
+      "SOM4": 5.0,
+      "SOM5A": 4.0,
+      "SOM5B": 4.0,
+      "SOM6": 7.0,
+      "TC": 8.0,
+      "TCM": 2.0,
+      "TI": 15.0,
+      "TIM": 10.0,
+      "VIP2": 7.0,
+      "VIP3": 7.0,
+      "VIP4": 0.2,
+      "VIP5A": 0.2,
+      "VIP5B": 0.2,
+      "VIP6": 0.2
+    },
+    "ou_ctrl_params": {
+      "controller_mod": "RateController2",
+      "epsm_ctrl": 0.1,
+      "ks_ctrl": 0.0001,
+      "ku_ctrl": 0.001,
+      "mu_gain": 0.005,
+      "sigma_gain": 0.0,
+      "t0": 10000,
+      "target_rates": {
+        "CT5A": 2.0,
+        "CT5B": 2.0,
+        "CT6": 2.0,
+        "HTC": 8.0,
+        "IRE": 15.0,
+        "IREM": 10.0,
+        "IT2": 2.0,
+        "IT3": 2.0,
+        "IT5A": 5.0,
+        "IT5B": 5.0,
+        "IT6": 3.0,
+        "ITP4": 2.0,
+        "ITS4": 2.0,
+        "NGF1": 3.0,
+        "NGF2": 1.0,
+        "NGF3": 1.0,
+        "NGF4": 0.1,
+        "NGF5A": 0.5,
+        "NGF5B": 0.5,
+        "NGF6": 0.5,
+        "PT5B": 5.0,
+        "PV2": 12.0,
+        "PV3": 12.0,
+        "PV4": 10.0,
+        "PV5A": 8.0,
+        "PV5B": 8.0,
+        "PV6": 15.0,
+        "SOM2": 6.0,
+        "SOM3": 6.0,
+        "SOM4": 5.0,
+        "SOM5A": 4.0,
+        "SOM5B": 4.0,
+        "SOM6": 7.0,
+        "TC": 8.0,
+        "TCM": 2.0,
+        "TI": 15.0,
+        "TIM": 10.0,
+        "VIP2": 7.0,
+        "VIP3": 7.0,
+        "VIP4": 0.2,
+        "VIP5A": 0.2,
+        "VIP5B": 0.2,
+        "VIP6": 0.2
+      },
+      "tau_rate_ctrl": 100,
+      "taum_ctrl": 2500,
+      "tauu_ctrl": 100,
+      "tlock": 160000,
+      "z0": 0
+    }
+  },
+  "thal_med": {
+    "duration": 220000.0,
+    "t0_calc": 200000.0,
+    "seed_main": 1000,
+    "seeds": {
+      "cell": 1,
+      "conn": 2000,
+      "loc": 1,
+      "stim": 1000
+    },
+    "wmult": 0.25,
+    "EEGain": 0.5,
+    "subnet_params": {
+      "conns_frozen": [],
+      "fpath_frozen_rates": "/ddn/niknovikov19/repo/A1_OUinp/exp_configs/batch_rxbkg_state1_mech1/net_newsec_ctrl_var_seed/target_state_1.csv",
+      "global_seed": 3000,
+      "pops_active": [
+        "TC",
+        "HTC",
+        "TI",
+        "IRE",
+        "TCM",
+        "TIM",
+        "IREM"
+      ]
+    },
+    "IClamp": {
+      "HTC": [
+        {
+          "amp": 4,
+          "dur": 220000.0
+        },
+        {
+          "amp": -0.15799162850300966,
+          "dur": 220000.0
+        }
+      ],
+      "IRE": [
+        {
+          "amp": 0.2,
+          "dur": 220000.0
+        },
+        {
+          "amp": -0.019262143816851655,
+          "dur": 220000.0
+        }
+      ],
+      "IREM": [
+        {
+          "amp": 0.2,
+          "dur": 220000.0
+        },
+        {
+          "amp": -0.03076673928626604,
+          "dur": 220000.0
+        }
+      ],
+      "TC": [
+        {
+          "amp": 4,
+          "dur": 220000.0
+        },
+        {
+          "amp": -0.23506264738553814,
+          "dur": 220000.0
+        }
+      ],
+      "TCM": [
+        {
+          "amp": 6,
+          "dur": 220000.0
+        },
+        {
+          "amp": -0.20883876990917746,
+          "dur": 220000.0
+        }
+      ],
+      "TI": [
+        {
+          "amp": 0.03,
+          "dur": 220000.0
+        },
+        {
+          "amp": -0.0004659604456170393,
+          "dur": 220000.0
+        }
+      ],
+      "TIM": [
+        {
+          "amp": 0.03,
+          "dur": 220000.0
+        },
+        {
+          "amp": -0.0008936951682445695,
+          "dur": 220000.0
+        }
+      ]
+    },
+    "target_rates": {
+      "CT5A": 2.0,
+      "CT5B": 2.0,
+      "CT6": 2.0,
+      "HTC": 8.0,
+      "IRE": 15.0,
+      "IREM": 10.0,
+      "IT2": 2.0,
+      "IT3": 2.0,
+      "IT5A": 5.0,
+      "IT5B": 5.0,
+      "IT6": 3.0,
+      "ITP4": 2.0,
+      "ITS4": 2.0,
+      "NGF1": 3.0,
+      "NGF2": 1.0,
+      "NGF3": 1.0,
+      "NGF4": 0.1,
+      "NGF5A": 0.5,
+      "NGF5B": 0.5,
+      "NGF6": 0.5,
+      "PT5B": 5.0,
+      "PV2": 12.0,
+      "PV3": 12.0,
+      "PV4": 10.0,
+      "PV5A": 8.0,
+      "PV5B": 8.0,
+      "PV6": 15.0,
+      "SOM2": 6.0,
+      "SOM3": 6.0,
+      "SOM4": 5.0,
+      "SOM5A": 4.0,
+      "SOM5B": 4.0,
+      "SOM6": 7.0,
+      "TC": 8.0,
+      "TCM": 2.0,
+      "TI": 15.0,
+      "TIM": 10.0,
+      "VIP2": 7.0,
+      "VIP3": 7.0,
+      "VIP4": 0.2,
+      "VIP5A": 0.2,
+      "VIP5B": 0.2,
+      "VIP6": 0.2
+    }
+  }
+}

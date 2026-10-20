@@ -1,0 +1,1760 @@
+
+===== PDF PAGE 1 =====
+Title
+Circuit decoupling method for baseline regime tuning in a biophysically detailed thalamocortical
+model
+
+Introduction
+Biophysically detailed circuit models integrate data on neuronal properties, synaptic interactions,
+and circuit anatomy to support in silico experiments (Arkhipov et al., 2018; Billeh et al., 2020;
+Dura-Bernal et al., 2023; Isbister et al., 2026). Direct measurements constrain some model
+parameters, while others remain weakly constrained and need to be tuned so that simulated
+activity matches physiological recordings. Such tuning often requires a high-dimensional search,
+with candidate parameter combinations evaluated through computationally expensive
+simulations. Despite these challenges, several optimization methods have been successfully
+applied to biophysical model tuning (Dura-Bernal et al., 2019, 2023), and new approaches
+continue to emerge (Deistler et al., 2025). Nevertheless, reproducing physiological circuit
+activity remains difficult and requires tuning procedures adapted to the model and available data
+(Dura-Bernal et al., 2024; Tolley et al., 2024).
+
+An important goal of model tuning is to establish a physiologically appropriate baseline regime
+with realistic spontaneous activity. Experiments demonstrate that response properties depend on
+ongoing activity in both individual cells (Chance et al., 2002; Fellous et al., 2003) and neuronal
+populations (Petersen et al., 2003; Curto et al., 2009; Zagha et al., 2013). Nonlinear recurrent
+network models likewise show that circuit dynamics vary with activity level even when synaptic
+weights remain fixed (Ahmadian et al., 2013; Rubin et al., 2015; Hennequin et al., 2018).
+Establishing an appropriate baseline is therefore necessary to reproduce circuit responses under
+the physiological condition of interest.
+
+There are two main tuning approaches used for setting the baseline activity. It can be done either
+by tuning recurrent synaptic weights (Arkhipov et al., 2018; Billeh et al., 2020; Dura-Bernal et
+al., 2023) or population-specific background inputs that represent aggregate synaptic activity
+from the sources outside the modeled circuit (Jiang et al., 2024; Isbister et al., 2026). Weight
+tuning can make the circuit more self-sufficient in generating baseline activity, but it is
+computationally demanding and can inadvertently distort circuit responses to incoming stimuli.
+By comparison, tuning background inputs while keeping recurrent weights fixed is more
+straightforward, but it creates a dependence on external drive of unspecified biological origin.
+Each approach has its own strengths and limitations, and the choice of tuning strategy depends
+on the available constraints and modeling objectives.
+
+Even with recurrent weights fixed, background-input tuning remains challenging because the
+input to one population can affect the whole circuit. A direct approach would be to tune
+population-specific inputs jointly, which requires a potentially costly search in a high-
+dimensional parameter space. To simplify the search, one could remove the recurrent
+connections and tune each population’s inputs independently. This requires correcting for any
+mismatch in baseline activity that may arise when connectivity is restored. One such method was
+proposed by Isbister et al. (2026). They measured how each population’s firing rate depended on
+background input in isolation, and then iteratively estimated a mapping between population
+firing rates in disconnected and connected circuits. This mapping allowed them to identify the
+background inputs expected to produce the target rates once recurrent connectivity is restored.
+
+===== PDF PAGE 2 =====
+The method reached the target regime within a few iterations in their model, although the study
+did not establish general conditions for convergence. This motivates exploring complementary
+approaches to simplifying the high-dimensional search for background inputs.
+
+Here we present a method for establishing the baseline regime in multi-population models via
+background input tuning based on circuit decoupling with static surrogate compensation for the
+omitted recurrent connections. The method allows each population’s background input to be
+tuned independently under synaptic conditions approximating those expected in the recurrent
+circuit operating in the target baseline regime. We apply the method to a modified version of our
+previously published 43-population model of macaque auditory thalamocortical circuit (Dura-
+Bernal et al., 2023) and assess whether background inputs tuned in the decoupled setup yield
+near-target regime when recurrent connectivity is restored. We also explore how our method
+could help identify and overcome issues that emerge along the tuning process.
+
+Results
+
+Circuit decoupling with surrogate compensation
+We developed a method for tuning background inputs in multi-population models based on
+circuit decoupling with automatic replacement of removed recurrent connections by
+compensatory surrogate inputs. In a fully decoupled circuit, cells do not affect each other
+through recurrent connections, so the background inputs can be tuned independently for each
+population. This transforms a high-dimensional optimization problem into a set of independent,
+low-dimensional problems that can be solved in parallel. We construct the surrogate inputs to
+approximate ((unclear verb or adjective)) the synaptic inputs that cells would receive in the
+original circuit if its populations fired at their target rates. Our rationale is that background inputs
+tuned in a decoupled model with such surrogate compensation could provide candidate solutions
+for the original model as well, bringing the original recurrently connected circuit close to the
+target regime.
+
+We illustrate the method using a hypothetical circuit containing two populations, P1 and P2 (Fig.
+FIG_SURR_NET(A)). The circuit contains within- and cross-population recurrent projections
+Pn→Pm (m,n = 1,2), each comprising a set Cmn of individual cell-to-cell connections. In
+addition, each cell receives two background synaptic inputs, one excitatory and one inhibitory,
+driven by independent Poisson spike generators. The background input rates and synaptic
+weights are defined separately for each population and shared among its cells. We keep the
+synaptic weights fixed and adjust the background rates to make P1 and P2 fire at their respective
+target mean rates, r10 and r20.
+
+A fully decoupled version of the circuit is shown in Fig. FIG_SURR_NET(B). To compensate
+for the omitted recurrent inputs, we introduce a surrogate population Pn′ for each original
+population Pn, consisting of independent Poisson spike generators that fire at the target rate rn0
+assigned to Pn. We then replace every recurrent projection Pn→Pm with a corresponding
+surrogate input Pn′→Pm. We connect the surrogate units of Pn′ to cells of Pm following the
+same rules as for the original Pn→Pm projection, preserving connection probabilities and the
+distributions of synaptic weights and transmission delays. We position the surrogate units
+according to the same spatial distribution as the cells of Pn, thus preserving distance-dependent
+terms in the connectivity rules. In the resulting circuit, the original cells and their background
+inputs remain unchanged, while their recurrent inputs are replaced by inputs from surrogate
+spike generators.
+
+===== PDF PAGE 3 =====
+In the decoupled circuit, the surrogate inputs are independent of the activity of P1 and P2.
+Changing the background input to either population changes its firing rate without affecting the
+inputs received by the other population, allowing the background inputs to the two populations to
+be tuned independently ((“populations” repeats too much)). If P1 and P2 were to fire at their
+target rates in the original circuit, the corresponding recurrent and surrogate projections
+((confusing; sounds like recurrent and surrogate exist within the same original circuit)) would
+have equal mean presynaptic firing rates and follow the same connectivity rules (Fig.
+FIG_SURR_NET(A,B)). This suggests that the background inputs tuned in the decoupled circuit
+may also produce firing rates near the targets in the recurrent circuit. More generally, for a
+circuit containing N populations, a joint search over 2N background-input parameters can be
+((potentially)) replaced by N independent two-parameter searches. However, successful tuning in
+the decoupled circuit does not guarantee that the recurrent circuit will reach the target regime, so
+the resulting background inputs must be tested after recurrent connections are restored.
+
+Our framework additionally allows partial decoupling, in which only selected recurrent
+connections are replaced by surrogate inputs while the remaining connections are preserved (Fig.
+FIG_SURR_NET(C)) ((link to the previous parag)). This provides two complementary ways to
+examine circuit dynamics. First, we can examine the contribution of individual projections or
+groups of projections by replacing them with surrogate inputs while leaving the rest of the
+recurrent circuit intact. Second, we can isolate a selected subcircuit by retaining its internal
+recurrent connections and replacing inputs from the rest of the circuit with surrogate inputs.
+Figure FIG_SURR_NET(C) illustrates both operations for a three-population circuit.
+
+Finally, we implemented semi-surrogate connections, which combine recurrent and surrogate
+inputs within a single projection (Fig. FIG_SURR_NET(D)). For each connection with original
+synaptic weight w, we introduce recurrent and surrogate components with weights kw and
+(1−k)w, respectively, where 0 ≤ k ≤ 1 ((not for each connection – for each projection:
+connectivity is sampled anew)). Thus, k = 0 corresponds to a fully surrogate projection, while k
+= 1 corresponds to the original recurrent projection. By varying k gradually over time, we can
+smoothly replace surrogate input with recurrent input without abruptly restoring the full
+recurrent feedback ((implicit “input=feedback”)). This allows us to examine how the circuit
+responds to the restoration of selected connections and whether the target regime can be
+maintained as recurrent interactions are reinstated.
+
+===== PDF PAGE 4 =====
+FIG_SURR_NET
+
+
+
+
+
+ Figure FIG_SURR_NET. Example of a surrogate open-loop model. (A) Original recurrent
+  circuit with two interacting populations P1 and P2. Populations are coupled through recurrent
+ connections Cnm (m,n=1,2), so their activities are inter-dependent. In addition, each population
+ receives background excitatory and inhibitory Poisson inputs, parameterized by firing rates rxan
+ and synaptic weights wxan (n=1,2, a=e,i). (B) Surrogate open-loop version of the same circuit.
+    Recurrent inputs are replaced by inputs from surrogate populations P1’, P2’ composed of
+ independent Poisson spike generators. These surrogate inputs reproduce the same connectivity
+   properties Cnm (m,n=1,2) as in the recurrent network, including probabilities, weights, and
+ delays. This transformation decouples the optimization problem, allowing the background input
+ parameters to be tuned independently for each population. (C) Partially surrogate setup. Left –
+full model; middle – 1→3 connection is surrogate (static); right – subnetwork 2+3 is selected, so
+ its inputs 1→2 and 1→3 are surrogate ((TODO: P1,P2,P3)). (D) Semi-surrogate setup. Weight
+ of 1→2 connection is reduced from w21 to kw21 (0<k<1), and the missing part is compensated
+                   by a surrogate 1’→2 input with weight (1-k)w21.
+
+Background input tuning in a fully decoupled circuit
+We applied our method to a modified version of our previously published biophysical model of
+the macaque auditory thalamocortical circuit, containing 43 recurrently connected populations
+(Dura-Bernal et al., 2023). Our objective was to establish a baseline regime in which each
+population's mean firing rate matched a chosen target. We chose the target rates from published
+experimental measurements and estimated missing values by extrapolating available evidence
+across species, brain regions, layers, and cell types (Table TBL_TARGET_RATES). We denote
+the vector of these 43 target rates by R0.
+
+The version used here differed from the published model in its background-input configuration:
+each neuron received excitatory and inhibitory Poisson inputs representing synaptic activity from
+sources outside the modeled circuit. Neurons within a population shared the two input rates but
+
+===== PDF PAGE 5 =====
+received independently generated spike trains. We held both recurrent and background-input
+synaptic weights fixed and tuned only the two Poisson rates for each population. Across the 43
+populations, this gave 86 tunable background rates.
+
+We first searched for background rates that would make the populations fire at their targets in a
+fully decoupled version of the circuit. Each modeled population retained its background inputs,
+while its recurrent inputs were replaced by inputs from surrogate populations. The spike
+generators in each surrogate population fired at the target mean rate assigned to the
+corresponding modeled population. Figure FIG_BKG_GRID(A) illustrates this configuration for
+one population, P, with excitatory and inhibitory background rates rxpe and rxpi, respectively,
+grouped as hp=(rxpe,rxpi). A1' represents the surrogate copy of the entire circuit that supplies
+compensating inputs to P. Because the surrogate inputs were independent of the modeled
+populations' activity, adjusting one population's background rates left the inputs to other
+populations unchanged. The task of choosing 86 background rates could therefore be carried out
+as 43 independent 2-D searches, each over the excitatory and inhibitory background rates of one
+population.
+
+We performed each of these searches in two stages: a coarse scan followed by a finer scan.
+Figure FIG_BKG_GRID(B,C) shows the resulting firing-rate maps for the illustrated population
+P. For the coarse scan, we simulated the fully decoupled circuit with background rates sampled
+from a grid spanning a broad rectangular region of the (rxpe,rxpi) plane and measured the
+population's mean firing rate for each combination. The coarse map showed a narrow,
+approximately diagonal band of background rates for which the population fired near its target,
+rp0 (Fig. FIG_BKG_GRID(B)). We defined a parallelogram Qp around a portion of this band
+and performed a finer scan within it, using transformed coordinates in which Qp appeared as a
+rectangle (Fig. FIG_BKG_GRID(C)). From the finer measurements, we identified a contour
+along which the population's mean firing rate equaled its target. We selected the background-rate
+pair at the midpoint of this contour within Qp as the solution and denote this pair by
+hp*=(rxpe*,rxpi*).
+
+The searches yielded a set of selected background rates for all 43 populations, which we denote
+by H* (Table TBL_RX_WX). To test these rates across different model realizations, we ran 15
+simulations of the fully decoupled circuit, holding H* fixed while resampling the connectivity
+and Poisson spike trains. For the illustrated population P, the firing rate fluctuated around its
+target after an initial transient (Fig. FIG_BKG_GRID(D)). Its mean firing rate remained near the
+target across the 15 realizations (Fig. FIG_BKG_GRID(E)).
+
+We calculated firing-rate errors as the differences between simulated mean population rates and
+the corresponding target rates. Across the 15 realizations, most populations had error
+distributions centered near zero [stats], although the distribution widths varied across populations
+(blue box plots in Figs. FIG_CMP_SURR_FULL(C) and FIG_THAL(D); summary statistics in
+Table TBL_ERR_STATS). We next asked whether the selected background inputs would also
+produce firing rates near the targets when recurrent connections were restored.
+
+===== PDF PAGE 6 =====
+FIG_BKG_GRID
+
+
+
+
+
+Figure FIG_BKG_GRID. Population-specific search for background input parameters in
+the surrogate open-loop setup. (A) Schematic of the tuning setup for a single population P=IT5A
+receiving excitatory and inhibitory background Poisson inputs hp=(rxpe, rxpi) through fixed
+synaptic weights wxpe, xxpi. Recurrent inputs are replaced by inputs from a surrogate copy of the
+full circuit emitting spikes in the target regime. (B) Average firing rate map Rpb on the parameter
+plane (rxpe, rxpi). Search region Qp is defined as a parallelogram containing firing rates close to
+the target rp0. (C) Same search region Qp after coordinate transformation. The rectangular shape
+of Qp simplifies the parameter search. Black curve denotes the set of all possible inputs that yield
+the target firing rate: Rp=rp0. The point hp∗=(rxpe*, rxpi*) is the selected background input for
+population P. (D) Example firing-rate dynamics obtained under the chosen input hp=hp∗, showing
+convergence to the target rate rp0. (E) Distribution of the average firing rates across random seeds
+for the same chosen input hp*, illustrating robustness of the solution.
+
+Cortex
+All-surrogate setup
+
+We start our analysis from the cortical part of the thalamocortical model, while replacing all
+thalamic populations with their surrogate copies.
+
+First, we evaluate the quality of our background tuning using the all-surrogate setup, in which all
+recurrent inputs are replaced by static surrogates (Fig. FIG_CMP_SURR_FULL(A)). We take
+our tuned background input and run 15 simulation trials with different random seeds. The per-
+cell random connectivity differs across trials, as do the realizations of the input Poisson spike
+trains. For each trial, we compute the resulting firing rates {rpn_surr} (p – population, n – trial)
+by averaging over the last 3 seconds of simulation and compare them to the target rates {rp0}. In
+Fig. FIG_CMP_SURR_FULL(C), blue vertical bars represent the statistics of the error
+{rpn_surr-rp0} across trials. One can see that the errors are mostly centered around zero, with
+relatively low variance, as expected for a setup similar to the one used for background tuning.          Добавлено примечание ([НН1]): Numbers
+
+===== PDF PAGE 7 =====
+Fully connected model
+
+Next, we plug the background input into a full cortical model, where all intracortical connections
+are active, while thalamocortical inputs remain surrogate (Fig. FIG_CMP_SURR_FULL(B)).
+Again, we run 15 trials with different seeds, compute the average rates Rn_full={rpn_full} in
+each trial, and compare them to the target R0={rp0}. The error distributions across trials are
+shown in Fig. FIG_CMP_SURR_FULL(C) by orange bars. One can see that the resulting state
+Rn_full strongly deviates from the target in most trials.
+
+There are several things that could potentially happen with the near-target state Rn_surr
+observed in the all-surrogate setup (its distance from R0 is shown by the blue bars). First, it could
+disappear or lose stability, causing the system to converge to a different state Rn_full. Second, it
+could persist but shift from Rn_surr to Rn_full. Third, it could remain stable and co-exist with
+Rn_full, making the system bistable: initial conditions would then determine whether the system
+converges to a near-target state close to Rn_surr or to a second state Rn_full located far from the
+target.
+
+Model with static self-excitation
+
+At this point, we confirmed that the model has the correct state in the all-surrogate setup but
+converges to a wrong state when all connections are recurrent. Next, we try to identify a set of
+connections responsible for this discrepancy (not necessarily a minimal one). Loss of stability
+and emergence of bistability are often associated with recurrent self-excitation. Thus, we
+consider a version of the cortical model in which all excitatory-to-excitatory (E-E) connections
+are surrogate (i.e. static), while the other connections remain recurrent
+(FIG_CMP_EE_SURR_FADE(A)).
+
+As before, we ran 15 simulation trials with different random seeds. The resulting rate
+distributions are shown in FIG_CMP_EE_SURR_FADE(C) by green bars. One can see that the
+simulated states remain close to the target (cf. the orange bars in Fig.
+FIG_CMP_SURR_FULL(C)). This confirms that at least some subset of the recurrent E-E
+connections is responsible for the deviation from the target observed in the full model.
+
+Fading from static to recurrent self-excitation
+
+The remaining question is whether the full model actually lacks a stationary near-target regime,
+or whether such a regime exists but the simulations start from a point outside its basin of
+attraction. To answer this question, we start from the model with surrogate E-E connections,
+simulate it for 3 seconds to let the regime settle, and then smoothly fade out the surrogate E-E
+connections while fading in the recurrent E-E connections (FIG_CMP_EE_SURR_FADE(B)).
+The transition lasts for 2 seconds, after which the model becomes fully recurrent. We then
+continue the simulation and compute the resulting state as for the other models.
+
+The result is shown in FIG_CMP_EE_SURR_FADE(C) by red bars. One can see that the model
+remains close to the initial near-target state even after the self-excitation becomes fully recurrent.
+Note that the red bars in FIG_CMP_EE_SURR_FADE(C) and the orange bars in
+FIG_CMP_SURR_FULL(C) correspond to the same fully connected model, which settles into
+different regimes depending on the initial conditions.
+
+Figures
+
+===== PDF PAGE 8 =====
+Figure FIG_CMP_SURR_FULL. (A) Open-loop surrogate model; Ctx – cortical populations of
+the original circuit; Ctx’ and Thal’ – surrogate copies of cortical/thalamic populations comprised
+     of Poisson spike generators firing at the target rates; Bkg – background input. All non-
+   background inputs of Ctx cells are surrogate, i.e. originate from Ctx’/Thal’ units. (B) Full
+cortical model with recurrent connectivity; thalamus is surrogate. (C) Deviation of the simulated
+   average firing rates of the populations from their target rates. Each box represents statistics
+across 15 trials with different random seeds. One can see that the full model (orange) settles into
+                         a state very different from the target one.
+
+===== PDF PAGE 9 =====
+Figure FIG_CMP_EE_SURR_FADE. (A) Model with surrogate self-excitation; Ctx – all cortical
+ populations; E’ – surrogate copies of excitatory cortical populations; Thal’ – surrogate copies of
+     thalamic populations. E-E connections are surrogate (originate from E’ units), all other
+  intracortical connections are recurrent. (B) Model smoothly fades from surrogate to recurrent
+                self-excitation according to a signal a(t). The model is equivalent to
+  FIG_CMP_EE_SURR_FADE(A) when a=0, and to FIG_CMP_SURR_FULL(B) when a=1.
+ (C) Deviation of the firing rates from the targets. One can see that the model with surrogate E-E
+  connections (green) settles into a near-target regime, and it remains close to the target after a
+            smooth transition from surrogate to recurrent E-E connectivity (red).
+
+
+
+
+
+Thalamus
+All-surrogate and fully connected models
+
+Having tuned the cortical model with surrogate thalamic inputs, we next turn to the
+complementary case: tuning the thalamic model with surrogate cortical inputs (Fig.
+FIG_THAL(A)). As before, we start by confirming the adequacy of the background tuning. To
+do this, we simulate 15 all-surrogate versions of the model and compare the resulting firing rates
+with the targets. Distributions of the firing-rate errors across 15 random trials are shown in Fig.
+FIG_THAL(D) by blue bars, and one can see that the errors are close to zero.
+
+Next, we run the full thalamic model with active recurrent connections (Fig. FIG_THAL(B)).
+The resulting error distributions are shown in Fig. FIG_THAL(D) by orange bars and reveal
+systematic deviations from the target for some populations. This prompted us to apply the same
+approach as for the cortical model: freezing candidate subsets of connections and examining the
+
+===== PDF PAGE 10 =====
+resulting errors. We first tested E-E connections, but unlike in the cortex, freezing them did not
+correct the discrepancy. We therefore tested other subsets and identified one whose freezing
+corrected most of the systematic deviation from the target (see details in Supplementary).
+However, smoothly fading these connections from surrogate to recurrent versions always led to
+reappearance of the deviation. Thus, we conclude that the thalamic tuning error has a different
+nature from the one observed in the cortex. The system is not bistable and does not converge to
+an alternative regime that co-exists with the near-target one. Instead, the surrogate-based
+background prediction itself is inaccurate: the background input that yields a near-target regime
+in the all-surrogate setup produces a regime that deviates from the target when all recurrent
+connections are active.
+
+To identify the source of this discrepancy, we examined the thalamic activity more closely and
+found that the firing-rate distributions across cells are very broad. This is an expected                 Добавлено примечание ([НН2]): Ref to supplementary
+consequence of the small number of thalamic cells in the model combined with random
+connectivity and non-fixed in-degree. Such broad distributions strongly violate the assumption of
+the surrogate setup that all presynaptic units have approximately equal firing rates.
+
+Second stage of background optimization
+
+To reduce the error, we add a second tuning stage in which the background inputs to all thalamic
+populations are jointly optimized, with the surrogate-based prediction used as the initial point.
+Despite its inaccuracy, this prediction is relatively close to the target and therefore serves as a
+better starting point for optimization than a random guess. Given the initial proximity to the
+target and the relatively small number of thalamic populations, joint optimization is feasible.
+
+As before, we generate 15 versions of the model with different random seeds. We then optimize
+the background input separately for each version, starting from the same initial point. As a result,
+we obtain 15 different background-input corrections, one for each model realization
+(schematically shown in FIG_THAL(C)). The green bars in Fig. FIG_THAL(E) show the
+distributions of these corrections across the 15 realizations, and the green bars in Fig.
+FIG_THAL(D) show the residual distributions of the post-optimization errors. One can see that
+both the systematic error and the variance are substantially reduced compared to the orange bars.
+
+Our goal is to find a background input that performs well across different random realizations of
+connectivity and Poisson spiking. Therefore, we collect the optimized background corrections
+from all 15 models and calculate the median correction for each population (Fig. FIG_THAL(E),
+red horizontal marks). The sum of the surrogate-based background prediction and this median
+correction is used as the final solution for the thalamus. The resulting error distributions are
+shown in Fig. FIG_THAL(D) by red bars. The variance predictably increases compared to the
+green bars, but the systematic errors change only slightly, supporting the use of median
+corrections instead of model-specific optimized values.
+
+Figures
+
+===== PDF PAGE 11 =====
+  Figure FIG_THAL. (A) Thal – thalamic populations of the original circuit; Ctx’ and Thal’ –
+ surrogate copies of cortical/thalamic populations; Bkg – background input. All non-background
+  inputs of Thal cells are surrogate, i.e. originate from Ctx’/Thal’ units. (B) Full thalamic model
+ with recurrent connectivity; cortex is surrogate. (C) Same as B, but with additional background
+ corrections; corr_own – corrections are optimized separately for each random model realization,
+ corr_med – median across realizations is used. (D) Distance between simulated and target firing
+   rates, distributions over 15 trials with different random seeds. Full recurrent model (orange)
+ shows systematic deviations from the target. Per-trial corrections reduce the deviations (green),
+  and the effect is spared when the median correction over trials in used (red). (E) Background
+    corrections obtained during joint optimization; green – distributions of per-trial optimized
+         corrections (corr_med); red horizontal marks – median corrections (corr_med).
+
+Thalamocortical circuit
+Finally, we tested the tuned parameters in the full thalamocortical model. We used the
+background inputs obtained in the surrogate open-loop model and re-applied the second-stage
+corrections previously found for the isolated thalamic subcircuit (Fig. FIG_THAL(E)). As in the
+isolated cortical subcircuit, the near-target regime was not reached from naïve initial conditions.
+We therefore used the same surrogate-to-recurrent fading procedure. Initially, all excitatory-to-
+excitatory connections were replaced by surrogate inputs (Fig. FIG_A1(B,C), left). After the
+initial transients decayed, the surrogate inputs were gradually faded out while the corresponding
+recurrent connections were restored between 8 and 10 s. The circuit remained near the target
+regime after recurrent connectivity was fully restored (Fig. FIG_A1(B,C), right).
+
+We evaluated the resulting firing rates across 15 random realizations of connectivity and
+background activity using the same tuned parameters. Mean firing-rate errors remained small for
+most populations, although the magnitude and variability of the errors differed across
+populations (Fig. FIG_A1(A)). The largest residual deviations occurred in TC, VIP2, and VIP3.
+These populations showed larger errors than in the corresponding isolated cortical or thalamic
+subcircuits, consistent with an effect of thalamocortical and corticothalamic interactions that
+were absent during the preceding subcircuit tuning stages. In the fully recurrent regime,
+
+===== PDF PAGE 12 =====
+population spiking remained largely asynchronous, with irregular low-amplitude fluctuations
+exemplified by the IT3 firing rate (Fig. FIG_A1(B,C), right).
+
+
+Figures
+
+
+
+
+
+    Figure FIG_A1. Evaluation of parameter tuning in the full thalamocortical model.
+ (A) Distributions of firing-rate errors across 15 random model realizations. For each population,
+  error was calculated as the mean firing rate during the final 5 s of simulation minus the target
+ rate (boxes – interquartile range [IQR], white circles – mean, whiskers – extreme values within
+1.5∙IQR, colored dots – outliers). Vertical black lines mark zero error. (B) Spike rasters from one
+    model realization, shown in two 1.5-s time intervals. Recurrent excitatory-to-excitatory
+   connections are replaced by surrogate inputs in the left panel and restored in the right panel;
+ cross-fading from surrogate to recurrent inputs occurred between 8 and 10 s. Population colors
+are the same as in panel A. (C) Firing rate dynamics of IT3 population in the same time windows
+                                        as in panel B.
+
+Discussion
+In this work, we developed a circuit-decoupling method with surrogate compensation for
+baseline firing-rate tuning in recurrent circuit models. We applied it to our 43-population
+biophysically detailed model of the macaque auditory thalamocortical circuit. Using full
+decoupling, we tuned the background inputs for each population separately and reached the
+target firing rates in the open-loop setup. We then tested the open-loop solution separately in the
+isolated cortical and thalamic subcircuits with compensated partial decoupling. Both subcircuits
+deviated substantially from the target, but our tests suggested different causes. The cortical
+subnetwork was able to sustain a near-target regime, but with naïve initialization it settled in a
+coexisting regime far from the target. A gradual surrogate-to-recurrent cross-fade of E→E
+connections solved the issue and gave access to the near-target regime. In the thalamic
+subcircuit, we found no evidence for a similar accessibility problem, so the deviation from the
+
+===== PDF PAGE 13 =====
+target likely stemmed from limited accuracy of surrogate compensation. An additional
+multidimensional tuning of the thalamic subcircuit yielded corrections to the open-loop solution
+and reduced the errors. Finally, we combined the open-loop background solution, thalamic
+corrections, and fading procedure in the full thalamocortical model. Across 15 random model
+realizations, most population firing rates stayed near the target, although considerable errors
+remained in several cases. Overall, compensated full decoupling enabled population-wise
+background tuning, while partial decoupling helped diagnose and address the problems that
+appeared when recurrent connectivity was restored.
+
+Circuit decoupling for background-input tuning
+Establishing an appropriate baseline regime in a neural circuit model is important for achieving
+correct dynamics, including the responses to transient inputs. Impact of the baseline on dynamic
+properties was experimentally shown both for individual cells (Chance et al., 2002; Fellous et al.,
+2003) and neural circuits (Arieli et al., 1996; Petersen et al. 2003; Curto et al., 2009; Zagha et al.,
+2013; McGinley et al., 2015; Reig et al., 2015; Gutnisky et al., 2017). Baseline activity shapes
+the effective inter-cell coupling, so changing the baseline can alter circuit dynamics even when
+synaptic weights remain fixed (Ahmadian et al., 2013; Rubin et al., 2015; Hennequin et al.,
+2018).
+
+A practical way to define the baseline state of a circuit model is to specify the firing rates of its
+constituent populations. Methods for achieving these baseline rates may either involve tuning
+cross-population connection weights (Arkhipov et al., 2018; Billeh et al., 2020; Dura-Bernal et
+al., 2023) or focus on population-specific background inputs (Jiang et al., 2024; Isbister et al.,
+2026). Weight tuning favors the model’s biological self-sufficiency but requires jointly
+optimizing a very large number of parameters and risks distorting the circuit’s dynamical
+properties. By contrast, background-input tuning involves a much smaller parameter set and
+keeps connectivity fixed, but makes the baseline activity dependent on an abstract external drive
+aggregating multiple unspecified influences. In this work, we follow the background-input
+approach and develop a framework intended to make this form of tuning more tractable.
+
+Despite its smaller parameter set, background-input tuning remains a multidimensional
+problem. Changing the input to one population affects the whole circuit through recurrent
+connectivity, so population-specific inputs have to be tuned jointly. Independent population-
+wise tuning becomes possible in the open-loop setup created by circuit decoupling. By itself,
+however, this decoupling omits the recurrent inputs that cells normally receive from each other.
+Background inputs tuned to produce certain firing rates in the decoupled setup may therefore
+yield different rates in the recurrently connected model. Consequently, background-input
+tuning methods based on decoupling must account for this potential difference. Our framework
+and a method proposed by Isbister et al. (2026) represent two possible ways to address this
+mismatch.
+
+Isbister et al. decoupled the circuit without compensating for the omitted recurrent inputs and
+addressed the potential rate mismatch in a subsequent tuning stage that involved simulations of
+the recurrently connected model. First, in the open-loop setup, they measured how each
+population’s firing rate depended on its background input. Next, they estimated a mapping
+between population-rate vectors in the open-loop and recurrent setups. To avoid high-
+dimensional sampling, they restricted the space of recurrent-model firing rate vectors to a one-
+dimensional manifold formed by scalar multiples of the target rate vector they sought to achieve.
+The corresponding open-loop rate vectors remained unknown, so the mapping was refined
+iteratively: after each round of recurrent-model simulations, they used the resulting rates to
+
+===== PDF PAGE 14 =====
+choose candidate background inputs for the next round. In their model, the target rates were
+reached after a few iterations, although the study did not establish general conditions for
+convergence.
+
+In contrast to Isbister et al., we use a modified open-loop setup where the omitted recurrent
+inputs are compensated by surrogate inputs delivering spike trains at the target firing rates of
+the corresponding presynaptic populations. These spike trains are generated independently of the
+ongoing circuit activity, so our compensation does not introduce coupling and preserves the
+open-loop setup. Together, the surrogate inputs to a cell approximate the joint influence it would
+experience in the recurrent circuit operating near the target regime.
+
+When the surrogate compensation is sufficiently accurate, the background inputs tuned in the
+open-loop setup can yield a near-target regime after recurrent connectivity is restored – as we
+found for the cortical part of our model (Fig. FIG_CMP_EE_SURR_FADE(C), red bars). When
+substantial errors remain, the open-loop background solution can instead provide the basis for a
+second tuning stage involving multidimensional search – as we demonstrated in the thalamic
+part of the model (Fig. FIG_THAL(D), red bars). We do not prescribe a specific algorithm, and
+various methods could be used for this stage. In principle, our framework is also compatible
+with the method of Isbister et al.: compensated open-loop tuning applied to several multiples
+of the target state could meaningfully initialize their iterative procedure, potentially improving
+convergence. Overall, our method could either yield a directly usable background solution or
+help initialize a secondary tuning procedure.
+
+In addition to full decoupling described above, our framework supports partial decoupling that
+isolates selected subcircuits from the rest of the network while preserving their internal
+connectivity. As before, the full-network environment can be approximated by surrogate
+compensation of the omitted inputs. Working with subcircuits helps identify and address tuning
+problems in a smaller setting before assembling the full network. It can also reduce the number
+of jointly optimized parameters when multidimensional search is needed. A related strategy
+was used by Billeh et al. and Dura-Bernal et al. for synaptic weight tuning: they started tuning
+from individual layers and progressed toward the full network. In our model, we used
+compensated partial decoupling to tune the cortical and thalamic subcircuits separately and
+overcame distinct tuning challenges that emerged in each. Overall, the two forms of decoupling
+played complementary roles: full decoupling enabled population-wise background tuning, while
+partial decoupling provided an intermediate step before full-network reassembly.
+
+Conditions for accurate surrogate compensation
+Background inputs tuned in the open-loop setup are intended to yield a near-target regime after
+recurrent connectivity is restored. The success of this transfer depends on how closely the
+surrogate inputs match the recurrent synaptic inputs that emerge near the target regime. In
+our implementation, all units within a surrogate population generated independent Poisson
+spike trains at the same rate. This construction simplifies two aspects of recurrent activity:
+spike-train correlations and within-population heterogeneity of firing rates. The accuracy of
+surrogate compensation therefore depends on how strongly these simplifications alter the inputs
+received by postsynaptic cells.
+
+Replacing each presynaptic cell by an independent Poisson generator removes both temporal
+correlations within individual spike trains and correlations between cells. This simplification is
+broadly consistent with experiments showing irregular spiking in awake cortex and weak
+pairwise correlations in both cortex and thalamus (Compte et al., 2003; Maimon and Assad,
+
+===== PDF PAGE 15 =====
+2009; Ecker et al., 2010; Erisken et al., 2014; Maksimov et al., 2018). Such activity is well-
+studied theoretically and commonly emerges in large recurrent networks through excitation-
+inhibition balance and inhibition-driven decorrelation (van Vreeswijk, Sompolinsky, 1998;
+Brunel, 2000; Renart et al., 2010; Sanzeni et al., 2022). Our recurrent model produced
+irregular spiking and weak correlations as well (suppl.), suggesting the plausibility of the          Добавлено примечание ([НН3]): synonym needed
+independent Poisson approximation for the chosen baseline regime.
+
+The other simplification concerns cell-to-cell firing-rate heterogeneity, which is absent from our
+surrogate populations whose units all fire at the same rate. By comparison, experiments show
+that spontaneous firing rates vary widely across cells in the cortex (Hromádka et al., 2008;
+O'Connor et al., 2010) and thalamus (Anderson and Linden, 2011; Bartlett and Wang, 2011).
+Broad rate distributions also emerge naturally in network models with random or
+heterogeneous connectivity (van Vreeswijk, Sompolinsky, 1998; Roxin et al., 2011; Vegué,
+Roxin, 2019; Sanzeni et al., 2022). Our model produced broad within-population rate
+distributions as well (suppl.). Thus, equal-rate surrogates do not reproduce this aspect of
+recurrent activity, which may reduce the accuracy of surrogate-based tuning.
+
+The negative impact of presynaptic rate averaging depends on the resulting distortion of the
+effective input to postsynaptic cells. This distortion is expected to remain small under two
+main conditions. First, the mean postsynaptic effect must depend approximately linearly on
+presynaptic firing rate, while strong synaptic non-linearities could violate this condition
+(Mongillo et al., 2012). Second, each postsynaptic cell must receive input from a sufficiently
+large and unbiased sample of presynaptic cells, so that the mean firing rate in that sample stays
+close to the presynaptic population mean (Vegué and Roxin, 2019). Violations of either
+condition could reduce the accuracy of surrogate compensation and decrease tuning quality.
+
+Testing the open-loop solution in recurrent subcircuits
+Imperfect surrogate compensation is not the only reason why recurrent activity may deviate from
+the target state. A recurrently connected circuit may have multiple stable regimes and settle
+into one that is not closest to the target. We therefore distinguish two problems: inaccuracy
+of surrogate compensation and inaccessibility of the desired regime. The two problems are
+independent and can coexist, so both must be considered when testing the open-loop solution in
+recurrent subcircuits.
+
+The isolated cortical subcircuit provided an example of the accessibility problem. With all
+intracortical connections recurrent, the activity settled into a regime far from the target state. We
+therefore tested whether the circuit could sustain another regime closer to the target. First, we
+found that replacing E→E connections with surrogate inputs was enough to achieve a near-target
+regime. Then, starting from this regime, we gradually faded out the surrogate E→E inputs and
+restored the recurrent E→E connections. After this transition, the activity remained close to the
+target, with population-wise mean errors across model realizations within ±2 Hz (Fig.
+FIG_CMP_EE_SURR_FADE(C), red bars). Thus, the same cortical subcircuit was able to
+sustain two different regimes, but the one closer to the target was inaccessible with naïve
+model initialization. The gradual surrogate-to-recurrent E→E transition provided a way to
+reach this regime.
+
+In the thalamic subcircuit, similar tests provided no evidence for an accessibility problem:
+replacing different subsets of connections by surrogates improved the result to varying degrees,
+but the errors always returned after fading back to recurrent connectivity (Supplementary Fig.
+XXX). We therefore interpret these errors primarily as a result of inaccurate surrogate
+
+===== PDF PAGE 16 =====
+compensation. Such inaccuracy is consistent with limited presynaptic sampling: cells in the
+thalamic subcircuit received fewer recurrent inputs than in the cortex, and the presynaptic
+firing rates had broader distributions (Supplementary Fig. XXX). Together, these factors
+caused the mean presynaptic firing rate to vary more across postsynaptic cells in the thalamus
+(Supplementary Fig. XXX). Consistent with this variability, several thalamic populations
+showed substantially larger errors compared to those remaining in the cortex after E→E
+fading. In the TC population, for example, the mean error across model realizations was about 10
+Hz (Fig. FIG_THAL(D), orange bars). These residual errors were large enough to motivate the
+secondary tuning stage.
+
+Secondary tuning after imperfect surrogate compensation
+When surrogate compensation leaves substantial residual errors, the open-loop solution may
+still provide a useful starting point for secondary multidimensional tuning. Since the open-
+loop solution is approximately valid, the search can focus on small corrections to it – this process
+may converge easier than tuning the background input from scratch in the coupled model. We
+demonstrated this approach in the isolated thalamic subcircuit with surrogate cortical inputs.          Добавлено примечание ([НН4]): Can be read like
+We took the open-loop solution for the background inputs and jointly tuned seven tonic                  “demonstrated with”. Maybe omit the qualifier at all.
+corrections, one per thalamic population. We repeated the tuning for 15 random model
+realizations, computed the median correction vector, and re-applied it to every realization. Such
+correction reduced the mean error across realizations to within ±5 Hz for every thalamic
+population (Fig. FIG_THAL(D), red bars). Most realization-specific errors decreased as well,
+although some remained substantial. In general, the secondary tuning stage successfully
+improved the open-loop solution for the thalamic subcircuit.
+
+Secondary tuning reintroduces multidimensional search, thus reducing the main computational
+advantage of full decoupling. Partial decoupling nevertheless simplifies the problem by
+restricting the search to individual subcircuits. In our case, isolating the thalamus limited the
+coupled search to seven variables. When the thalamic corrections were applied to the full 43-
+population model, mean errors remained small for most populations, although TC, VIP2, and
+VIP3 showed larger errors than in the corresponding subcircuits. This loss of accuracy is
+consistent with restoring thalamocortical and corticothalamic connections that remained
+surrogate during subcircuit tuning. Thus, partial decoupling can substantially reduce the
+tuning dimensionality, although the accuracy may decrease when the full recurrent connectivity
+is restored.
+
+Toolbox and future extensions
+We implemented our method as a publicly available toolbox that automatically modifies
+NetPyNE-compatible model descriptions. The toolbox applies circuit decoupling with surrogate
+compensation based on user-defined rules that specify which connections should be replaced by
+surrogate inputs and which populations should be omitted. The toolbox supports full decoupling
+for open-loop background tuning, compensated isolation of selected recurrent subcircuits, and
+selective connection replacement for pathway freezing or gradual surrogate-to-recurrent fading.
+We demonstrated these capabilities in one model and for one target regime, but the toolbox
+could be potentially applied to a broad class of NetPyNE-compatible circuit models.
+
+Future extensions could improve the match between surrogate inputs and recurrent activity.
+One approach would be to iteratively refine the surrogate inputs to better reproduce the
+firing-rate distributions and spike-train statistics observed in the recurrent network. After
+each recurrent-network simulation, these activity properties could be measured and used to
+
+===== PDF PAGE 17 =====
+construct updated surrogates for the next round of open-loop tuning, with the process repeated
+until convergence. Although this procedure would still ignore cross-cell correlations, it could
+further reduce errors caused by surrogate-recurrent mismatch.
+
+A promising future direction is to extend the present surrogate-compensated decoupling
+framework from stationary firing-rate targets to time-dependent activity, such as evoked
+responses or oscillations. For such applications, surrogate inputs would need to capture the
+relevant temporal structure in addition to mean firing rates. Although we did not test this
+extension here, it could broaden the use of circuit decoupling from establishing baseline regimes
+to tuning and analyzing dynamic properties of biophysically detailed network models.
+
+Methods
+
+Model
+Overview
+
+We used a modified version of the macaque auditory thalamocortical model (A1) developed by
+Dura-Bernal et al. (2023). The model was implemented in NetPyNE/NEURON. Most of the
+parameters remained unchanged compared to the original version. Below, we provide a brief
+overview of the model an describe the changes we made. For details, see Dura-Bernal et al.
+(2023) and github.
+
+The simulations analyzed here concerned spontaneous baseline activity.
+
+The data-based projection weights are supplied with the model files described in Code                Добавлено примечание ([НН5]): define
+Availability; their experimental basis and construction are described by Dura-Bernal et al.
+(2023).
+
+Cells, populations
+
+The model contained 12,908 neurons in 43 populations, including 36 cortical populations across
+layers 1-6 (including L5A/L5B subdivision) and 7 populations in the auditory thalamus and
+thalamic reticular nucleus. Cortical excitatory cells belong to the types: L2-6 intratelencphalic
+pyramidal (IT), L4 stellate (ITS4), L5-6 corticothalamic (CT), pyramidal-tract-like cells of L5B
+(PT5B). Inhibitory cell types: parvalbumin-positive (PV), somatostatin-positive (SOM),
+vasoactive-intestinal-peptide-positive (VIP), neurogliaform (NGF). L1 contained only NGF
+cells, L2-6 contained all inhibitory types. Thalamus contained MGB thalamocortical cells (TC,
+HTC, TCM), MGB interneurons (TI, TIM), and reticular nucleus cells (IRE, IREM). Thalamus
+was divided by the core (TC, HTC, TI, IRE) and matrix (TCM, TIM, IREM). Cells were
+randomly positioned withing their respective layers based on experimentally estimated densities.
+
+Cell models contained 1-6 compartments (depending on the type) whose membrane properties
+were defined by several types of ion channels with biologically realistic parameters. Some of the
+cellular parameters were changed compared to the published model, summarized in Table
+TBL_PARAMS_NEW. These changes were made for (1) thalamocortical cells to achieve more
+realistic single-cell activity and (2) excitatory cortical cells to avoid cell-level multistability.
+
+Connectivity
+
+The circuit had random sparse connectivity with the same connection probabilities and synaptic
+delays as in Dura-Bernal et al. (2023). Most of synaptic properties remained the same, except for
+revised time constants and reversal potential of GABAB receptors; also, some of the pathways
+
+===== PDF PAGE 18 =====
+had a different GABAA:GABAB ratio in our version (see Table TBL_PARAMS_NEW).
+Furthermore, we revised the synaptic positioning rules that define pathway-specific lists of
+postsynaptic cell sections to choose from. As in the published model, every section contained
+one numerical segment, so section choice fully specified synapse location at the resolution of the
+cell models. The complete section map is given in Table TBL_SEC.
+
+The main changes involved synaptic weights. Dura-Bernal et al. (2023) combined the available
+experimental evidence to build the “original” weight matrix Wdata. Then they introduced a set of
+multipliers jointly applied to this matrix and tuned them to fit the required circuit activity. In this
+paper, we tuned the background inputs rather than weights, so we removed the multipliers tuned
+by Dura-Bernal et al. (2023). Instead, we applied two non-specific multipliers: 0.125 to the
+connections between excitatory cells (E-E) and 0.25 to the other connections. The weights of E-
+E connections were reduced compared to the others to prevent abnormally synchronized circuit
+activity.
+
+Background inputs
+
+Every neuron in our model received a background input comprised of two independently
+generated Poisson spike trains delivered to the soma. One spike train provided excitatory input
+through an AMPA synapse, and the other – inhibitory input through a GABAA synapse.
+Neurons in the same population shared the two input rates and synaptic weights, but received
+independently generated spike trains. The synaptic weights were chosen separately for each
+population so that an individual background spike (from either excitatory or inhibitory input)
+received in the resting state (with all other synaptic inputs turned off) produced a somatic voltage
+deflection with the absolute amplitude of approximately 0.5 mV (see wxe and wxi columns in
+Table TBL_RX_WX). We chose this value arbitrarily from a biologically plausible EPSP/IPSP
+range and used it for each cell for simplicity. Such choice is reasonable due to the abstract nature
+of the background inputs that imitate the joint influence of processes not directly accounted for
+in the model. The background weights were kept constant, while the background rates (rxe, rxi)
+were the tunable variables. All the background inputs that were used in the published version of
+the model to provide minimal baseline activity were removed.
+
+For the thalamic and excitatory cortical populations, we also added a tonic offset current to the
+soma intended to achieve biologically plausible resting state (Table TBL_IBKG_ADHOC).
+
+Simulation and analysis (TODO)
+     -  NetPyNE, HPC, cores, repo
+     -   Duration, time step
+     -  Random seeds: connectivity, generators, etc.. (see the code)
+     -  Averaging window, rate/in-degree/input histogram properties
+
+Circuit decoupling with surrogate compensation
+We decoupled individual populations or subcircuits by replacing selected synaptic inputs from
+modeled neurons with inputs from fixed-rate Poisson spike generators (Fig. FIG_SURR_NET).
+These generators provided surrogate compensation at the target firing rates of the original
+presynaptic populations. For a modeled population 𝑃𝑛, we denote its target mean firing rate by
+𝑟𝑛0. The projection 𝐶𝑛𝑚 comprises all connections from the presynaptic population 𝑃𝑚 to the
+postsynaptic population 𝑃𝑛.
+
+Full decoupling for isolating populations
+
+===== PDF PAGE 19 =====
+For each modeled population 𝑃𝑚, we constructed a surrogate population 𝑃𝑚′ consisting of
+independent Poisson spike generators distributed within the same spatial region and at the same
+density as the modeled neurons. Each generator emitted a homogeneous Poisson spike train at
+the target rate 𝑟𝑚0. These rates were constant and independent of the activity of the modeled
+neurons.
+
+To fully decouple the circuit, we replaced every projection 𝑃𝑚→𝑃𝑛 with a projection 𝑃𝑚′ →𝑃𝑛,
+including projections within each modeled population (Fig. FIG_SURR_NET(A,B)). We
+generated the surrogate projections using the connection probabilities, synaptic-weight
+distributions, transmission delays, and distance-dependent rules of the corresponding recurrent
+projections. We also used the same synaptic mechanisms and postsynaptic placement rules as in
+the corresponding recurrent projections. With all recurrent sources replaced by fixed-rate
+generators, varying one population's background-input rates left the inputs to other populations
+unchanged.
+
+In Fig. FIG_SURR_NET(A,B), 𝑃1 and 𝑃2 denote modeled populations, 𝑃1′ and 𝑃2′ denote their
+surrogate populations, and 𝐶𝑛𝑚 labels the corresponding projections. Each modeled population
+𝑃𝑛 also receives excitatory and inhibitory background inputs with rates 𝑟𝑥𝑎𝑛 and synaptic weights
+𝑤𝑥𝑎𝑛, where 𝑎= 𝑒, 𝑖 denotes excitatory and inhibitory input, respectively.
+
+Partial decoupling for subcircuit isolation and connection freezing
+
+For partial decoupling, we replaced selected projections 𝑃𝑚→𝑃𝑛 with 𝑃𝑚′ →𝑃𝑛 while retaining
+the other projections between modeled populations. We refer to replacing a selected projection in
+this way as connection freezing. The surrogate generators supplied stochastic spike trains at the
+fixed target rate 𝑟𝑚0, independently of the activity of 𝑃𝑚. The middle schematic in Fig.
+FIG_SURR_NET(C) illustrates this replacement for 𝑃1 →𝑃3, which becomes 𝑃1′ →𝑃3.
+
+To isolate a subcircuit comprising a population set 𝑆, we retained recurrent projections within
+and between modeled populations in 𝑆. We replaced every projection into 𝑆 from an outside
+population with a projection from its corresponding surrogate population. In the right schematic
+in Fig. FIG_SURR_NET(C), 𝑆= {𝑃2, 𝑃3}: we retained recurrent projections within and between
+𝑃2 and 𝑃3 and replaced projections from 𝑃1 with projections from 𝑃1′. Modeled populations
+outside the selected subcircuit could be omitted once their inputs to the retained populations
+were supplied by surrogate generators.
+
+Semi-surrogate connections
+
+For a semi-surrogate projection, we combined synaptic input from a modeled presynaptic
+population 𝑃𝑚 with input from its surrogate population 𝑃𝑚′ (Fig. FIG_SURR_NET(D)). We
+retained the recurrent projection 𝑃𝑚→𝑃𝑛 and independently generated a surrogate projection
+𝑃𝑚′ →𝑃𝑛 using the same connection rules and a different random seed. The two projections
+supplied input to the same postsynaptic population but had separately sampled connections.
+
+We defined a splitting coefficient 𝑘∈[0,1] to control the relative contributions of the two
+sources. We multiplied the synaptic weights of the recurrent projection by 𝑘 and those of the
+surrogate projection by 1 −𝑘:
+
+                              𝑤rec = 𝑘𝑤rec0  ,      𝑤surr = (1 −𝑘)𝑤surr0   .
+
+Here, 𝑤rec0 and 𝑤surr0  denote the unscaled weights of synapses in the recurrent and surrogate
+projections, respectively, drawn from the original projection's weight distribution. The endpoints
+𝑘= 0 and 𝑘= 1 corresponded to fully surrogate and fully recurrent input. Figure
+
+===== PDF PAGE 20 =====
+FIG_SURR_NET(D) illustrates this scaling for input from 𝑃1 and 𝑃1′ to 𝑃2, using 𝑤21 to denote
+an unscaled synaptic weight.
+
+When the modeled and surrogate presynaptic populations fired at the same mean rate, the
+matched connection rules and scaling factors 𝑘+ (1 −𝑘) = 1 preserved the expected mean
+synaptic input. This equality applied in expectation over the randomly generated connections and
+spike trains. Preserving the mean did not impose the same constraint on input variance. For
+independent Poisson inputs, variance depends on the squared synaptic weights: at matched rates,
+two equally sized synapse sets with half the original weights produce the same mean input but
+half the variance of one full-weight set.
+
+We faded surrogate input by increasing the time-dependent coefficient 𝑘(𝑡) toward the fully
+recurrent value 𝑘= 1. The projections selected for fading and the time course of 𝑘(𝑡) are
+specified in the Fading section.
+
+Assumptions
+
+When we estimate the required background input H by using surrogate open-loop models, we
+assume that the activity of the surrogate pre-synaptic populations is similar to the activity of the
+real populations in a recurrently connected full model. In practice, this similarity is limited.
+
+Surrogate neurons generate independent Poisson spike trains with equal firing rates within a
+single population. However, the activity in a full model may differ from it in several ways:
+
+     -   Real neurons may generate non-Poisson spike trains (with CV not equal to 1);
+     -   In a connected network, spike trains are correlated between cells;
+     -   Recurrent connectivity and complex cellular mechanisms may cause temporal
+        correlations of spiking activity (e.g. oscillations);
+     -   Cells within a population receive different numbers of inputs, so their firing rates are not
+       equal.
+
+When we plug the input H=Hs found in the surrogate open-loop setup into the full model, the
+disparities between real and surrogate inputs will make the actual baseline rates R* deviate from
+the target rates R0. However, we cannot estimate the magnitude of this deviation in advance. Our
+rationale is that R* will be close enough to R0 so it can be used as a good starting point for the
+next tuning step that will sufficiently reduce the deviation.
+
+Background input tuning in a fully decoupled circuit
+We tuned the background inputs to our 43-population thalamocortical circuit to achieve the
+target regime 𝑅0 specified as a vector of 𝑁= 43 population target firing rates: 𝑅0 =
+(𝑟10, . . . , 𝑟𝑁0), which we chose based on the literature (Table TBL_TARGET_RATES). We
+started the background-input tuning process by using a fully decoupled circuit with surrogate
+compensation (Fig. FIG_BKG_GRID(A)). All the recurrent connections of the original circuit
+A1 were replaced by compensatory inputs from a surrogate circuit A1' comprised of fixed-rate
+Poisson spike generators.
+
+As described in (Model), every neuron of a population 𝑃 received two Poisson spike trains with
+the rates 𝑟𝑥𝑒𝑝, 𝑟𝑥𝑖𝑝 through the AMPA/GABAA synapses with the weights 𝑤𝑥𝑒𝑝, 𝑤𝑥𝑖𝑝, respectively.
+We kept the weights fixed and varied the background-rate pair ℎ𝑝= (𝑟𝑥𝑒𝑝, 𝑟𝑥𝑖𝑝) in two stages: a
+coarse rectangular grid scan followed by a fine grid scan within a fitted parallelogram. Each
+population had its own search regions at both stages. Figure FIG_BKG_GRID illustrates the
+search and validation for one population, 𝑃= 𝐼𝑇5𝐵
+
+===== PDF PAGE 21 =====
+Shared grids and coarse scan
+
+Both scans used a 𝑀× 𝑀 grid (𝑀= 20), indexed by 𝑚𝑒, 𝑚𝑖= 1, . . . , 𝑀.
+
+For the coarse scan, we sampled the background rates for a population 𝑃 uniformly from pre-
+defined intervals:
+
+                                  𝑟𝑥𝑎𝑝∈(𝑟𝑥𝑎𝑝,𝑚𝑖𝑛, 𝑟𝑥𝑎𝑝,𝑚𝑎𝑥), 𝑎= 𝑒, 𝑖,
+where 𝑟𝑥𝑒𝑝,𝑚𝑖𝑛= 𝑟𝑥𝑖𝑝,𝑚𝑖𝑛= 1 Hz, and 𝑟𝑥𝑒𝑝,𝑚𝑎𝑥, 𝑟𝑥𝑖𝑝,𝑚𝑎𝑥 were chosen for each population separately
+(Table TBL_GRID_REGIONS).
+
+To make the search process more efficient, we simulated multiple populations at once for each
+grid point, with the population-specific background inputs defined by the grid coordinates
+(𝑚𝑒, 𝑚𝑖):
+                𝑟𝑥𝑎𝑝= 𝑟𝑥𝑎𝑝,𝑚𝑖𝑛+ (𝑟𝑥𝑎𝑝,𝑚𝑎𝑥−𝑟𝑥𝑎𝑝,𝑚𝑖𝑛) ⋅(𝑚𝑎−1)/(𝑀−1), 𝑎= 𝑒, 𝑖.
+
+The populations shared the same surrogate inputs and did not affect each other due to
+decoupling.
+
+We ran each simulation for 5 s and measured mean population firing rates over 3–5 s interval.
+The measurements at all grid points formed the coarse firing-rate map 𝑅𝑝𝑏 for each population 𝑃
+(Fig. FIG_BKG_GRID(B)).
+
+Fitting the fine-search region
+For each population 𝑃, we fitted a parallelogram 𝑄𝑝 encompassing a region on (𝑟𝑥𝑒𝑝, 𝑟𝑥𝑖𝑝)-plane
+where the coarse firing-rate map 𝑅𝑝𝑏 had values close to the target rate 𝑟𝑝0.
+
+The procedure of 𝑄𝑝 fitting was based on finding low-rate and high-rate contours on the coarse
+map 𝑅𝑝𝑏. For the low-rate level, we used 𝑟𝑝𝑙𝑜𝑤= 0.5 Hz for every population. For the high-rate
+level 𝑟𝑝ℎ𝑖𝑔ℎ, we used a predefined rate of 10, 30, or 60 Hz for cortical populations and the target
+rate 𝑟𝑝0 for thalamic populations (Table TBL_GRID_REGIONS).
+
+For the cortical populations, we extracted the contours directly from the coarse map 𝑅𝑝𝑏. For each
+contour, we chose the segment containing the point with the smallest 𝑟𝑥𝑒𝑝 value. For the thalamic
+populations, we first applied Gaussian smoothing to the map 𝑅𝑝𝑏, with a standard deviation of
+one coarse-grid cell per axis, and retained the longest segment for each contour.
+
+We approximated the high-rate contour by a straight line through the leftmost and rightmost
+points and computed its slope 𝑠𝑝. We then calculated the maximum horizontal gap 𝑑𝑝 between
+this line and the low-rate contour. To define the strip, we used a width-expansion fraction 𝛼𝑝 and
+a right-edge shift fraction 𝛽𝑝 (Table TBL_GRID_REGIONS). We set the horizontal width to
+(1 + 𝛼𝑝)𝑑𝑝 and obtained the right edge by shifting the fitted line rightward by 𝛽𝑝𝑑𝑝.
+We then limited the strip along the 𝑟𝑥𝑖𝑝-axis to form the search parallelogram 𝑄𝑝. We set its lower
+edge at 𝑟𝑥𝑖𝑝= 1 Hz and its upper edge at the same inhibitory rate as the rightmost vertex of the
+original high-rate contour. If the lower-right corner had 𝑟𝑥𝑒𝑝< 0, we raised the lower edge until
+𝑟𝑥𝑒𝑝= 0 at that corner. We rounded the lower-right corner coordinates, horizontal width, and
+vertical height to multiples of 10 Hz. We used these four values and the fitted slope 𝑠𝑝 to define
+the fine grid (Table TBL_GRID_REGIONS).
+
+===== PDF PAGE 22 =====
+Fine scan
+
+For the fine scan, we used the indices 𝑚𝑒, 𝑚𝑖= 1, … , 𝑀 to specify positions on a skewed grid
+covering each population's fitted parallelogram 𝑄𝑝. We denote its lower-right corner by
+(𝑟𝑥𝑒𝑝𝑐, 𝑟𝑥𝑖𝑝𝑐), and its horizontal width and vertical height by 𝛥𝑟𝑥𝑒𝑝 and 𝛥𝑟𝑥𝑖𝑝, respectively (Table
+TBL_GRID_REGIONS). Using the fitted slope 𝑠𝑝, we calculated the background rates at the
+grid nodes:
+
+                           𝑝            𝑝𝑚𝑖−1
+                                   𝑟𝑥𝑖     = 𝑟𝑥𝑖𝑝𝑐+ 𝛥𝑟𝑥𝑖                ,                         𝑀−1
+                                                 𝑝𝑐
+                           𝑝               𝑟𝑥𝑖𝑝−𝑟𝑥𝑖   𝑝𝑀−𝑚𝑒                              𝑟𝑥𝑒 = 𝑟𝑥𝑒𝑝𝑐+        −𝛥𝑟𝑥𝑒                  .
+                                           𝑠𝑝      𝑀−1
+The index 𝑚𝑖 specified rows at uniformly spaced inhibitory rates 𝑟𝑥𝑖𝑝 from the lower to the upper
+bound of 𝑄𝑝. Within each row, 𝑚𝑒 specified uniformly spaced excitatory rates 𝑟𝑥𝑒𝑝 from the left
+to the right diagonal edge of 𝑄𝑝. For each grid point, we simulated multiple populations together,
+assigning each population the background rates from its own parallelogram.
+
+Some parallelograms extended into negative excitatory rates. We excluded these grid points for
+the affected population and left the corresponding firing-rate entries missing (we skipped…). We
+ran each simulation for 12 s and measured mean population firing rates over 7-12 s. These
+measurements formed the fine firing-rate map 𝑅𝑝 for each population (Fig.
+FIG_BKG_GRID(C)).
+
+Selecting the background rates
+
+We linearly interpolated each fine firing-rate map 𝑅𝑝 onto a 200 × 200 grid in the grid-index
+coordinates (𝑚𝑒, 𝑚𝑖). In these coordinates, 𝑄𝑝 is represented as a rectangle (Fig.
+FIG_BKG_GRID(C)). We applied Gaussian smoothing with a standard deviation of 6
+interpolation-grid cells per axis for cortical populations and approximately 11.7 cells per axis for
+thalamic populations.
+
+From the smoothed map, we extracted the contour at the target firing rate 𝑟𝑝0 and selected its
+middle point by index (Fig. FIG_BKG_GRID(C)). We converted the (𝑚𝑒, 𝑚𝑖) grid coordinates
+of the selected midpoint to background-rate coordinates (𝑟𝑥𝑒𝑝, 𝑟𝑥𝑖𝑝) using the equations in Section
+3 and rounded them to the nearest integer value in Hz. We denoted the obtained background
+input to the population 𝑃 by ℎ𝑝∗= (𝑟𝑥𝑒𝑝∗, 𝑟𝑥𝑖𝑝∗) (Figure FIG_BKG_GRID(C,D)) and combined all
+𝑁= 43 population-specific background inputs into the vector 𝐻∗= (ℎ1∗, … , ℎ𝑁∗). The results of
+this process are given in Table TBL_RX_WX.
+
+Validation across random realizations
+
+With 𝐻∗ fixed, we ran 15 simulations of the fully decoupled circuit for 10 s each, resampling
+connectivity and Poisson spike trains for each realization. We recorded population firing-rate
+time series and calculated mean firing rates over 7-10 s interval. For each population and
+realization, we calculated the firing-rate error by subtracting the target rate 𝑟𝑝0 from the
+measured mean rate.
+
+For 𝑃= 𝐼𝑇5𝐵, Fig. FIG_BKG_GRID(D) shows the firing-rate dynamics, and Fig.
+FIG_BKG_GRID(E) shows the distribution of mean firing rates across realizations. We
+summarized firing-rate error distributions for all cortical and thalamic populations as blue box
+
+===== PDF PAGE 23 =====
+plots in Figs. FIG_CMP_SURR_FULL(C) and FIG_THAL(D), respectively, with summary
+statistics in Table TBL_ERR_STATS.
+
+Fading (TODO)
+     -  Which pop. pairs were used for conn. freezing
+     -   In thalamus and in full A1
+
+Secondary tuning stage
+Probing the thalamus for bistability (TODO)
+
+Secondary tuning stage
+
+For the second tuning stage, we chose a feedback procedure to jointly determine one constant somatic
+current correction per thalamic population. During adaptation, feedback dynamically adjusted the currents
+to bring population firing rates toward their targets. We allowed the controlled activity to settle, then
+disabled feedback and locked the learned tonic corrections. To obtain corrections that could maintain
+firing rates near their targets after feedback ended, we accumulated a slow correction from the slowly
+varying firing-rate error and used an additional transient correction during adaptation. At locking, we
+retained the slow correction and removed the transient one.
+
+Population firing-rate estimate
+
+For population 𝑃 containing 𝑁𝑝 neurons, we defined the normalized population spike train as
+
+                                         𝑁𝑝
+                              1
+                            𝑥𝑝(𝑡) = 𝑁𝑝∑∑𝛿(𝑡−𝑡𝑝𝑖𝑘),
+                                                𝑘
+                                             𝑖=1
+
+where 𝑡𝑝𝑖𝑘 is the time at which spike 𝑘 from neuron 𝑖 reached the controller, including a delivery delay
+of 1 𝑚𝑠. We estimated the running mean firing rate 𝑟𝑝(𝑡) by exponential filtering with time constant
+𝜏𝑟= 100 𝑚𝑠:
+
+                                 𝜏𝑟𝑟̇𝑝= −𝑟𝑝+ 𝑐𝑡𝑥𝑝(𝑡).
+
+We used the conversion factor 𝑐𝑡= 103 𝑚𝑠 𝑠−1 to express the rate estimate in Herz while 𝑡 is given in
+milliseconds. Each delivered spike increased 𝑟𝑝 by 𝑐𝑡/(𝑁𝑝𝜏𝑟), and between spikes 𝑟𝑝 decayed
+exponentially with time constant 𝜏𝑟. Normalization by 𝑁𝑝 yielded the mean firing rate per neuron.
+
+Feedback control of tonic current
+
+We defined the firing-rate error as 𝑒𝑝(𝑡) = 𝑟𝑝0 −𝑟𝑝(𝑡), where 𝑟𝑝0 is the target rate of population 𝑃. We
+filtered this error to obtain its slowly varying component, 𝑚𝑝, and used the residual 𝑒𝑝−𝑚𝑝 to calculate
+the transient correction. During adaptation, the controller states evolved according to:
+
+                          𝜏𝑚𝑚̇𝑝     = 𝑒𝑝−𝑚𝑝,
+                                 𝜏𝑢𝑢̇𝑝  = −𝑢𝑝+ 𝑘𝑢(𝑒𝑝−𝑚𝑝),
+                                               𝑠̇𝑝     = 𝑘𝑠𝜙𝜀(𝑚𝑝),
+                              𝑧𝑝      = 𝑠𝑝+ 𝑢𝑝.
+
+Here, 𝜏𝑚 is the time constant for filtering the error, 𝑢𝑝 is the transient correction, and 𝜏𝑢 and 𝑘𝑢 are its
+filtering time constant and gain. The state 𝑠𝑝 is the accumulated slow correction, 𝑘𝑠 is its integrator gain,
+and 𝑧𝑝 is the total controller output.
+
+===== PDF PAGE 24 =====
+The slow correction 𝑠𝑝 responded to the slow error component 𝑚𝑝, while the transient correction 𝑢𝑝
+responded to the residual 𝑒𝑝−𝑚𝑝. The transient-correction gain 𝑘𝑢 was small, limiting the contribution
+of 𝑢𝑝 during adaptation. This separation allowed the slow branch 𝑠𝑝 to accumulate the correction for a
+persistent firing-rate mismatch without relying on a fast dynamic feedback created by 𝑢𝑝.
+
+Even near the target, firing rates fluctuate due to stochastic spiking. To make 𝑠𝑝 less sensible to such
+fluctuations, we introduced a dead zone:
+
+                            𝑚𝑝−𝜀,  𝑚𝑝> 𝜀,
+                        𝜙𝜀(𝑚𝑝) = {   0,     |𝑚𝑝| ≤𝜀,
+                       𝑚𝑝+ 𝜀, 𝑚𝑝< −𝜀.
+
+The slow correction 𝑠𝑝 therefore accumulated only the portion of the filtered error that exceeded the dead
+zone.
+
+The controller parameter values are given in Table TBL_CTRL_PARAMS.
+
+To close the feedback loop, we used the controller output 𝑧𝑝 to drive a somatic current injected to every
+cell of the controlled population 𝑃:
+
+                                       𝐼𝑝(𝑡) = 𝑔𝜇𝑧𝑝(𝑡).
+
+The gain 𝑔𝜇 was chosen to balance the convergence time and stability of the system.
+
+When the population activity 𝑟𝑝(𝑡) was below the target rate 𝑟𝑝0, the error 𝑒𝑝(𝑡) = 𝑟𝑝0 −𝑟𝑝(𝑡) was
+potitive, as well as its filtered version 𝑚𝑝. With 𝑚𝑝> 𝜀, the feedback current 𝐼𝑝 changed in the
+depolarizing direction, tending to increase 𝑟𝑝(𝑡). Conversely, when 𝑟𝑝(𝑡) was above 𝑟𝑝0, the feedback
+current changed towards hyperpolarization. Thus, the feedback controller worked to keep the activity
+close to the target 𝑟𝑝0.
+
+We implemented the controller equations in a NEURON mechanism that received every output spike
+from the controlled population 𝑃 with the weight 1⁄ 𝑁𝑝 . The mechanism's output drove a current
+delivered to the soma of every neuron in 𝑃. In distributed simulations, each MPI rank had its own
+instance of the controller mechanism. Each instance received spikes from all neurons in 𝑃, including
+those on other ranks, and supplied the same control signal to the neurons located on its own rank.
+
+Tuning protocol and static corrections
+
+To determine the current corrections, we ran simulations lasting 220 𝑠. We initialized the rate estimate
+and controller states as 𝑟𝑝= 𝑚𝑝= 𝑢𝑝= 0 and 𝑠𝑝= 𝑧0 = 0 𝐻𝑧, where 𝑧0 is the initial controller
+output. During the first 10 𝑠, only the rate estimate evolved, and the controller output remained at 𝑧0.
+Adaptation began at 𝑡0 = 10 𝑠 and continued until 𝑡𝑙𝑜𝑐𝑘= 160 𝑠. At locking, we froze the controller
+states and removed the transient correction, leaving the learned slow correction as the tonic output:
+
+                                               𝑧0,       𝑡< 𝑡0,
+                         𝑧𝑝(𝑡) = {𝑠𝑝(𝑡) + 𝑢𝑝(𝑡),   𝑡0 ≤𝑡≤𝑡𝑙𝑜𝑐𝑘,
+                                          𝑠𝑝(𝑡𝑙𝑜𝑐𝑘),    𝑡> 𝑡𝑙𝑜𝑐𝑘.
+
+We calculated mean population firing rates over 200–220 𝑠 to assess the result.
+
+We repeated the tuning procedure across 15 independent realizations of the model. For realization 𝑗, the
+fixed current correction for population 𝑃 was:
+
+                                        𝐼𝑝(𝑗) = 𝑔𝜇𝑠𝑝(𝑗)(𝑡𝑙𝑜𝑐𝑘).
+
+===== PDF PAGE 25 =====
+We obtained one static correction per population by taking the median over model realizations:
+
+                              𝐼̃𝑝= median{𝐼𝑝(1), … , 𝐼𝑝(15)}.
+
+Taking the median limited the influence of extreme current estimates. The resulting static corrections are
+given in Table TBL_STATIC_CURRENT_CORRECTIONS. (Figure link here).
+
+In subsequent simulations, every neuron in population 𝑃 received the additional constant somatic current
+𝐼̃𝑝 without active feedback control.
+
+(CTRL TRACES HERE)
+
+
+Testing the solutions (TODO)
+Random realizations, how the plots were built etc..
+
+Toolbox (TODO)
+
+
+Supplementary
+
+Target rates
+Table TBL_TARGET_RATES
+
+ Population  Rate, Hz  Population  Rate, Hz
+  NGF1       3     NGF5A       0.5
+    IT2        2       IT5B        5
+   PV2        12     CT5B        2
+  SOM2       6      PT5B        5
+   VIP2        7      PV5B        8
+  NGF2       1     SOM5B       4
+    IT3        2      VIP5B        0.2
+   PV3        12     NGF5B       0.5
+  SOM3       6        IT6         3
+   VIP3        7      CT6        2
+  NGF3       1       PV6        15
+   ITS4        2     SOM6       7
+   ITP4        2       VIP6         0.2
+   PV4        10     NGF6        0.5
+  SOM4       5      TC         8
+   VIP4        0.2     HTC        8
+  NGF4        0.1    TCM        2
+   IT5A        5        TI         15
+  CT5A       2      TIM        10
+  PV5A       8       IRE        15
+ SOM5A      4     IREM       10
+  VIP5A       0.2
+
+
+     -   Refs
+
+===== PDF PAGE 26 =====
+Achieving monostability
+     -  gKDR, f-I curves
+
+Ad-hoc bkg corrections
+     -   Resting voltage (Ctx)
+     -   Position on f-I curve (Thal)
+
+Table TBL_IBKG_ADHOC
+
+         Current, nA          Current, nA
+  IT2       0.183      IT6       0.096
+  IT3       0.207     CT6       0.281
+ ITS4      0.215     TC         4
+ ITP4      0.215    HTC        4
+ IT5A      0.099    TCM        6
+ CT5A      0.281       TI         0.03
+ IT5B      0.107    TIM        0.03
+ CT5B      0.281     IRE         0.2
+ PT5B      0.143    IREM        0.2
+
+
+Vrest and PSP
+     -   Slides 32-36
+
+Open-loop tuning results                                                                 Добавлено примечание ([НН6]): Note that
+                                                                                            FIG_CMP_SURR_FULL (blue) already contains all open-loop
+     -  Data from FIG_BKG_GRID for every population                                                              boxplots.
+
+
+Table RX_WX
+
+            rxe      rxi    wxe    wxi                rxe       rxi     wxe      wxi
+   IT2    8776    939     0.31     1.17   SOM6    3419     1335      0.26      0.54
+   IT3    9575   1560    0.31     1.16    VIP2    2802     1024      0.31      1.03
+  ITP4   8385   1620    0.31     1.19    VIP3    2930     1054      0.31      1.03
+  ITS4    8400   1611    0.31     1.19    VIP4    1775     1599      0.31      1.03
+  IT5A   8705   2081    0.30     1.12   VIP5A    1625     622      0.31      1.03
+  IT5B   8763   2052    0.30     1.15   VIP5B    2117     672      0.31      1.03
+   IT6    7981   2006    0.29     1.09    VIP6     753     3407      0.31      1.03
+ CT5A   8287   1627    0.31     1.24   NGF1    6629     408      0.33      0.64
+  CT5B   8241   1636    0.31     1.24   NGF2    3451     708      0.33      0.64
+  CT6    7801   1632    0.31     1.24   NGF3    3790     765      0.33      0.64
+  PT5B   8553   1486    0.32     1.10   NGF4    2732     1090      0.33      0.64
+  PV2    5411   1578    0.25     1.99   NGF5A   3725     568      0.33      0.64
+  PV3    5405   1582    0.25     1.99   NGF5B   3649     532      0.33      0.64
+  PV4    5492    653     0.25     1.99   NGF6    3211     718      0.33      0.64
+  PV5A   5595    341     0.25     1.99    TC     8573     764      0.19      1.08
+  PV5B   5685    344     0.25     1.99   HTC     8130     954      0.19      1.08
+  PV6    5561    781     0.25     1.99   TCM    9361     650      0.19      1.08
+ SOM2   3066   3050    0.26     0.54      TI      8526     548      0.14      1.11
+
+===== PDF PAGE 27 =====
+ SOM3   3209   3091    0.26     0.54    TIM     8814     497      0.14      1.11
+ SOM4   3381   2583    0.26     0.54    IRE     8817     442      0.28      1.65
+ SOM5A  3268   1928    0.26     0.54   IREM    9709     390      0.28      1.65
+ SOM5B  3256   1955    0.26     0.54
+
+
+Thalamic corrections
+Table TBL_THAL_CORR (nA)
+
+         Median   Mean      Std.
+  TC     -0.2351    -0.2541    0.1049
+ HTC    -0.1580    -0.1342    0.1440
+ TCM    -0.2088    -0.2217    0.0580
+   TI      -0.0005    -0.0005    0.0011
+  TIM     -0.0009    -0.0011    0.0010
+  IRE     -0.0193    -0.0200    0.0036
+ IREM    -0.0308    -0.0303    0.0082
+
+
+Distributions of firing rates, in-degrees, and synaptic inputs
+     -   Slide 8
+
+Simulations (TODO)
+Ctx without fading
+
+Thalamus without correction
+
+Lack of bistability in the thalamic subcircuit
+
+Without 50% E-E decrease
+
+Full A1 without fading / thalamic corrections
+
+Firing rate traces from other pops from FIG_A1 (slide 9)
+
+Fading g traces (slides 45-46)
+
+Tables (TODO)
+Rate, error, CV (mean, std, IQR, …)
+
+Bkg-tuning regions
+
+Supplementary Tables S1 and S2 report the current cellular, synaptic, and section-targeting
+settings that differ from the published model. Parameters inherited without change from Dura-
+Bernal et al. (2023) are not repeated. The baseline-fitting gains used in the published model are
+absent from the present model and are not tabulated.
+
+Table TBL_PARAMS_NEW. Current cellular and inhibitory synaptic parameters that
+differ from Dura-Bernal et al. (2023)
+
+===== PDF PAGE 28 =====
+                                        Parameter or
+Model element    Population or pathway                         Current setting
+                                      mechanism
+
+                                                                         1.5 × source-template
+Cortical cell       IT2; IT3                      kdr.gbar, all sections
+                                                                      value
+
+                  ITP4; IT5A; CT5A; IT5B;                       3 × source-template
+Cortical cell                                       kdr.gbar, all sections
+               CT5B; IT6; CT6                                    value
+
+                                                               soma; Bdend; Adend1;
+Cortical cell      ITS4                        Sections
+                                                              Adend2; Adend3
+
+Thalamic cell    TC                             cal mechanism        Absent
+
+Thalamic cell    TC                        htc.gmax              1e-6
+
+Thalamic cell    TC                          ittc.gmax              0.002
+
+Thalamic cell    HTC                          cal.gcalbar            0.001
+
+Thalamic cell    HTC                      htc.gmax              1e-6
+
+Thalamic cell    HTC                         ittc.gmax              0.002
+
+Inhibitory
+              GABABCtx; GABABThal   tau1                41 ms
+synapse
+
+Inhibitory
+              GABABCtx; GABABThal   tau2                642 ms
+synapse
+
+Inhibitory
+              GABABCtx; GABABThal   Reversal potential     −105 mV
+synapse
+
+Inhibitory                            GABAASlow;
+                SOM→cortical E                                        0.9; 0.2
+projection                          GABABCtx
+
+Inhibitory
+                SOM→cortical I         GABAASlow          1.0
+projection
+
+Inhibitory
+                NGF→cortical E         GABAA; GABABCtx  0.5; 1.0
+projection
+
+Inhibitory
+                NGF→cortical I        GABAA               1.0
+projection
+
+===== PDF PAGE 29 =====
+                                        Parameter or
+Model element    Population or pathway                         Current setting
+                                      mechanism
+
+Inhibitory                            GABAASlow;
+                 Thalamic I→thalamic E                                 0.9; 0.4
+projection                            GABABThal
+
+Inhibitory                                                                     1.0; no GABAB
+                 Thalamic I→thalamic I     GABAASlow
+projection                                                     component
+
+Inhibitory                            GABAASlow;
+                 Thalamic I→cortical E                                  1.0; 0
+projection                            GABABThal
+
+Inhibitory
+                 Thalamic I→cortical I     GABAASlow          1.0
+projection
+
+ Note. Conductance values are given in the native units of the corresponding NEURON
+ mechanisms. Receptor-component factors multiply the listed components independently and are
+ not constrained to sum to 1. Cortical E denotes IT2, IT3, ITP4, ITS4, IT5A, CT5A, IT5B, CT5B,
+ PT5B, IT6, and CT6; cortical I denotes the PV, SOM, VIP, and NGF populations; thalamic E
+ denotes TC, TCM, and HTC; and thalamic I denotes TI, TIM, IRE, and IREM.
+
+ Table TBL_SEC. Pathway-specific postsynaptic section assignments
+
+                                Postsynaptic population or
+Presynaptic population or class                              Allowed sections
+                                    class
+
+                                                          Adend1; Adend2; Adend3;
+Cortical E, SOM, or VIP           Cortical E
+                                                       Bdend
+
+PV                                 Cortical E                    Adend1; Bdend; soma
+
+NGF1                              Cortical E                   Adend3
+
+NGF2, NGF3, or NGF4            Cortical E2–4                 Adend1; Adend2
+
+NGF2, NGF3, or NGF4            Cortical E5–6                Adend2
+
+NGF5A, NGF5B, or NGF6         Cortical E5–6                Adend1
+
+NGF5A, NGF5B, or NGF6         Cortical E2–4                Bdend
+
+TC or HTC                        Cortical E                    Adend1; Bdend
+
+TCM                              Cortical E                    Adend1; Adend2; Adend3
+
+===== PDF PAGE 30 =====
+                                Postsynaptic population or
+Presynaptic population or class                              Allowed sections
+                                    class
+
+Cortical E                    PV, SOM, or NGF              dend
+
+Cortical E                   VIP                                 ori1; ori2; rad1; rad2
+
+NGF, PV, or SOM           PV                          dend
+
+VIP                    PV                        soma
+
+PV or VIP              SOM                         soma; dend
+
+NGF or SOM            SOM                         dend
+
+NGF, PV, SOM, or VIP       NGF                         dend
+
+PV                         VIP                          soma; ori1; ori2; rad1
+
+SOM                       VIP                                 ori1; ori2; rad1; rad2
+
+VIP                        VIP                          soma; ori1; ori2; rad1; rad2
+
+NGF                       VIP                                 ori1; ori2; rad1; rad2
+
+Cortical E or any             Any thalamic/reticular
+                                                      soma
+thalamic/reticular population       population
+
+Any thalamic/reticular population  PV, SOM, or NGF              dend
+
+Any thalamic/reticular population  VIP                                 ori1; ori2; rad1; rad2
+
+ Note. Cortical E2–4 denotes IT2, IT3, ITP4, and ITS4. Cortical E5–6 denotes IT5A, CT5A,
+ IT5B, CT5B, PT5B, IT6, and CT6. Any thalamic/reticular population denotes TC, TCM, HTC,
+ TI, TIM, IRE, and IREM. PV, SOM, VIP, and NGF denote all layer-specific populations of the
+ corresponding inhibitory class.
+
+
+ References
+     1.  Ahmadian, Y., Rubin, D. B., & Miller, K. D. (2013). Analysis of the stabilized
+         supralinear network. Neural Computation, 25(8), 1994–2037.
+        https://doi.org/10.1162/NECO_a_00472
+
+===== PDF PAGE 31 =====
+2.  Anderson, L. A., & Linden, J. F. (2011). Physiological differences between histologically
+    defined subdivisions in the mouse auditory thalamus. Hearing Research, 274(1–2), 48–
+    60. https://doi.org/10.1016/j.heares.2010.12.016
+3.  Arieli, A., Sterkin, A., Grinvald, A., & Aertsen, A. (1996). Dynamics of Ongoing
+    Activity: Explanation of the Large Variability in Evoked Cortical Responses. Science.
+    https://doi.org/10.1126/science.273.5283.1868
+4.  Arkhipov, A., Gouwens, N. W., Billeh, Y. N., Gratiy, S., Iyer, R., Wei, Z., Xu, Z.,
+   Abbasi-Asl, R., Berg, J., Buice, M., Cain, N., da Costa, N., de Vries, S., Denman, D.,
+   Durand, S., Feng, D., Jarsky, T., Lecoq, J., Lee, B., … Koch, C. (2018). Visual
+   physiology of the layer 4 cortical circuit in silico. PLoS Computational Biology, 14(11),
+   e1006535. https://doi.org/10.1371/journal.pcbi.1006535
+5.  Bartlett, E. L., & Wang, X. (2011). Correlation of neural response properties with
+    auditory thalamus subdivisions in the awake marmoset. Journal of Neurophysiology,
+    105(6), 2647–2667. https://doi.org/10.1152/jn.00238.2010
+6.  Billeh, Y. N., Cai, B., Gratiy, S. L., Dai, K., Iyer, R., Gouwens, N. W., Abbasi-Asl, R.,
+    Jia, X., Siegle, J. H., Olsen, S. R., Koch, C., Mihalas, S., & Arkhipov, A. (2020).
+   Systematic Integration of Structural and Functional Data into Multi-scale Models of
+   Mouse Primary Visual Cortex. Neuron, 106(3), 388-403.e18.
+    https://doi.org/10.1016/j.neuron.2020.01.040
+7.  Brunel, N. (2000). Dynamics of Sparsely Connected Networks of Excitatory and
+    Inhibitory Spiking Neurons. Journal of Computational Neuroscience.
+    https://doi.org/10.1023/a:1008925309027
+8.  Chance, F. S., Abbott, L. F., & Reyes, A. D. (2002). Gain Modulation from Background
+   Synaptic Input. Neuron. https://doi.org/10.1016/s0896-6273(02)00820-6
+9.  Compte, A., Constantinidis, C., Tegnér, J., Raghavachari, S., Chafee, M. V., Goldman-
+   Rakic, P. S., & Wang, X.-J. (2003). Temporally Irregular Mnemonic Persistent Activity
+    in Prefrontal Neurons of Monkeys During a Delayed Response Task. Journal of
+   Neurophysiology, 90(5), 3441–3454. https://doi.org/10.1152/jn.00949.2002
+10. Curto, C., Sakata, S., Marguet, S., Itskov, V., & Harris, K. D. (2009). A Simple Model of
+    Cortical Dynamics Explains Variability and State Dependence of Sensory Responses in
+   Urethane-Anesthetized Auditory Cortex. The Journal of Neuroscience, 29(34), 10600–
+   10612. https://doi.org/10.1523/JNEUROSCI.2053-09.2009
+11. Dura-Bernal, S., Griffith, E. Y., Barczak, A., O’Connell, M. N., McGinnis, T., Moreira,
+     J. V. S., Schroeder, C. E., Lytton, W. W., Lakatos, P., & Neymotin, S. A. (2023). Data-
+    driven multiscale model of macaque auditory thalamocortical circuits reproduces in vivo
+   dynamics. Cell Reports, 42(11), 113378. https://doi.org/10.1016/j.celrep.2023.113378
+12. Ecker, A. S., Berens, P., Keliris, G. A., Bethge, M., Logothetis, N. K., & Tolias, A. S.
+    (2010). Decorrelated neuronal firing in cortical microcircuits. Science, 327(5965), 584–
+   587. https://doi.org/10.1126/science.1179867
+13. Erisken, S., Vaiceliunaite, A., Jurjut, O., Fiorini, M., & Et., A. (2014). Effects of
+   Locomotion Extend throughout the Mouse Early Visual System. Current Biology.
+    https://doi.org/10.1016/j.cub.2014.10.045
+14. Fellous, J.-M., Rudolph, M., Destexhe, A., & Sejnowski, T. J. (2003). Synaptic
+   Background Noise Controls the Input/Output Characteristics of Single Cells in An In
+    Vitro Model of In Vivo Activity. Neuroscience, 122(3), 811–829.
+    https://doi.org/10.1016/j.neuroscience.2003.08.027
+15. Gutnisky, D. A., Beaman, C., Lew, S. E., & Dragoi, V. (n.d.). Cortical response states for
+   enhanced sensory discrimination. eLife, 6, e29226. https://doi.org/10.7554/eLife.29226
+
+===== PDF PAGE 32 =====
+16. Hennequin, G., Ahmadian, Y., Rubin, D. B., Lengyel, M., & Miller, K. D. (2018). The
+   Dynamical Regime of Sensory Cortex: Stable Dynamics around a Single Stimulus-Tuned
+    Attractor Account for Patterns of Noise Variability. Neuron, 98(4), 846-860.e5.
+    https://doi.org/10.1016/j.neuron.2018.04.017
+17. Hromádka, T., DeWeese, M. R., & Zador, A. M. (2008). Sparse Representation of
+   Sounds in the Unanesthetized Auditory Cortex. PLOS Biology, 6(1), e16.
+    https://doi.org/10.1371/journal.pbio.0060016
+18. Isbister, J. B., Ecker, A., Pokorny, C., Bolaños-Puchet, S., Egas Santander, D., Arnaudon,
+    A., Awile, O., Natali, B.-Z., Alonso, J. B., Boci, E., Chindemi, G., Courcol, J.-D.,
+   Damart, T., Delemontex, T., Dietz, A., Ficarelli, G., Gevaert, M., Herttuainen, J., Ivaska,
+    G., … Reimann, M. W. (2026). Modeling and simulation of neocortical micro- and
+    mesocircuitry (Part II, Physiology and experimentation). eLife, 13, RP99693.
+    https://doi.org/10.7554/eLife.99693
+19. Jiang, H.-J., Qi, G., Duarte, R., Feldmeyer, D., & van Albada, S. J. (2024). A layered
+    microcircuit model of somatosensory cortex with three interneuron types and cell-type-
+    specific short-term plasticity. Cerebral Cortex, 34(9), bhae378.
+    https://doi.org/10.1093/cercor/bhae378
+20. Maksimov, A., Diesmann, M., & van Albada, S. J. (2018). Criteria on Balance, Stability,
+   and Excitability in Cortical Networks for Constraining Computational Models. Frontiers
+    in Computational Neuroscience, 12. https://doi.org/10.3389/fncom.2018.00044
+21. McGinley, M. J., David, S. V., & McCormick, D. A. (2015). Cortical membrane potential
+    signature of optimal states for sensory signal detection. Neuron, 87(1), 179–192.
+    https://doi.org/10.1016/j.neuron.2015.05.038
+22. Mongillo, G., Hansel, D., & van Vreeswijk, C. (2012). Bistability and Spatiotemporal
+    Irregularity in Neuronal Networks with Nonlinear Synaptic Transmission. Physical
+   Review Letters. https://doi.org/10.1103/physrevlett.108.158101
+23. O’Connor, D. H., Peron, S. P., Huber, D., & Svoboda, K. (2010). Neural activity in barrel
+    cortex underlying vibrissa-based object localization in mice. Neuron, 67(6), 1048–1061.
+    https://doi.org/10.1016/j.neuron.2010.08.026
+24. Petersen, C. C. H., Hahn, T. T. G., Mehta, M., Grinvald, A., & Sakmann, B. (2003).
+    Interaction of sensory responses with spontaneous depolarization in layer 2/3 barrel
+    cortex. Proceedings of the National Academy of Sciences of the United States of America,
+    100(23), 13638–13643. https://doi.org/10.1073/pnas.2235811100
+25. Reig, R., Zerlaut, Y., Vergara, R., Destexhe, A., & Sanchez-Vives, M. V. (2015). Gain
+   Modulation of Synaptic Inputs by Network State in Auditory Cortex In Vivo. The
+   Journal of Neuroscience, 35(6), 2689–2702. https://doi.org/10.1523/JNEUROSCI.2004-
+   14.2015
+26. Renart, A., de la Rocha, J., Bartho, P., Hollender, L., Parga, N., Reyes, A., & Harris, K.
+   D. (2010). The Asynchronous State in Cortical Circuits. Science (New York, N.Y.),
+   327(5965), 587–590. https://doi.org/10.1126/science.1179850
+27. Roxin, A., Brunel, N., Hansel, D., Mongillo, G., & Vreeswijk, C. van. (2011). On the
+    Distribution of Firing Rates in Networks of Cortical Neurons. Journal of Neuroscience,
+    31(45), 16217–16226. https://doi.org/10.1523/JNEUROSCI.1677-11.2011
+28. Rubin, D. B., Van Hooser, S. D., & Miller, K. D. (2015). The Stabilized Supralinear
+   Network: A Unifying Circuit Motif Underlying Multi-Input Integration in Sensory
+    Cortex. Neuron, 85(2), 402–417. https://doi.org/10.1016/j.neuron.2014.12.026
+
+===== PDF PAGE 33 =====
+    29. Sanzeni, A., Histed, M. H., & Brunel, N. (2022). Emergence of Irregular Activity in
+      Networks of Strongly Coupled Conductance-Based Neurons. Physical Review X, 12(1),
+      011044. https://doi.org/10.1103/PhysRevX.12.011044
+    30. Vegué, M., & Roxin, A. (2019). Firing rate distributions in spiking networks with
+       heterogeneous connectivity. Physical Review E.
+       https://doi.org/10.1103/PhysRevE.100.022208
+    31. Vreeswijk, C. van, & Sompolinsky, H. (1998). Chaotic Balanced State in a Model of
+       Cortical Circuits. Neural Computation. https://doi.org/10.1162/089976698300017214
+    32. Zagha, E., Casale, A. E., Sachdev, R. N. S., McGinley, M. J., & McCormick, D. A.
+       (2013). Motor cortex feedback influences sensory processing by modulating network
+         state. Neuron, 79(3), 567–578. https://doi.org/10.1016/j.neuron.2013.06.008
+
+
+Methods (old)
+
+Model
+We used a modified version of our previously published biophysical model of thalamocortical
+A1 column.
+
+In the old model, we initialized the synaptic weights based on experimental data, and then scaled
+them by population-specific multipliers found during optimization. In the present study, we took
+the original weights from the old model (without multipliers) and kept them constant along the
+tuning process.
+
+Cellular and synaptic properties, as well as connection probabilities, were taken from the old
+model unmodified or with minor changes.
+
+Background spiking inputs in the old model were excitatory, and their parameters were chosen in
+a way to provide minimal activity levels in isolated neurons. In the present model, we imitate the
+input from brain regions outside the modeled column by delivering two Poisson spike trains to
+the soma of every neuron – via AMPA and GABAA synapses, respectively. The synaptic
+weights wxe, wxi were chosen to provide the EPSP/IPSP amplitudes of 0.5 mV, and the
+background firing rates rxe, rxi underwent an optimization process. All neurons within a single
+population received the background inputs with the same properties, and each Poisson spike train
+was sampled independently.
+
+TODO: target rates, N=43, 25% weights
+
+Surrogate open-loop circuits
+Direct optimization of background inputs in a multi-population model is computationally
+prohibitive due to the high dimensionality of the parameter space. To address this, we developed
+a method that transforms a recurrent network into a set of decoupled open-loop surrogate
+models, allowing the background parameters to be tuned independently for each population. This
+reduces a single high-dimensional optimization problem to many low-dimensional ones, which
+can be solved efficiently and in parallel.
+
+The method is illustrated in Figure FIG_SURR_NET for a circuit comprising of two populations
+P1 and P2. Figure FIG_SURR_NET(A) shows the original circuit with recurrent connections
+Cnm (m,n=1,2), where each Cnm represents the full set of connections originating from Pm cells
+and targeting Pn cells. Also, each cell of Pn receives a background input from two Poisson spike
+
+===== PDF PAGE 34 =====
+generators with the rates rxen, rrin and the weights wxen, wxin, connected via AMPA and
+GABAA synapses, respectively.
+
+The corresponding surrogate circuit is shown in Figure FIG_SURR_NET(B). For each
+population Pn (n=1,2) in the original circuit, we build a surrogate population Pn’, consisting of
+independent Poisson spike generators firing at the rate rn0 that is the target rate we want to
+achieve for Pn. Pseudo-cells of Pn’ are spatially distributed according to the same rules as the
+cells of Pn, i.e. they occupy the same spatial region with the same density.
+
+For each pair of populations Pm, Pn (m,n=1,2), we remove Pm→ Pn connections (i.e.
+connections from cells of Pm to cells of Pn) and replace them by equivalent Pm′→ Pn
+connections originating from spike-generating pseudo-cells of Pm’. We create these new
+connections according to the same rules that were used for Pm→ Pn in the original model (Cnm
+in panels A and B). Thus, connection probabilities remain the same, and the distributions of
+synaptic weights and transmission delays are preserved. Distance-dependent terms in the
+connectivity rules are automatically reproduced as Pm’ and Pm have the same spatial
+distribution. Background inputs in the surrogate model are kept unchanged.
+
+Thus, in the surrogate model (panel B), population P1 has four inputs: (1) background spike
+generators (rxe1, wxe1) connected to P1 cells in a 1-to-1 manner via AMPA synapses, (2)
+background generators (rxi1, wxi1) connected 1-to-1 via GABAA synapses, (3) spike-generating
+pseudo-cells of P1’, firing at the rate r10 (target rate for P1 we want to achieve) and connected to
+P1 cells according to the set of rules C11, (4) pseudo-cells of P2’ with the rate r20, connected
+according to the rules C21. Similarly, P2 receives background inputs with the rates rxe2 and
+rxi2, as well as surrogate inputs from P1’ and P2’ with the rates r10 and r20, respectively.
+
+In the original model (panel A), cells receive the same background inputs as in the surrogate
+model (panel B), but instead of the surrogate inputs from P1’ and P2’ with the rates r10 and r20,
+they receive recurrent inputs from P1 and P2 with some average rates r1 and r2. Our main idea
+is: if we tune the background input rates rx=(rxe1, rxi1, rxe2, rxi2) in such way that P1 and P2 in
+the surrogate model fire at the rates r1=r10, r2=r20, and then plug this rx into the original model,
+we might expect that it will also settle into the state (r10, r20). Indeed, the original model is
+equivalent to the surrogate one in this case: inputs received by a cell, in average, have the same
+rates and weights in both models, and the mean number of inputs is also the same. Existence and
+stability of the state (r10, r20) with recurrent connectivity is discussed below in the paper.
+
+===== PDF PAGE 35 =====
+ Figure FIG_SURR_NET. Example of a surrogate open-loop model. (A) Original recurrent
+  circuit with two interacting populations P1 and P2. Populations are coupled through recurrent
+ connections Cnm (m,n=1,2), so their activities are inter-dependent. In addition, each population
+ receives background excitatory and inhibitory Poisson inputs, parameterized by firing rates rxan
+ and synaptic weights wxan (n=1,2, a=e,i). (B) Surrogate open-loop version of the same circuit.
+    Recurrent inputs are replaced by inputs from surrogate populations P1’, P2’ composed of
+ independent Poisson spike generators. These surrogate inputs reproduce the same connectivity
+   properties Cnm (m,n=1,2) as in the recurrent network, including probabilities, weights, and
+ delays. This transformation decouples the optimization problem, allowing the background input
+ parameters to be tuned independently for each population. (C) Partially surrogate setup. Left –
+full model; middle – 1→3 connection is surrogate (static); right – subnetwork 2+3 is selected, so
+ its inputs 1→2 and 1→3 are surrogate. (D) Semi-surrogate setup. Weight of 1→2 connection is
+ reduced from w21 to kw21 (0<k<1), and the missing part is compensated by a surrogate 1’→2
+                                  input with weight (1-k)w21.
+
+
+Background input tuning
+With the surrogate setup, we were able to tune the background inputs for each population
+separately. All neurons that belong to the same population receive background inputs with the
+same properties, so for each population P, we need to find a pair of firing rates: hp =(rxpe, rxpi),
+while the weights (wxe, wxi ) are fixed to the values that yield |PSP|=0.5 mV. Thus, for the full
+A1 model with N=43 populations, our task is to find a 2N-dimensional background input vector:
+H=(h1,…,hN) that sets the model to the target baseline state R0 given by a vector of target firing
+rates for individual populations: R0=(r10,…,rN0).
+
+Following the logic described above, we replace this 2N-dimensional task by N 2-dimensional
+tasks and search for the input H that produces the target state R0 in an open-loop surrogate
+model. Fig. FIG_BKG_GRID(A) shows the surrogate setup for a population P. The node A1’
+
+===== PDF PAGE 36 =====
+represents a surrogate copy of the whole A1 circuit, containing all 43 surrogate populations
+P1’,…,PN’ emitting Poisson spikes at the corresponding target rates r10,…,rN0. The link
+A1’->P encapsulates all the synaptic inputs of P that were recurrent in A1 and now are rewired to
+originate from surrogate spike generators (with the same connectivity properties). The upper link
+represents the background inputs of P, whose weights wxpe, wxpi are fixed (tuned for |PSP|=0.5
+mV), and the rates rxpe, rxpi undergo a grid search process described below. This process and its
+results are illustrated in Fig. FIG_BKG_GRID(B-E), using P=IT5B population as an example.
+
+More precisely, for each population P, we go through the following steps:
+
+-  Build a surrogate model, in which all recurrent inputs of P are replaced by equivalent spike
+   generators (panel A);
+-  Choose a region for broad parameter scanning as a rectangle on the (rxpe, rxpi) parameter
+   plane, with a reasonable range of parameters (e.g. for IT5B we used rxe=0..25 kHz, rxi=0..5
+   kHz);
+-  Perform broad parameter scanning: run simulations with (rxpe, rxpi) located at the nodes
+   of a grid covering the chosen rectangular region. For each simulation, compute the mean
+   firing rate of population P, thus producing a 2-D rate matrix Rpb (panel B, heatmap).
+-  Choose a region Qp for fine parameter scanning. We define Qp as a parallelogram on the
+   (rxpe, rxpi) parameter plane, where the firing rate of P is close to the target value – i.e. a
+   narrow strip around Rpb=rp0 contour. Panel B shows the region Qp in (rxpe, rxpi)
+   coordinates, and panel C shows Qp in transformed coordinates, where the parallelogram turns
+   into a rectangle.
+-  Scan the parameters over Qp and build the firing rate matrix Rp. Run simulations with
+   (rxpe, rxpi) located at the nodes of a grid covering Qp. Build a 2-D matrix Rp containing the
+   average firing rates of P measured for the grid nodes (panel C, heatmap).
+-  Find 1-D contour where the target rate is reached: Rp=rp0 (black curve on panel C).
+-  Choose a point hp*=(rxpe*, rxpi*) on the contour (red dot on panel C). We chose hp* as
+   the midpoint of the contour, but one could also use a second biophysical constraint such as
+  CV or mean voltage.
+Panel D shows the firing rate dynamics of population P in the surrogate setup (panel A) under
+the chosen background input hp*=(rxpe*, rxpe*). The rp(t) trace confirms the validity of the hp*
+choice: after an initial transient period, the firing rate of P fluctuates around the target value rp0.
+Panel E shows the statistics of the average firing rate Rp=<rp(t)> across multiple random seeds
+that govern the sampling of connectivity patterns and Poisson spike trains. One can see that the
+results are robust, and Rp remains close to the target rate rp0 for various seeds.
+Although the procedure above is written for a single population P, in practice all populations
+were simulated together. For each population, we defined its own search region Qp on the (rxe,
+rxi) plane, with the same grid resolution across populations. Thus, each simulation corresponded
+to a single grid-node index shared across populations, while the actual (rxpi, rxpe) values were
+determined for each population individually by its own region Qp. Surrogate presynaptic spike
+generators were shared across the populations. Simulations were parallelized across the grid
+nodes. The same workflow was used for the initial coarse parameter scanning over rectangular
+(rxe, rxi) regions, which were also chosen for each population separately.
+
+===== PDF PAGE 37 =====
+Figure FIG_BKG_GRID. Population-specific search for background input parameters in
+the surrogate open-loop setup. (A) Schematic of the tuning setup for a single population P=IT5A
+receiving excitatory and inhibitory background Poisson inputs hp=(rxpe, rxpi) through fixed
+synaptic weights wxpe, xxpi. Recurrent inputs are replaced by inputs from a surrogate copy of the
+full circuit emitting spikes in the target regime. (B) Average firing rate map Rpb on the parameter
+plane (rxpe, rxpi). Search region Qp is defined as a parallelogram containing firing rates close to
+the target rp0. (C) Same search region Qp after coordinate transformation. The rectangular shape
+of Qp simplifies the parameter search. Black curve denotes the set of all possible inputs that yield
+the target firing rate: Rp=rp0. The point hp∗=(rxpe*, rxpi*) is the selected background input for
+population P. (D) Example firing-rate dynamics obtained under the chosen input hp=hp∗, showing
+convergence to the target rate rp0. (E) Distribution of the average firing rates across random seeds
+for the same chosen input hp*, illustrating robustness of the solution.
+
+
+Partially surrogate models
+In addition to the fully surrogate setup described above, our framework allows construction of
+partially surrogate models, in which only selected connections are rewired to originate from
+surrogate populations, while the remaining connections stay recurrent, as in the full model. Thus,
+for a given postsynaptic population, inputs from some presynaptic populations can be replaced
+by their surrogate copies, whereas other inputs can remain driven by real neurons. If all inputs
+and outputs of a population are surrogate, that population no longer needs to be explicitly
+simulated and can be removed from the network.
+
+First, one can keep most of the recurrent network intact while replacing selected connections
+with surrogate inputs. Comparing such variants with the full model helps reveal the dynamical
+role of specific connections. In particular, this approach can identify connections that destabilize
+network activity or, conversely, contribute to its stabilization.
+
+Second, one can isolate a subcircuit of interest by keeping only a selected set of populations and
+their mutual recurrent connections intact, while replacing the rest of the network with surrogate
+
+===== PDF PAGE 38 =====
+inputs. This enables analysis of individual circuit components within a realistic network context
+at substantially reduced computational cost. For example, a single cortical layer can be studied
+while the remainder of the circuit is represented by surrogate populations.
+
+
+Semi-surrogate connections
+We also implemented semi-surrogate connections, in which an input pathway is split between
+recurrent and surrogate components. For each postsynaptic neuron, the original set of synapses is
+duplicated: one half receives recurrent inputs from real neurons, while the other half receives
+surrogate inputs from spike generators.
+Synaptic weights are proportionally divided between the two components. If the original
+synaptic weight is w, then recurrent synapses have the weight kw, while surrogate synapses have
+the weight (1−k)w, where k∈[0,1] is a splitting coefficient. The limiting cases k=0 and k=1
+correspond to fully surrogate and fully recurrent inputs, respectively.
+Since the recurrent and surrogate weights always sum to w, the mean total input remains the
+same for any k. However, this equivalence does not extend to higher-order statistics. For
+example, N synapses with weight w generally yield larger input variance than 2N synapses with
+weight w/2.
+We also implemented a time-dependent version of the splitting coefficient k(t), allowing smooth
+transitions between surrogate and recurrent connectivity setups.
+
+Assumptions
+When we estimate the required background input H by using surrogate open-loop models, we
+assume that the activity of the surrogate pre-synaptic populations is similar to the activity of the
+real populations in a recurrently connected full model. In practice, this similarity is limited.
+
+Surrogate neurons generate independent Poisson spike trains with equal firing rates within a
+single population. However, the activity in a full model may differ from it in several ways:
+
+     -   Real neurons may generate non-Poisson spike trains (with CV not equal to 1);
+     -   In a connected network, spike trains are correlated between cells;
+     -   Recurrent connectivity and complex cellular mechanisms may cause temporal
+        correlations of spiking activity (e.g. oscillations);
+     -   Cells within a population receive different numbers of inputs, so their firing rates are not
+       equal.
+
+When we plug the input H=Hs found in the surrogate open-loop setup into the full model, the
+disparities between real and surrogate inputs will make the actual baseline rates R* deviate from
+the target rates R0. However, we cannot estimate the magnitude of this deviation in advance. Our
+rationale is that R* will be close enough to R0 so it can be used as a good starting point for the
+next tuning step that will sufficiently reduce the deviation.
+
+TODO: describe the monostability requirement
+
+Existence of the target steady state
+It is not guaranteed that there exists a background input H, under which the original model has a
+steady state matching the chosen target R0. First, it is possible that R0 is not a fixed point for any
+input H (e.g. if Rn is larger than the maximum firing rate achievable by the neurons of the n-th
+population). Second, even if the fixed point R0 exists for some input H, it could be unstable.
+
+===== PDF PAGE 39 =====
+The existence of H that yields the steady state R0 cannot be assessed in advance. We determine
+the input Hs that yields the target state R0 in the surrogate open-loop setup, and run an
+optimization process in the full model starting from Hs. We consider the outcome to be
+successful if the resulting firing rate dynamics remains sufficiently close to R0. Technically, it
+may correspond either to a steady state (close to) R0 or to an orbit swirling around R0.
+
+With our original selection of parameters (based on our previously published A1 model), an
+input Hs plugged to the full model yielded unrealistically synchronous activity. Thus, we decided
+to decrease the weights of exc-exc connections by 50%.
