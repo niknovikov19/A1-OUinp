@@ -102,3 +102,113 @@ Artifact names in the historical entries below reflect the original layout. See 
 - Added automatic creation of `plots/` during offline regeneration, so a fresh checkout does not need the ignored output directory to exist.
 - Regeneration passed using cached inputs and a new temporary output directory; all eight comparison plots and the correction table were produced. Code/document whitespace checks passed. Original snapshot and extracted evidence formatting was preserved.
 - Commit scope is the paper figure-data task folder and its root ignore rules. Unrelated working-tree edits, including the separate step-response ignore change, remain outside this commit.
+
+## 2026-10-20 — Supplementary simulation inventory started
+
+- User requested an inventory and data/code-readiness assessment for Supplementary → “Simulations (TODO)”, excluding “Without 50% E-E decrease”. Scope and I/O constraints are recorded in `supplementary_simulations_task.md`.
+- Existing paper text, main-figure manifests, and mounted-root listings are available locally. Additional relevant local investigations exist under `dev_scratch/thal_frz/` and `dev_scratch/thal_frz_2/`; inspect these before accessing more remote data.
+- No simulation submission or production-configuration edit is part of this assessment.
+
+## Supplementary list and first code findings
+
+- PDF page 27 lists six relevant items: cortex without fading; thalamus without correction; lack of bistability in thalamus; full A1 without fading / thalamic corrections; firing-rate traces for other FIG_A1 populations; fading g traces. “Without 50% E-E decrease” is excluded.
+- First two items reuse already verified main-figure experiments (`ctx_full` and `thal_orig`). New simulation is not needed merely to tabulate their rate errors.
+- Local `dev_scratch/thal_frz/` contains archived cfgs, collected rate/CV datasets, and per-cell rate caches for the thalamic freeze/fade experiments. Existing freeze analyses explicitly distinguish requested from effective projections; these caches should be assessed before any remote reads.
+- `ConnFader.setup_recording()` actually records a representative synapse's `_ref_g`, although its docstring and figure ylabel say modulation/`pmod`. Thus existing `wmod_figs` can be conductance traces, not just the deterministic fade coefficient. Existing post-run code must be checked for whether numerical traces were persisted or only plotted.
+- A separate five-seed/14-condition thalamic loop cache exists under `dev_scratch/thal_frz_2/`; its 10–15 s window and live-source-only input statistics differ from the older 15-seed, 7–10 s fade experiments. It cannot silently replace the corresponding main-paper cohort or supply dynamic conductance traces.
+
+## Matched A1 controls located
+
+- Targeted top-level listings of the three mounted batches are saved as `data/inventories/supplementary_remote_experiments.json`.
+- The controller batch contains all four full-A1 combinations: naive recurrent without correction (`exp_a1_ee_full_ictrl_0...`), naive recurrent with correction (`exp_a1_full..._ictrl...`), faded without correction (`exp_a1_ee_fade_ictrl_0...`), and faded with correction (`exp_a1_ee_fade..._ictrl...`). Each is labeled 15 seeds and a 10–15 s window; exact counts will be checked next.
+- Representative saved cfgs verify 43 active populations and no permanently frozen pairs in all four, 196 split E–E pairs only in faded variants, and the exact extra TC/HTC median currents only in corrected variants. Thus the full-A1 TODO is not intrinsically a missing-experiment problem.
+- These older A1 controls use 15 s total / 10–15 s measurement, while FIG_A1 uses 20 s total / 15–20 s measurement. Use the older matched cohort for its own comparison; do not treat it as an identical control cohort for the later figure without checking timing and settings.
+- Historical thalamic cfgs verify 49 split pairs for all-connection fading and six for each E→interneuron/interneuron→E fading condition. Their fade schedules are not saved as cfg fields, so current module constants alone cannot establish the historical transition times.
+- The current full-A1 runtime `inp.ibkg_corrections` dictionary adds currents after the baseline and median currents; an empty dictionary does not disable the existing median correction. For reruns, the controller-capable experiment's `USE_IBKG_CTRL` switch is the direct existing parameter for turning that correction on/off.
+
+## Supplementary data verification
+
+- All six historical A1 setups (four fading/correction combinations plus two static E–E-surrogate controls) have complete 15-seed result/cfg filename sets, seeds 1000–1014, and summaries over 10–15 s. Snapshotted 90 result summaries and six representative cfgs; copied one additional 141,582-byte thalamic fade image. Distinct remote payload is 1,080,927 bytes across 97 files, recorded in `supplementary_read_audit.json`.
+- All six A1 representative cfgs match on a hash of target rates, background-input definitions/seeds, mechanism changes, weight gains, section-selection settings, and global seeds. Fade variants differ in split connections and `cache_efficient` (0 versus True), so shared numeric seeds alone are not evidence of identical realized connectivity/noise.
+- `inventory_supplementary_data.py` inspected all 22 local thalamic rate/CV datasets via `sim_data_analyzer.xr_io.load_xr`. The all-surrogate mean absolute population bias is 0.545 Hz, naive full thalamus 5.443 Hz, and three faded conditions about 5.16–5.32 Hz. Frozen interneuron→relay input improves bias to 2.710 Hz, which returns to 5.174 Hz after that input is faded back to recurrence. These are finite-protocol comparisons, not proof of global monostability.
+- Representative raw files exist for the thalamic reference/fades (about 9.6–14.1 MB), cortex without fading (32.4 MB), and all historical A1 controls (46–66 MB). No raw pickle was opened. Exact per-experiment output filenames/sizes are saved in `supplementary_data_readiness.json`.
+- The exact FIG_A1 3-seed seed-1000 source has 21 saved rate-figure PNGs and three conductance/fade PNGs; its compact `rvec_xr/` folder is empty. The later 15-seed cohort also has no compact rate NetCDFs. Additional exact rate traces require extracting/filtering existing spikes, not simulating again.
+- The inspected historical all-thalamus conductance image supports a 3–5 s fade. The current and historical `ConnFader` implementation records `_ref_g` in µS, stores it only on the fader object, and the inspected post-run hooks save a PNG without a numerical fader export. Numerical g curves are therefore not yet located; a small recording/export change would be needed for a rerun if original traces cannot be recovered elsewhere.
+
+## Supplementary inventory written
+
+- Wrote `supplementary_simulations.md` and the six-row `data/tables/supplementary_simulations_inventory.csv`, with code parameters, exact existing A1 control paths, data limits, and acquisition routes.
+- Distinguished 15-seed historical A1 controls (10–15 s) from FIG_A1 (15–20 s). The historical 2×2 needs no new run. A strict later 15-seed factorial would need its three missing cells if the existing faded/corrected reference can be retained; a new common implementation might instead justify all four.
+- Flagged misleading legacy rate-image counts: several thalamic `rvec_figs/` folders contain only cortical-class filenames. Their presence is not sufficient evidence for useful thalamic time courses; use existing raw spikes for the required plots.
+- Acquisition priority is compact post-processing of existing spikes for thalamic fade dynamics and additional FIG_A1 population traces, followed by deciding whether existing g images suffice or a numerical recording export is required. No new model implementation is needed for the listed scientific controls; numerical g persistence is a small output/metadata exception to parameter-only changes.
+- Final checks passed: six inventory rows; six complete 15-seed/43-population A1 cohorts; 3,870 unique numerical rows; all 97 snapshotted artifact hashes; selected-input fingerprints including subnet seed; freeze/split flags; 10–15 s windows; and all seven median-current on/off settings in all six representative cfgs. Script syntax, report links, and tracked-file whitespace checks pass.
+- No raw simulation pickle was opened, no production config edited, and no simulation/HPC job submitted. Newly produced artifacts are organized under the existing paper task folder and were not committed or pushed by this inventory task.
+# Supplementary raster collection — 2026-10-20
+
+## Follow-up: single-projection thalamic fading table
+
+Run-organization correction: the user clarified that parameter-only differences
+should not create new `exp_configs/` experiment folders. Both missing conditions
+will reuse `net_newsec_ee_fade_var_seed`, with changed parameter values and distinct
+`EXP_LABEL`/result names. The run plan now records this; no simulation code or
+experiment directory has been changed or created.
+
+Proposed the next-run procedure in `notes/thalamus_missing_fades_run_plan.md`:
+two dedicated single-projection restoration configurations, seed-1000 pilots,
+then 15 seeds each, explicit proposed 3–5 s fading and 7–10 s summaries, full-record
+compact rate exports, and existing tracked HPC requests/preflight. Inspection
+confirmed that the old fader hooks read module-level settings, so cfg overrides
+alone cannot select the new pair/schedule; present defaults are full A1 and a
+permanent freeze and must not be launched unchanged. No jobs or experiment edits
+were made in response to the planning question.
+
+Prepared the requested seven-population table as
+`data/tables/population_rate_table_thalamus_fading.csv`: target rates and seven
+condition columns in the agreed order, with mean rate ± sample SD to two decimal
+places for the five available conditions. The IREM→TI and IREM→IRE fading
+columns are explicit empty placeholders (14 blank cells). Unlike the prior error
+tables, these cells contain firing rates. Sources contain both modeled and `frz`
+surrogate-source populations; only the seven modeled populations are selected.
+The local-only generator uses `sim_data_analyzer`, validates all 15 seeds and
+saved protocol/intervention metadata, and preserves 525 unrounded per-seed rates
+plus source hashes and numerical summaries. Caption, source mapping, limitations,
+and regeneration are in `notes/thalamus_fading_table_caption.md`. No mounted
+result files were read and no experiments were launched for this export.
+Verification confirmed seven population rows, five populated condition columns,
+14 empty cells, and 525 per-seed source values. Every displayed mean and sample
+SD matches an independent recomputation from the exported per-seed CSV.
+
+The user confirmed intended improving projections **IREM→TI** and **IREM→IRE**.
+Their frozen conditions exist (`irem_ti_0`, `irem_ire_0`), alongside all-surrogate,
+naive recurrence, and all-surrogate-to-recurrence fading: five of seven proposed
+condition columns, all 15 seeds and 7–10 s. No matching single-projection fading
+cohorts were found in fresh nonrecursive experiment-name listings of the three
+mounted batches. This follow-up read no remote file contents. The existing I→E/E→I
+fades and full-A1 E–E fades are different interventions. Two parameter-only
+thalamus conditions (15 seeds each) would fill the gaps. Exact evidence, proposed
+table organization, interpretation limits, and parameter choices are preserved in
+`notes/thalamus_branch_fading_table_assessment.md`; the fresh name audit is
+`data/inventories/thalamus_branch_fading_name_check.json`. No paper table or runs
+were created.
+
+## Raster collection
+
+Targeted, nonrecursive listings of 21 selected experiment `rasters/` folders found
+`raster_00000_seed_1000.png` in every folder. Selection covers four cortex
+conditions, three long thalamic correction conditions, the seven short thalamic
+protocols in the supplementary inventory, six historical A1 controls/references,
+and the exact three-seed FIG_A1 illustrative cohort. Image sizes are approximately
+0.48–2.49 MB each. Only one PNG per condition will be copied; no raw simulation
+pickle is needed. The 10 s versus 220 s thalamic cohorts and 15 s versus 20 s A1
+cohorts must remain distinguishable in filenames and documentation.
+
+Completed collection: 21 seed-1000 PNGs, none missing, 32,170,125 bytes (30.7 MiB)
+read remotely. All local images passed PNG verification and match their recorded
+SHA-256 and byte counts; each is 2500×2500 px. The saved cfgs specify no explicit
+raster `timeRange`, so summary windows are recorded separately and are not treated
+as raster axis limits. Visual inspection of `thalamus_all_faded_10s.png` confirms
+a 0–10000 ms raster with the seven thalamic populations. Images remain byte-for-byte
+copies, with short descriptive filenames under `evidence/rasters/`. That folder's
+README, manifest CSV, and copy audit preserve provenance; the existing root ignore
+rule excludes its PNGs. No pickle was opened or new simulation launched.
+

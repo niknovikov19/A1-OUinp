@@ -1,0 +1,7531 @@
+{
+  "a1_controls": {
+    "a1_no_fade_no_corr": {
+      "path": "exp_results/batch_rxbkg_state1_mech1/net_newsec_ctrl_var_seed/exp_a1_ee_full_ictrl_0_nseed_15_t_10.0_15.0_wmult_0.25_ee_0.5",
+      "exists": true,
+      "result_files": [
+        "result_00000_seed_1000.json",
+        "result_00001_seed_1001.json",
+        "result_00002_seed_1002.json",
+        "result_00003_seed_1003.json",
+        "result_00004_seed_1004.json",
+        "result_00005_seed_1005.json",
+        "result_00006_seed_1006.json",
+        "result_00007_seed_1007.json",
+        "result_00008_seed_1008.json",
+        "result_00009_seed_1009.json",
+        "result_00010_seed_1010.json",
+        "result_00011_seed_1011.json",
+        "result_00012_seed_1012.json",
+        "result_00013_seed_1013.json",
+        "result_00014_seed_1014.json"
+      ],
+      "cfg_files": [
+        "cfg_00000_seed_1000.json",
+        "cfg_00001_seed_1001.json",
+        "cfg_00002_seed_1002.json",
+        "cfg_00003_seed_1003.json",
+        "cfg_00004_seed_1004.json",
+        "cfg_00005_seed_1005.json",
+        "cfg_00006_seed_1006.json",
+        "cfg_00007_seed_1007.json",
+        "cfg_00008_seed_1008.json",
+        "cfg_00009_seed_1009.json",
+        "cfg_00010_seed_1010.json",
+        "cfg_00011_seed_1011.json",
+        "cfg_00012_seed_1012.json",
+        "cfg_00013_seed_1013.json",
+        "cfg_00014_seed_1014.json"
+      ],
+      "outputs": {
+        "wmod_figs": [],
+        "rvec_figs": [],
+        "rvec_xr": [],
+        "sample_pickle": "exp_results/batch_rxbkg_state1_mech1/net_newsec_ctrl_var_seed/exp_a1_ee_full_ictrl_0_nseed_15_t_10.0_15.0_wmult_0.25_ee_0.5/pkl/data_00000_seed_1000.pkl",
+        "sample_pickle_bytes": 46614885
+      },
+      "cfg": {
+        "duration_s": 15.0,
+        "t0_calc_s": 10.0,
+        "pops_active": [
+          "IT2",
+          "IT3",
+          "ITP4",
+          "ITS4",
+          "IT5A",
+          "IT5B",
+          "IT6",
+          "CT5A",
+          "CT5B",
+          "CT6",
+          "PT5B",
+          "PV2",
+          "PV3",
+          "PV4",
+          "PV5A",
+          "PV5B",
+          "PV6",
+          "SOM2",
+          "SOM3",
+          "SOM4",
+          "SOM5A",
+          "SOM5B",
+          "SOM6",
+          "VIP2",
+          "VIP3",
+          "VIP4",
+          "VIP5A",
+          "VIP5B",
+          "VIP6",
+          "NGF1",
+          "NGF2",
+          "NGF3",
+          "NGF4",
+          "NGF5A",
+          "NGF5B",
+          "NGF6",
+          "TC",
+          "HTC",
+          "TI",
+          "IRE",
+          "TCM",
+          "TIM",
+          "IREM"
+        ],
+        "conns_frozen": [],
+        "conns_split": {},
+        "IClamp": {
+          "CT5A": {
+            "amp": 0.2811061829853486,
+            "dur": 15000.0
+          },
+          "CT5B": {
+            "amp": 0.2811521746117064,
+            "dur": 15000.0
+          },
+          "CT6": {
+            "amp": 0.28108070843753286,
+            "dur": 15000.0
+          },
+          "HTC": {
+            "amp": 4,
+            "dur": 15000.0
+          },
+          "IRE": {
+            "amp": 0.2,
+            "dur": 15000.0
+          },
+          "IREM": {
+            "amp": 0.2,
+            "dur": 15000.0
+          },
+          "IT2": {
+            "amp": 0.1826028861538529,
+            "dur": 15000.0
+          },
+          "IT3": {
+            "amp": 0.20736533596853907,
+            "dur": 15000.0
+          },
+          "IT5A": {
+            "amp": 0.09949009140570944,
+            "dur": 15000.0
+          },
+          "IT5B": {
+            "amp": 0.10708485376197718,
+            "dur": 15000.0
+          },
+          "IT6": {
+            "amp": 0.09601067195088177,
+            "dur": 15000.0
+          },
+          "ITP4": {
+            "amp": 0.214754445093032,
+            "dur": 15000.0
+          },
+          "ITS4": {
+            "amp": 0.2146776587814983,
+            "dur": 15000.0
+          },
+          "PT5B": {
+            "amp": 0.14307249038537465,
+            "dur": 15000.0
+          },
+          "TC": {
+            "amp": 4,
+            "dur": 15000.0
+          },
+          "TCM": {
+            "amp": 6,
+            "dur": 15000.0
+          },
+          "TI": {
+            "amp": 0.03,
+            "dur": 15000.0
+          },
+          "TIM": {
+            "amp": 0.03,
+            "dur": 15000.0
+          }
+        },
+        "wmult": 0.25,
+        "EEGain": 0.5,
+        "cache_efficient": true,
+        "runtime_params": null,
+        "ou_ctrl_params": null
+      },
+      "selected_settings_sha256": "a02bf05e17addb97c4e7900373bf0ccc6316af9bcb8bc5fec23f2900bd218436",
+      "summary_windows_s": [
+        [
+          10.0,
+          15.0
+        ]
+      ],
+      "seeds": [
+        1000,
+        1001,
+        1002,
+        1003,
+        1004,
+        1005,
+        1006,
+        1007,
+        1008,
+        1009,
+        1010,
+        1011,
+        1012,
+        1013,
+        1014
+      ]
+    },
+    "a1_no_fade_corr": {
+      "path": "exp_results/batch_rxbkg_state1_mech1/net_newsec_ctrl_var_seed/exp_a1_full_nseed_15_t_10.0_15.0_ictrl_wmult_0.25_ee_0.5",
+      "exists": true,
+      "result_files": [
+        "result_00000_seed_1000.json",
+        "result_00001_seed_1001.json",
+        "result_00002_seed_1002.json",
+        "result_00003_seed_1003.json",
+        "result_00004_seed_1004.json",
+        "result_00005_seed_1005.json",
+        "result_00006_seed_1006.json",
+        "result_00007_seed_1007.json",
+        "result_00008_seed_1008.json",
+        "result_00009_seed_1009.json",
+        "result_00010_seed_1010.json",
+        "result_00011_seed_1011.json",
+        "result_00012_seed_1012.json",
+        "result_00013_seed_1013.json",
+        "result_00014_seed_1014.json"
+      ],
+      "cfg_files": [
+        "cfg_00000_seed_1000.json",
+        "cfg_00001_seed_1001.json",
+        "cfg_00002_seed_1002.json",
+        "cfg_00003_seed_1003.json",
+        "cfg_00004_seed_1004.json",
+        "cfg_00005_seed_1005.json",
+        "cfg_00006_seed_1006.json",
+        "cfg_00007_seed_1007.json",
+        "cfg_00008_seed_1008.json",
+        "cfg_00009_seed_1009.json",
+        "cfg_00010_seed_1010.json",
+        "cfg_00011_seed_1011.json",
+        "cfg_00012_seed_1012.json",
+        "cfg_00013_seed_1013.json",
+        "cfg_00014_seed_1014.json"
+      ],
+      "outputs": {
+        "wmod_figs": [],
+        "rvec_figs": [
+          "NGF_00000_seed_1000.png",
+          "NGF_00001_seed_1001.png",
+          "NGF_00002_seed_1002.png",
+          "NGF_00003_seed_1003.png",
+          "NGF_00004_seed_1004.png",
+          "NGF_00005_seed_1005.png",
+          "NGF_00006_seed_1006.png",
+          "NGF_00007_seed_1007.png",
+          "NGF_00008_seed_1008.png",
+          "NGF_00009_seed_1009.png",
+          "NGF_00010_seed_1010.png",
+          "NGF_00011_seed_1011.png",
+          "NGF_00012_seed_1012.png",
+          "NGF_00013_seed_1013.png",
+          "NGF_00014_seed_1014.png",
+          "PV_00000_seed_1000.png",
+          "PV_00001_seed_1001.png",
+          "PV_00002_seed_1002.png",
+          "PV_00003_seed_1003.png",
+          "PV_00004_seed_1004.png",
+          "PV_00005_seed_1005.png",
+          "PV_00006_seed_1006.png",
+          "PV_00007_seed_1007.png",
+          "PV_00008_seed_1008.png",
+          "PV_00009_seed_1009.png",
+          "PV_00010_seed_1010.png",
+          "PV_00011_seed_1011.png",
+          "PV_00012_seed_1012.png",
+          "PV_00013_seed_1013.png",
+          "PV_00014_seed_1014.png",
+          "PYR_00000_seed_1000.png",
+          "PYR_00001_seed_1001.png",
+          "PYR_00002_seed_1002.png",
+          "PYR_00003_seed_1003.png",
+          "PYR_00004_seed_1004.png",
+          "PYR_00005_seed_1005.png",
+          "PYR_00006_seed_1006.png",
+          "PYR_00007_seed_1007.png",
+          "PYR_00008_seed_1008.png",
+          "PYR_00009_seed_1009.png",
+          "PYR_00010_seed_1010.png",
+          "PYR_00011_seed_1011.png",
+          "PYR_00012_seed_1012.png",
+          "PYR_00013_seed_1013.png",
+          "PYR_00014_seed_1014.png",
+          "SOM_00000_seed_1000.png",
+          "SOM_00001_seed_1001.png",
+          "SOM_00002_seed_1002.png",
+          "SOM_00003_seed_1003.png",
+          "SOM_00004_seed_1004.png",
+          "SOM_00005_seed_1005.png",
+          "SOM_00006_seed_1006.png",
+          "SOM_00007_seed_1007.png",
+          "SOM_00008_seed_1008.png",
+          "SOM_00009_seed_1009.png",
+          "SOM_00010_seed_1010.png",
+          "SOM_00011_seed_1011.png",
+          "SOM_00012_seed_1012.png",
+          "SOM_00013_seed_1013.png",
+          "SOM_00014_seed_1014.png",
+          "THAL_E_00000_seed_1000.png",
+          "THAL_E_00001_seed_1001.png",
+          "THAL_E_00002_seed_1002.png",
+          "THAL_E_00003_seed_1003.png",
+          "THAL_E_00004_seed_1004.png",
+          "THAL_E_00005_seed_1005.png",
+          "THAL_E_00006_seed_1006.png",
+          "THAL_E_00007_seed_1007.png",
+          "THAL_E_00008_seed_1008.png",
+          "THAL_E_00009_seed_1009.png",
+          "THAL_E_00010_seed_1010.png",
+          "THAL_E_00011_seed_1011.png",
+          "THAL_E_00012_seed_1012.png",
+          "THAL_E_00013_seed_1013.png",
+          "THAL_E_00014_seed_1014.png",
+          "THAL_I_00000_seed_1000.png",
+          "THAL_I_00001_seed_1001.png",
+          "THAL_I_00002_seed_1002.png",
+          "THAL_I_00003_seed_1003.png",
+          "THAL_I_00004_seed_1004.png",
+          "THAL_I_00005_seed_1005.png",
+          "THAL_I_00006_seed_1006.png",
+          "THAL_I_00007_seed_1007.png",
+          "THAL_I_00008_seed_1008.png",
+          "THAL_I_00009_seed_1009.png",
+          "THAL_I_00010_seed_1010.png",
+          "THAL_I_00011_seed_1011.png",
+          "THAL_I_00012_seed_1012.png",
+          "THAL_I_00013_seed_1013.png",
+          "THAL_I_00014_seed_1014.png",
+          "VIP_00000_seed_1000.png",
+          "VIP_00001_seed_1001.png",
+          "VIP_00002_seed_1002.png",
+          "VIP_00003_seed_1003.png",
+          "VIP_00004_seed_1004.png",
+          "VIP_00005_seed_1005.png",
+          "VIP_00006_seed_1006.png",
+          "VIP_00007_seed_1007.png",
+          "VIP_00008_seed_1008.png",
+          "VIP_00009_seed_1009.png",
+          "VIP_00010_seed_1010.png",
+          "VIP_00011_seed_1011.png",
+          "VIP_00012_seed_1012.png",
+          "VIP_00013_seed_1013.png",
+          "VIP_00014_seed_1014.png"
+        ],
+        "rvec_xr": [],
+        "sample_pickle": "exp_results/batch_rxbkg_state1_mech1/net_newsec_ctrl_var_seed/exp_a1_full_nseed_15_t_10.0_15.0_ictrl_wmult_0.25_ee_0.5/pkl/data_00000_seed_1000.pkl",
+        "sample_pickle_bytes": 45994823
+      },
+      "cfg": {
+        "duration_s": 15.0,
+        "t0_calc_s": 10.0,
+        "pops_active": [
+          "IT2",
+          "IT3",
+          "ITP4",
+          "ITS4",
+          "IT5A",
+          "IT5B",
+          "IT6",
+          "CT5A",
+          "CT5B",
+          "CT6",
+          "PT5B",
+          "PV2",
+          "PV3",
+          "PV4",
+          "PV5A",
+          "PV5B",
+          "PV6",
+          "SOM2",
+          "SOM3",
+          "SOM4",
+          "SOM5A",
+          "SOM5B",
+          "SOM6",
+          "VIP2",
+          "VIP3",
+          "VIP4",
+          "VIP5A",
+          "VIP5B",
+          "VIP6",
+          "NGF1",
+          "NGF2",
+          "NGF3",
+          "NGF4",
+          "NGF5A",
+          "NGF5B",
+          "NGF6",
+          "TC",
+          "HTC",
+          "TI",
+          "IRE",
+          "TCM",
+          "TIM",
+          "IREM"
+        ],
+        "conns_frozen": [],
+        "conns_split": {},
+        "IClamp": {
+          "CT5A": {
+            "amp": 0.2811061829853486,
+            "dur": 15000.0
+          },
+          "CT5B": {
+            "amp": 0.2811521746117064,
+            "dur": 15000.0
+          },
+          "CT6": {
+            "amp": 0.28108070843753286,
+            "dur": 15000.0
+          },
+          "HTC": [
+            {
+              "amp": 4,
+              "dur": 15000.0
+            },
+            {
+              "amp": -0.15799162850300966,
+              "dur": 15000.0
+            }
+          ],
+          "IRE": [
+            {
+              "amp": 0.2,
+              "dur": 15000.0
+            },
+            {
+              "amp": -0.019262143816851655,
+              "dur": 15000.0
+            }
+          ],
+          "IREM": [
+            {
+              "amp": 0.2,
+              "dur": 15000.0
+            },
+            {
+              "amp": -0.03076673928626604,
+              "dur": 15000.0
+            }
+          ],
+          "IT2": {
+            "amp": 0.1826028861538529,
+            "dur": 15000.0
+          },
+          "IT3": {
+            "amp": 0.20736533596853907,
+            "dur": 15000.0
+          },
+          "IT5A": {
+            "amp": 0.09949009140570944,
+            "dur": 15000.0
+          },
+          "IT5B": {
+            "amp": 0.10708485376197718,
+            "dur": 15000.0
+          },
+          "IT6": {
+            "amp": 0.09601067195088177,
+            "dur": 15000.0
+          },
+          "ITP4": {
+            "amp": 0.214754445093032,
+            "dur": 15000.0
+          },
+          "ITS4": {
+            "amp": 0.2146776587814983,
+            "dur": 15000.0
+          },
+          "PT5B": {
+            "amp": 0.14307249038537465,
+            "dur": 15000.0
+          },
+          "TC": [
+            {
+              "amp": 4,
+              "dur": 15000.0
+            },
+            {
+              "amp": -0.23506264738553814,
+              "dur": 15000.0
+            }
+          ],
+          "TCM": [
+            {
+              "amp": 6,
+              "dur": 15000.0
+            },
+            {
+              "amp": -0.20883876990917746,
+              "dur": 15000.0
+            }
+          ],
+          "TI": [
+            {
+              "amp": 0.03,
+              "dur": 15000.0
+            },
+            {
+              "amp": -0.0004659604456170393,
+              "dur": 15000.0
+            }
+          ],
+          "TIM": [
+            {
+              "amp": 0.03,
+              "dur": 15000.0
+            },
+            {
+              "amp": -0.0008936951682445695,
+              "dur": 15000.0
+            }
+          ]
+        },
+        "wmult": 0.25,
+        "EEGain": 0.5,
+        "cache_efficient": true,
+        "runtime_params": null,
+        "ou_ctrl_params": null
+      },
+      "selected_settings_sha256": "a02bf05e17addb97c4e7900373bf0ccc6316af9bcb8bc5fec23f2900bd218436",
+      "summary_windows_s": [
+        [
+          10.0,
+          15.0
+        ]
+      ],
+      "seeds": [
+        1000,
+        1001,
+        1002,
+        1003,
+        1004,
+        1005,
+        1006,
+        1007,
+        1008,
+        1009,
+        1010,
+        1011,
+        1012,
+        1013,
+        1014
+      ]
+    },
+    "a1_fade_no_corr": {
+      "path": "exp_results/batch_rxbkg_state1_mech1/net_newsec_ctrl_var_seed/exp_a1_ee_fade_ictrl_0_nseed_15_t_10.0_15.0_wmult_0.25_ee_0.5",
+      "exists": true,
+      "result_files": [
+        "result_00000_seed_1000.json",
+        "result_00001_seed_1001.json",
+        "result_00002_seed_1002.json",
+        "result_00003_seed_1003.json",
+        "result_00004_seed_1004.json",
+        "result_00005_seed_1005.json",
+        "result_00006_seed_1006.json",
+        "result_00007_seed_1007.json",
+        "result_00008_seed_1008.json",
+        "result_00009_seed_1009.json",
+        "result_00010_seed_1010.json",
+        "result_00011_seed_1011.json",
+        "result_00012_seed_1012.json",
+        "result_00013_seed_1013.json",
+        "result_00014_seed_1014.json"
+      ],
+      "cfg_files": [
+        "cfg_00000_seed_1000.json",
+        "cfg_00001_seed_1001.json",
+        "cfg_00002_seed_1002.json",
+        "cfg_00003_seed_1003.json",
+        "cfg_00004_seed_1004.json",
+        "cfg_00005_seed_1005.json",
+        "cfg_00006_seed_1006.json",
+        "cfg_00007_seed_1007.json",
+        "cfg_00008_seed_1008.json",
+        "cfg_00009_seed_1009.json",
+        "cfg_00010_seed_1010.json",
+        "cfg_00011_seed_1011.json",
+        "cfg_00012_seed_1012.json",
+        "cfg_00013_seed_1013.json",
+        "cfg_00014_seed_1014.json"
+      ],
+      "outputs": {
+        "wmod_figs": [
+          "wmod_00000_seed_1000.png",
+          "wmod_00001_seed_1001.png",
+          "wmod_00002_seed_1002.png",
+          "wmod_00003_seed_1003.png",
+          "wmod_00004_seed_1004.png",
+          "wmod_00005_seed_1005.png",
+          "wmod_00006_seed_1006.png",
+          "wmod_00007_seed_1007.png",
+          "wmod_00008_seed_1008.png",
+          "wmod_00009_seed_1009.png",
+          "wmod_00010_seed_1010.png",
+          "wmod_00011_seed_1011.png",
+          "wmod_00012_seed_1012.png",
+          "wmod_00013_seed_1013.png",
+          "wmod_00014_seed_1014.png"
+        ],
+        "rvec_figs": [],
+        "rvec_xr": [],
+        "sample_pickle": "exp_results/batch_rxbkg_state1_mech1/net_newsec_ctrl_var_seed/exp_a1_ee_fade_ictrl_0_nseed_15_t_10.0_15.0_wmult_0.25_ee_0.5/pkl/data_00000_seed_1000.pkl",
+        "sample_pickle_bytes": 66045899
+      },
+      "cfg": {
+        "duration_s": 15.0,
+        "t0_calc_s": 10.0,
+        "pops_active": [
+          "IT2",
+          "IT3",
+          "ITP4",
+          "ITS4",
+          "IT5A",
+          "IT5B",
+          "IT6",
+          "CT5A",
+          "CT5B",
+          "CT6",
+          "PT5B",
+          "PV2",
+          "PV3",
+          "PV4",
+          "PV5A",
+          "PV5B",
+          "PV6",
+          "SOM2",
+          "SOM3",
+          "SOM4",
+          "SOM5A",
+          "SOM5B",
+          "SOM6",
+          "VIP2",
+          "VIP3",
+          "VIP4",
+          "VIP5A",
+          "VIP5B",
+          "VIP6",
+          "NGF1",
+          "NGF2",
+          "NGF3",
+          "NGF4",
+          "NGF5A",
+          "NGF5B",
+          "NGF6",
+          "TC",
+          "HTC",
+          "TI",
+          "IRE",
+          "TCM",
+          "TIM",
+          "IREM"
+        ],
+        "conns_frozen": [],
+        "conns_split": {
+          "CT5A, CT5A": 0.5,
+          "CT5A, CT5B": 0.5,
+          "CT5A, CT6": 0.5,
+          "CT5A, HTC": 0.5,
+          "CT5A, IT2": 0.5,
+          "CT5A, IT3": 0.5,
+          "CT5A, IT5A": 0.5,
+          "CT5A, IT5B": 0.5,
+          "CT5A, IT6": 0.5,
+          "CT5A, ITP4": 0.5,
+          "CT5A, ITS4": 0.5,
+          "CT5A, PT5B": 0.5,
+          "CT5A, TC": 0.5,
+          "CT5A, TCM": 0.5,
+          "CT5B, CT5A": 0.5,
+          "CT5B, CT5B": 0.5,
+          "CT5B, CT6": 0.5,
+          "CT5B, HTC": 0.5,
+          "CT5B, IT2": 0.5,
+          "CT5B, IT3": 0.5,
+          "CT5B, IT5A": 0.5,
+          "CT5B, IT5B": 0.5,
+          "CT5B, IT6": 0.5,
+          "CT5B, ITP4": 0.5,
+          "CT5B, ITS4": 0.5,
+          "CT5B, PT5B": 0.5,
+          "CT5B, TC": 0.5,
+          "CT5B, TCM": 0.5,
+          "CT6, CT5A": 0.5,
+          "CT6, CT5B": 0.5,
+          "CT6, CT6": 0.5,
+          "CT6, HTC": 0.5,
+          "CT6, IT2": 0.5,
+          "CT6, IT3": 0.5,
+          "CT6, IT5A": 0.5,
+          "CT6, IT5B": 0.5,
+          "CT6, IT6": 0.5,
+          "CT6, ITP4": 0.5,
+          "CT6, ITS4": 0.5,
+          "CT6, PT5B": 0.5,
+          "CT6, TC": 0.5,
+          "CT6, TCM": 0.5,
+          "HTC, CT5A": 0.5,
+          "HTC, CT5B": 0.5,
+          "HTC, CT6": 0.5,
+          "HTC, HTC": 0.5,
+          "HTC, IT2": 0.5,
+          "HTC, IT3": 0.5,
+          "HTC, IT5A": 0.5,
+          "HTC, IT5B": 0.5,
+          "HTC, IT6": 0.5,
+          "HTC, ITP4": 0.5,
+          "HTC, ITS4": 0.5,
+          "HTC, PT5B": 0.5,
+          "HTC, TC": 0.5,
+          "HTC, TCM": 0.5,
+          "IT2, CT5A": 0.5,
+          "IT2, CT5B": 0.5,
+          "IT2, CT6": 0.5,
+          "IT2, HTC": 0.5,
+          "IT2, IT2": 0.5,
+          "IT2, IT3": 0.5,
+          "IT2, IT5A": 0.5,
+          "IT2, IT5B": 0.5,
+          "IT2, IT6": 0.5,
+          "IT2, ITP4": 0.5,
+          "IT2, ITS4": 0.5,
+          "IT2, PT5B": 0.5,
+          "IT2, TC": 0.5,
+          "IT2, TCM": 0.5,
+          "IT3, CT5A": 0.5,
+          "IT3, CT5B": 0.5,
+          "IT3, CT6": 0.5,
+          "IT3, HTC": 0.5,
+          "IT3, IT2": 0.5,
+          "IT3, IT3": 0.5,
+          "IT3, IT5A": 0.5,
+          "IT3, IT5B": 0.5,
+          "IT3, IT6": 0.5,
+          "IT3, ITP4": 0.5,
+          "IT3, ITS4": 0.5,
+          "IT3, PT5B": 0.5,
+          "IT3, TC": 0.5,
+          "IT3, TCM": 0.5,
+          "IT5A, CT5A": 0.5,
+          "IT5A, CT5B": 0.5,
+          "IT5A, CT6": 0.5,
+          "IT5A, HTC": 0.5,
+          "IT5A, IT2": 0.5,
+          "IT5A, IT3": 0.5,
+          "IT5A, IT5A": 0.5,
+          "IT5A, IT5B": 0.5,
+          "IT5A, IT6": 0.5,
+          "IT5A, ITP4": 0.5,
+          "IT5A, ITS4": 0.5,
+          "IT5A, PT5B": 0.5,
+          "IT5A, TC": 0.5,
+          "IT5A, TCM": 0.5,
+          "IT5B, CT5A": 0.5,
+          "IT5B, CT5B": 0.5,
+          "IT5B, CT6": 0.5,
+          "IT5B, HTC": 0.5,
+          "IT5B, IT2": 0.5,
+          "IT5B, IT3": 0.5,
+          "IT5B, IT5A": 0.5,
+          "IT5B, IT5B": 0.5,
+          "IT5B, IT6": 0.5,
+          "IT5B, ITP4": 0.5,
+          "IT5B, ITS4": 0.5,
+          "IT5B, PT5B": 0.5,
+          "IT5B, TC": 0.5,
+          "IT5B, TCM": 0.5,
+          "IT6, CT5A": 0.5,
+          "IT6, CT5B": 0.5,
+          "IT6, CT6": 0.5,
+          "IT6, HTC": 0.5,
+          "IT6, IT2": 0.5,
+          "IT6, IT3": 0.5,
+          "IT6, IT5A": 0.5,
+          "IT6, IT5B": 0.5,
+          "IT6, IT6": 0.5,
+          "IT6, ITP4": 0.5,
+          "IT6, ITS4": 0.5,
+          "IT6, PT5B": 0.5,
+          "IT6, TC": 0.5,
+          "IT6, TCM": 0.5,
+          "ITP4, CT5A": 0.5,
+          "ITP4, CT5B": 0.5,
+          "ITP4, CT6": 0.5,
+          "ITP4, HTC": 0.5,
+          "ITP4, IT2": 0.5,
+          "ITP4, IT3": 0.5,
+          "ITP4, IT5A": 0.5,
+          "ITP4, IT5B": 0.5,
+          "ITP4, IT6": 0.5,
+          "ITP4, ITP4": 0.5,
+          "ITP4, ITS4": 0.5,
+          "ITP4, PT5B": 0.5,
+          "ITP4, TC": 0.5,
+          "ITP4, TCM": 0.5,
+          "ITS4, CT5A": 0.5,
+          "ITS4, CT5B": 0.5,
+          "ITS4, CT6": 0.5,
+          "ITS4, HTC": 0.5,
+          "ITS4, IT2": 0.5,
+          "ITS4, IT3": 0.5,
+          "ITS4, IT5A": 0.5,
+          "ITS4, IT5B": 0.5,
+          "ITS4, IT6": 0.5,
+          "ITS4, ITP4": 0.5,
+          "ITS4, ITS4": 0.5,
+          "ITS4, PT5B": 0.5,
+          "ITS4, TC": 0.5,
+          "ITS4, TCM": 0.5,
+          "PT5B, CT5A": 0.5,
+          "PT5B, CT5B": 0.5,
+          "PT5B, CT6": 0.5,
+          "PT5B, HTC": 0.5,
+          "PT5B, IT2": 0.5,
+          "PT5B, IT3": 0.5,
+          "PT5B, IT5A": 0.5,
+          "PT5B, IT5B": 0.5,
+          "PT5B, IT6": 0.5,
+          "PT5B, ITP4": 0.5,
+          "PT5B, ITS4": 0.5,
+          "PT5B, PT5B": 0.5,
+          "PT5B, TC": 0.5,
+          "PT5B, TCM": 0.5,
+          "TC, CT5A": 0.5,
+          "TC, CT5B": 0.5,
+          "TC, CT6": 0.5,
+          "TC, HTC": 0.5,
+          "TC, IT2": 0.5,
+          "TC, IT3": 0.5,
+          "TC, IT5A": 0.5,
+          "TC, IT5B": 0.5,
+          "TC, IT6": 0.5,
+          "TC, ITP4": 0.5,
+          "TC, ITS4": 0.5,
+          "TC, PT5B": 0.5,
+          "TC, TC": 0.5,
+          "TC, TCM": 0.5,
+          "TCM, CT5A": 0.5,
+          "TCM, CT5B": 0.5,
+          "TCM, CT6": 0.5,
+          "TCM, HTC": 0.5,
+          "TCM, IT2": 0.5,
+          "TCM, IT3": 0.5,
+          "TCM, IT5A": 0.5,
+          "TCM, IT5B": 0.5,
+          "TCM, IT6": 0.5,
+          "TCM, ITP4": 0.5,
+          "TCM, ITS4": 0.5,
+          "TCM, PT5B": 0.5,
+          "TCM, TC": 0.5,
+          "TCM, TCM": 0.5
+        },
+        "IClamp": {
+          "CT5A": {
+            "amp": 0.2811061829853486,
+            "dur": 15000.0
+          },
+          "CT5B": {
+            "amp": 0.2811521746117064,
+            "dur": 15000.0
+          },
+          "CT6": {
+            "amp": 0.28108070843753286,
+            "dur": 15000.0
+          },
+          "HTC": {
+            "amp": 4,
+            "dur": 15000.0
+          },
+          "IRE": {
+            "amp": 0.2,
+            "dur": 15000.0
+          },
+          "IREM": {
+            "amp": 0.2,
+            "dur": 15000.0
+          },
+          "IT2": {
+            "amp": 0.1826028861538529,
+            "dur": 15000.0
+          },
+          "IT3": {
+            "amp": 0.20736533596853907,
+            "dur": 15000.0
+          },
+          "IT5A": {
+            "amp": 0.09949009140570944,
+            "dur": 15000.0
+          },
+          "IT5B": {
+            "amp": 0.10708485376197718,
+            "dur": 15000.0
+          },
+          "IT6": {
+            "amp": 0.09601067195088177,
+            "dur": 15000.0
+          },
+          "ITP4": {
+            "amp": 0.214754445093032,
+            "dur": 15000.0
+          },
+          "ITS4": {
+            "amp": 0.2146776587814983,
+            "dur": 15000.0
+          },
+          "PT5B": {
+            "amp": 0.14307249038537465,
+            "dur": 15000.0
+          },
+          "TC": {
+            "amp": 4,
+            "dur": 15000.0
+          },
+          "TCM": {
+            "amp": 6,
+            "dur": 15000.0
+          },
+          "TI": {
+            "amp": 0.03,
+            "dur": 15000.0
+          },
+          "TIM": {
+            "amp": 0.03,
+            "dur": 15000.0
+          }
+        },
+        "wmult": 0.25,
+        "EEGain": 0.5,
+        "cache_efficient": 0,
+        "runtime_params": null,
+        "ou_ctrl_params": null
+      },
+      "selected_settings_sha256": "a02bf05e17addb97c4e7900373bf0ccc6316af9bcb8bc5fec23f2900bd218436",
+      "summary_windows_s": [
+        [
+          10.0,
+          15.0
+        ]
+      ],
+      "seeds": [
+        1000,
+        1001,
+        1002,
+        1003,
+        1004,
+        1005,
+        1006,
+        1007,
+        1008,
+        1009,
+        1010,
+        1011,
+        1012,
+        1013,
+        1014
+      ]
+    },
+    "a1_fade_corr": {
+      "path": "exp_results/batch_rxbkg_state1_mech1/net_newsec_ctrl_var_seed/exp_a1_ee_fade_nseed_15_t_10.0_15.0_ictrl_wmult_0.25_ee_0.5",
+      "exists": true,
+      "result_files": [
+        "result_00000_seed_1000.json",
+        "result_00001_seed_1001.json",
+        "result_00002_seed_1002.json",
+        "result_00003_seed_1003.json",
+        "result_00004_seed_1004.json",
+        "result_00005_seed_1005.json",
+        "result_00006_seed_1006.json",
+        "result_00007_seed_1007.json",
+        "result_00008_seed_1008.json",
+        "result_00009_seed_1009.json",
+        "result_00010_seed_1010.json",
+        "result_00011_seed_1011.json",
+        "result_00012_seed_1012.json",
+        "result_00013_seed_1013.json",
+        "result_00014_seed_1014.json"
+      ],
+      "cfg_files": [
+        "cfg_00000_seed_1000.json",
+        "cfg_00001_seed_1001.json",
+        "cfg_00002_seed_1002.json",
+        "cfg_00003_seed_1003.json",
+        "cfg_00004_seed_1004.json",
+        "cfg_00005_seed_1005.json",
+        "cfg_00006_seed_1006.json",
+        "cfg_00007_seed_1007.json",
+        "cfg_00008_seed_1008.json",
+        "cfg_00009_seed_1009.json",
+        "cfg_00010_seed_1010.json",
+        "cfg_00011_seed_1011.json",
+        "cfg_00012_seed_1012.json",
+        "cfg_00013_seed_1013.json",
+        "cfg_00014_seed_1014.json"
+      ],
+      "outputs": {
+        "wmod_figs": [
+          "wmod_00000_seed_1000.png",
+          "wmod_00001_seed_1001.png",
+          "wmod_00002_seed_1002.png",
+          "wmod_00003_seed_1003.png",
+          "wmod_00004_seed_1004.png",
+          "wmod_00005_seed_1005.png",
+          "wmod_00006_seed_1006.png",
+          "wmod_00007_seed_1007.png",
+          "wmod_00008_seed_1008.png",
+          "wmod_00009_seed_1009.png",
+          "wmod_00010_seed_1010.png",
+          "wmod_00011_seed_1011.png",
+          "wmod_00012_seed_1012.png",
+          "wmod_00013_seed_1013.png",
+          "wmod_00014_seed_1014.png"
+        ],
+        "rvec_figs": [
+          "NGF_00000_seed_1000.png",
+          "NGF_00001_seed_1001.png",
+          "NGF_00002_seed_1002.png",
+          "NGF_00003_seed_1003.png",
+          "NGF_00004_seed_1004.png",
+          "NGF_00005_seed_1005.png",
+          "NGF_00006_seed_1006.png",
+          "NGF_00007_seed_1007.png",
+          "NGF_00008_seed_1008.png",
+          "NGF_00009_seed_1009.png",
+          "NGF_00010_seed_1010.png",
+          "NGF_00011_seed_1011.png",
+          "NGF_00012_seed_1012.png",
+          "NGF_00013_seed_1013.png",
+          "NGF_00014_seed_1014.png",
+          "PV_00000_seed_1000.png",
+          "PV_00001_seed_1001.png",
+          "PV_00002_seed_1002.png",
+          "PV_00003_seed_1003.png",
+          "PV_00004_seed_1004.png",
+          "PV_00005_seed_1005.png",
+          "PV_00006_seed_1006.png",
+          "PV_00007_seed_1007.png",
+          "PV_00008_seed_1008.png",
+          "PV_00009_seed_1009.png",
+          "PV_00010_seed_1010.png",
+          "PV_00011_seed_1011.png",
+          "PV_00012_seed_1012.png",
+          "PV_00013_seed_1013.png",
+          "PV_00014_seed_1014.png",
+          "PYR_00000_seed_1000.png",
+          "PYR_00001_seed_1001.png",
+          "PYR_00002_seed_1002.png",
+          "PYR_00003_seed_1003.png",
+          "PYR_00004_seed_1004.png",
+          "PYR_00005_seed_1005.png",
+          "PYR_00006_seed_1006.png",
+          "PYR_00007_seed_1007.png",
+          "PYR_00008_seed_1008.png",
+          "PYR_00009_seed_1009.png",
+          "PYR_00010_seed_1010.png",
+          "PYR_00011_seed_1011.png",
+          "PYR_00012_seed_1012.png",
+          "PYR_00013_seed_1013.png",
+          "PYR_00014_seed_1014.png",
+          "SOM_00000_seed_1000.png",
+          "SOM_00001_seed_1001.png",
+          "SOM_00002_seed_1002.png",
+          "SOM_00003_seed_1003.png",
+          "SOM_00004_seed_1004.png",
+          "SOM_00005_seed_1005.png",
+          "SOM_00006_seed_1006.png",
+          "SOM_00007_seed_1007.png",
+          "SOM_00008_seed_1008.png",
+          "SOM_00009_seed_1009.png",
+          "SOM_00010_seed_1010.png",
+          "SOM_00011_seed_1011.png",
+          "SOM_00012_seed_1012.png",
+          "SOM_00013_seed_1013.png",
+          "SOM_00014_seed_1014.png",
+          "THAL_E_00000_seed_1000.png",
+          "THAL_E_00001_seed_1001.png",
+          "THAL_E_00002_seed_1002.png",
+          "THAL_E_00003_seed_1003.png",
+          "THAL_E_00004_seed_1004.png",
+          "THAL_E_00005_seed_1005.png",
+          "THAL_E_00006_seed_1006.png",
+          "THAL_E_00007_seed_1007.png",
+          "THAL_E_00008_seed_1008.png",
+          "THAL_E_00009_seed_1009.png",
+          "THAL_E_00010_seed_1010.png",
+          "THAL_E_00011_seed_1011.png",
+          "THAL_E_00012_seed_1012.png",
+          "THAL_E_00013_seed_1013.png",
+          "THAL_E_00014_seed_1014.png",
+          "THAL_I_00000_seed_1000.png",
+          "THAL_I_00001_seed_1001.png",
+          "THAL_I_00002_seed_1002.png",
+          "THAL_I_00003_seed_1003.png",
+          "THAL_I_00004_seed_1004.png",
+          "THAL_I_00005_seed_1005.png",
+          "THAL_I_00006_seed_1006.png",
+          "THAL_I_00007_seed_1007.png",
+          "THAL_I_00008_seed_1008.png",
+          "THAL_I_00009_seed_1009.png",
+          "THAL_I_00010_seed_1010.png",
+          "THAL_I_00011_seed_1011.png",
+          "THAL_I_00012_seed_1012.png",
+          "THAL_I_00013_seed_1013.png",
+          "THAL_I_00014_seed_1014.png",
+          "VIP_00000_seed_1000.png",
+          "VIP_00001_seed_1001.png",
+          "VIP_00002_seed_1002.png",
+          "VIP_00003_seed_1003.png",
+          "VIP_00004_seed_1004.png",
+          "VIP_00005_seed_1005.png",
+          "VIP_00006_seed_1006.png",
+          "VIP_00007_seed_1007.png",
+          "VIP_00008_seed_1008.png",
+          "VIP_00009_seed_1009.png",
+          "VIP_00010_seed_1010.png",
+          "VIP_00011_seed_1011.png",
+          "VIP_00012_seed_1012.png",
+          "VIP_00013_seed_1013.png",
+          "VIP_00014_seed_1014.png"
+        ],
+        "rvec_xr": [],
+        "sample_pickle": "exp_results/batch_rxbkg_state1_mech1/net_newsec_ctrl_var_seed/exp_a1_ee_fade_nseed_15_t_10.0_15.0_ictrl_wmult_0.25_ee_0.5/pkl/data_00000_seed_1000.pkl",
+        "sample_pickle_bytes": 65663501
+      },
+      "cfg": {
+        "duration_s": 15.0,
+        "t0_calc_s": 10.0,
+        "pops_active": [
+          "IT2",
+          "IT3",
+          "ITP4",
+          "ITS4",
+          "IT5A",
+          "IT5B",
+          "IT6",
+          "CT5A",
+          "CT5B",
+          "CT6",
+          "PT5B",
+          "PV2",
+          "PV3",
+          "PV4",
+          "PV5A",
+          "PV5B",
+          "PV6",
+          "SOM2",
+          "SOM3",
+          "SOM4",
+          "SOM5A",
+          "SOM5B",
+          "SOM6",
+          "VIP2",
+          "VIP3",
+          "VIP4",
+          "VIP5A",
+          "VIP5B",
+          "VIP6",
+          "NGF1",
+          "NGF2",
+          "NGF3",
+          "NGF4",
+          "NGF5A",
+          "NGF5B",
+          "NGF6",
+          "TC",
+          "HTC",
+          "TI",
+          "IRE",
+          "TCM",
+          "TIM",
+          "IREM"
+        ],
+        "conns_frozen": [],
+        "conns_split": {
+          "CT5A, CT5A": 0.5,
+          "CT5A, CT5B": 0.5,
+          "CT5A, CT6": 0.5,
+          "CT5A, HTC": 0.5,
+          "CT5A, IT2": 0.5,
+          "CT5A, IT3": 0.5,
+          "CT5A, IT5A": 0.5,
+          "CT5A, IT5B": 0.5,
+          "CT5A, IT6": 0.5,
+          "CT5A, ITP4": 0.5,
+          "CT5A, ITS4": 0.5,
+          "CT5A, PT5B": 0.5,
+          "CT5A, TC": 0.5,
+          "CT5A, TCM": 0.5,
+          "CT5B, CT5A": 0.5,
+          "CT5B, CT5B": 0.5,
+          "CT5B, CT6": 0.5,
+          "CT5B, HTC": 0.5,
+          "CT5B, IT2": 0.5,
+          "CT5B, IT3": 0.5,
+          "CT5B, IT5A": 0.5,
+          "CT5B, IT5B": 0.5,
+          "CT5B, IT6": 0.5,
+          "CT5B, ITP4": 0.5,
+          "CT5B, ITS4": 0.5,
+          "CT5B, PT5B": 0.5,
+          "CT5B, TC": 0.5,
+          "CT5B, TCM": 0.5,
+          "CT6, CT5A": 0.5,
+          "CT6, CT5B": 0.5,
+          "CT6, CT6": 0.5,
+          "CT6, HTC": 0.5,
+          "CT6, IT2": 0.5,
+          "CT6, IT3": 0.5,
+          "CT6, IT5A": 0.5,
+          "CT6, IT5B": 0.5,
+          "CT6, IT6": 0.5,
+          "CT6, ITP4": 0.5,
+          "CT6, ITS4": 0.5,
+          "CT6, PT5B": 0.5,
+          "CT6, TC": 0.5,
+          "CT6, TCM": 0.5,
+          "HTC, CT5A": 0.5,
+          "HTC, CT5B": 0.5,
+          "HTC, CT6": 0.5,
+          "HTC, HTC": 0.5,
+          "HTC, IT2": 0.5,
+          "HTC, IT3": 0.5,
+          "HTC, IT5A": 0.5,
+          "HTC, IT5B": 0.5,
+          "HTC, IT6": 0.5,
+          "HTC, ITP4": 0.5,
+          "HTC, ITS4": 0.5,
+          "HTC, PT5B": 0.5,
+          "HTC, TC": 0.5,
+          "HTC, TCM": 0.5,
+          "IT2, CT5A": 0.5,
+          "IT2, CT5B": 0.5,
+          "IT2, CT6": 0.5,
+          "IT2, HTC": 0.5,
+          "IT2, IT2": 0.5,
+          "IT2, IT3": 0.5,
+          "IT2, IT5A": 0.5,
+          "IT2, IT5B": 0.5,
+          "IT2, IT6": 0.5,
+          "IT2, ITP4": 0.5,
+          "IT2, ITS4": 0.5,
+          "IT2, PT5B": 0.5,
+          "IT2, TC": 0.5,
+          "IT2, TCM": 0.5,
+          "IT3, CT5A": 0.5,
+          "IT3, CT5B": 0.5,
+          "IT3, CT6": 0.5,
+          "IT3, HTC": 0.5,
+          "IT3, IT2": 0.5,
+          "IT3, IT3": 0.5,
+          "IT3, IT5A": 0.5,
+          "IT3, IT5B": 0.5,
+          "IT3, IT6": 0.5,
+          "IT3, ITP4": 0.5,
+          "IT3, ITS4": 0.5,
+          "IT3, PT5B": 0.5,
+          "IT3, TC": 0.5,
+          "IT3, TCM": 0.5,
+          "IT5A, CT5A": 0.5,
+          "IT5A, CT5B": 0.5,
+          "IT5A, CT6": 0.5,
+          "IT5A, HTC": 0.5,
+          "IT5A, IT2": 0.5,
+          "IT5A, IT3": 0.5,
+          "IT5A, IT5A": 0.5,
+          "IT5A, IT5B": 0.5,
+          "IT5A, IT6": 0.5,
+          "IT5A, ITP4": 0.5,
+          "IT5A, ITS4": 0.5,
+          "IT5A, PT5B": 0.5,
+          "IT5A, TC": 0.5,
+          "IT5A, TCM": 0.5,
+          "IT5B, CT5A": 0.5,
+          "IT5B, CT5B": 0.5,
+          "IT5B, CT6": 0.5,
+          "IT5B, HTC": 0.5,
+          "IT5B, IT2": 0.5,
+          "IT5B, IT3": 0.5,
+          "IT5B, IT5A": 0.5,
+          "IT5B, IT5B": 0.5,
+          "IT5B, IT6": 0.5,
+          "IT5B, ITP4": 0.5,
+          "IT5B, ITS4": 0.5,
+          "IT5B, PT5B": 0.5,
+          "IT5B, TC": 0.5,
+          "IT5B, TCM": 0.5,
+          "IT6, CT5A": 0.5,
+          "IT6, CT5B": 0.5,
+          "IT6, CT6": 0.5,
+          "IT6, HTC": 0.5,
+          "IT6, IT2": 0.5,
+          "IT6, IT3": 0.5,
+          "IT6, IT5A": 0.5,
+          "IT6, IT5B": 0.5,
+          "IT6, IT6": 0.5,
+          "IT6, ITP4": 0.5,
+          "IT6, ITS4": 0.5,
+          "IT6, PT5B": 0.5,
+          "IT6, TC": 0.5,
+          "IT6, TCM": 0.5,
+          "ITP4, CT5A": 0.5,
+          "ITP4, CT5B": 0.5,
+          "ITP4, CT6": 0.5,
+          "ITP4, HTC": 0.5,
+          "ITP4, IT2": 0.5,
+          "ITP4, IT3": 0.5,
+          "ITP4, IT5A": 0.5,
+          "ITP4, IT5B": 0.5,
+          "ITP4, IT6": 0.5,
+          "ITP4, ITP4": 0.5,
+          "ITP4, ITS4": 0.5,
+          "ITP4, PT5B": 0.5,
+          "ITP4, TC": 0.5,
+          "ITP4, TCM": 0.5,
+          "ITS4, CT5A": 0.5,
+          "ITS4, CT5B": 0.5,
+          "ITS4, CT6": 0.5,
+          "ITS4, HTC": 0.5,
+          "ITS4, IT2": 0.5,
+          "ITS4, IT3": 0.5,
+          "ITS4, IT5A": 0.5,
+          "ITS4, IT5B": 0.5,
+          "ITS4, IT6": 0.5,
+          "ITS4, ITP4": 0.5,
+          "ITS4, ITS4": 0.5,
+          "ITS4, PT5B": 0.5,
+          "ITS4, TC": 0.5,
+          "ITS4, TCM": 0.5,
+          "PT5B, CT5A": 0.5,
+          "PT5B, CT5B": 0.5,
+          "PT5B, CT6": 0.5,
+          "PT5B, HTC": 0.5,
+          "PT5B, IT2": 0.5,
+          "PT5B, IT3": 0.5,
+          "PT5B, IT5A": 0.5,
+          "PT5B, IT5B": 0.5,
+          "PT5B, IT6": 0.5,
+          "PT5B, ITP4": 0.5,
+          "PT5B, ITS4": 0.5,
+          "PT5B, PT5B": 0.5,
+          "PT5B, TC": 0.5,
+          "PT5B, TCM": 0.5,
+          "TC, CT5A": 0.5,
+          "TC, CT5B": 0.5,
+          "TC, CT6": 0.5,
+          "TC, HTC": 0.5,
+          "TC, IT2": 0.5,
+          "TC, IT3": 0.5,
+          "TC, IT5A": 0.5,
+          "TC, IT5B": 0.5,
+          "TC, IT6": 0.5,
+          "TC, ITP4": 0.5,
+          "TC, ITS4": 0.5,
+          "TC, PT5B": 0.5,
+          "TC, TC": 0.5,
+          "TC, TCM": 0.5,
+          "TCM, CT5A": 0.5,
+          "TCM, CT5B": 0.5,
+          "TCM, CT6": 0.5,
+          "TCM, HTC": 0.5,
+          "TCM, IT2": 0.5,
+          "TCM, IT3": 0.5,
+          "TCM, IT5A": 0.5,
+          "TCM, IT5B": 0.5,
+          "TCM, IT6": 0.5,
+          "TCM, ITP4": 0.5,
+          "TCM, ITS4": 0.5,
+          "TCM, PT5B": 0.5,
+          "TCM, TC": 0.5,
+          "TCM, TCM": 0.5
+        },
+        "IClamp": {
+          "CT5A": {
+            "amp": 0.2811061829853486,
+            "dur": 15000.0
+          },
+          "CT5B": {
+            "amp": 0.2811521746117064,
+            "dur": 15000.0
+          },
+          "CT6": {
+            "amp": 0.28108070843753286,
+            "dur": 15000.0
+          },
+          "HTC": [
+            {
+              "amp": 4,
+              "dur": 15000.0
+            },
+            {
+              "amp": -0.15799162850300966,
+              "dur": 15000.0
+            }
+          ],
+          "IRE": [
+            {
+              "amp": 0.2,
+              "dur": 15000.0
+            },
+            {
+              "amp": -0.019262143816851655,
+              "dur": 15000.0
+            }
+          ],
+          "IREM": [
+            {
+              "amp": 0.2,
+              "dur": 15000.0
+            },
+            {
+              "amp": -0.03076673928626604,
+              "dur": 15000.0
+            }
+          ],
+          "IT2": {
+            "amp": 0.1826028861538529,
+            "dur": 15000.0
+          },
+          "IT3": {
+            "amp": 0.20736533596853907,
+            "dur": 15000.0
+          },
+          "IT5A": {
+            "amp": 0.09949009140570944,
+            "dur": 15000.0
+          },
+          "IT5B": {
+            "amp": 0.10708485376197718,
+            "dur": 15000.0
+          },
+          "IT6": {
+            "amp": 0.09601067195088177,
+            "dur": 15000.0
+          },
+          "ITP4": {
+            "amp": 0.214754445093032,
+            "dur": 15000.0
+          },
+          "ITS4": {
+            "amp": 0.2146776587814983,
+            "dur": 15000.0
+          },
+          "PT5B": {
+            "amp": 0.14307249038537465,
+            "dur": 15000.0
+          },
+          "TC": [
+            {
+              "amp": 4,
+              "dur": 15000.0
+            },
+            {
+              "amp": -0.23506264738553814,
+              "dur": 15000.0
+            }
+          ],
+          "TCM": [
+            {
+              "amp": 6,
+              "dur": 15000.0
+            },
+            {
+              "amp": -0.20883876990917746,
+              "dur": 15000.0
+            }
+          ],
+          "TI": [
+            {
+              "amp": 0.03,
+              "dur": 15000.0
+            },
+            {
+              "amp": -0.0004659604456170393,
+              "dur": 15000.0
+            }
+          ],
+          "TIM": [
+            {
+              "amp": 0.03,
+              "dur": 15000.0
+            },
+            {
+              "amp": -0.0008936951682445695,
+              "dur": 15000.0
+            }
+          ]
+        },
+        "wmult": 0.25,
+        "EEGain": 0.5,
+        "cache_efficient": 0,
+        "runtime_params": null,
+        "ou_ctrl_params": null
+      },
+      "selected_settings_sha256": "a02bf05e17addb97c4e7900373bf0ccc6316af9bcb8bc5fec23f2900bd218436",
+      "summary_windows_s": [
+        [
+          10.0,
+          15.0
+        ]
+      ],
+      "seeds": [
+        1000,
+        1001,
+        1002,
+        1003,
+        1004,
+        1005,
+        1006,
+        1007,
+        1008,
+        1009,
+        1010,
+        1011,
+        1012,
+        1013,
+        1014
+      ]
+    },
+    "a1_ee_surr_no_corr": {
+      "path": "exp_results/batch_rxbkg_state1_mech1/net_newsec_ctrl_var_seed/exp_a1_ee_0_ictrl_0_nseed_15_t_10.0_15.0_wmult_0.25_ee_0.5",
+      "exists": true,
+      "result_files": [
+        "result_00000_seed_1000.json",
+        "result_00001_seed_1001.json",
+        "result_00002_seed_1002.json",
+        "result_00003_seed_1003.json",
+        "result_00004_seed_1004.json",
+        "result_00005_seed_1005.json",
+        "result_00006_seed_1006.json",
+        "result_00007_seed_1007.json",
+        "result_00008_seed_1008.json",
+        "result_00009_seed_1009.json",
+        "result_00010_seed_1010.json",
+        "result_00011_seed_1011.json",
+        "result_00012_seed_1012.json",
+        "result_00013_seed_1013.json",
+        "result_00014_seed_1014.json"
+      ],
+      "cfg_files": [
+        "cfg_00000_seed_1000.json",
+        "cfg_00001_seed_1001.json",
+        "cfg_00002_seed_1002.json",
+        "cfg_00003_seed_1003.json",
+        "cfg_00004_seed_1004.json",
+        "cfg_00005_seed_1005.json",
+        "cfg_00006_seed_1006.json",
+        "cfg_00007_seed_1007.json",
+        "cfg_00008_seed_1008.json",
+        "cfg_00009_seed_1009.json",
+        "cfg_00010_seed_1010.json",
+        "cfg_00011_seed_1011.json",
+        "cfg_00012_seed_1012.json",
+        "cfg_00013_seed_1013.json",
+        "cfg_00014_seed_1014.json"
+      ],
+      "outputs": {
+        "wmod_figs": [],
+        "rvec_figs": [],
+        "rvec_xr": [],
+        "sample_pickle": "exp_results/batch_rxbkg_state1_mech1/net_newsec_ctrl_var_seed/exp_a1_ee_0_ictrl_0_nseed_15_t_10.0_15.0_wmult_0.25_ee_0.5/pkl/data_00000_seed_1000.pkl",
+        "sample_pickle_bytes": 65160562
+      },
+      "cfg": {
+        "duration_s": 15.0,
+        "t0_calc_s": 10.0,
+        "pops_active": [
+          "IT2",
+          "IT3",
+          "ITP4",
+          "ITS4",
+          "IT5A",
+          "IT5B",
+          "IT6",
+          "CT5A",
+          "CT5B",
+          "CT6",
+          "PT5B",
+          "PV2",
+          "PV3",
+          "PV4",
+          "PV5A",
+          "PV5B",
+          "PV6",
+          "SOM2",
+          "SOM3",
+          "SOM4",
+          "SOM5A",
+          "SOM5B",
+          "SOM6",
+          "VIP2",
+          "VIP3",
+          "VIP4",
+          "VIP5A",
+          "VIP5B",
+          "VIP6",
+          "NGF1",
+          "NGF2",
+          "NGF3",
+          "NGF4",
+          "NGF5A",
+          "NGF5B",
+          "NGF6",
+          "TC",
+          "HTC",
+          "TI",
+          "IRE",
+          "TCM",
+          "TIM",
+          "IREM"
+        ],
+        "conns_frozen": [
+          [
+            "IT2",
+            "IT2"
+          ],
+          [
+            "IT2",
+            "IT3"
+          ],
+          [
+            "IT2",
+            "ITP4"
+          ],
+          [
+            "IT2",
+            "ITS4"
+          ],
+          [
+            "IT2",
+            "IT5A"
+          ],
+          [
+            "IT2",
+            "IT5B"
+          ],
+          [
+            "IT2",
+            "IT6"
+          ],
+          [
+            "IT2",
+            "CT5A"
+          ],
+          [
+            "IT2",
+            "CT5B"
+          ],
+          [
+            "IT2",
+            "CT6"
+          ],
+          [
+            "IT2",
+            "PT5B"
+          ],
+          [
+            "IT2",
+            "TC"
+          ],
+          [
+            "IT2",
+            "HTC"
+          ],
+          [
+            "IT2",
+            "TCM"
+          ],
+          [
+            "IT3",
+            "IT2"
+          ],
+          [
+            "IT3",
+            "IT3"
+          ],
+          [
+            "IT3",
+            "ITP4"
+          ],
+          [
+            "IT3",
+            "ITS4"
+          ],
+          [
+            "IT3",
+            "IT5A"
+          ],
+          [
+            "IT3",
+            "IT5B"
+          ],
+          [
+            "IT3",
+            "IT6"
+          ],
+          [
+            "IT3",
+            "CT5A"
+          ],
+          [
+            "IT3",
+            "CT5B"
+          ],
+          [
+            "IT3",
+            "CT6"
+          ],
+          [
+            "IT3",
+            "PT5B"
+          ],
+          [
+            "IT3",
+            "TC"
+          ],
+          [
+            "IT3",
+            "HTC"
+          ],
+          [
+            "IT3",
+            "TCM"
+          ],
+          [
+            "ITP4",
+            "IT2"
+          ],
+          [
+            "ITP4",
+            "IT3"
+          ],
+          [
+            "ITP4",
+            "ITP4"
+          ],
+          [
+            "ITP4",
+            "ITS4"
+          ],
+          [
+            "ITP4",
+            "IT5A"
+          ],
+          [
+            "ITP4",
+            "IT5B"
+          ],
+          [
+            "ITP4",
+            "IT6"
+          ],
+          [
+            "ITP4",
+            "CT5A"
+          ],
+          [
+            "ITP4",
+            "CT5B"
+          ],
+          [
+            "ITP4",
+            "CT6"
+          ],
+          [
+            "ITP4",
+            "PT5B"
+          ],
+          [
+            "ITP4",
+            "TC"
+          ],
+          [
+            "ITP4",
+            "HTC"
+          ],
+          [
+            "ITP4",
+            "TCM"
+          ],
+          [
+            "ITS4",
+            "IT2"
+          ],
+          [
+            "ITS4",
+            "IT3"
+          ],
+          [
+            "ITS4",
+            "ITP4"
+          ],
+          [
+            "ITS4",
+            "ITS4"
+          ],
+          [
+            "ITS4",
+            "IT5A"
+          ],
+          [
+            "ITS4",
+            "IT5B"
+          ],
+          [
+            "ITS4",
+            "IT6"
+          ],
+          [
+            "ITS4",
+            "CT5A"
+          ],
+          [
+            "ITS4",
+            "CT5B"
+          ],
+          [
+            "ITS4",
+            "CT6"
+          ],
+          [
+            "ITS4",
+            "PT5B"
+          ],
+          [
+            "ITS4",
+            "TC"
+          ],
+          [
+            "ITS4",
+            "HTC"
+          ],
+          [
+            "ITS4",
+            "TCM"
+          ],
+          [
+            "IT5A",
+            "IT2"
+          ],
+          [
+            "IT5A",
+            "IT3"
+          ],
+          [
+            "IT5A",
+            "ITP4"
+          ],
+          [
+            "IT5A",
+            "ITS4"
+          ],
+          [
+            "IT5A",
+            "IT5A"
+          ],
+          [
+            "IT5A",
+            "IT5B"
+          ],
+          [
+            "IT5A",
+            "IT6"
+          ],
+          [
+            "IT5A",
+            "CT5A"
+          ],
+          [
+            "IT5A",
+            "CT5B"
+          ],
+          [
+            "IT5A",
+            "CT6"
+          ],
+          [
+            "IT5A",
+            "PT5B"
+          ],
+          [
+            "IT5A",
+            "TC"
+          ],
+          [
+            "IT5A",
+            "HTC"
+          ],
+          [
+            "IT5A",
+            "TCM"
+          ],
+          [
+            "IT5B",
+            "IT2"
+          ],
+          [
+            "IT5B",
+            "IT3"
+          ],
+          [
+            "IT5B",
+            "ITP4"
+          ],
+          [
+            "IT5B",
+            "ITS4"
+          ],
+          [
+            "IT5B",
+            "IT5A"
+          ],
+          [
+            "IT5B",
+            "IT5B"
+          ],
+          [
+            "IT5B",
+            "IT6"
+          ],
+          [
+            "IT5B",
+            "CT5A"
+          ],
+          [
+            "IT5B",
+            "CT5B"
+          ],
+          [
+            "IT5B",
+            "CT6"
+          ],
+          [
+            "IT5B",
+            "PT5B"
+          ],
+          [
+            "IT5B",
+            "TC"
+          ],
+          [
+            "IT5B",
+            "HTC"
+          ],
+          [
+            "IT5B",
+            "TCM"
+          ],
+          [
+            "IT6",
+            "IT2"
+          ],
+          [
+            "IT6",
+            "IT3"
+          ],
+          [
+            "IT6",
+            "ITP4"
+          ],
+          [
+            "IT6",
+            "ITS4"
+          ],
+          [
+            "IT6",
+            "IT5A"
+          ],
+          [
+            "IT6",
+            "IT5B"
+          ],
+          [
+            "IT6",
+            "IT6"
+          ],
+          [
+            "IT6",
+            "CT5A"
+          ],
+          [
+            "IT6",
+            "CT5B"
+          ],
+          [
+            "IT6",
+            "CT6"
+          ],
+          [
+            "IT6",
+            "PT5B"
+          ],
+          [
+            "IT6",
+            "TC"
+          ],
+          [
+            "IT6",
+            "HTC"
+          ],
+          [
+            "IT6",
+            "TCM"
+          ],
+          [
+            "CT5A",
+            "IT2"
+          ],
+          [
+            "CT5A",
+            "IT3"
+          ],
+          [
+            "CT5A",
+            "ITP4"
+          ],
+          [
+            "CT5A",
+            "ITS4"
+          ],
+          [
+            "CT5A",
+            "IT5A"
+          ],
+          [
+            "CT5A",
+            "IT5B"
+          ],
+          [
+            "CT5A",
+            "IT6"
+          ],
+          [
+            "CT5A",
+            "CT5A"
+          ],
+          [
+            "CT5A",
+            "CT5B"
+          ],
+          [
+            "CT5A",
+            "CT6"
+          ],
+          [
+            "CT5A",
+            "PT5B"
+          ],
+          [
+            "CT5A",
+            "TC"
+          ],
+          [
+            "CT5A",
+            "HTC"
+          ],
+          [
+            "CT5A",
+            "TCM"
+          ],
+          [
+            "CT5B",
+            "IT2"
+          ],
+          [
+            "CT5B",
+            "IT3"
+          ],
+          [
+            "CT5B",
+            "ITP4"
+          ],
+          [
+            "CT5B",
+            "ITS4"
+          ],
+          [
+            "CT5B",
+            "IT5A"
+          ],
+          [
+            "CT5B",
+            "IT5B"
+          ],
+          [
+            "CT5B",
+            "IT6"
+          ],
+          [
+            "CT5B",
+            "CT5A"
+          ],
+          [
+            "CT5B",
+            "CT5B"
+          ],
+          [
+            "CT5B",
+            "CT6"
+          ],
+          [
+            "CT5B",
+            "PT5B"
+          ],
+          [
+            "CT5B",
+            "TC"
+          ],
+          [
+            "CT5B",
+            "HTC"
+          ],
+          [
+            "CT5B",
+            "TCM"
+          ],
+          [
+            "CT6",
+            "IT2"
+          ],
+          [
+            "CT6",
+            "IT3"
+          ],
+          [
+            "CT6",
+            "ITP4"
+          ],
+          [
+            "CT6",
+            "ITS4"
+          ],
+          [
+            "CT6",
+            "IT5A"
+          ],
+          [
+            "CT6",
+            "IT5B"
+          ],
+          [
+            "CT6",
+            "IT6"
+          ],
+          [
+            "CT6",
+            "CT5A"
+          ],
+          [
+            "CT6",
+            "CT5B"
+          ],
+          [
+            "CT6",
+            "CT6"
+          ],
+          [
+            "CT6",
+            "PT5B"
+          ],
+          [
+            "CT6",
+            "TC"
+          ],
+          [
+            "CT6",
+            "HTC"
+          ],
+          [
+            "CT6",
+            "TCM"
+          ],
+          [
+            "PT5B",
+            "IT2"
+          ],
+          [
+            "PT5B",
+            "IT3"
+          ],
+          [
+            "PT5B",
+            "ITP4"
+          ],
+          [
+            "PT5B",
+            "ITS4"
+          ],
+          [
+            "PT5B",
+            "IT5A"
+          ],
+          [
+            "PT5B",
+            "IT5B"
+          ],
+          [
+            "PT5B",
+            "IT6"
+          ],
+          [
+            "PT5B",
+            "CT5A"
+          ],
+          [
+            "PT5B",
+            "CT5B"
+          ],
+          [
+            "PT5B",
+            "CT6"
+          ],
+          [
+            "PT5B",
+            "PT5B"
+          ],
+          [
+            "PT5B",
+            "TC"
+          ],
+          [
+            "PT5B",
+            "HTC"
+          ],
+          [
+            "PT5B",
+            "TCM"
+          ],
+          [
+            "TC",
+            "IT2"
+          ],
+          [
+            "TC",
+            "IT3"
+          ],
+          [
+            "TC",
+            "ITP4"
+          ],
+          [
+            "TC",
+            "ITS4"
+          ],
+          [
+            "TC",
+            "IT5A"
+          ],
+          [
+            "TC",
+            "IT5B"
+          ],
+          [
+            "TC",
+            "IT6"
+          ],
+          [
+            "TC",
+            "CT5A"
+          ],
+          [
+            "TC",
+            "CT5B"
+          ],
+          [
+            "TC",
+            "CT6"
+          ],
+          [
+            "TC",
+            "PT5B"
+          ],
+          [
+            "TC",
+            "TC"
+          ],
+          [
+            "TC",
+            "HTC"
+          ],
+          [
+            "TC",
+            "TCM"
+          ],
+          [
+            "HTC",
+            "IT2"
+          ],
+          [
+            "HTC",
+            "IT3"
+          ],
+          [
+            "HTC",
+            "ITP4"
+          ],
+          [
+            "HTC",
+            "ITS4"
+          ],
+          [
+            "HTC",
+            "IT5A"
+          ],
+          [
+            "HTC",
+            "IT5B"
+          ],
+          [
+            "HTC",
+            "IT6"
+          ],
+          [
+            "HTC",
+            "CT5A"
+          ],
+          [
+            "HTC",
+            "CT5B"
+          ],
+          [
+            "HTC",
+            "CT6"
+          ],
+          [
+            "HTC",
+            "PT5B"
+          ],
+          [
+            "HTC",
+            "TC"
+          ],
+          [
+            "HTC",
+            "HTC"
+          ],
+          [
+            "HTC",
+            "TCM"
+          ],
+          [
+            "TCM",
+            "IT2"
+          ],
+          [
+            "TCM",
+            "IT3"
+          ],
+          [
+            "TCM",
+            "ITP4"
+          ],
+          [
+            "TCM",
+            "ITS4"
+          ],
+          [
+            "TCM",
+            "IT5A"
+          ],
+          [
+            "TCM",
+            "IT5B"
+          ],
+          [
+            "TCM",
+            "IT6"
+          ],
+          [
+            "TCM",
+            "CT5A"
+          ],
+          [
+            "TCM",
+            "CT5B"
+          ],
+          [
+            "TCM",
+            "CT6"
+          ],
+          [
+            "TCM",
+            "PT5B"
+          ],
+          [
+            "TCM",
+            "TC"
+          ],
+          [
+            "TCM",
+            "HTC"
+          ],
+          [
+            "TCM",
+            "TCM"
+          ]
+        ],
+        "conns_split": {},
+        "IClamp": {
+          "CT5A": {
+            "amp": 0.2811061829853486,
+            "dur": 15000.0
+          },
+          "CT5B": {
+            "amp": 0.2811521746117064,
+            "dur": 15000.0
+          },
+          "CT6": {
+            "amp": 0.28108070843753286,
+            "dur": 15000.0
+          },
+          "HTC": {
+            "amp": 4,
+            "dur": 15000.0
+          },
+          "IRE": {
+            "amp": 0.2,
+            "dur": 15000.0
+          },
+          "IREM": {
+            "amp": 0.2,
+            "dur": 15000.0
+          },
+          "IT2": {
+            "amp": 0.1826028861538529,
+            "dur": 15000.0
+          },
+          "IT3": {
+            "amp": 0.20736533596853907,
+            "dur": 15000.0
+          },
+          "IT5A": {
+            "amp": 0.09949009140570944,
+            "dur": 15000.0
+          },
+          "IT5B": {
+            "amp": 0.10708485376197718,
+            "dur": 15000.0
+          },
+          "IT6": {
+            "amp": 0.09601067195088177,
+            "dur": 15000.0
+          },
+          "ITP4": {
+            "amp": 0.214754445093032,
+            "dur": 15000.0
+          },
+          "ITS4": {
+            "amp": 0.2146776587814983,
+            "dur": 15000.0
+          },
+          "PT5B": {
+            "amp": 0.14307249038537465,
+            "dur": 15000.0
+          },
+          "TC": {
+            "amp": 4,
+            "dur": 15000.0
+          },
+          "TCM": {
+            "amp": 6,
+            "dur": 15000.0
+          },
+          "TI": {
+            "amp": 0.03,
+            "dur": 15000.0
+          },
+          "TIM": {
+            "amp": 0.03,
+            "dur": 15000.0
+          }
+        },
+        "wmult": 0.25,
+        "EEGain": 0.5,
+        "cache_efficient": true,
+        "runtime_params": null,
+        "ou_ctrl_params": null
+      },
+      "selected_settings_sha256": "a02bf05e17addb97c4e7900373bf0ccc6316af9bcb8bc5fec23f2900bd218436",
+      "summary_windows_s": [
+        [
+          10.0,
+          15.0
+        ]
+      ],
+      "seeds": [
+        1000,
+        1001,
+        1002,
+        1003,
+        1004,
+        1005,
+        1006,
+        1007,
+        1008,
+        1009,
+        1010,
+        1011,
+        1012,
+        1013,
+        1014
+      ]
+    },
+    "a1_ee_surr_corr": {
+      "path": "exp_results/batch_rxbkg_state1_mech1/net_newsec_ctrl_var_seed/exp_a1_ee_0_nseed_15_t_10.0_15.0_ictrl_wmult_0.25_ee_0.5",
+      "exists": true,
+      "result_files": [
+        "result_00000_seed_1000.json",
+        "result_00001_seed_1001.json",
+        "result_00002_seed_1002.json",
+        "result_00003_seed_1003.json",
+        "result_00004_seed_1004.json",
+        "result_00005_seed_1005.json",
+        "result_00006_seed_1006.json",
+        "result_00007_seed_1007.json",
+        "result_00008_seed_1008.json",
+        "result_00009_seed_1009.json",
+        "result_00010_seed_1010.json",
+        "result_00011_seed_1011.json",
+        "result_00012_seed_1012.json",
+        "result_00013_seed_1013.json",
+        "result_00014_seed_1014.json"
+      ],
+      "cfg_files": [
+        "cfg_00000_seed_1000.json",
+        "cfg_00001_seed_1001.json",
+        "cfg_00002_seed_1002.json",
+        "cfg_00003_seed_1003.json",
+        "cfg_00004_seed_1004.json",
+        "cfg_00005_seed_1005.json",
+        "cfg_00006_seed_1006.json",
+        "cfg_00007_seed_1007.json",
+        "cfg_00008_seed_1008.json",
+        "cfg_00009_seed_1009.json",
+        "cfg_00010_seed_1010.json",
+        "cfg_00011_seed_1011.json",
+        "cfg_00012_seed_1012.json",
+        "cfg_00013_seed_1013.json",
+        "cfg_00014_seed_1014.json"
+      ],
+      "outputs": {
+        "wmod_figs": [],
+        "rvec_figs": [
+          "NGF_00000_seed_1000.png",
+          "NGF_00001_seed_1001.png",
+          "NGF_00002_seed_1002.png",
+          "NGF_00003_seed_1003.png",
+          "NGF_00004_seed_1004.png",
+          "NGF_00005_seed_1005.png",
+          "NGF_00006_seed_1006.png",
+          "NGF_00007_seed_1007.png",
+          "NGF_00008_seed_1008.png",
+          "NGF_00009_seed_1009.png",
+          "NGF_00010_seed_1010.png",
+          "NGF_00011_seed_1011.png",
+          "NGF_00012_seed_1012.png",
+          "NGF_00013_seed_1013.png",
+          "NGF_00014_seed_1014.png",
+          "PV_00000_seed_1000.png",
+          "PV_00001_seed_1001.png",
+          "PV_00002_seed_1002.png",
+          "PV_00003_seed_1003.png",
+          "PV_00004_seed_1004.png",
+          "PV_00005_seed_1005.png",
+          "PV_00006_seed_1006.png",
+          "PV_00007_seed_1007.png",
+          "PV_00008_seed_1008.png",
+          "PV_00009_seed_1009.png",
+          "PV_00010_seed_1010.png",
+          "PV_00011_seed_1011.png",
+          "PV_00012_seed_1012.png",
+          "PV_00013_seed_1013.png",
+          "PV_00014_seed_1014.png",
+          "PYR_00000_seed_1000.png",
+          "PYR_00001_seed_1001.png",
+          "PYR_00002_seed_1002.png",
+          "PYR_00003_seed_1003.png",
+          "PYR_00004_seed_1004.png",
+          "PYR_00005_seed_1005.png",
+          "PYR_00006_seed_1006.png",
+          "PYR_00007_seed_1007.png",
+          "PYR_00008_seed_1008.png",
+          "PYR_00009_seed_1009.png",
+          "PYR_00010_seed_1010.png",
+          "PYR_00011_seed_1011.png",
+          "PYR_00012_seed_1012.png",
+          "PYR_00013_seed_1013.png",
+          "PYR_00014_seed_1014.png",
+          "SOM_00000_seed_1000.png",
+          "SOM_00001_seed_1001.png",
+          "SOM_00002_seed_1002.png",
+          "SOM_00003_seed_1003.png",
+          "SOM_00004_seed_1004.png",
+          "SOM_00005_seed_1005.png",
+          "SOM_00006_seed_1006.png",
+          "SOM_00007_seed_1007.png",
+          "SOM_00008_seed_1008.png",
+          "SOM_00009_seed_1009.png",
+          "SOM_00010_seed_1010.png",
+          "SOM_00011_seed_1011.png",
+          "SOM_00012_seed_1012.png",
+          "SOM_00013_seed_1013.png",
+          "SOM_00014_seed_1014.png",
+          "THAL_E_00000_seed_1000.png",
+          "THAL_E_00001_seed_1001.png",
+          "THAL_E_00002_seed_1002.png",
+          "THAL_E_00003_seed_1003.png",
+          "THAL_E_00004_seed_1004.png",
+          "THAL_E_00005_seed_1005.png",
+          "THAL_E_00006_seed_1006.png",
+          "THAL_E_00007_seed_1007.png",
+          "THAL_E_00008_seed_1008.png",
+          "THAL_E_00009_seed_1009.png",
+          "THAL_E_00010_seed_1010.png",
+          "THAL_E_00011_seed_1011.png",
+          "THAL_E_00012_seed_1012.png",
+          "THAL_E_00013_seed_1013.png",
+          "THAL_E_00014_seed_1014.png",
+          "THAL_I_00000_seed_1000.png",
+          "THAL_I_00001_seed_1001.png",
+          "THAL_I_00002_seed_1002.png",
+          "THAL_I_00003_seed_1003.png",
+          "THAL_I_00004_seed_1004.png",
+          "THAL_I_00005_seed_1005.png",
+          "THAL_I_00006_seed_1006.png",
+          "THAL_I_00007_seed_1007.png",
+          "THAL_I_00008_seed_1008.png",
+          "THAL_I_00009_seed_1009.png",
+          "THAL_I_00010_seed_1010.png",
+          "THAL_I_00011_seed_1011.png",
+          "THAL_I_00012_seed_1012.png",
+          "THAL_I_00013_seed_1013.png",
+          "THAL_I_00014_seed_1014.png",
+          "VIP_00000_seed_1000.png",
+          "VIP_00001_seed_1001.png",
+          "VIP_00002_seed_1002.png",
+          "VIP_00003_seed_1003.png",
+          "VIP_00004_seed_1004.png",
+          "VIP_00005_seed_1005.png",
+          "VIP_00006_seed_1006.png",
+          "VIP_00007_seed_1007.png",
+          "VIP_00008_seed_1008.png",
+          "VIP_00009_seed_1009.png",
+          "VIP_00010_seed_1010.png",
+          "VIP_00011_seed_1011.png",
+          "VIP_00012_seed_1012.png",
+          "VIP_00013_seed_1013.png",
+          "VIP_00014_seed_1014.png"
+        ],
+        "rvec_xr": [],
+        "sample_pickle": "exp_results/batch_rxbkg_state1_mech1/net_newsec_ctrl_var_seed/exp_a1_ee_0_nseed_15_t_10.0_15.0_ictrl_wmult_0.25_ee_0.5/pkl/data_00000_seed_1000.pkl",
+        "sample_pickle_bytes": 64963883
+      },
+      "cfg": {
+        "duration_s": 15.0,
+        "t0_calc_s": 10.0,
+        "pops_active": [
+          "IT2",
+          "IT3",
+          "ITP4",
+          "ITS4",
+          "IT5A",
+          "IT5B",
+          "IT6",
+          "CT5A",
+          "CT5B",
+          "CT6",
+          "PT5B",
+          "PV2",
+          "PV3",
+          "PV4",
+          "PV5A",
+          "PV5B",
+          "PV6",
+          "SOM2",
+          "SOM3",
+          "SOM4",
+          "SOM5A",
+          "SOM5B",
+          "SOM6",
+          "VIP2",
+          "VIP3",
+          "VIP4",
+          "VIP5A",
+          "VIP5B",
+          "VIP6",
+          "NGF1",
+          "NGF2",
+          "NGF3",
+          "NGF4",
+          "NGF5A",
+          "NGF5B",
+          "NGF6",
+          "TC",
+          "HTC",
+          "TI",
+          "IRE",
+          "TCM",
+          "TIM",
+          "IREM"
+        ],
+        "conns_frozen": [
+          [
+            "IT2",
+            "IT2"
+          ],
+          [
+            "IT2",
+            "IT3"
+          ],
+          [
+            "IT2",
+            "ITP4"
+          ],
+          [
+            "IT2",
+            "ITS4"
+          ],
+          [
+            "IT2",
+            "IT5A"
+          ],
+          [
+            "IT2",
+            "IT5B"
+          ],
+          [
+            "IT2",
+            "IT6"
+          ],
+          [
+            "IT2",
+            "CT5A"
+          ],
+          [
+            "IT2",
+            "CT5B"
+          ],
+          [
+            "IT2",
+            "CT6"
+          ],
+          [
+            "IT2",
+            "PT5B"
+          ],
+          [
+            "IT2",
+            "TC"
+          ],
+          [
+            "IT2",
+            "HTC"
+          ],
+          [
+            "IT2",
+            "TCM"
+          ],
+          [
+            "IT3",
+            "IT2"
+          ],
+          [
+            "IT3",
+            "IT3"
+          ],
+          [
+            "IT3",
+            "ITP4"
+          ],
+          [
+            "IT3",
+            "ITS4"
+          ],
+          [
+            "IT3",
+            "IT5A"
+          ],
+          [
+            "IT3",
+            "IT5B"
+          ],
+          [
+            "IT3",
+            "IT6"
+          ],
+          [
+            "IT3",
+            "CT5A"
+          ],
+          [
+            "IT3",
+            "CT5B"
+          ],
+          [
+            "IT3",
+            "CT6"
+          ],
+          [
+            "IT3",
+            "PT5B"
+          ],
+          [
+            "IT3",
+            "TC"
+          ],
+          [
+            "IT3",
+            "HTC"
+          ],
+          [
+            "IT3",
+            "TCM"
+          ],
+          [
+            "ITP4",
+            "IT2"
+          ],
+          [
+            "ITP4",
+            "IT3"
+          ],
+          [
+            "ITP4",
+            "ITP4"
+          ],
+          [
+            "ITP4",
+            "ITS4"
+          ],
+          [
+            "ITP4",
+            "IT5A"
+          ],
+          [
+            "ITP4",
+            "IT5B"
+          ],
+          [
+            "ITP4",
+            "IT6"
+          ],
+          [
+            "ITP4",
+            "CT5A"
+          ],
+          [
+            "ITP4",
+            "CT5B"
+          ],
+          [
+            "ITP4",
+            "CT6"
+          ],
+          [
+            "ITP4",
+            "PT5B"
+          ],
+          [
+            "ITP4",
+            "TC"
+          ],
+          [
+            "ITP4",
+            "HTC"
+          ],
+          [
+            "ITP4",
+            "TCM"
+          ],
+          [
+            "ITS4",
+            "IT2"
+          ],
+          [
+            "ITS4",
+            "IT3"
+          ],
+          [
+            "ITS4",
+            "ITP4"
+          ],
+          [
+            "ITS4",
+            "ITS4"
+          ],
+          [
+            "ITS4",
+            "IT5A"
+          ],
+          [
+            "ITS4",
+            "IT5B"
+          ],
+          [
+            "ITS4",
+            "IT6"
+          ],
+          [
+            "ITS4",
+            "CT5A"
+          ],
+          [
+            "ITS4",
+            "CT5B"
+          ],
+          [
+            "ITS4",
+            "CT6"
+          ],
+          [
+            "ITS4",
+            "PT5B"
+          ],
+          [
+            "ITS4",
+            "TC"
+          ],
+          [
+            "ITS4",
+            "HTC"
+          ],
+          [
+            "ITS4",
+            "TCM"
+          ],
+          [
+            "IT5A",
+            "IT2"
+          ],
+          [
+            "IT5A",
+            "IT3"
+          ],
+          [
+            "IT5A",
+            "ITP4"
+          ],
+          [
+            "IT5A",
+            "ITS4"
+          ],
+          [
+            "IT5A",
+            "IT5A"
+          ],
+          [
+            "IT5A",
+            "IT5B"
+          ],
+          [
+            "IT5A",
+            "IT6"
+          ],
+          [
+            "IT5A",
+            "CT5A"
+          ],
+          [
+            "IT5A",
+            "CT5B"
+          ],
+          [
+            "IT5A",
+            "CT6"
+          ],
+          [
+            "IT5A",
+            "PT5B"
+          ],
+          [
+            "IT5A",
+            "TC"
+          ],
+          [
+            "IT5A",
+            "HTC"
+          ],
+          [
+            "IT5A",
+            "TCM"
+          ],
+          [
+            "IT5B",
+            "IT2"
+          ],
+          [
+            "IT5B",
+            "IT3"
+          ],
+          [
+            "IT5B",
+            "ITP4"
+          ],
+          [
+            "IT5B",
+            "ITS4"
+          ],
+          [
+            "IT5B",
+            "IT5A"
+          ],
+          [
+            "IT5B",
+            "IT5B"
+          ],
+          [
+            "IT5B",
+            "IT6"
+          ],
+          [
+            "IT5B",
+            "CT5A"
+          ],
+          [
+            "IT5B",
+            "CT5B"
+          ],
+          [
+            "IT5B",
+            "CT6"
+          ],
+          [
+            "IT5B",
+            "PT5B"
+          ],
+          [
+            "IT5B",
+            "TC"
+          ],
+          [
+            "IT5B",
+            "HTC"
+          ],
+          [
+            "IT5B",
+            "TCM"
+          ],
+          [
+            "IT6",
+            "IT2"
+          ],
+          [
+            "IT6",
+            "IT3"
+          ],
+          [
+            "IT6",
+            "ITP4"
+          ],
+          [
+            "IT6",
+            "ITS4"
+          ],
+          [
+            "IT6",
+            "IT5A"
+          ],
+          [
+            "IT6",
+            "IT5B"
+          ],
+          [
+            "IT6",
+            "IT6"
+          ],
+          [
+            "IT6",
+            "CT5A"
+          ],
+          [
+            "IT6",
+            "CT5B"
+          ],
+          [
+            "IT6",
+            "CT6"
+          ],
+          [
+            "IT6",
+            "PT5B"
+          ],
+          [
+            "IT6",
+            "TC"
+          ],
+          [
+            "IT6",
+            "HTC"
+          ],
+          [
+            "IT6",
+            "TCM"
+          ],
+          [
+            "CT5A",
+            "IT2"
+          ],
+          [
+            "CT5A",
+            "IT3"
+          ],
+          [
+            "CT5A",
+            "ITP4"
+          ],
+          [
+            "CT5A",
+            "ITS4"
+          ],
+          [
+            "CT5A",
+            "IT5A"
+          ],
+          [
+            "CT5A",
+            "IT5B"
+          ],
+          [
+            "CT5A",
+            "IT6"
+          ],
+          [
+            "CT5A",
+            "CT5A"
+          ],
+          [
+            "CT5A",
+            "CT5B"
+          ],
+          [
+            "CT5A",
+            "CT6"
+          ],
+          [
+            "CT5A",
+            "PT5B"
+          ],
+          [
+            "CT5A",
+            "TC"
+          ],
+          [
+            "CT5A",
+            "HTC"
+          ],
+          [
+            "CT5A",
+            "TCM"
+          ],
+          [
+            "CT5B",
+            "IT2"
+          ],
+          [
+            "CT5B",
+            "IT3"
+          ],
+          [
+            "CT5B",
+            "ITP4"
+          ],
+          [
+            "CT5B",
+            "ITS4"
+          ],
+          [
+            "CT5B",
+            "IT5A"
+          ],
+          [
+            "CT5B",
+            "IT5B"
+          ],
+          [
+            "CT5B",
+            "IT6"
+          ],
+          [
+            "CT5B",
+            "CT5A"
+          ],
+          [
+            "CT5B",
+            "CT5B"
+          ],
+          [
+            "CT5B",
+            "CT6"
+          ],
+          [
+            "CT5B",
+            "PT5B"
+          ],
+          [
+            "CT5B",
+            "TC"
+          ],
+          [
+            "CT5B",
+            "HTC"
+          ],
+          [
+            "CT5B",
+            "TCM"
+          ],
+          [
+            "CT6",
+            "IT2"
+          ],
+          [
+            "CT6",
+            "IT3"
+          ],
+          [
+            "CT6",
+            "ITP4"
+          ],
+          [
+            "CT6",
+            "ITS4"
+          ],
+          [
+            "CT6",
+            "IT5A"
+          ],
+          [
+            "CT6",
+            "IT5B"
+          ],
+          [
+            "CT6",
+            "IT6"
+          ],
+          [
+            "CT6",
+            "CT5A"
+          ],
+          [
+            "CT6",
+            "CT5B"
+          ],
+          [
+            "CT6",
+            "CT6"
+          ],
+          [
+            "CT6",
+            "PT5B"
+          ],
+          [
+            "CT6",
+            "TC"
+          ],
+          [
+            "CT6",
+            "HTC"
+          ],
+          [
+            "CT6",
+            "TCM"
+          ],
+          [
+            "PT5B",
+            "IT2"
+          ],
+          [
+            "PT5B",
+            "IT3"
+          ],
+          [
+            "PT5B",
+            "ITP4"
+          ],
+          [
+            "PT5B",
+            "ITS4"
+          ],
+          [
+            "PT5B",
+            "IT5A"
+          ],
+          [
+            "PT5B",
+            "IT5B"
+          ],
+          [
+            "PT5B",
+            "IT6"
+          ],
+          [
+            "PT5B",
+            "CT5A"
+          ],
+          [
+            "PT5B",
+            "CT5B"
+          ],
+          [
+            "PT5B",
+            "CT6"
+          ],
+          [
+            "PT5B",
+            "PT5B"
+          ],
+          [
+            "PT5B",
+            "TC"
+          ],
+          [
+            "PT5B",
+            "HTC"
+          ],
+          [
+            "PT5B",
+            "TCM"
+          ],
+          [
+            "TC",
+            "IT2"
+          ],
+          [
+            "TC",
+            "IT3"
+          ],
+          [
+            "TC",
+            "ITP4"
+          ],
+          [
+            "TC",
+            "ITS4"
+          ],
+          [
+            "TC",
+            "IT5A"
+          ],
+          [
+            "TC",
+            "IT5B"
+          ],
+          [
+            "TC",
+            "IT6"
+          ],
+          [
+            "TC",
+            "CT5A"
+          ],
+          [
+            "TC",
+            "CT5B"
+          ],
+          [
+            "TC",
+            "CT6"
+          ],
+          [
+            "TC",
+            "PT5B"
+          ],
+          [
+            "TC",
+            "TC"
+          ],
+          [
+            "TC",
+            "HTC"
+          ],
+          [
+            "TC",
+            "TCM"
+          ],
+          [
+            "HTC",
+            "IT2"
+          ],
+          [
+            "HTC",
+            "IT3"
+          ],
+          [
+            "HTC",
+            "ITP4"
+          ],
+          [
+            "HTC",
+            "ITS4"
+          ],
+          [
+            "HTC",
+            "IT5A"
+          ],
+          [
+            "HTC",
+            "IT5B"
+          ],
+          [
+            "HTC",
+            "IT6"
+          ],
+          [
+            "HTC",
+            "CT5A"
+          ],
+          [
+            "HTC",
+            "CT5B"
+          ],
+          [
+            "HTC",
+            "CT6"
+          ],
+          [
+            "HTC",
+            "PT5B"
+          ],
+          [
+            "HTC",
+            "TC"
+          ],
+          [
+            "HTC",
+            "HTC"
+          ],
+          [
+            "HTC",
+            "TCM"
+          ],
+          [
+            "TCM",
+            "IT2"
+          ],
+          [
+            "TCM",
+            "IT3"
+          ],
+          [
+            "TCM",
+            "ITP4"
+          ],
+          [
+            "TCM",
+            "ITS4"
+          ],
+          [
+            "TCM",
+            "IT5A"
+          ],
+          [
+            "TCM",
+            "IT5B"
+          ],
+          [
+            "TCM",
+            "IT6"
+          ],
+          [
+            "TCM",
+            "CT5A"
+          ],
+          [
+            "TCM",
+            "CT5B"
+          ],
+          [
+            "TCM",
+            "CT6"
+          ],
+          [
+            "TCM",
+            "PT5B"
+          ],
+          [
+            "TCM",
+            "TC"
+          ],
+          [
+            "TCM",
+            "HTC"
+          ],
+          [
+            "TCM",
+            "TCM"
+          ]
+        ],
+        "conns_split": {},
+        "IClamp": {
+          "CT5A": {
+            "amp": 0.2811061829853486,
+            "dur": 15000.0
+          },
+          "CT5B": {
+            "amp": 0.2811521746117064,
+            "dur": 15000.0
+          },
+          "CT6": {
+            "amp": 0.28108070843753286,
+            "dur": 15000.0
+          },
+          "HTC": [
+            {
+              "amp": 4,
+              "dur": 15000.0
+            },
+            {
+              "amp": -0.15799162850300966,
+              "dur": 15000.0
+            }
+          ],
+          "IRE": [
+            {
+              "amp": 0.2,
+              "dur": 15000.0
+            },
+            {
+              "amp": -0.019262143816851655,
+              "dur": 15000.0
+            }
+          ],
+          "IREM": [
+            {
+              "amp": 0.2,
+              "dur": 15000.0
+            },
+            {
+              "amp": -0.03076673928626604,
+              "dur": 15000.0
+            }
+          ],
+          "IT2": {
+            "amp": 0.1826028861538529,
+            "dur": 15000.0
+          },
+          "IT3": {
+            "amp": 0.20736533596853907,
+            "dur": 15000.0
+          },
+          "IT5A": {
+            "amp": 0.09949009140570944,
+            "dur": 15000.0
+          },
+          "IT5B": {
+            "amp": 0.10708485376197718,
+            "dur": 15000.0
+          },
+          "IT6": {
+            "amp": 0.09601067195088177,
+            "dur": 15000.0
+          },
+          "ITP4": {
+            "amp": 0.214754445093032,
+            "dur": 15000.0
+          },
+          "ITS4": {
+            "amp": 0.2146776587814983,
+            "dur": 15000.0
+          },
+          "PT5B": {
+            "amp": 0.14307249038537465,
+            "dur": 15000.0
+          },
+          "TC": [
+            {
+              "amp": 4,
+              "dur": 15000.0
+            },
+            {
+              "amp": -0.23506264738553814,
+              "dur": 15000.0
+            }
+          ],
+          "TCM": [
+            {
+              "amp": 6,
+              "dur": 15000.0
+            },
+            {
+              "amp": -0.20883876990917746,
+              "dur": 15000.0
+            }
+          ],
+          "TI": [
+            {
+              "amp": 0.03,
+              "dur": 15000.0
+            },
+            {
+              "amp": -0.0004659604456170393,
+              "dur": 15000.0
+            }
+          ],
+          "TIM": [
+            {
+              "amp": 0.03,
+              "dur": 15000.0
+            },
+            {
+              "amp": -0.0008936951682445695,
+              "dur": 15000.0
+            }
+          ]
+        },
+        "wmult": 0.25,
+        "EEGain": 0.5,
+        "cache_efficient": true,
+        "runtime_params": null,
+        "ou_ctrl_params": null
+      },
+      "selected_settings_sha256": "a02bf05e17addb97c4e7900373bf0ccc6316af9bcb8bc5fec23f2900bd218436",
+      "summary_windows_s": [
+        [
+          10.0,
+          15.0
+        ]
+      ],
+      "seeds": [
+        1000,
+        1001,
+        1002,
+        1003,
+        1004,
+        1005,
+        1006,
+        1007,
+        1008,
+        1009,
+        1010,
+        1011,
+        1012,
+        1013,
+        1014
+      ]
+    }
+  },
+  "thal_local": {
+    "exp_core_full_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5": {
+      "cache": "dev_scratch/thal_frz/analysis/collected/exp_core_full_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5.nc",
+      "cfg": "dev_scratch/thal_frz/cfg/exp_core_full_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5__cfg_00000_seed_1000.json",
+      "bytes": 11120,
+      "seeds": [
+        1000,
+        1001,
+        1002,
+        1003,
+        1004,
+        1005,
+        1006,
+        1007,
+        1008,
+        1009,
+        1010,
+        1011,
+        1012,
+        1013,
+        1014
+      ],
+      "pops_active": [
+        "TC",
+        "HTC",
+        "TI",
+        "IRE"
+      ],
+      "duration_s": 10.0,
+      "window_s": [
+        7.0,
+        10.0
+      ],
+      "conns_frozen": [],
+      "conns_split": {},
+      "mean_absolute_bias_hz": 0.7994406058841259,
+      "mean_rates_hz": {
+        "TC": 9.509578544061302,
+        "HTC": 8.560233918128654,
+        "TI": 15.14945533769063,
+        "IRE": 15.978494623655914
+      }
+    },
+    "exp_irem_core_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5": {
+      "cache": "dev_scratch/thal_frz/analysis/collected/exp_irem_core_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5.nc",
+      "cfg": "dev_scratch/thal_frz/cfg/exp_irem_core_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5__cfg_00000_seed_1000.json",
+      "bytes": 11888,
+      "seeds": [
+        1000,
+        1001,
+        1002,
+        1003,
+        1004,
+        1005,
+        1006,
+        1007,
+        1008,
+        1009,
+        1010,
+        1011,
+        1012,
+        1013,
+        1014
+      ],
+      "pops_active": [
+        "TC",
+        "HTC",
+        "TI",
+        "IRE",
+        "TCM",
+        "TIM",
+        "IREM"
+      ],
+      "duration_s": 10.0,
+      "window_s": [
+        7.0,
+        10.0
+      ],
+      "conns_frozen": [
+        [
+          "IREM",
+          "TC"
+        ],
+        [
+          "IREM",
+          "HTC"
+        ],
+        [
+          "IREM",
+          "TI"
+        ],
+        [
+          "IREM",
+          "IRE"
+        ]
+      ],
+      "conns_split": {},
+      "mean_absolute_bias_hz": 1.1248424193230429,
+      "mean_rates_hz": {
+        "TC": 10.304214559386974,
+        "HTC": 8.094736842105263,
+        "TI": 15.115904139433553,
+        "IRE": 16.313548387096773,
+        "TCM": 4.7260215053763455,
+        "TIM": 9.440958605664488,
+        "IREM": 10.760430107526881
+      }
+    },
+    "exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5": {
+      "cache": "dev_scratch/thal_frz/analysis/collected/exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5.nc",
+      "cfg": "dev_scratch/thal_frz/cfg/exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5__cfg_00000_seed_1000.json",
+      "bytes": 11888,
+      "seeds": [
+        1000,
+        1001,
+        1002,
+        1003,
+        1004,
+        1005,
+        1006,
+        1007,
+        1008,
+        1009,
+        1010,
+        1011,
+        1012,
+        1013,
+        1014
+      ],
+      "pops_active": [
+        "TC",
+        "HTC",
+        "TI",
+        "IRE",
+        "TCM",
+        "TIM",
+        "IREM"
+      ],
+      "duration_s": 10.0,
+      "window_s": [
+        7.0,
+        10.0
+      ],
+      "conns_frozen": [
+        [
+          "IREM",
+          "IRE"
+        ]
+      ],
+      "conns_split": {},
+      "mean_absolute_bias_hz": 1.7169876458542228,
+      "mean_rates_hz": {
+        "TC": 12.141570881226054,
+        "HTC": 8.949122807017545,
+        "TI": 13.751633986928105,
+        "IRE": 16.188673835125446,
+        "TCM": 4.920716845878135,
+        "TIM": 9.366884531590413,
+        "IREM": 10.937347670250896
+      }
+    },
+    "exp_irem_tc_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5": {
+      "cache": "dev_scratch/thal_frz/analysis/collected/exp_irem_tc_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5.nc",
+      "cfg": "dev_scratch/thal_frz/cfg/exp_irem_tc_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5__cfg_00000_seed_1000.json",
+      "bytes": 11888,
+      "seeds": [
+        1000,
+        1001,
+        1002,
+        1003,
+        1004,
+        1005,
+        1006,
+        1007,
+        1008,
+        1009,
+        1010,
+        1011,
+        1012,
+        1013,
+        1014
+      ],
+      "pops_active": [
+        "TC",
+        "HTC",
+        "TI",
+        "IRE",
+        "TCM",
+        "TIM",
+        "IREM"
+      ],
+      "duration_s": 10.0,
+      "window_s": [
+        7.0,
+        10.0
+      ],
+      "conns_frozen": [
+        [
+          "IREM",
+          "TC"
+        ],
+        [
+          "IREM",
+          "HTC"
+        ]
+      ],
+      "conns_split": {},
+      "mean_absolute_bias_hz": 7.250162431604833,
+      "mean_rates_hz": {
+        "TC": 31.20344827586207,
+        "HTC": 24.368421052631575,
+        "TI": 11.90326797385621,
+        "IRE": 15.66551971326165,
+        "TCM": 4.84573476702509,
+        "TIM": 8.070152505446623,
+        "IREM": 12.641433691756275
+      }
+    },
+    "exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5": {
+      "cache": "dev_scratch/thal_frz/analysis/collected/exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5.nc",
+      "cfg": "dev_scratch/thal_frz/cfg/exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5__cfg_00000_seed_1000.json",
+      "bytes": 11888,
+      "seeds": [
+        1000,
+        1001,
+        1002,
+        1003,
+        1004,
+        1005,
+        1006,
+        1007,
+        1008,
+        1009,
+        1010,
+        1011,
+        1012,
+        1013,
+        1014
+      ],
+      "pops_active": [
+        "TC",
+        "HTC",
+        "TI",
+        "IRE",
+        "TCM",
+        "TIM",
+        "IREM"
+      ],
+      "duration_s": 10.0,
+      "window_s": [
+        7.0,
+        10.0
+      ],
+      "conns_frozen": [
+        [
+          "IREM",
+          "TI"
+        ]
+      ],
+      "conns_split": {},
+      "mean_absolute_bias_hz": 2.3823471404707175,
+      "mean_rates_hz": {
+        "TC": 14.379501915708813,
+        "HTC": 11.794152046783624,
+        "TI": 15.13115468409586,
+        "IRE": 15.623512544802866,
+        "TCM": 4.739211469534051,
+        "TIM": 8.72156862745098,
+        "IREM": 11.730465949820788
+      }
+    },
+    "exp_matx_core_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5": {
+      "cache": "dev_scratch/thal_frz/analysis/collected/exp_matx_core_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5.nc",
+      "cfg": "dev_scratch/thal_frz/cfg/exp_matx_core_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5__cfg_00000_seed_1000.json",
+      "bytes": 12400,
+      "seeds": [
+        1000,
+        1001,
+        1002,
+        1003,
+        1004,
+        1005,
+        1006,
+        1007,
+        1008,
+        1009,
+        1010,
+        1011,
+        1012,
+        1013,
+        1014
+      ],
+      "pops_active": [
+        "TC",
+        "HTC",
+        "TI",
+        "IRE",
+        "TCM",
+        "TIM",
+        "IREM"
+      ],
+      "duration_s": 10.0,
+      "window_s": [
+        7.0,
+        10.0
+      ],
+      "conns_frozen": [
+        [
+          "TCM",
+          "TC"
+        ],
+        [
+          "TCM",
+          "HTC"
+        ],
+        [
+          "TCM",
+          "TI"
+        ],
+        [
+          "TCM",
+          "IRE"
+        ],
+        [
+          "TIM",
+          "TC"
+        ],
+        [
+          "TIM",
+          "HTC"
+        ],
+        [
+          "TIM",
+          "TI"
+        ],
+        [
+          "TIM",
+          "IRE"
+        ],
+        [
+          "IREM",
+          "TC"
+        ],
+        [
+          "IREM",
+          "HTC"
+        ],
+        [
+          "IREM",
+          "TI"
+        ],
+        [
+          "IREM",
+          "IRE"
+        ]
+      ],
+      "conns_split": {},
+      "mean_absolute_bias_hz": 1.236682105454116,
+      "mean_rates_hz": {
+        "TC": 10.805172413793105,
+        "HTC": 8.22748538011696,
+        "TI": 14.698039215686276,
+        "IRE": 15.613189964157705,
+        "TCM": 4.82695340501792,
+        "TIM": 9.266230936819172,
+        "IREM": 11.148243727598565
+      }
+    },
+    "exp_matx_full_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5": {
+      "cache": "dev_scratch/thal_frz/analysis/collected/exp_matx_full_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5.nc",
+      "cfg": "dev_scratch/thal_frz/cfg/exp_matx_full_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5__cfg_00000_seed_1000.json",
+      "bytes": 10864,
+      "seeds": [
+        1000,
+        1001,
+        1002,
+        1003,
+        1004,
+        1005,
+        1006,
+        1007,
+        1008,
+        1009,
+        1010,
+        1011,
+        1012,
+        1013,
+        1014
+      ],
+      "pops_active": [
+        "TCM",
+        "TIM",
+        "IREM"
+      ],
+      "duration_s": 10.0,
+      "window_s": [
+        7.0,
+        10.0
+      ],
+      "conns_frozen": [],
+      "conns_split": {},
+      "mean_absolute_bias_hz": 0.9906004169887789,
+      "mean_rates_hz": {
+        "TCM": 3.6367025089605733,
+        "TIM": 9.485403050108934,
+        "IREM": 10.820501792114694
+      }
+    },
+    "exp_matx_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5": {
+      "cache": "dev_scratch/thal_frz/analysis/collected/exp_matx_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5.nc",
+      "cfg": "dev_scratch/thal_frz/cfg/exp_matx_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5__cfg_00000_seed_1000.json",
+      "bytes": 12144,
+      "seeds": [
+        1000,
+        1001,
+        1002,
+        1003,
+        1004,
+        1005,
+        1006,
+        1007,
+        1008,
+        1009,
+        1010,
+        1011,
+        1012,
+        1013,
+        1014
+      ],
+      "pops_active": [
+        "TC",
+        "HTC",
+        "TI",
+        "IRE",
+        "TCM",
+        "TIM",
+        "IREM"
+      ],
+      "duration_s": 10.0,
+      "window_s": [
+        7.0,
+        10.0
+      ],
+      "conns_frozen": [
+        [
+          "TCM",
+          "TI"
+        ],
+        [
+          "TIM",
+          "TI"
+        ],
+        [
+          "IREM",
+          "TI"
+        ]
+      ],
+      "conns_split": {},
+      "mean_absolute_bias_hz": 2.2568582998642546,
+      "mean_rates_hz": {
+        "TC": 14.148275862068964,
+        "HTC": 11.044444444444446,
+        "TI": 15.074945533769062,
+        "IRE": 15.695770609318997,
+        "TCM": 4.936774193548387,
+        "TIM": 8.765141612200436,
+        "IREM": 11.662939068100355
+      }
+    },
+    "exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5": {
+      "cache": "dev_scratch/thal_frz/analysis/collected/exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5.nc",
+      "cfg": "dev_scratch/thal_frz/cfg/exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5__cfg_00000_seed_1000.json",
+      "bytes": 14928,
+      "seeds": [
+        1000,
+        1001,
+        1002,
+        1003,
+        1004,
+        1005,
+        1006,
+        1007,
+        1008,
+        1009,
+        1010,
+        1011,
+        1012,
+        1013,
+        1014
+      ],
+      "pops_active": [
+        "TC",
+        "HTC",
+        "TCM",
+        "TI",
+        "TIM",
+        "IRE",
+        "IREM"
+      ],
+      "duration_s": 10.0,
+      "window_s": [
+        7.0,
+        10.0
+      ],
+      "conns_frozen": [],
+      "conns_split": {
+        "HTC, HTC": 0.5,
+        "HTC, IRE": 0.5,
+        "HTC, IREM": 0.5,
+        "HTC, TC": 0.5,
+        "HTC, TCM": 0.5,
+        "HTC, TI": 0.5,
+        "HTC, TIM": 0.5,
+        "IRE, HTC": 0.5,
+        "IRE, IRE": 0.5,
+        "IRE, IREM": 0.5,
+        "IRE, TC": 0.5,
+        "IRE, TCM": 0.5,
+        "IRE, TI": 0.5,
+        "IRE, TIM": 0.5,
+        "IREM, HTC": 0.5,
+        "IREM, IRE": 0.5,
+        "IREM, IREM": 0.5,
+        "IREM, TC": 0.5,
+        "IREM, TCM": 0.5,
+        "IREM, TI": 0.5,
+        "IREM, TIM": 0.5,
+        "TC, HTC": 0.5,
+        "TC, IRE": 0.5,
+        "TC, IREM": 0.5,
+        "TC, TC": 0.5,
+        "TC, TCM": 0.5,
+        "TC, TI": 0.5,
+        "TC, TIM": 0.5,
+        "TCM, HTC": 0.5,
+        "TCM, IRE": 0.5,
+        "TCM, IREM": 0.5,
+        "TCM, TC": 0.5,
+        "TCM, TCM": 0.5,
+        "TCM, TI": 0.5,
+        "TCM, TIM": 0.5,
+        "TI, HTC": 0.5,
+        "TI, IRE": 0.5,
+        "TI, IREM": 0.5,
+        "TI, TC": 0.5,
+        "TI, TCM": 0.5,
+        "TI, TI": 0.5,
+        "TI, TIM": 0.5,
+        "TIM, HTC": 0.5,
+        "TIM, IRE": 0.5,
+        "TIM, IREM": 0.5,
+        "TIM, TC": 0.5,
+        "TIM, TCM": 0.5,
+        "TIM, TI": 0.5,
+        "TIM, TIM": 0.5
+      },
+      "mean_absolute_bias_hz": 5.3155807548708855,
+      "mean_rates_hz": {
+        "TC": 21.85536398467433,
+        "HTC": 18.386549707602338,
+        "TCM": 3.7274551971326164,
+        "TI": 10.780827886710243,
+        "TIM": 7.79825708061002,
+        "IRE": 13.583942652329746,
+        "IREM": 13.402724014336917
+      },
+      "raw_source": "exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5",
+      "outputs": {
+        "wmod_figs": [
+          "wmod_00000_seed_1000.png",
+          "wmod_00001_seed_1001.png",
+          "wmod_00002_seed_1002.png",
+          "wmod_00003_seed_1003.png",
+          "wmod_00004_seed_1004.png",
+          "wmod_00005_seed_1005.png",
+          "wmod_00006_seed_1006.png",
+          "wmod_00007_seed_1007.png",
+          "wmod_00008_seed_1008.png",
+          "wmod_00009_seed_1009.png",
+          "wmod_00010_seed_1010.png",
+          "wmod_00011_seed_1011.png",
+          "wmod_00012_seed_1012.png",
+          "wmod_00013_seed_1013.png",
+          "wmod_00014_seed_1014.png"
+        ],
+        "rvec_figs": [
+          "NGF_00000_seed_1000.png",
+          "NGF_00001_seed_1001.png",
+          "NGF_00002_seed_1002.png",
+          "NGF_00003_seed_1003.png",
+          "NGF_00004_seed_1004.png",
+          "NGF_00005_seed_1005.png",
+          "NGF_00006_seed_1006.png",
+          "NGF_00007_seed_1007.png",
+          "NGF_00008_seed_1008.png",
+          "NGF_00009_seed_1009.png",
+          "NGF_00010_seed_1010.png",
+          "NGF_00011_seed_1011.png",
+          "NGF_00012_seed_1012.png",
+          "NGF_00013_seed_1013.png",
+          "NGF_00014_seed_1014.png",
+          "PV_00000_seed_1000.png",
+          "PV_00001_seed_1001.png",
+          "PV_00002_seed_1002.png",
+          "PV_00003_seed_1003.png",
+          "PV_00004_seed_1004.png",
+          "PV_00005_seed_1005.png",
+          "PV_00006_seed_1006.png",
+          "PV_00007_seed_1007.png",
+          "PV_00008_seed_1008.png",
+          "PV_00009_seed_1009.png",
+          "PV_00010_seed_1010.png",
+          "PV_00011_seed_1011.png",
+          "PV_00012_seed_1012.png",
+          "PV_00013_seed_1013.png",
+          "PV_00014_seed_1014.png",
+          "PYR_00000_seed_1000.png",
+          "PYR_00001_seed_1001.png",
+          "PYR_00002_seed_1002.png",
+          "PYR_00003_seed_1003.png",
+          "PYR_00004_seed_1004.png",
+          "PYR_00005_seed_1005.png",
+          "PYR_00006_seed_1006.png",
+          "PYR_00007_seed_1007.png",
+          "PYR_00008_seed_1008.png",
+          "PYR_00009_seed_1009.png",
+          "PYR_00010_seed_1010.png",
+          "PYR_00011_seed_1011.png",
+          "PYR_00012_seed_1012.png",
+          "PYR_00013_seed_1013.png",
+          "PYR_00014_seed_1014.png",
+          "SOM_00000_seed_1000.png",
+          "SOM_00001_seed_1001.png",
+          "SOM_00002_seed_1002.png",
+          "SOM_00003_seed_1003.png",
+          "SOM_00004_seed_1004.png",
+          "SOM_00005_seed_1005.png",
+          "SOM_00006_seed_1006.png",
+          "SOM_00007_seed_1007.png",
+          "SOM_00008_seed_1008.png",
+          "SOM_00009_seed_1009.png",
+          "SOM_00010_seed_1010.png",
+          "SOM_00011_seed_1011.png",
+          "SOM_00012_seed_1012.png",
+          "SOM_00013_seed_1013.png",
+          "SOM_00014_seed_1014.png",
+          "VIP_00000_seed_1000.png",
+          "VIP_00001_seed_1001.png",
+          "VIP_00002_seed_1002.png",
+          "VIP_00003_seed_1003.png",
+          "VIP_00004_seed_1004.png",
+          "VIP_00005_seed_1005.png",
+          "VIP_00006_seed_1006.png",
+          "VIP_00007_seed_1007.png",
+          "VIP_00008_seed_1008.png",
+          "VIP_00009_seed_1009.png",
+          "VIP_00010_seed_1010.png",
+          "VIP_00011_seed_1011.png",
+          "VIP_00012_seed_1012.png",
+          "VIP_00013_seed_1013.png",
+          "VIP_00014_seed_1014.png"
+        ],
+        "rvec_xr": [],
+        "sample_pickle": "exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5/pkl/data_00000_seed_1000.pkl",
+        "sample_pickle_bytes": 14075240
+      }
+    },
+    "exp_thal_ee_0_ire_tc_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5": {
+      "cache": "dev_scratch/thal_frz/analysis/collected/exp_thal_ee_0_ire_tc_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5.nc",
+      "cfg": "dev_scratch/thal_frz/cfg/exp_thal_ee_0_ire_tc_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5__cfg_00000_seed_1000.json",
+      "bytes": 12144,
+      "seeds": [
+        1000,
+        1001,
+        1002,
+        1003,
+        1004,
+        1005,
+        1006,
+        1007,
+        1008,
+        1009,
+        1010,
+        1011,
+        1012,
+        1013,
+        1014
+      ],
+      "pops_active": [
+        "TC",
+        "HTC",
+        "TCM",
+        "TI",
+        "TIM",
+        "IRE",
+        "IREM"
+      ],
+      "duration_s": 10.0,
+      "window_s": [
+        7.0,
+        10.0
+      ],
+      "conns_frozen": [
+        [
+          "IT2",
+          "IT2"
+        ],
+        [
+          "IT2",
+          "IT3"
+        ],
+        [
+          "IT2",
+          "ITP4"
+        ],
+        [
+          "IT2",
+          "ITS4"
+        ],
+        [
+          "IT2",
+          "IT5A"
+        ],
+        [
+          "IT2",
+          "IT5B"
+        ],
+        [
+          "IT2",
+          "IT6"
+        ],
+        [
+          "IT2",
+          "CT5A"
+        ],
+        [
+          "IT2",
+          "CT5B"
+        ],
+        [
+          "IT2",
+          "CT6"
+        ],
+        [
+          "IT2",
+          "PT5B"
+        ],
+        [
+          "IT2",
+          "TC"
+        ],
+        [
+          "IT2",
+          "HTC"
+        ],
+        [
+          "IT2",
+          "TCM"
+        ],
+        [
+          "IT3",
+          "IT2"
+        ],
+        [
+          "IT3",
+          "IT3"
+        ],
+        [
+          "IT3",
+          "ITP4"
+        ],
+        [
+          "IT3",
+          "ITS4"
+        ],
+        [
+          "IT3",
+          "IT5A"
+        ],
+        [
+          "IT3",
+          "IT5B"
+        ],
+        [
+          "IT3",
+          "IT6"
+        ],
+        [
+          "IT3",
+          "CT5A"
+        ],
+        [
+          "IT3",
+          "CT5B"
+        ],
+        [
+          "IT3",
+          "CT6"
+        ],
+        [
+          "IT3",
+          "PT5B"
+        ],
+        [
+          "IT3",
+          "TC"
+        ],
+        [
+          "IT3",
+          "HTC"
+        ],
+        [
+          "IT3",
+          "TCM"
+        ],
+        [
+          "ITP4",
+          "IT2"
+        ],
+        [
+          "ITP4",
+          "IT3"
+        ],
+        [
+          "ITP4",
+          "ITP4"
+        ],
+        [
+          "ITP4",
+          "ITS4"
+        ],
+        [
+          "ITP4",
+          "IT5A"
+        ],
+        [
+          "ITP4",
+          "IT5B"
+        ],
+        [
+          "ITP4",
+          "IT6"
+        ],
+        [
+          "ITP4",
+          "CT5A"
+        ],
+        [
+          "ITP4",
+          "CT5B"
+        ],
+        [
+          "ITP4",
+          "CT6"
+        ],
+        [
+          "ITP4",
+          "PT5B"
+        ],
+        [
+          "ITP4",
+          "TC"
+        ],
+        [
+          "ITP4",
+          "HTC"
+        ],
+        [
+          "ITP4",
+          "TCM"
+        ],
+        [
+          "ITS4",
+          "IT2"
+        ],
+        [
+          "ITS4",
+          "IT3"
+        ],
+        [
+          "ITS4",
+          "ITP4"
+        ],
+        [
+          "ITS4",
+          "ITS4"
+        ],
+        [
+          "ITS4",
+          "IT5A"
+        ],
+        [
+          "ITS4",
+          "IT5B"
+        ],
+        [
+          "ITS4",
+          "IT6"
+        ],
+        [
+          "ITS4",
+          "CT5A"
+        ],
+        [
+          "ITS4",
+          "CT5B"
+        ],
+        [
+          "ITS4",
+          "CT6"
+        ],
+        [
+          "ITS4",
+          "PT5B"
+        ],
+        [
+          "ITS4",
+          "TC"
+        ],
+        [
+          "ITS4",
+          "HTC"
+        ],
+        [
+          "ITS4",
+          "TCM"
+        ],
+        [
+          "IT5A",
+          "IT2"
+        ],
+        [
+          "IT5A",
+          "IT3"
+        ],
+        [
+          "IT5A",
+          "ITP4"
+        ],
+        [
+          "IT5A",
+          "ITS4"
+        ],
+        [
+          "IT5A",
+          "IT5A"
+        ],
+        [
+          "IT5A",
+          "IT5B"
+        ],
+        [
+          "IT5A",
+          "IT6"
+        ],
+        [
+          "IT5A",
+          "CT5A"
+        ],
+        [
+          "IT5A",
+          "CT5B"
+        ],
+        [
+          "IT5A",
+          "CT6"
+        ],
+        [
+          "IT5A",
+          "PT5B"
+        ],
+        [
+          "IT5A",
+          "TC"
+        ],
+        [
+          "IT5A",
+          "HTC"
+        ],
+        [
+          "IT5A",
+          "TCM"
+        ],
+        [
+          "IT5B",
+          "IT2"
+        ],
+        [
+          "IT5B",
+          "IT3"
+        ],
+        [
+          "IT5B",
+          "ITP4"
+        ],
+        [
+          "IT5B",
+          "ITS4"
+        ],
+        [
+          "IT5B",
+          "IT5A"
+        ],
+        [
+          "IT5B",
+          "IT5B"
+        ],
+        [
+          "IT5B",
+          "IT6"
+        ],
+        [
+          "IT5B",
+          "CT5A"
+        ],
+        [
+          "IT5B",
+          "CT5B"
+        ],
+        [
+          "IT5B",
+          "CT6"
+        ],
+        [
+          "IT5B",
+          "PT5B"
+        ],
+        [
+          "IT5B",
+          "TC"
+        ],
+        [
+          "IT5B",
+          "HTC"
+        ],
+        [
+          "IT5B",
+          "TCM"
+        ],
+        [
+          "IT6",
+          "IT2"
+        ],
+        [
+          "IT6",
+          "IT3"
+        ],
+        [
+          "IT6",
+          "ITP4"
+        ],
+        [
+          "IT6",
+          "ITS4"
+        ],
+        [
+          "IT6",
+          "IT5A"
+        ],
+        [
+          "IT6",
+          "IT5B"
+        ],
+        [
+          "IT6",
+          "IT6"
+        ],
+        [
+          "IT6",
+          "CT5A"
+        ],
+        [
+          "IT6",
+          "CT5B"
+        ],
+        [
+          "IT6",
+          "CT6"
+        ],
+        [
+          "IT6",
+          "PT5B"
+        ],
+        [
+          "IT6",
+          "TC"
+        ],
+        [
+          "IT6",
+          "HTC"
+        ],
+        [
+          "IT6",
+          "TCM"
+        ],
+        [
+          "CT5A",
+          "IT2"
+        ],
+        [
+          "CT5A",
+          "IT3"
+        ],
+        [
+          "CT5A",
+          "ITP4"
+        ],
+        [
+          "CT5A",
+          "ITS4"
+        ],
+        [
+          "CT5A",
+          "IT5A"
+        ],
+        [
+          "CT5A",
+          "IT5B"
+        ],
+        [
+          "CT5A",
+          "IT6"
+        ],
+        [
+          "CT5A",
+          "CT5A"
+        ],
+        [
+          "CT5A",
+          "CT5B"
+        ],
+        [
+          "CT5A",
+          "CT6"
+        ],
+        [
+          "CT5A",
+          "PT5B"
+        ],
+        [
+          "CT5A",
+          "TC"
+        ],
+        [
+          "CT5A",
+          "HTC"
+        ],
+        [
+          "CT5A",
+          "TCM"
+        ],
+        [
+          "CT5B",
+          "IT2"
+        ],
+        [
+          "CT5B",
+          "IT3"
+        ],
+        [
+          "CT5B",
+          "ITP4"
+        ],
+        [
+          "CT5B",
+          "ITS4"
+        ],
+        [
+          "CT5B",
+          "IT5A"
+        ],
+        [
+          "CT5B",
+          "IT5B"
+        ],
+        [
+          "CT5B",
+          "IT6"
+        ],
+        [
+          "CT5B",
+          "CT5A"
+        ],
+        [
+          "CT5B",
+          "CT5B"
+        ],
+        [
+          "CT5B",
+          "CT6"
+        ],
+        [
+          "CT5B",
+          "PT5B"
+        ],
+        [
+          "CT5B",
+          "TC"
+        ],
+        [
+          "CT5B",
+          "HTC"
+        ],
+        [
+          "CT5B",
+          "TCM"
+        ],
+        [
+          "CT6",
+          "IT2"
+        ],
+        [
+          "CT6",
+          "IT3"
+        ],
+        [
+          "CT6",
+          "ITP4"
+        ],
+        [
+          "CT6",
+          "ITS4"
+        ],
+        [
+          "CT6",
+          "IT5A"
+        ],
+        [
+          "CT6",
+          "IT5B"
+        ],
+        [
+          "CT6",
+          "IT6"
+        ],
+        [
+          "CT6",
+          "CT5A"
+        ],
+        [
+          "CT6",
+          "CT5B"
+        ],
+        [
+          "CT6",
+          "CT6"
+        ],
+        [
+          "CT6",
+          "PT5B"
+        ],
+        [
+          "CT6",
+          "TC"
+        ],
+        [
+          "CT6",
+          "HTC"
+        ],
+        [
+          "CT6",
+          "TCM"
+        ],
+        [
+          "PT5B",
+          "IT2"
+        ],
+        [
+          "PT5B",
+          "IT3"
+        ],
+        [
+          "PT5B",
+          "ITP4"
+        ],
+        [
+          "PT5B",
+          "ITS4"
+        ],
+        [
+          "PT5B",
+          "IT5A"
+        ],
+        [
+          "PT5B",
+          "IT5B"
+        ],
+        [
+          "PT5B",
+          "IT6"
+        ],
+        [
+          "PT5B",
+          "CT5A"
+        ],
+        [
+          "PT5B",
+          "CT5B"
+        ],
+        [
+          "PT5B",
+          "CT6"
+        ],
+        [
+          "PT5B",
+          "PT5B"
+        ],
+        [
+          "PT5B",
+          "TC"
+        ],
+        [
+          "PT5B",
+          "HTC"
+        ],
+        [
+          "PT5B",
+          "TCM"
+        ],
+        [
+          "TC",
+          "IT2"
+        ],
+        [
+          "TC",
+          "IT3"
+        ],
+        [
+          "TC",
+          "ITP4"
+        ],
+        [
+          "TC",
+          "ITS4"
+        ],
+        [
+          "TC",
+          "IT5A"
+        ],
+        [
+          "TC",
+          "IT5B"
+        ],
+        [
+          "TC",
+          "IT6"
+        ],
+        [
+          "TC",
+          "CT5A"
+        ],
+        [
+          "TC",
+          "CT5B"
+        ],
+        [
+          "TC",
+          "CT6"
+        ],
+        [
+          "TC",
+          "PT5B"
+        ],
+        [
+          "TC",
+          "TC"
+        ],
+        [
+          "TC",
+          "HTC"
+        ],
+        [
+          "TC",
+          "TCM"
+        ],
+        [
+          "HTC",
+          "IT2"
+        ],
+        [
+          "HTC",
+          "IT3"
+        ],
+        [
+          "HTC",
+          "ITP4"
+        ],
+        [
+          "HTC",
+          "ITS4"
+        ],
+        [
+          "HTC",
+          "IT5A"
+        ],
+        [
+          "HTC",
+          "IT5B"
+        ],
+        [
+          "HTC",
+          "IT6"
+        ],
+        [
+          "HTC",
+          "CT5A"
+        ],
+        [
+          "HTC",
+          "CT5B"
+        ],
+        [
+          "HTC",
+          "CT6"
+        ],
+        [
+          "HTC",
+          "PT5B"
+        ],
+        [
+          "HTC",
+          "TC"
+        ],
+        [
+          "HTC",
+          "HTC"
+        ],
+        [
+          "HTC",
+          "TCM"
+        ],
+        [
+          "TCM",
+          "IT2"
+        ],
+        [
+          "TCM",
+          "IT3"
+        ],
+        [
+          "TCM",
+          "ITP4"
+        ],
+        [
+          "TCM",
+          "ITS4"
+        ],
+        [
+          "TCM",
+          "IT5A"
+        ],
+        [
+          "TCM",
+          "IT5B"
+        ],
+        [
+          "TCM",
+          "IT6"
+        ],
+        [
+          "TCM",
+          "CT5A"
+        ],
+        [
+          "TCM",
+          "CT5B"
+        ],
+        [
+          "TCM",
+          "CT6"
+        ],
+        [
+          "TCM",
+          "PT5B"
+        ],
+        [
+          "TCM",
+          "TC"
+        ],
+        [
+          "TCM",
+          "HTC"
+        ],
+        [
+          "TCM",
+          "TCM"
+        ],
+        [
+          "IRE",
+          "TC"
+        ],
+        [
+          "IRE",
+          "HTC"
+        ],
+        [
+          "IRE",
+          "TCM"
+        ],
+        [
+          "IREM",
+          "TC"
+        ],
+        [
+          "IREM",
+          "HTC"
+        ],
+        [
+          "IREM",
+          "TCM"
+        ]
+      ],
+      "conns_split": {},
+      "mean_absolute_bias_hz": 23.17547321614541,
+      "mean_rates_hz": {
+        "TC": 49.13697318007663,
+        "HTC": 38.6374269005848,
+        "TCM": 57.40430107526881,
+        "TI": 4.069716775599129,
+        "TIM": 3.6187363834422657,
+        "IRE": 10.164301075268817,
+        "IREM": 22.90236559139785
+      }
+    },
+    "exp_thal_ee_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5": {
+      "cache": "dev_scratch/thal_frz/analysis/collected/exp_thal_ee_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5.nc",
+      "cfg": "dev_scratch/thal_frz/cfg/exp_thal_ee_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5__cfg_00000_seed_1000.json",
+      "bytes": 11632,
+      "seeds": [
+        1000,
+        1001,
+        1002,
+        1003,
+        1004,
+        1005,
+        1006,
+        1007,
+        1008,
+        1009,
+        1010,
+        1011,
+        1012,
+        1013,
+        1014
+      ],
+      "pops_active": [
+        "TC",
+        "HTC",
+        "TCM",
+        "TI",
+        "TIM",
+        "IRE",
+        "IREM"
+      ],
+      "duration_s": 10.0,
+      "window_s": [
+        7.0,
+        10.0
+      ],
+      "conns_frozen": [
+        [
+          "IT2",
+          "IT2"
+        ],
+        [
+          "IT2",
+          "IT3"
+        ],
+        [
+          "IT2",
+          "ITP4"
+        ],
+        [
+          "IT2",
+          "ITS4"
+        ],
+        [
+          "IT2",
+          "IT5A"
+        ],
+        [
+          "IT2",
+          "IT5B"
+        ],
+        [
+          "IT2",
+          "IT6"
+        ],
+        [
+          "IT2",
+          "CT5A"
+        ],
+        [
+          "IT2",
+          "CT5B"
+        ],
+        [
+          "IT2",
+          "CT6"
+        ],
+        [
+          "IT2",
+          "PT5B"
+        ],
+        [
+          "IT2",
+          "TC"
+        ],
+        [
+          "IT2",
+          "HTC"
+        ],
+        [
+          "IT2",
+          "TCM"
+        ],
+        [
+          "IT3",
+          "IT2"
+        ],
+        [
+          "IT3",
+          "IT3"
+        ],
+        [
+          "IT3",
+          "ITP4"
+        ],
+        [
+          "IT3",
+          "ITS4"
+        ],
+        [
+          "IT3",
+          "IT5A"
+        ],
+        [
+          "IT3",
+          "IT5B"
+        ],
+        [
+          "IT3",
+          "IT6"
+        ],
+        [
+          "IT3",
+          "CT5A"
+        ],
+        [
+          "IT3",
+          "CT5B"
+        ],
+        [
+          "IT3",
+          "CT6"
+        ],
+        [
+          "IT3",
+          "PT5B"
+        ],
+        [
+          "IT3",
+          "TC"
+        ],
+        [
+          "IT3",
+          "HTC"
+        ],
+        [
+          "IT3",
+          "TCM"
+        ],
+        [
+          "ITP4",
+          "IT2"
+        ],
+        [
+          "ITP4",
+          "IT3"
+        ],
+        [
+          "ITP4",
+          "ITP4"
+        ],
+        [
+          "ITP4",
+          "ITS4"
+        ],
+        [
+          "ITP4",
+          "IT5A"
+        ],
+        [
+          "ITP4",
+          "IT5B"
+        ],
+        [
+          "ITP4",
+          "IT6"
+        ],
+        [
+          "ITP4",
+          "CT5A"
+        ],
+        [
+          "ITP4",
+          "CT5B"
+        ],
+        [
+          "ITP4",
+          "CT6"
+        ],
+        [
+          "ITP4",
+          "PT5B"
+        ],
+        [
+          "ITP4",
+          "TC"
+        ],
+        [
+          "ITP4",
+          "HTC"
+        ],
+        [
+          "ITP4",
+          "TCM"
+        ],
+        [
+          "ITS4",
+          "IT2"
+        ],
+        [
+          "ITS4",
+          "IT3"
+        ],
+        [
+          "ITS4",
+          "ITP4"
+        ],
+        [
+          "ITS4",
+          "ITS4"
+        ],
+        [
+          "ITS4",
+          "IT5A"
+        ],
+        [
+          "ITS4",
+          "IT5B"
+        ],
+        [
+          "ITS4",
+          "IT6"
+        ],
+        [
+          "ITS4",
+          "CT5A"
+        ],
+        [
+          "ITS4",
+          "CT5B"
+        ],
+        [
+          "ITS4",
+          "CT6"
+        ],
+        [
+          "ITS4",
+          "PT5B"
+        ],
+        [
+          "ITS4",
+          "TC"
+        ],
+        [
+          "ITS4",
+          "HTC"
+        ],
+        [
+          "ITS4",
+          "TCM"
+        ],
+        [
+          "IT5A",
+          "IT2"
+        ],
+        [
+          "IT5A",
+          "IT3"
+        ],
+        [
+          "IT5A",
+          "ITP4"
+        ],
+        [
+          "IT5A",
+          "ITS4"
+        ],
+        [
+          "IT5A",
+          "IT5A"
+        ],
+        [
+          "IT5A",
+          "IT5B"
+        ],
+        [
+          "IT5A",
+          "IT6"
+        ],
+        [
+          "IT5A",
+          "CT5A"
+        ],
+        [
+          "IT5A",
+          "CT5B"
+        ],
+        [
+          "IT5A",
+          "CT6"
+        ],
+        [
+          "IT5A",
+          "PT5B"
+        ],
+        [
+          "IT5A",
+          "TC"
+        ],
+        [
+          "IT5A",
+          "HTC"
+        ],
+        [
+          "IT5A",
+          "TCM"
+        ],
+        [
+          "IT5B",
+          "IT2"
+        ],
+        [
+          "IT5B",
+          "IT3"
+        ],
+        [
+          "IT5B",
+          "ITP4"
+        ],
+        [
+          "IT5B",
+          "ITS4"
+        ],
+        [
+          "IT5B",
+          "IT5A"
+        ],
+        [
+          "IT5B",
+          "IT5B"
+        ],
+        [
+          "IT5B",
+          "IT6"
+        ],
+        [
+          "IT5B",
+          "CT5A"
+        ],
+        [
+          "IT5B",
+          "CT5B"
+        ],
+        [
+          "IT5B",
+          "CT6"
+        ],
+        [
+          "IT5B",
+          "PT5B"
+        ],
+        [
+          "IT5B",
+          "TC"
+        ],
+        [
+          "IT5B",
+          "HTC"
+        ],
+        [
+          "IT5B",
+          "TCM"
+        ],
+        [
+          "IT6",
+          "IT2"
+        ],
+        [
+          "IT6",
+          "IT3"
+        ],
+        [
+          "IT6",
+          "ITP4"
+        ],
+        [
+          "IT6",
+          "ITS4"
+        ],
+        [
+          "IT6",
+          "IT5A"
+        ],
+        [
+          "IT6",
+          "IT5B"
+        ],
+        [
+          "IT6",
+          "IT6"
+        ],
+        [
+          "IT6",
+          "CT5A"
+        ],
+        [
+          "IT6",
+          "CT5B"
+        ],
+        [
+          "IT6",
+          "CT6"
+        ],
+        [
+          "IT6",
+          "PT5B"
+        ],
+        [
+          "IT6",
+          "TC"
+        ],
+        [
+          "IT6",
+          "HTC"
+        ],
+        [
+          "IT6",
+          "TCM"
+        ],
+        [
+          "CT5A",
+          "IT2"
+        ],
+        [
+          "CT5A",
+          "IT3"
+        ],
+        [
+          "CT5A",
+          "ITP4"
+        ],
+        [
+          "CT5A",
+          "ITS4"
+        ],
+        [
+          "CT5A",
+          "IT5A"
+        ],
+        [
+          "CT5A",
+          "IT5B"
+        ],
+        [
+          "CT5A",
+          "IT6"
+        ],
+        [
+          "CT5A",
+          "CT5A"
+        ],
+        [
+          "CT5A",
+          "CT5B"
+        ],
+        [
+          "CT5A",
+          "CT6"
+        ],
+        [
+          "CT5A",
+          "PT5B"
+        ],
+        [
+          "CT5A",
+          "TC"
+        ],
+        [
+          "CT5A",
+          "HTC"
+        ],
+        [
+          "CT5A",
+          "TCM"
+        ],
+        [
+          "CT5B",
+          "IT2"
+        ],
+        [
+          "CT5B",
+          "IT3"
+        ],
+        [
+          "CT5B",
+          "ITP4"
+        ],
+        [
+          "CT5B",
+          "ITS4"
+        ],
+        [
+          "CT5B",
+          "IT5A"
+        ],
+        [
+          "CT5B",
+          "IT5B"
+        ],
+        [
+          "CT5B",
+          "IT6"
+        ],
+        [
+          "CT5B",
+          "CT5A"
+        ],
+        [
+          "CT5B",
+          "CT5B"
+        ],
+        [
+          "CT5B",
+          "CT6"
+        ],
+        [
+          "CT5B",
+          "PT5B"
+        ],
+        [
+          "CT5B",
+          "TC"
+        ],
+        [
+          "CT5B",
+          "HTC"
+        ],
+        [
+          "CT5B",
+          "TCM"
+        ],
+        [
+          "CT6",
+          "IT2"
+        ],
+        [
+          "CT6",
+          "IT3"
+        ],
+        [
+          "CT6",
+          "ITP4"
+        ],
+        [
+          "CT6",
+          "ITS4"
+        ],
+        [
+          "CT6",
+          "IT5A"
+        ],
+        [
+          "CT6",
+          "IT5B"
+        ],
+        [
+          "CT6",
+          "IT6"
+        ],
+        [
+          "CT6",
+          "CT5A"
+        ],
+        [
+          "CT6",
+          "CT5B"
+        ],
+        [
+          "CT6",
+          "CT6"
+        ],
+        [
+          "CT6",
+          "PT5B"
+        ],
+        [
+          "CT6",
+          "TC"
+        ],
+        [
+          "CT6",
+          "HTC"
+        ],
+        [
+          "CT6",
+          "TCM"
+        ],
+        [
+          "PT5B",
+          "IT2"
+        ],
+        [
+          "PT5B",
+          "IT3"
+        ],
+        [
+          "PT5B",
+          "ITP4"
+        ],
+        [
+          "PT5B",
+          "ITS4"
+        ],
+        [
+          "PT5B",
+          "IT5A"
+        ],
+        [
+          "PT5B",
+          "IT5B"
+        ],
+        [
+          "PT5B",
+          "IT6"
+        ],
+        [
+          "PT5B",
+          "CT5A"
+        ],
+        [
+          "PT5B",
+          "CT5B"
+        ],
+        [
+          "PT5B",
+          "CT6"
+        ],
+        [
+          "PT5B",
+          "PT5B"
+        ],
+        [
+          "PT5B",
+          "TC"
+        ],
+        [
+          "PT5B",
+          "HTC"
+        ],
+        [
+          "PT5B",
+          "TCM"
+        ],
+        [
+          "TC",
+          "IT2"
+        ],
+        [
+          "TC",
+          "IT3"
+        ],
+        [
+          "TC",
+          "ITP4"
+        ],
+        [
+          "TC",
+          "ITS4"
+        ],
+        [
+          "TC",
+          "IT5A"
+        ],
+        [
+          "TC",
+          "IT5B"
+        ],
+        [
+          "TC",
+          "IT6"
+        ],
+        [
+          "TC",
+          "CT5A"
+        ],
+        [
+          "TC",
+          "CT5B"
+        ],
+        [
+          "TC",
+          "CT6"
+        ],
+        [
+          "TC",
+          "PT5B"
+        ],
+        [
+          "TC",
+          "TC"
+        ],
+        [
+          "TC",
+          "HTC"
+        ],
+        [
+          "TC",
+          "TCM"
+        ],
+        [
+          "HTC",
+          "IT2"
+        ],
+        [
+          "HTC",
+          "IT3"
+        ],
+        [
+          "HTC",
+          "ITP4"
+        ],
+        [
+          "HTC",
+          "ITS4"
+        ],
+        [
+          "HTC",
+          "IT5A"
+        ],
+        [
+          "HTC",
+          "IT5B"
+        ],
+        [
+          "HTC",
+          "IT6"
+        ],
+        [
+          "HTC",
+          "CT5A"
+        ],
+        [
+          "HTC",
+          "CT5B"
+        ],
+        [
+          "HTC",
+          "CT6"
+        ],
+        [
+          "HTC",
+          "PT5B"
+        ],
+        [
+          "HTC",
+          "TC"
+        ],
+        [
+          "HTC",
+          "HTC"
+        ],
+        [
+          "HTC",
+          "TCM"
+        ],
+        [
+          "TCM",
+          "IT2"
+        ],
+        [
+          "TCM",
+          "IT3"
+        ],
+        [
+          "TCM",
+          "ITP4"
+        ],
+        [
+          "TCM",
+          "ITS4"
+        ],
+        [
+          "TCM",
+          "IT5A"
+        ],
+        [
+          "TCM",
+          "IT5B"
+        ],
+        [
+          "TCM",
+          "IT6"
+        ],
+        [
+          "TCM",
+          "CT5A"
+        ],
+        [
+          "TCM",
+          "CT5B"
+        ],
+        [
+          "TCM",
+          "CT6"
+        ],
+        [
+          "TCM",
+          "PT5B"
+        ],
+        [
+          "TCM",
+          "TC"
+        ],
+        [
+          "TCM",
+          "HTC"
+        ],
+        [
+          "TCM",
+          "TCM"
+        ]
+      ],
+      "conns_split": {},
+      "mean_absolute_bias_hz": 5.315951502601443,
+      "mean_rates_hz": {
+        "TC": 21.883716475095788,
+        "HTC": 18.153216374269007,
+        "TCM": 3.741362007168459,
+        "TI": 10.754248366013071,
+        "TIM": 7.759912854030502,
+        "IRE": 13.504659498207888,
+        "IREM": 13.452186379928314
+      }
+    },
+    "exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5": {
+      "cache": "dev_scratch/thal_frz/analysis/collected/exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5.nc",
+      "cfg": "dev_scratch/thal_frz/cfg/exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5__cfg_00000_seed_1000.json",
+      "bytes": 11632,
+      "seeds": [
+        1000,
+        1001,
+        1002,
+        1003,
+        1004,
+        1005,
+        1006,
+        1007,
+        1008,
+        1009,
+        1010,
+        1011,
+        1012,
+        1013,
+        1014
+      ],
+      "pops_active": [
+        "TC",
+        "HTC",
+        "TCM",
+        "TI",
+        "TIM",
+        "IRE",
+        "IREM"
+      ],
+      "duration_s": 10.0,
+      "window_s": [
+        7.0,
+        10.0
+      ],
+      "conns_frozen": [],
+      "conns_split": {},
+      "mean_absolute_bias_hz": 5.442540098710938,
+      "mean_rates_hz": {
+        "TC": 22.29272030651341,
+        "HTC": 18.51345029239766,
+        "TCM": 3.670394265232974,
+        "TI": 10.657516339869282,
+        "TIM": 7.753812636165577,
+        "IRE": 13.458637992831541,
+        "IREM": 13.491182795698924
+      },
+      "raw_source": "exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5",
+      "outputs": {
+        "wmod_figs": [],
+        "rvec_figs": [
+          "NGF_00000_seed_1000.png",
+          "NGF_00001_seed_1001.png",
+          "NGF_00002_seed_1002.png",
+          "NGF_00003_seed_1003.png",
+          "NGF_00004_seed_1004.png",
+          "NGF_00005_seed_1005.png",
+          "NGF_00006_seed_1006.png",
+          "NGF_00007_seed_1007.png",
+          "NGF_00008_seed_1008.png",
+          "NGF_00009_seed_1009.png",
+          "NGF_00010_seed_1010.png",
+          "NGF_00011_seed_1011.png",
+          "NGF_00012_seed_1012.png",
+          "NGF_00013_seed_1013.png",
+          "NGF_00014_seed_1014.png",
+          "PV_00000_seed_1000.png",
+          "PV_00001_seed_1001.png",
+          "PV_00002_seed_1002.png",
+          "PV_00003_seed_1003.png",
+          "PV_00004_seed_1004.png",
+          "PV_00005_seed_1005.png",
+          "PV_00006_seed_1006.png",
+          "PV_00007_seed_1007.png",
+          "PV_00008_seed_1008.png",
+          "PV_00009_seed_1009.png",
+          "PV_00010_seed_1010.png",
+          "PV_00011_seed_1011.png",
+          "PV_00012_seed_1012.png",
+          "PV_00013_seed_1013.png",
+          "PV_00014_seed_1014.png",
+          "PYR_00000_seed_1000.png",
+          "PYR_00001_seed_1001.png",
+          "PYR_00002_seed_1002.png",
+          "PYR_00003_seed_1003.png",
+          "PYR_00004_seed_1004.png",
+          "PYR_00005_seed_1005.png",
+          "PYR_00006_seed_1006.png",
+          "PYR_00007_seed_1007.png",
+          "PYR_00008_seed_1008.png",
+          "PYR_00009_seed_1009.png",
+          "PYR_00010_seed_1010.png",
+          "PYR_00011_seed_1011.png",
+          "PYR_00012_seed_1012.png",
+          "PYR_00013_seed_1013.png",
+          "PYR_00014_seed_1014.png",
+          "SOM_00000_seed_1000.png",
+          "SOM_00001_seed_1001.png",
+          "SOM_00002_seed_1002.png",
+          "SOM_00003_seed_1003.png",
+          "SOM_00004_seed_1004.png",
+          "SOM_00005_seed_1005.png",
+          "SOM_00006_seed_1006.png",
+          "SOM_00007_seed_1007.png",
+          "SOM_00008_seed_1008.png",
+          "SOM_00009_seed_1009.png",
+          "SOM_00010_seed_1010.png",
+          "SOM_00011_seed_1011.png",
+          "SOM_00012_seed_1012.png",
+          "SOM_00013_seed_1013.png",
+          "SOM_00014_seed_1014.png",
+          "VIP_00000_seed_1000.png",
+          "VIP_00001_seed_1001.png",
+          "VIP_00002_seed_1002.png",
+          "VIP_00003_seed_1003.png",
+          "VIP_00004_seed_1004.png",
+          "VIP_00005_seed_1005.png",
+          "VIP_00006_seed_1006.png",
+          "VIP_00007_seed_1007.png",
+          "VIP_00008_seed_1008.png",
+          "VIP_00009_seed_1009.png",
+          "VIP_00010_seed_1010.png",
+          "VIP_00011_seed_1011.png",
+          "VIP_00012_seed_1012.png",
+          "VIP_00013_seed_1013.png",
+          "VIP_00014_seed_1014.png"
+        ],
+        "rvec_xr": [],
+        "sample_pickle": "exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5/pkl/data_00000_seed_1000.pkl",
+        "sample_pickle_bytes": 9637377
+      }
+    },
+    "exp_thal_ire_tc_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5": {
+      "cache": "dev_scratch/thal_frz/analysis/collected/exp_thal_ire_tc_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5.nc",
+      "cfg": "dev_scratch/thal_frz/cfg/exp_thal_ire_tc_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5__cfg_00000_seed_1000.json",
+      "bytes": 12144,
+      "seeds": [
+        1000,
+        1001,
+        1002,
+        1003,
+        1004,
+        1005,
+        1006,
+        1007,
+        1008,
+        1009,
+        1010,
+        1011,
+        1012,
+        1013,
+        1014
+      ],
+      "pops_active": [
+        "TC",
+        "HTC",
+        "TCM",
+        "TI",
+        "TIM",
+        "IRE",
+        "IREM"
+      ],
+      "duration_s": 10.0,
+      "window_s": [
+        7.0,
+        10.0
+      ],
+      "conns_frozen": [
+        [
+          "IRE",
+          "TC"
+        ],
+        [
+          "IRE",
+          "HTC"
+        ],
+        [
+          "IRE",
+          "TCM"
+        ],
+        [
+          "IREM",
+          "TC"
+        ],
+        [
+          "IREM",
+          "HTC"
+        ],
+        [
+          "IREM",
+          "TCM"
+        ]
+      ],
+      "conns_split": {},
+      "mean_absolute_bias_hz": 22.15648597582129,
+      "mean_rates_hz": {
+        "TC": 48.70977011494253,
+        "HTC": 37.37426900584795,
+        "TCM": 54.34451612903226,
+        "TI": 4.635729847494554,
+        "TIM": 3.972549019607843,
+        "IRE": 10.81605734767025,
+        "IREM": 22.09118279569893
+      }
+    },
+    "exp_thal_pe_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5": {
+      "cache": "dev_scratch/thal_frz/analysis/collected/exp_thal_pe_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5.nc",
+      "cfg": "dev_scratch/thal_frz/cfg/exp_thal_pe_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5__cfg_00000_seed_1000.json",
+      "bytes": 12656,
+      "seeds": [
+        1000,
+        1001,
+        1002,
+        1003,
+        1004,
+        1005,
+        1006,
+        1007,
+        1008,
+        1009,
+        1010,
+        1011,
+        1012,
+        1013,
+        1014
+      ],
+      "pops_active": [
+        "TC",
+        "HTC",
+        "TCM",
+        "TI",
+        "TIM",
+        "IRE",
+        "IREM"
+      ],
+      "duration_s": 10.0,
+      "window_s": [
+        7.0,
+        10.0
+      ],
+      "conns_frozen": [
+        [
+          "TC",
+          "TC"
+        ],
+        [
+          "TC",
+          "HTC"
+        ],
+        [
+          "TC",
+          "TCM"
+        ],
+        [
+          "HTC",
+          "TC"
+        ],
+        [
+          "HTC",
+          "HTC"
+        ],
+        [
+          "HTC",
+          "TCM"
+        ],
+        [
+          "TCM",
+          "TC"
+        ],
+        [
+          "TCM",
+          "HTC"
+        ],
+        [
+          "TCM",
+          "TCM"
+        ],
+        [
+          "TI",
+          "TC"
+        ],
+        [
+          "TI",
+          "HTC"
+        ],
+        [
+          "TI",
+          "TCM"
+        ],
+        [
+          "TIM",
+          "TC"
+        ],
+        [
+          "TIM",
+          "HTC"
+        ],
+        [
+          "TIM",
+          "TCM"
+        ],
+        [
+          "IRE",
+          "TC"
+        ],
+        [
+          "IRE",
+          "HTC"
+        ],
+        [
+          "IRE",
+          "TCM"
+        ],
+        [
+          "IREM",
+          "TC"
+        ],
+        [
+          "IREM",
+          "HTC"
+        ],
+        [
+          "IREM",
+          "TCM"
+        ]
+      ],
+      "conns_split": {},
+      "mean_absolute_bias_hz": 1.7297961657325864,
+      "mean_rates_hz": {
+        "TC": 9.401724137931035,
+        "HTC": 8.352631578947367,
+        "TCM": 1.7949820788530464,
+        "TI": 11.41350762527233,
+        "TIM": 8.223529411764705,
+        "IRE": 13.109103942652329,
+        "IREM": 12.895340501792115
+      }
+    },
+    "exp_thal_pti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5": {
+      "cache": "dev_scratch/thal_frz/analysis/collected/exp_thal_pti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5.nc",
+      "cfg": "dev_scratch/thal_frz/cfg/exp_thal_pti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5__cfg_00000_seed_1000.json",
+      "bytes": 14928,
+      "seeds": [
+        1000,
+        1001,
+        1002,
+        1003,
+        1004,
+        1005,
+        1006,
+        1007,
+        1008,
+        1009,
+        1010,
+        1011,
+        1012,
+        1013,
+        1014
+      ],
+      "pops_active": [
+        "TC",
+        "HTC",
+        "TCM",
+        "TI",
+        "TIM",
+        "IRE",
+        "IREM"
+      ],
+      "duration_s": 10.0,
+      "window_s": [
+        7.0,
+        10.0
+      ],
+      "conns_frozen": [
+        [
+          "TC",
+          "TI"
+        ],
+        [
+          "TC",
+          "TIM"
+        ],
+        [
+          "HTC",
+          "TI"
+        ],
+        [
+          "HTC",
+          "TIM"
+        ],
+        [
+          "TCM",
+          "TI"
+        ],
+        [
+          "TCM",
+          "TIM"
+        ],
+        [
+          "TI",
+          "TI"
+        ],
+        [
+          "TI",
+          "TIM"
+        ],
+        [
+          "TIM",
+          "TI"
+        ],
+        [
+          "TIM",
+          "TIM"
+        ],
+        [
+          "IRE",
+          "TI"
+        ],
+        [
+          "IRE",
+          "TIM"
+        ],
+        [
+          "IREM",
+          "TI"
+        ],
+        [
+          "IREM",
+          "TIM"
+        ]
+      ],
+      "conns_split": {},
+      "mean_absolute_bias_hz": 2.0331835160541982,
+      "mean_rates_hz": {
+        "TC": 12.51072796934866,
+        "HTC": 12.127485380116958,
+        "TCM": 2.208172043010753,
+        "TI": 15.3119825708061,
+        "TIM": 10.68409586056645,
+        "IRE": 13.445304659498209,
+        "IREM": 12.835125448028673
+      }
+    },
+    "exp_thal_tc_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5": {
+      "cache": "dev_scratch/thal_frz/analysis/collected/exp_thal_tc_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5.nc",
+      "cfg": "dev_scratch/thal_frz/cfg/exp_thal_tc_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5__cfg_00000_seed_1000.json",
+      "bytes": 12400,
+      "seeds": [
+        1000,
+        1001,
+        1002,
+        1003,
+        1004,
+        1005,
+        1006,
+        1007,
+        1008,
+        1009,
+        1010,
+        1011,
+        1012,
+        1013,
+        1014
+      ],
+      "pops_active": [
+        "TC",
+        "HTC",
+        "TCM",
+        "TI",
+        "TIM",
+        "IRE",
+        "IREM"
+      ],
+      "duration_s": 10.0,
+      "window_s": [
+        7.0,
+        10.0
+      ],
+      "conns_frozen": [
+        [
+          "TC",
+          "TI"
+        ],
+        [
+          "TC",
+          "TIM"
+        ],
+        [
+          "HTC",
+          "TI"
+        ],
+        [
+          "HTC",
+          "TIM"
+        ],
+        [
+          "TCM",
+          "TI"
+        ],
+        [
+          "TCM",
+          "TIM"
+        ]
+      ],
+      "conns_split": {},
+      "mean_absolute_bias_hz": 5.266961684347841,
+      "mean_rates_hz": {
+        "TC": 21.845593869731804,
+        "HTC": 18.171929824561403,
+        "TCM": 3.7906810035842287,
+        "TI": 10.821350762527233,
+        "TIM": 7.76557734204793,
+        "IRE": 13.657634408602153,
+        "IREM": 13.305089605734768
+      },
+      "raw_source": "exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_tc_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5",
+      "outputs": {
+        "wmod_figs": [],
+        "rvec_figs": [
+          "THAL_00000_seed_1000.png",
+          "THAL_00001_seed_1001.png",
+          "THAL_00002_seed_1002.png",
+          "THAL_00003_seed_1003.png",
+          "THAL_00004_seed_1004.png",
+          "THAL_00005_seed_1005.png",
+          "THAL_00006_seed_1006.png",
+          "THAL_00007_seed_1007.png",
+          "THAL_00008_seed_1008.png",
+          "THAL_00009_seed_1009.png",
+          "THAL_00010_seed_1010.png",
+          "THAL_00011_seed_1011.png",
+          "THAL_00012_seed_1012.png",
+          "THAL_00013_seed_1013.png",
+          "THAL_00014_seed_1014.png"
+        ],
+        "rvec_xr": [],
+        "sample_pickle": "exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_tc_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5/pkl/data_00000_seed_1000.pkl",
+        "sample_pickle_bytes": 10453767
+      }
+    },
+    "exp_thal_tc_ti_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5": {
+      "cache": "dev_scratch/thal_frz/analysis/collected/exp_thal_tc_ti_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5.nc",
+      "cfg": "dev_scratch/thal_frz/cfg/exp_thal_tc_ti_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5__cfg_00000_seed_1000.json",
+      "bytes": 12400,
+      "seeds": [
+        1000,
+        1001,
+        1002,
+        1003,
+        1004,
+        1005,
+        1006,
+        1007,
+        1008,
+        1009,
+        1010,
+        1011,
+        1012,
+        1013,
+        1014
+      ],
+      "pops_active": [
+        "TC",
+        "HTC",
+        "TCM",
+        "TI",
+        "TIM",
+        "IRE",
+        "IREM"
+      ],
+      "duration_s": 10.0,
+      "window_s": [
+        7.0,
+        10.0
+      ],
+      "conns_frozen": [],
+      "conns_split": {
+        "HTC, TI": 0.5,
+        "HTC, TIM": 0.5,
+        "TC, TI": 0.5,
+        "TC, TIM": 0.5,
+        "TCM, TI": 0.5,
+        "TCM, TIM": 0.5
+      },
+      "mean_absolute_bias_hz": 5.160234382585981,
+      "mean_rates_hz": {
+        "TC": 21.637356321839086,
+        "HTC": 17.77894736842105,
+        "TCM": 3.729605734767025,
+        "TI": 10.885403050108932,
+        "TIM": 7.828758169934641,
+        "IRE": 13.648602150537634,
+        "IREM": 13.338494623655915
+      },
+      "raw_source": "exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_tc_ti_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5",
+      "outputs": {
+        "wmod_figs": [
+          "wmod_00000_seed_1000.png",
+          "wmod_00001_seed_1001.png",
+          "wmod_00002_seed_1002.png",
+          "wmod_00003_seed_1003.png",
+          "wmod_00004_seed_1004.png",
+          "wmod_00005_seed_1005.png",
+          "wmod_00006_seed_1006.png",
+          "wmod_00007_seed_1007.png",
+          "wmod_00008_seed_1008.png",
+          "wmod_00009_seed_1009.png",
+          "wmod_00010_seed_1010.png",
+          "wmod_00011_seed_1011.png",
+          "wmod_00012_seed_1012.png",
+          "wmod_00013_seed_1013.png",
+          "wmod_00014_seed_1014.png"
+        ],
+        "rvec_figs": [
+          "THAL_00000_seed_1000.png",
+          "THAL_00001_seed_1001.png",
+          "THAL_00002_seed_1002.png",
+          "THAL_00003_seed_1003.png",
+          "THAL_00004_seed_1004.png",
+          "THAL_00005_seed_1005.png",
+          "THAL_00006_seed_1006.png",
+          "THAL_00007_seed_1007.png",
+          "THAL_00008_seed_1008.png",
+          "THAL_00009_seed_1009.png",
+          "THAL_00010_seed_1010.png",
+          "THAL_00011_seed_1011.png",
+          "THAL_00012_seed_1012.png",
+          "THAL_00013_seed_1013.png",
+          "THAL_00014_seed_1014.png"
+        ],
+        "rvec_xr": [],
+        "sample_pickle": "exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_tc_ti_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5/pkl/data_00000_seed_1000.pkl",
+        "sample_pickle_bytes": 10466737
+      }
+    },
+    "exp_thal_ti_tc_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5": {
+      "cache": "dev_scratch/thal_frz/analysis/collected/exp_thal_ti_tc_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5.nc",
+      "cfg": "dev_scratch/thal_frz/cfg/exp_thal_ti_tc_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5__cfg_00000_seed_1000.json",
+      "bytes": 12144,
+      "seeds": [
+        1000,
+        1001,
+        1002,
+        1003,
+        1004,
+        1005,
+        1006,
+        1007,
+        1008,
+        1009,
+        1010,
+        1011,
+        1012,
+        1013,
+        1014
+      ],
+      "pops_active": [
+        "TC",
+        "HTC",
+        "TCM",
+        "TI",
+        "TIM",
+        "IRE",
+        "IREM"
+      ],
+      "duration_s": 10.0,
+      "window_s": [
+        7.0,
+        10.0
+      ],
+      "conns_frozen": [
+        [
+          "TI",
+          "TC"
+        ],
+        [
+          "TI",
+          "HTC"
+        ],
+        [
+          "TI",
+          "TCM"
+        ],
+        [
+          "TIM",
+          "TC"
+        ],
+        [
+          "TIM",
+          "HTC"
+        ],
+        [
+          "TIM",
+          "TCM"
+        ]
+      ],
+      "conns_split": {},
+      "mean_absolute_bias_hz": 2.7101313709072934,
+      "mean_rates_hz": {
+        "TC": 12.796360153256705,
+        "HTC": 12.603508771929825,
+        "TCM": 2.1850896057347673,
+        "TI": 11.52244008714597,
+        "TIM": 8.25446623093682,
+        "IRE": 13.594265232974909,
+        "IREM": 12.757132616487457
+      },
+      "raw_source": "exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_ti_tc_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5",
+      "outputs": {
+        "wmod_figs": [],
+        "rvec_figs": [
+          "NGF_00000_seed_1000.png",
+          "NGF_00001_seed_1001.png",
+          "NGF_00002_seed_1002.png",
+          "NGF_00003_seed_1003.png",
+          "NGF_00004_seed_1004.png",
+          "NGF_00005_seed_1005.png",
+          "NGF_00006_seed_1006.png",
+          "NGF_00007_seed_1007.png",
+          "NGF_00008_seed_1008.png",
+          "NGF_00009_seed_1009.png",
+          "NGF_00010_seed_1010.png",
+          "NGF_00011_seed_1011.png",
+          "NGF_00012_seed_1012.png",
+          "NGF_00013_seed_1013.png",
+          "NGF_00014_seed_1014.png",
+          "PV_00000_seed_1000.png",
+          "PV_00001_seed_1001.png",
+          "PV_00002_seed_1002.png",
+          "PV_00003_seed_1003.png",
+          "PV_00004_seed_1004.png",
+          "PV_00005_seed_1005.png",
+          "PV_00006_seed_1006.png",
+          "PV_00007_seed_1007.png",
+          "PV_00008_seed_1008.png",
+          "PV_00009_seed_1009.png",
+          "PV_00010_seed_1010.png",
+          "PV_00011_seed_1011.png",
+          "PV_00012_seed_1012.png",
+          "PV_00013_seed_1013.png",
+          "PV_00014_seed_1014.png",
+          "PYR_00000_seed_1000.png",
+          "PYR_00001_seed_1001.png",
+          "PYR_00002_seed_1002.png",
+          "PYR_00003_seed_1003.png",
+          "PYR_00004_seed_1004.png",
+          "PYR_00005_seed_1005.png",
+          "PYR_00006_seed_1006.png",
+          "PYR_00007_seed_1007.png",
+          "PYR_00008_seed_1008.png",
+          "PYR_00009_seed_1009.png",
+          "PYR_00010_seed_1010.png",
+          "PYR_00011_seed_1011.png",
+          "PYR_00012_seed_1012.png",
+          "PYR_00013_seed_1013.png",
+          "PYR_00014_seed_1014.png",
+          "SOM_00000_seed_1000.png",
+          "SOM_00001_seed_1001.png",
+          "SOM_00002_seed_1002.png",
+          "SOM_00003_seed_1003.png",
+          "SOM_00004_seed_1004.png",
+          "SOM_00005_seed_1005.png",
+          "SOM_00006_seed_1006.png",
+          "SOM_00007_seed_1007.png",
+          "SOM_00008_seed_1008.png",
+          "SOM_00009_seed_1009.png",
+          "SOM_00010_seed_1010.png",
+          "SOM_00011_seed_1011.png",
+          "SOM_00012_seed_1012.png",
+          "SOM_00013_seed_1013.png",
+          "SOM_00014_seed_1014.png",
+          "VIP_00000_seed_1000.png",
+          "VIP_00001_seed_1001.png",
+          "VIP_00002_seed_1002.png",
+          "VIP_00003_seed_1003.png",
+          "VIP_00004_seed_1004.png",
+          "VIP_00005_seed_1005.png",
+          "VIP_00006_seed_1006.png",
+          "VIP_00007_seed_1007.png",
+          "VIP_00008_seed_1008.png",
+          "VIP_00009_seed_1009.png",
+          "VIP_00010_seed_1010.png",
+          "VIP_00011_seed_1011.png",
+          "VIP_00012_seed_1012.png",
+          "VIP_00013_seed_1013.png",
+          "VIP_00014_seed_1014.png"
+        ],
+        "rvec_xr": [],
+        "sample_pickle": "exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_ti_tc_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5/pkl/data_00000_seed_1000.pkl",
+        "sample_pickle_bytes": 10106523
+      }
+    },
+    "exp_thal_ti_tc_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5": {
+      "cache": "dev_scratch/thal_frz/analysis/collected/exp_thal_ti_tc_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5.nc",
+      "cfg": "dev_scratch/thal_frz/cfg/exp_thal_ti_tc_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5__cfg_00000_seed_1000.json",
+      "bytes": 12144,
+      "seeds": [
+        1000,
+        1001,
+        1002,
+        1003,
+        1004,
+        1005,
+        1006,
+        1007,
+        1008,
+        1009,
+        1010,
+        1011,
+        1012,
+        1013,
+        1014
+      ],
+      "pops_active": [
+        "TC",
+        "HTC",
+        "TCM",
+        "TI",
+        "TIM",
+        "IRE",
+        "IREM"
+      ],
+      "duration_s": 10.0,
+      "window_s": [
+        7.0,
+        10.0
+      ],
+      "conns_frozen": [],
+      "conns_split": {
+        "TI, HTC": 0.5,
+        "TI, TC": 0.5,
+        "TI, TCM": 0.5,
+        "TIM, HTC": 0.5,
+        "TIM, TC": 0.5,
+        "TIM, TCM": 0.5
+      },
+      "mean_absolute_bias_hz": 5.174443591876447,
+      "mean_rates_hz": {
+        "TC": 21.413409961685822,
+        "HTC": 17.9859649122807,
+        "TCM": 3.8037275985663084,
+        "TI": 10.853159041394337,
+        "TIM": 7.840522875816993,
+        "IRE": 13.626953405017922,
+        "IREM": 13.33863799283154
+      },
+      "raw_source": "exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_ti_tc_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5",
+      "outputs": {
+        "wmod_figs": [
+          "wmod_00000_seed_1000.png",
+          "wmod_00001_seed_1001.png",
+          "wmod_00002_seed_1002.png",
+          "wmod_00003_seed_1003.png",
+          "wmod_00004_seed_1004.png",
+          "wmod_00005_seed_1005.png",
+          "wmod_00006_seed_1006.png",
+          "wmod_00007_seed_1007.png",
+          "wmod_00008_seed_1008.png",
+          "wmod_00009_seed_1009.png",
+          "wmod_00010_seed_1010.png",
+          "wmod_00011_seed_1011.png",
+          "wmod_00012_seed_1012.png",
+          "wmod_00013_seed_1013.png",
+          "wmod_00014_seed_1014.png"
+        ],
+        "rvec_figs": [
+          "NGF_00000_seed_1000.png",
+          "NGF_00001_seed_1001.png",
+          "NGF_00002_seed_1002.png",
+          "NGF_00003_seed_1003.png",
+          "NGF_00004_seed_1004.png",
+          "NGF_00005_seed_1005.png",
+          "NGF_00006_seed_1006.png",
+          "NGF_00007_seed_1007.png",
+          "NGF_00008_seed_1008.png",
+          "NGF_00009_seed_1009.png",
+          "NGF_00010_seed_1010.png",
+          "NGF_00011_seed_1011.png",
+          "NGF_00012_seed_1012.png",
+          "NGF_00013_seed_1013.png",
+          "NGF_00014_seed_1014.png",
+          "PV_00000_seed_1000.png",
+          "PV_00001_seed_1001.png",
+          "PV_00002_seed_1002.png",
+          "PV_00003_seed_1003.png",
+          "PV_00004_seed_1004.png",
+          "PV_00005_seed_1005.png",
+          "PV_00006_seed_1006.png",
+          "PV_00007_seed_1007.png",
+          "PV_00008_seed_1008.png",
+          "PV_00009_seed_1009.png",
+          "PV_00010_seed_1010.png",
+          "PV_00011_seed_1011.png",
+          "PV_00012_seed_1012.png",
+          "PV_00013_seed_1013.png",
+          "PV_00014_seed_1014.png",
+          "PYR_00000_seed_1000.png",
+          "PYR_00001_seed_1001.png",
+          "PYR_00002_seed_1002.png",
+          "PYR_00003_seed_1003.png",
+          "PYR_00004_seed_1004.png",
+          "PYR_00005_seed_1005.png",
+          "PYR_00006_seed_1006.png",
+          "PYR_00007_seed_1007.png",
+          "PYR_00008_seed_1008.png",
+          "PYR_00009_seed_1009.png",
+          "PYR_00010_seed_1010.png",
+          "PYR_00011_seed_1011.png",
+          "PYR_00012_seed_1012.png",
+          "PYR_00013_seed_1013.png",
+          "PYR_00014_seed_1014.png",
+          "SOM_00000_seed_1000.png",
+          "SOM_00001_seed_1001.png",
+          "SOM_00002_seed_1002.png",
+          "SOM_00003_seed_1003.png",
+          "SOM_00004_seed_1004.png",
+          "SOM_00005_seed_1005.png",
+          "SOM_00006_seed_1006.png",
+          "SOM_00007_seed_1007.png",
+          "SOM_00008_seed_1008.png",
+          "SOM_00009_seed_1009.png",
+          "SOM_00010_seed_1010.png",
+          "SOM_00011_seed_1011.png",
+          "SOM_00012_seed_1012.png",
+          "SOM_00013_seed_1013.png",
+          "SOM_00014_seed_1014.png",
+          "VIP_00000_seed_1000.png",
+          "VIP_00001_seed_1001.png",
+          "VIP_00002_seed_1002.png",
+          "VIP_00003_seed_1003.png",
+          "VIP_00004_seed_1004.png",
+          "VIP_00005_seed_1005.png",
+          "VIP_00006_seed_1006.png",
+          "VIP_00007_seed_1007.png",
+          "VIP_00008_seed_1008.png",
+          "VIP_00009_seed_1009.png",
+          "VIP_00010_seed_1010.png",
+          "VIP_00011_seed_1011.png",
+          "VIP_00012_seed_1012.png",
+          "VIP_00013_seed_1013.png",
+          "VIP_00014_seed_1014.png"
+        ],
+        "rvec_xr": [],
+        "sample_pickle": "exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_ti_tc_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5/pkl/data_00000_seed_1000.pkl",
+        "sample_pickle_bytes": 10000623
+      }
+    },
+    "exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5": {
+      "cache": "dev_scratch/thal_frz/analysis/collected/exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5.nc",
+      "cfg": "dev_scratch/thal_frz/cfg/exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5__cfg_00000_seed_1000.json",
+      "bytes": 14928,
+      "seeds": [
+        1000,
+        1001,
+        1002,
+        1003,
+        1004,
+        1005,
+        1006,
+        1007,
+        1008,
+        1009,
+        1010,
+        1011,
+        1012,
+        1013,
+        1014
+      ],
+      "pops_active": [
+        "TC",
+        "HTC",
+        "TCM",
+        "TI",
+        "TIM",
+        "IRE",
+        "IREM"
+      ],
+      "duration_s": 10.0,
+      "window_s": [
+        7.0,
+        10.0
+      ],
+      "conns_frozen": "all",
+      "conns_split": {},
+      "mean_absolute_bias_hz": 0.5448711783238623,
+      "mean_rates_hz": {
+        "TC": 9.806321839080459,
+        "HTC": 8.294736842105262,
+        "TCM": 2.5273118279569897,
+        "TI": 15.372984749455336,
+        "TIM": 10.709803921568628,
+        "IRE": 14.91727598566308,
+        "IREM": 9.97978494623656
+      },
+      "raw_source": "exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5",
+      "outputs": {
+        "wmod_figs": [],
+        "rvec_figs": [
+          "NGF_00000_seed_1000.png",
+          "NGF_00001_seed_1001.png",
+          "NGF_00002_seed_1002.png",
+          "NGF_00003_seed_1003.png",
+          "NGF_00004_seed_1004.png",
+          "NGF_00005_seed_1005.png",
+          "NGF_00006_seed_1006.png",
+          "NGF_00007_seed_1007.png",
+          "NGF_00008_seed_1008.png",
+          "NGF_00009_seed_1009.png",
+          "NGF_00010_seed_1010.png",
+          "NGF_00011_seed_1011.png",
+          "NGF_00012_seed_1012.png",
+          "NGF_00013_seed_1013.png",
+          "NGF_00014_seed_1014.png",
+          "PV_00000_seed_1000.png",
+          "PV_00001_seed_1001.png",
+          "PV_00002_seed_1002.png",
+          "PV_00003_seed_1003.png",
+          "PV_00004_seed_1004.png",
+          "PV_00005_seed_1005.png",
+          "PV_00006_seed_1006.png",
+          "PV_00007_seed_1007.png",
+          "PV_00008_seed_1008.png",
+          "PV_00009_seed_1009.png",
+          "PV_00010_seed_1010.png",
+          "PV_00011_seed_1011.png",
+          "PV_00012_seed_1012.png",
+          "PV_00013_seed_1013.png",
+          "PV_00014_seed_1014.png",
+          "PYR_00000_seed_1000.png",
+          "PYR_00001_seed_1001.png",
+          "PYR_00002_seed_1002.png",
+          "PYR_00003_seed_1003.png",
+          "PYR_00004_seed_1004.png",
+          "PYR_00005_seed_1005.png",
+          "PYR_00006_seed_1006.png",
+          "PYR_00007_seed_1007.png",
+          "PYR_00008_seed_1008.png",
+          "PYR_00009_seed_1009.png",
+          "PYR_00010_seed_1010.png",
+          "PYR_00011_seed_1011.png",
+          "PYR_00012_seed_1012.png",
+          "PYR_00013_seed_1013.png",
+          "PYR_00014_seed_1014.png",
+          "SOM_00000_seed_1000.png",
+          "SOM_00001_seed_1001.png",
+          "SOM_00002_seed_1002.png",
+          "SOM_00003_seed_1003.png",
+          "SOM_00004_seed_1004.png",
+          "SOM_00005_seed_1005.png",
+          "SOM_00006_seed_1006.png",
+          "SOM_00007_seed_1007.png",
+          "SOM_00008_seed_1008.png",
+          "SOM_00009_seed_1009.png",
+          "SOM_00010_seed_1010.png",
+          "SOM_00011_seed_1011.png",
+          "SOM_00012_seed_1012.png",
+          "SOM_00013_seed_1013.png",
+          "SOM_00014_seed_1014.png",
+          "VIP_00000_seed_1000.png",
+          "VIP_00001_seed_1001.png",
+          "VIP_00002_seed_1002.png",
+          "VIP_00003_seed_1003.png",
+          "VIP_00004_seed_1004.png",
+          "VIP_00005_seed_1005.png",
+          "VIP_00006_seed_1006.png",
+          "VIP_00007_seed_1007.png",
+          "VIP_00008_seed_1008.png",
+          "VIP_00009_seed_1009.png",
+          "VIP_00010_seed_1010.png",
+          "VIP_00011_seed_1011.png",
+          "VIP_00012_seed_1012.png",
+          "VIP_00013_seed_1013.png",
+          "VIP_00014_seed_1014.png"
+        ],
+        "rvec_xr": [],
+        "sample_pickle": "exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5/pkl/data_00000_seed_1000.pkl",
+        "sample_pickle_bytes": 13174244
+      }
+    },
+    "exp_thal_unconn_nseed_5_t_7.0_10.0_wmult_0.25_ee_0.5": {
+      "cache": "dev_scratch/thal_frz/analysis/collected/exp_thal_unconn_nseed_5_t_7.0_10.0_wmult_0.25_ee_0.5.nc",
+      "cfg": "dev_scratch/thal_frz/cfg/exp_thal_unconn_nseed_5_t_7.0_10.0_wmult_0.25_ee_0.5__cfg_00000_seed_1000.json",
+      "bytes": 10368,
+      "seeds": [
+        1000,
+        1001,
+        1002,
+        1003,
+        1004
+      ],
+      "pops_active": [
+        "TC",
+        "HTC",
+        "TCM",
+        "TI",
+        "TIM",
+        "IRE",
+        "IREM"
+      ],
+      "duration_s": 10.0,
+      "window_s": [
+        7.0,
+        10.0
+      ],
+      "conns_frozen": "all",
+      "conns_split": {},
+      "mean_absolute_bias_hz": 0.9301291736178106,
+      "mean_rates_hz": {
+        "TC": 5.810344827586207,
+        "HTC": 5.9263157894736835,
+        "TCM": 1.8025806451612905,
+        "TI": 14.94248366013072,
+        "TIM": 9.77124183006536,
+        "IRE": 13.738494623655914,
+        "IREM": 9.49763440860215
+      }
+    },
+    "exp_tim_core_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5": {
+      "cache": "dev_scratch/thal_frz/analysis/collected/exp_tim_core_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5.nc",
+      "cfg": "dev_scratch/thal_frz/cfg/exp_tim_core_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5__cfg_00000_seed_1000.json",
+      "bytes": 11888,
+      "seeds": [
+        1000,
+        1001,
+        1002,
+        1003,
+        1004,
+        1005,
+        1006,
+        1007,
+        1008,
+        1009,
+        1010,
+        1011,
+        1012,
+        1013,
+        1014
+      ],
+      "pops_active": [
+        "TC",
+        "HTC",
+        "TI",
+        "IRE",
+        "TCM",
+        "TIM",
+        "IREM"
+      ],
+      "duration_s": 10.0,
+      "window_s": [
+        7.0,
+        10.0
+      ],
+      "conns_frozen": [
+        [
+          "TIM",
+          "TC"
+        ],
+        [
+          "TIM",
+          "HTC"
+        ],
+        [
+          "TIM",
+          "TI"
+        ],
+        [
+          "TIM",
+          "IRE"
+        ]
+      ],
+      "conns_split": {},
+      "mean_absolute_bias_hz": 2.3692939650995206,
+      "mean_rates_hz": {
+        "TC": 13.652681992337165,
+        "HTC": 9.741520467836258,
+        "TI": 12.838344226579519,
+        "IRE": 15.489032258064515,
+        "TCM": 5.458351254480287,
+        "TIM": 8.725925925925926,
+        "IREM": 11.807741935483872
+      }
+    }
+  },
+  "main_outputs": {
+    "ctx_full": {
+      "wmod_figs": [],
+      "rvec_figs": [
+        "NGF_00000_seed_1000.png",
+        "NGF_00001_seed_1001.png",
+        "NGF_00002_seed_1002.png",
+        "NGF_00003_seed_1003.png",
+        "NGF_00004_seed_1004.png",
+        "NGF_00005_seed_1005.png",
+        "NGF_00006_seed_1006.png",
+        "NGF_00007_seed_1007.png",
+        "NGF_00008_seed_1008.png",
+        "NGF_00009_seed_1009.png",
+        "NGF_00010_seed_1010.png",
+        "NGF_00011_seed_1011.png",
+        "NGF_00012_seed_1012.png",
+        "NGF_00013_seed_1013.png",
+        "NGF_00014_seed_1014.png",
+        "PV_00000_seed_1000.png",
+        "PV_00001_seed_1001.png",
+        "PV_00002_seed_1002.png",
+        "PV_00003_seed_1003.png",
+        "PV_00004_seed_1004.png",
+        "PV_00005_seed_1005.png",
+        "PV_00006_seed_1006.png",
+        "PV_00007_seed_1007.png",
+        "PV_00008_seed_1008.png",
+        "PV_00009_seed_1009.png",
+        "PV_00010_seed_1010.png",
+        "PV_00011_seed_1011.png",
+        "PV_00012_seed_1012.png",
+        "PV_00013_seed_1013.png",
+        "PV_00014_seed_1014.png",
+        "PYR_00000_seed_1000.png",
+        "PYR_00001_seed_1001.png",
+        "PYR_00002_seed_1002.png",
+        "PYR_00003_seed_1003.png",
+        "PYR_00004_seed_1004.png",
+        "PYR_00005_seed_1005.png",
+        "PYR_00006_seed_1006.png",
+        "PYR_00007_seed_1007.png",
+        "PYR_00008_seed_1008.png",
+        "PYR_00009_seed_1009.png",
+        "PYR_00010_seed_1010.png",
+        "PYR_00011_seed_1011.png",
+        "PYR_00012_seed_1012.png",
+        "PYR_00013_seed_1013.png",
+        "PYR_00014_seed_1014.png",
+        "SOM_00000_seed_1000.png",
+        "SOM_00001_seed_1001.png",
+        "SOM_00002_seed_1002.png",
+        "SOM_00003_seed_1003.png",
+        "SOM_00004_seed_1004.png",
+        "SOM_00005_seed_1005.png",
+        "SOM_00006_seed_1006.png",
+        "SOM_00007_seed_1007.png",
+        "SOM_00008_seed_1008.png",
+        "SOM_00009_seed_1009.png",
+        "SOM_00010_seed_1010.png",
+        "SOM_00011_seed_1011.png",
+        "SOM_00012_seed_1012.png",
+        "SOM_00013_seed_1013.png",
+        "SOM_00014_seed_1014.png",
+        "VIP_00000_seed_1000.png",
+        "VIP_00001_seed_1001.png",
+        "VIP_00002_seed_1002.png",
+        "VIP_00003_seed_1003.png",
+        "VIP_00004_seed_1004.png",
+        "VIP_00005_seed_1005.png",
+        "VIP_00006_seed_1006.png",
+        "VIP_00007_seed_1007.png",
+        "VIP_00008_seed_1008.png",
+        "VIP_00009_seed_1009.png",
+        "VIP_00010_seed_1010.png",
+        "VIP_00011_seed_1011.png",
+        "VIP_00012_seed_1012.png",
+        "VIP_00013_seed_1013.png",
+        "VIP_00014_seed_1014.png"
+      ],
+      "rvec_xr": [],
+      "sample_pickle": "exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_ctx_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5/pkl/data_00000_seed_1000.pkl",
+      "sample_pickle_bytes": 32439833
+    },
+    "ctx_ee_fade": {
+      "wmod_figs": [
+        "wmod_00000_seed_1000.png",
+        "wmod_00001_seed_1001.png",
+        "wmod_00002_seed_1002.png",
+        "wmod_00003_seed_1003.png",
+        "wmod_00004_seed_1004.png",
+        "wmod_00005_seed_1005.png",
+        "wmod_00006_seed_1006.png",
+        "wmod_00007_seed_1007.png",
+        "wmod_00008_seed_1008.png",
+        "wmod_00009_seed_1009.png",
+        "wmod_00010_seed_1010.png",
+        "wmod_00011_seed_1011.png",
+        "wmod_00012_seed_1012.png",
+        "wmod_00013_seed_1013.png",
+        "wmod_00014_seed_1014.png"
+      ],
+      "rvec_figs": [
+        "NGF_00000_seed_1000.png",
+        "NGF_00001_seed_1001.png",
+        "NGF_00002_seed_1002.png",
+        "NGF_00003_seed_1003.png",
+        "NGF_00004_seed_1004.png",
+        "NGF_00005_seed_1005.png",
+        "NGF_00006_seed_1006.png",
+        "NGF_00007_seed_1007.png",
+        "NGF_00008_seed_1008.png",
+        "NGF_00009_seed_1009.png",
+        "NGF_00010_seed_1010.png",
+        "NGF_00011_seed_1011.png",
+        "NGF_00012_seed_1012.png",
+        "NGF_00013_seed_1013.png",
+        "NGF_00014_seed_1014.png",
+        "PV_00000_seed_1000.png",
+        "PV_00001_seed_1001.png",
+        "PV_00002_seed_1002.png",
+        "PV_00003_seed_1003.png",
+        "PV_00004_seed_1004.png",
+        "PV_00005_seed_1005.png",
+        "PV_00006_seed_1006.png",
+        "PV_00007_seed_1007.png",
+        "PV_00008_seed_1008.png",
+        "PV_00009_seed_1009.png",
+        "PV_00010_seed_1010.png",
+        "PV_00011_seed_1011.png",
+        "PV_00012_seed_1012.png",
+        "PV_00013_seed_1013.png",
+        "PV_00014_seed_1014.png",
+        "PYR_00000_seed_1000.png",
+        "PYR_00001_seed_1001.png",
+        "PYR_00002_seed_1002.png",
+        "PYR_00003_seed_1003.png",
+        "PYR_00004_seed_1004.png",
+        "PYR_00005_seed_1005.png",
+        "PYR_00006_seed_1006.png",
+        "PYR_00007_seed_1007.png",
+        "PYR_00008_seed_1008.png",
+        "PYR_00009_seed_1009.png",
+        "PYR_00010_seed_1010.png",
+        "PYR_00011_seed_1011.png",
+        "PYR_00012_seed_1012.png",
+        "PYR_00013_seed_1013.png",
+        "PYR_00014_seed_1014.png",
+        "SOM_00000_seed_1000.png",
+        "SOM_00001_seed_1001.png",
+        "SOM_00002_seed_1002.png",
+        "SOM_00003_seed_1003.png",
+        "SOM_00004_seed_1004.png",
+        "SOM_00005_seed_1005.png",
+        "SOM_00006_seed_1006.png",
+        "SOM_00007_seed_1007.png",
+        "SOM_00008_seed_1008.png",
+        "SOM_00009_seed_1009.png",
+        "SOM_00010_seed_1010.png",
+        "SOM_00011_seed_1011.png",
+        "SOM_00012_seed_1012.png",
+        "SOM_00013_seed_1013.png",
+        "SOM_00014_seed_1014.png",
+        "VIP_00000_seed_1000.png",
+        "VIP_00001_seed_1001.png",
+        "VIP_00002_seed_1002.png",
+        "VIP_00003_seed_1003.png",
+        "VIP_00004_seed_1004.png",
+        "VIP_00005_seed_1005.png",
+        "VIP_00006_seed_1006.png",
+        "VIP_00007_seed_1007.png",
+        "VIP_00008_seed_1008.png",
+        "VIP_00009_seed_1009.png",
+        "VIP_00010_seed_1010.png",
+        "VIP_00011_seed_1011.png",
+        "VIP_00012_seed_1012.png",
+        "VIP_00013_seed_1013.png",
+        "VIP_00014_seed_1014.png"
+      ],
+      "rvec_xr": [],
+      "sample_pickle": "exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_ctx_ee_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5/pkl/data_00000_seed_1000.pkl",
+      "sample_pickle_bytes": 48020189
+    },
+    "thal_orig": {
+      "wmod_figs": [],
+      "rvec_figs": [],
+      "rvec_xr": [],
+      "sample_pickle": "exp_results/batch_rxbkg_state1_mech1/net_newsec_ctrl_var_seed/exp_thal_nseed_15_t_200.0_220.0_wmult_0.25_ee_0.5/pkl/data_00000_seed_1000.pkl",
+      "sample_pickle_bytes": 143587591
+    },
+    "a1_errors": {
+      "wmod_figs": [
+        "wmod_00000_seed_1000.png",
+        "wmod_00001_seed_1001.png",
+        "wmod_00002_seed_1002.png",
+        "wmod_00003_seed_1003.png",
+        "wmod_00004_seed_1004.png",
+        "wmod_00005_seed_1005.png",
+        "wmod_00006_seed_1006.png",
+        "wmod_00007_seed_1007.png",
+        "wmod_00008_seed_1008.png",
+        "wmod_00009_seed_1009.png",
+        "wmod_00010_seed_1010.png",
+        "wmod_00011_seed_1011.png",
+        "wmod_00012_seed_1012.png",
+        "wmod_00013_seed_1013.png",
+        "wmod_00014_seed_1014.png"
+      ],
+      "rvec_figs": [
+        "NGF_00000_seed_1000.png",
+        "NGF_00001_seed_1001.png",
+        "NGF_00002_seed_1002.png",
+        "NGF_00003_seed_1003.png",
+        "NGF_00004_seed_1004.png",
+        "NGF_00005_seed_1005.png",
+        "NGF_00006_seed_1006.png",
+        "NGF_00007_seed_1007.png",
+        "NGF_00008_seed_1008.png",
+        "NGF_00009_seed_1009.png",
+        "NGF_00010_seed_1010.png",
+        "NGF_00011_seed_1011.png",
+        "NGF_00012_seed_1012.png",
+        "NGF_00013_seed_1013.png",
+        "NGF_00014_seed_1014.png",
+        "PV_00000_seed_1000.png",
+        "PV_00001_seed_1001.png",
+        "PV_00002_seed_1002.png",
+        "PV_00003_seed_1003.png",
+        "PV_00004_seed_1004.png",
+        "PV_00005_seed_1005.png",
+        "PV_00006_seed_1006.png",
+        "PV_00007_seed_1007.png",
+        "PV_00008_seed_1008.png",
+        "PV_00009_seed_1009.png",
+        "PV_00010_seed_1010.png",
+        "PV_00011_seed_1011.png",
+        "PV_00012_seed_1012.png",
+        "PV_00013_seed_1013.png",
+        "PV_00014_seed_1014.png",
+        "PYR_00000_seed_1000.png",
+        "PYR_00001_seed_1001.png",
+        "PYR_00002_seed_1002.png",
+        "PYR_00003_seed_1003.png",
+        "PYR_00004_seed_1004.png",
+        "PYR_00005_seed_1005.png",
+        "PYR_00006_seed_1006.png",
+        "PYR_00007_seed_1007.png",
+        "PYR_00008_seed_1008.png",
+        "PYR_00009_seed_1009.png",
+        "PYR_00010_seed_1010.png",
+        "PYR_00011_seed_1011.png",
+        "PYR_00012_seed_1012.png",
+        "PYR_00013_seed_1013.png",
+        "PYR_00014_seed_1014.png",
+        "SOM_00000_seed_1000.png",
+        "SOM_00001_seed_1001.png",
+        "SOM_00002_seed_1002.png",
+        "SOM_00003_seed_1003.png",
+        "SOM_00004_seed_1004.png",
+        "SOM_00005_seed_1005.png",
+        "SOM_00006_seed_1006.png",
+        "SOM_00007_seed_1007.png",
+        "SOM_00008_seed_1008.png",
+        "SOM_00009_seed_1009.png",
+        "SOM_00010_seed_1010.png",
+        "SOM_00011_seed_1011.png",
+        "SOM_00012_seed_1012.png",
+        "SOM_00013_seed_1013.png",
+        "SOM_00014_seed_1014.png",
+        "THAL_E_00000_seed_1000.png",
+        "THAL_E_00001_seed_1001.png",
+        "THAL_E_00002_seed_1002.png",
+        "THAL_E_00003_seed_1003.png",
+        "THAL_E_00004_seed_1004.png",
+        "THAL_E_00005_seed_1005.png",
+        "THAL_E_00006_seed_1006.png",
+        "THAL_E_00007_seed_1007.png",
+        "THAL_E_00008_seed_1008.png",
+        "THAL_E_00009_seed_1009.png",
+        "THAL_E_00010_seed_1010.png",
+        "THAL_E_00011_seed_1011.png",
+        "THAL_E_00012_seed_1012.png",
+        "THAL_E_00013_seed_1013.png",
+        "THAL_E_00014_seed_1014.png",
+        "THAL_I_00000_seed_1000.png",
+        "THAL_I_00001_seed_1001.png",
+        "THAL_I_00002_seed_1002.png",
+        "THAL_I_00003_seed_1003.png",
+        "THAL_I_00004_seed_1004.png",
+        "THAL_I_00005_seed_1005.png",
+        "THAL_I_00006_seed_1006.png",
+        "THAL_I_00007_seed_1007.png",
+        "THAL_I_00008_seed_1008.png",
+        "THAL_I_00009_seed_1009.png",
+        "THAL_I_00010_seed_1010.png",
+        "THAL_I_00011_seed_1011.png",
+        "THAL_I_00012_seed_1012.png",
+        "THAL_I_00013_seed_1013.png",
+        "THAL_I_00014_seed_1014.png",
+        "VIP_00000_seed_1000.png",
+        "VIP_00001_seed_1001.png",
+        "VIP_00002_seed_1002.png",
+        "VIP_00003_seed_1003.png",
+        "VIP_00004_seed_1004.png",
+        "VIP_00005_seed_1005.png",
+        "VIP_00006_seed_1006.png",
+        "VIP_00007_seed_1007.png",
+        "VIP_00008_seed_1008.png",
+        "VIP_00009_seed_1009.png",
+        "VIP_00010_seed_1010.png",
+        "VIP_00011_seed_1011.png",
+        "VIP_00012_seed_1012.png",
+        "VIP_00013_seed_1013.png",
+        "VIP_00014_seed_1014.png"
+      ],
+      "rvec_xr": [],
+      "sample_pickle": "exp_results/batch_rxbkg_state1_mech1/net_newsec_var_seed/exp_a1_ee_fade_nseed_15_t_15.0_20.0_ictrl_wmult_0.25_ee_0.5/pkl/data_00000_seed_1000.pkl",
+      "sample_pickle_bytes": 78543789
+    },
+    "a1_example": {
+      "wmod_figs": [
+        "wmod_00000_seed_1000.png",
+        "wmod_00001_seed_1001.png",
+        "wmod_00002_seed_1002.png"
+      ],
+      "rvec_figs": [
+        "NGF_00000_seed_1000.png",
+        "NGF_00001_seed_1001.png",
+        "NGF_00002_seed_1002.png",
+        "PV_00000_seed_1000.png",
+        "PV_00001_seed_1001.png",
+        "PV_00002_seed_1002.png",
+        "PYR_00000_seed_1000.png",
+        "PYR_00001_seed_1001.png",
+        "PYR_00002_seed_1002.png",
+        "SOM_00000_seed_1000.png",
+        "SOM_00001_seed_1001.png",
+        "SOM_00002_seed_1002.png",
+        "THAL_E_00000_seed_1000.png",
+        "THAL_E_00001_seed_1001.png",
+        "THAL_E_00002_seed_1002.png",
+        "THAL_I_00000_seed_1000.png",
+        "THAL_I_00001_seed_1001.png",
+        "THAL_I_00002_seed_1002.png",
+        "VIP_00000_seed_1000.png",
+        "VIP_00001_seed_1001.png",
+        "VIP_00002_seed_1002.png"
+      ],
+      "rvec_xr": [],
+      "sample_pickle": "exp_results/batch_rxbkg_state1_mech1/net_newsec_var_seed/exp_a1_ee_fade_nseed_3_t_15.0_20.0_ictrl_wmult_0.25_ee_0.5/pkl/data_00000_seed_1000.pkl",
+      "sample_pickle_bytes": 78647384
+    }
+  }
+}

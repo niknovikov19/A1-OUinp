@@ -1,0 +1,12 @@
+{
+  "remote_png_bytes_read_this_run": 32170125,
+  "copied_images": 21,
+  "missing_images": [],
+  "total_local_png_bytes": 32170125,
+  "seed": 1000,
+  "limits": {
+    "max_file_bytes": 5242880,
+    "max_total_bytes": 67108864
+  },
+  "note": "Checksums describe copied bytes; cached reruns check source presence/size only."
+}

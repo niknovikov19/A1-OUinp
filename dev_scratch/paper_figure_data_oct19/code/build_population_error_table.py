@@ -78,10 +78,10 @@ def main():
                 reference = stats[experiment, pop]
                 assert math.isclose(mean, float(reference['mean']), abs_tol=1e-12)
                 assert math.isclose(sd, float(reference['std']), abs_tol=1e-12)
-                mean = round(mean, 3)
+                mean = round(mean, 2)
                 if mean == 0:
                     mean = 0
-                result[label] = f'{mean:.3f} ± {sd:.3f}'
+                result[label] = f'{mean:.2f} ± {sd:.2f}'
             if len(targets) != 1:
                 raise ValueError(f'Targets differ between setups: {pop}')
             result['Target rate (Hz)'] = f'{targets.pop():g}'

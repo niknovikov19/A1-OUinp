@@ -1,0 +1,287 @@
+{
+  "quantity": "Modeled population firing rate in Hz, not signed rate error or surrogate-source rate",
+  "summary": "Mean ± sample SD (ddof=1), two decimal places",
+  "populations": [
+    "TC",
+    "HTC",
+    "TI",
+    "IRE",
+    "TCM",
+    "TIM",
+    "IREM"
+  ],
+  "seeds": [
+    1000,
+    1001,
+    1002,
+    1003,
+    1004,
+    1005,
+    1006,
+    1007,
+    1008,
+    1009,
+    1010,
+    1011,
+    1012,
+    1013,
+    1014
+  ],
+  "duration_s": 10,
+  "window_s": [
+    7,
+    10
+  ],
+  "target_rates_hz": {
+    "TC": 8.0,
+    "HTC": 8.0,
+    "TI": 15.0,
+    "IRE": 15.0,
+    "TCM": 2.0,
+    "TIM": 10.0,
+    "IREM": 10.0
+  },
+  "second_stage_corrections": false,
+  "missing_cell_encoding": "Empty CSV field",
+  "conditions": {
+    "All-surrogate": {
+      "status": "available",
+      "experiment": "exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5",
+      "remote_experiment": "exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5",
+      "local_rate_cache": "dev_scratch/thal_frz/analysis/collected/exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5.nc",
+      "local_cfg": "dev_scratch/thal_frz/cfg/exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5__cfg_00000_seed_1000.json",
+      "cache_sha256": "92cddf80dd44711ae46dc54b041f7c75c312454e37ec72b64793a77aac9a2300",
+      "cfg_sha256": "1e1d70eb717533fb5dddd3b47def7780a4f9421eee4d61e915c74927309b0ab4",
+      "statistics": {
+        "TC": {
+          "mean_hz": 9.806321839080459,
+          "sample_sd_hz": 2.905334988686445,
+          "n": 15
+        },
+        "HTC": {
+          "mean_hz": 8.294736842105262,
+          "sample_sd_hz": 3.6824524388608992,
+          "n": 15
+        },
+        "TI": {
+          "mean_hz": 15.372984749455338,
+          "sample_sd_hz": 1.0984739331842492,
+          "n": 15
+        },
+        "IRE": {
+          "mean_hz": 14.917275985663082,
+          "sample_sd_hz": 1.3196477832428721,
+          "n": 15
+        },
+        "TCM": {
+          "mean_hz": 2.5273118279569897,
+          "sample_sd_hz": 1.593350858731642,
+          "n": 15
+        },
+        "TIM": {
+          "mean_hz": 10.709803921568628,
+          "sample_sd_hz": 1.631645007054977,
+          "n": 15
+        },
+        "IREM": {
+          "mean_hz": 9.979784946236558,
+          "sample_sd_hz": 1.6350982456405943,
+          "n": 15
+        }
+      }
+    },
+    "IREM→TI frozen": {
+      "status": "available",
+      "experiment": "exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5",
+      "remote_experiment": "exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5",
+      "local_rate_cache": "dev_scratch/thal_frz/analysis/collected/exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5.nc",
+      "local_cfg": "dev_scratch/thal_frz/cfg/exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5__cfg_00000_seed_1000.json",
+      "cache_sha256": "b01cc422ffdb0daa8314fc4e474135ed0ee590e87dde68eacf2967fd9b9b356e",
+      "cfg_sha256": "013439a97bf6654cd668446debbc364797cf7bf58fc8bbc1856a0acfdd4962b4",
+      "statistics": {
+        "TC": {
+          "mean_hz": 14.379501915708811,
+          "sample_sd_hz": 6.993919218795995,
+          "n": 15
+        },
+        "HTC": {
+          "mean_hz": 11.794152046783626,
+          "sample_sd_hz": 5.996757161548795,
+          "n": 15
+        },
+        "TI": {
+          "mean_hz": 15.131154684095861,
+          "sample_sd_hz": 0.8431715142493078,
+          "n": 15
+        },
+        "IRE": {
+          "mean_hz": 15.623512544802868,
+          "sample_sd_hz": 3.687762644864025,
+          "n": 15
+        },
+        "TCM": {
+          "mean_hz": 4.739211469534051,
+          "sample_sd_hz": 3.6404150066425287,
+          "n": 15
+        },
+        "TIM": {
+          "mean_hz": 8.72156862745098,
+          "sample_sd_hz": 1.5426771152167476,
+          "n": 15
+        },
+        "IREM": {
+          "mean_hz": 11.73046594982079,
+          "sample_sd_hz": 2.7833800038834045,
+          "n": 15
+        }
+      }
+    },
+    "IREM→IRE frozen": {
+      "status": "available",
+      "experiment": "exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5",
+      "remote_experiment": "exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5",
+      "local_rate_cache": "dev_scratch/thal_frz/analysis/collected/exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5.nc",
+      "local_cfg": "dev_scratch/thal_frz/cfg/exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5__cfg_00000_seed_1000.json",
+      "cache_sha256": "8831c7b4d896b7801c127f47286642dbc6e358ab44eb16086f13697f3c8ffac8",
+      "cfg_sha256": "dd9656ed6f9852faf8f9a76155341bdd1f94a6b523c0208c658b9e92bc44e6ab",
+      "statistics": {
+        "TC": {
+          "mean_hz": 12.141570881226054,
+          "sample_sd_hz": 2.7256856617940906,
+          "n": 15
+        },
+        "HTC": {
+          "mean_hz": 8.949122807017543,
+          "sample_sd_hz": 4.372864143436733,
+          "n": 15
+        },
+        "TI": {
+          "mean_hz": 13.751633986928105,
+          "sample_sd_hz": 0.8971338655878409,
+          "n": 15
+        },
+        "IRE": {
+          "mean_hz": 16.18867383512545,
+          "sample_sd_hz": 0.6614150553210589,
+          "n": 15
+        },
+        "TCM": {
+          "mean_hz": 4.920716845878136,
+          "sample_sd_hz": 1.3484639893275976,
+          "n": 15
+        },
+        "TIM": {
+          "mean_hz": 9.366884531590413,
+          "sample_sd_hz": 0.5256454812501378,
+          "n": 15
+        },
+        "IREM": {
+          "mean_hz": 10.937347670250896,
+          "sample_sd_hz": 0.5981040615741081,
+          "n": 15
+        }
+      }
+    },
+    "Fully recurrent": {
+      "status": "available",
+      "experiment": "exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5",
+      "remote_experiment": "exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5",
+      "local_rate_cache": "dev_scratch/thal_frz/analysis/collected/exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5.nc",
+      "local_cfg": "dev_scratch/thal_frz/cfg/exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5__cfg_00000_seed_1000.json",
+      "cache_sha256": "eb154bc34ca9005ceac53e398fcb91a398036e4b18c743b29a5d277a490509bc",
+      "cfg_sha256": "b097bfc578537ce8784a3f0d65c2a8bbcea398b6defdaf5c7553ca5e07a14b66",
+      "statistics": {
+        "TC": {
+          "mean_hz": 22.29272030651341,
+          "sample_sd_hz": 9.566913791752958,
+          "n": 15
+        },
+        "HTC": {
+          "mean_hz": 18.51345029239766,
+          "sample_sd_hz": 8.147851949396966,
+          "n": 15
+        },
+        "TI": {
+          "mean_hz": 10.657516339869282,
+          "sample_sd_hz": 3.1535367647771366,
+          "n": 15
+        },
+        "IRE": {
+          "mean_hz": 13.458637992831541,
+          "sample_sd_hz": 3.170221713239059,
+          "n": 15
+        },
+        "TCM": {
+          "mean_hz": 3.6703942652329746,
+          "sample_sd_hz": 1.8813145872052768,
+          "n": 15
+        },
+        "TIM": {
+          "mean_hz": 7.753812636165577,
+          "sample_sd_hz": 1.6146468261908318,
+          "n": 15
+        },
+        "IREM": {
+          "mean_hz": 13.491182795698926,
+          "sample_sd_hz": 2.7747930144538926,
+          "n": 15
+        }
+      }
+    },
+    "Faded from all-surrogate": {
+      "status": "available",
+      "experiment": "exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5",
+      "remote_experiment": "exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5",
+      "local_rate_cache": "dev_scratch/thal_frz/analysis/collected/exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5.nc",
+      "local_cfg": "dev_scratch/thal_frz/cfg/exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5__cfg_00000_seed_1000.json",
+      "cache_sha256": "a00ae147e3e89b2e2932fa66762698d69c4381bef0a46d5b0bd3c1746fa88757",
+      "cfg_sha256": "40bfe8ed7646d84fb4dfd17ca82c12e6d55c96591415e89f504f9163c4dcf670",
+      "statistics": {
+        "TC": {
+          "mean_hz": 21.85536398467433,
+          "sample_sd_hz": 9.320155934276876,
+          "n": 15
+        },
+        "HTC": {
+          "mean_hz": 18.386549707602338,
+          "sample_sd_hz": 8.226689654098376,
+          "n": 15
+        },
+        "TI": {
+          "mean_hz": 10.78082788671024,
+          "sample_sd_hz": 3.16573389846839,
+          "n": 15
+        },
+        "IRE": {
+          "mean_hz": 13.583942652329748,
+          "sample_sd_hz": 3.1132095938068414,
+          "n": 15
+        },
+        "TCM": {
+          "mean_hz": 3.7274551971326164,
+          "sample_sd_hz": 1.8719737865244428,
+          "n": 15
+        },
+        "TIM": {
+          "mean_hz": 7.798257080610022,
+          "sample_sd_hz": 1.62684126937442,
+          "n": 15
+        },
+        "IREM": {
+          "mean_hz": 13.402724014336917,
+          "sample_sd_hz": 2.8166243310412225,
+          "n": 15
+        }
+      }
+    },
+    "Faded IREM→TI": {
+      "status": "missing",
+      "experiment": null
+    },
+    "Faded IREM→IRE": {
+      "status": "missing",
+      "experiment": null
+    }
+  },
+  "remote_reads": 0
+}

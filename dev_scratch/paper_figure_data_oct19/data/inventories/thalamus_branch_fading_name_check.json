@@ -1,0 +1,49 @@
+{
+  "scope": "One nonrecursive experiment-name listing in each of the three mounted batches; no remote file contents read",
+  "batches": {
+    "net_newsec_ee_fade_var_seed": {
+      "total_names": 40,
+      "relevant_names": [
+        "exp_a1_ee_0_irem_core_0_nseed_5_t_7.0_10.0_wmult_0.25_ee_0.5",
+        "exp_a1_ee_0_irem_ire_0_nseed_5_t_7.0_10.0_wmult_0.25_ee_0.5",
+        "exp_a1_ee_fade_irem_ire_0_nseed_15_t_10.0_15.0_wmult_0.25_ee_0.5",
+        "exp_a1_ee_fade_irem_ire_0_nseed_5_t_10.0_15.0_wmult_0.25_ee_0.5",
+        "exp_a1_ee_fade_irem_ire_0_nseed_5_t_7.0_10.0_wmult_0.25_ee_0.5",
+        "exp_a1_irem_ire_0_nseed_15_t_10.0_15.0_wmult_0.25_ee_0.5",
+        "exp_a1_irem_ire_0_nseed_5_t_10.0_15.0_wmult_0.25_ee_0.5",
+        "exp_irem_core_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5",
+        "exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5",
+        "exp_irem_tc_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5",
+        "exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5",
+        "exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5",
+        "exp_thal_ee_0_ire_tc_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5",
+        "exp_thal_ee_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5",
+        "exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5",
+        "exp_thal_ire_tc_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5",
+        "exp_thal_pe_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5",
+        "exp_thal_pti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5",
+        "exp_thal_tc_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5",
+        "exp_thal_tc_ti_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5",
+        "exp_thal_ti_tc_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5",
+        "exp_thal_ti_tc_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5",
+        "exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5",
+        "exp_thal_unconn_nseed_5_t_7.0_10.0_wmult_0.25_ee_0.5"
+      ]
+    },
+    "net_newsec_var_seed": {
+      "total_names": 19,
+      "relevant_names": []
+    },
+    "net_newsec_ctrl_var_seed": {
+      "total_names": 13,
+      "relevant_names": [
+        "exp_thal_nseed_15_t_15.0_25.0_ictrl_wmult_0.25_ee_0.5",
+        "exp_thal_nseed_15_t_200.0_220.0_ictrl_wmult_0.25_ee_0.5",
+        "exp_thal_nseed_15_t_200.0_220.0_kmu_0.005_ksigma_0.0_taur_100_taum_2500_tauu_100_tc0_10000_tlock_160000_ks_0.0001_ku_0.001_epsm_0.1_wmult_0.25_ee_0.5",
+        "exp_thal_nseed_15_t_200.0_220.0_wmult_0.25_ee_0.5",
+        "exp_thal_nseed_5_t_20.0_22.0_kmu_0.005_ksigma_0.0_taur_100_taum_2500_tauu_100_tc0_1000_tlock_16000_ks_0.0001_ku_0.001_epsm_0.1_wmult_0.25_ee_0.5",
+        "exp_thal_nseed_5_t_200.0_220.0_kmu_0.005_ksigma_0.0_taur_100_taum_2500_tauu_100_tc0_10000_tlock_160000_ks_0.0001_ku_0.001_epsm_0.1_wmult_0.25_ee_0.5"
+      ]
+    }
+  }
+}

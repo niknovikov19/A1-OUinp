@@ -1,0 +1,526 @@
+﻿condition,experiment,population,seed,target_hz,rate_hz,t0_s,t1_s
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TC,1000,8.0,7.864942528735632,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TC,1001,8.0,9.083333333333334,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TC,1002,8.0,13.902298850574713,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TC,1003,8.0,8.557471264367816,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TC,1004,8.0,10.46264367816092,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TC,1005,8.0,10.054597701149424,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TC,1006,8.0,9.71551724137931,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TC,1007,8.0,9.117816091954024,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TC,1008,8.0,16.160919540229887,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TC,1009,8.0,7.189655172413793,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TC,1010,8.0,13.094827586206897,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TC,1011,8.0,7.020114942528736,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TC,1012,8.0,5.652298850574712,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TC,1013,8.0,12.0,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TC,1014,8.0,7.218390804597702,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,HTC,1000,8.0,3.4473684210526314,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,HTC,1001,8.0,14.807017543859649,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,HTC,1002,8.0,9.070175438596491,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,HTC,1003,8.0,11.93859649122807,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,HTC,1004,8.0,11.701754385964913,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,HTC,1005,8.0,9.675438596491228,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,HTC,1006,8.0,3.9473684210526314,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,HTC,1007,8.0,9.350877192982455,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,HTC,1008,8.0,11.017543859649123,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,HTC,1009,8.0,3.403508771929825,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,HTC,1010,8.0,6.9298245614035086,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,HTC,1011,8.0,8.412280701754387,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,HTC,1012,8.0,8.956140350877192,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,HTC,1013,8.0,9.833333333333334,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,HTC,1014,8.0,1.9298245614035086,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TI,1000,15.0,13.790849673202615,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TI,1001,15.0,13.895424836601306,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TI,1002,15.0,15.745098039215685,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TI,1003,15.0,17.3202614379085,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TI,1004,15.0,16.11764705882353,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TI,1005,15.0,16.15686274509804,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TI,1006,15.0,16.908496732026144,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TI,1007,15.0,15.836601307189541,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TI,1008,15.0,14.81045751633987,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TI,1009,15.0,15.418300653594772,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TI,1010,15.0,14.934640522875815,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TI,1011,15.0,15.72549019607843,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TI,1012,15.0,13.529411764705882,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TI,1013,15.0,15.673202614379086,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TI,1014,15.0,14.73202614379085,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IRE,1000,15.0,13.901075268817204,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IRE,1001,15.0,13.434408602150539,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IRE,1002,15.0,14.95483870967742,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IRE,1003,15.0,15.473118279569894,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IRE,1004,15.0,15.180645161290322,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IRE,1005,15.0,15.888172043010751,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IRE,1006,15.0,14.113978494623655,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IRE,1007,15.0,15.210752688172041,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IRE,1008,15.0,15.795698924731184,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IRE,1009,15.0,14.617204301075267,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IRE,1010,15.0,18.589247311827958,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IRE,1011,15.0,12.81720430107527,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IRE,1012,15.0,14.610752688172042,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IRE,1013,15.0,14.470967741935484,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IRE,1014,15.0,14.701075268817203,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TCM,1000,2.0,0.8860215053763442,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TCM,1001,2.0,1.3591397849462366,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TCM,1002,2.0,4.027956989247312,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TCM,1003,2.0,4.210752688172043,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TCM,1004,2.0,1.9569892473118278,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TCM,1005,2.0,2.5075268817204304,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TCM,1006,2.0,0.7505376344086021,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TCM,1007,2.0,1.1913978494623656,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TCM,1008,2.0,2.1634408602150534,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TCM,1009,2.0,2.6451612903225805,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TCM,1010,2.0,6.531182795698925,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TCM,1011,2.0,2.449462365591398,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TCM,1012,2.0,2.113978494623656,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TCM,1013,2.0,4.103225806451613,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TCM,1014,2.0,1.0129032258064516,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TIM,1000,10.0,8.895424836601308,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TIM,1001,10.0,10.588235294117647,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TIM,1002,10.0,12.568627450980392,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TIM,1003,10.0,11.450980392156863,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TIM,1004,10.0,10.281045751633988,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TIM,1005,10.0,12.869281045751634,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TIM,1006,10.0,11.437908496732026,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TIM,1007,10.0,9.320261437908496,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TIM,1008,10.0,12.08496732026144,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TIM,1009,10.0,8.764705882352942,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TIM,1010,10.0,12.091503267973856,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TIM,1011,10.0,10.490196078431373,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TIM,1012,10.0,8.522875816993464,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TIM,1013,10.0,12.901960784313726,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TIM,1014,10.0,8.379084967320262,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IREM,1000,10.0,8.823655913978495,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IREM,1001,10.0,9.393548387096773,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IREM,1002,10.0,8.993548387096775,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IREM,1003,10.0,13.412903225806451,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IREM,1004,10.0,9.658064516129032,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IREM,1005,10.0,9.995698924731183,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IREM,1006,10.0,10.572043010752688,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IREM,1007,10.0,10.518279569892472,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IREM,1008,10.0,10.193548387096774,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IREM,1009,10.0,7.197849462365592,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IREM,1010,10.0,13.060215053763441,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IREM,1011,10.0,9.78494623655914,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IREM,1012,10.0,8.22795698924731,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IREM,1013,10.0,10.896774193548387,7,10
+All-surrogate,exp_thal_unconn_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IREM,1014,10.0,8.96774193548387,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TC,1000,8.0,19.091954022988503,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TC,1001,8.0,8.445402298850574,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TC,1002,8.0,19.272988505747126,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TC,1003,8.0,12.045977011494251,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TC,1004,8.0,13.885057471264368,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TC,1005,8.0,2.885057471264368,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TC,1006,8.0,23.227011494252874,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TC,1007,8.0,12.810344827586206,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TC,1008,8.0,11.635057471264368,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TC,1009,8.0,17.520114942528735,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TC,1010,8.0,4.977011494252874,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TC,1011,8.0,21.195402298850574,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TC,1012,8.0,8.810344827586206,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TC,1013,8.0,11.589080459770114,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TC,1014,8.0,28.301724137931036,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,HTC,1000,8.0,23.12280701754386,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,HTC,1001,8.0,9.385964912280702,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,HTC,1002,8.0,8.833333333333334,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,HTC,1003,8.0,10.903508771929824,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,HTC,1004,8.0,10.982456140350877,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,HTC,1005,8.0,7.798245614035087,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,HTC,1006,8.0,16.56140350877193,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,HTC,1007,8.0,18.824561403508774,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,HTC,1008,8.0,14.245614035087721,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,HTC,1009,8.0,9.140350877192981,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,HTC,1010,8.0,1.6228070175438596,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,HTC,1011,8.0,19.75438596491228,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,HTC,1012,8.0,2.508771929824561,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,HTC,1013,8.0,13.166666666666666,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,HTC,1014,8.0,10.06140350877193,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TI,1000,15.0,16.647058823529413,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TI,1001,15.0,15.287581699346404,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TI,1002,15.0,15.856209150326796,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TI,1003,15.0,14.26797385620915,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TI,1004,15.0,15.562091503267974,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TI,1005,15.0,14.215686274509803,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TI,1006,15.0,16.0718954248366,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TI,1007,15.0,14.431372549019608,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TI,1008,15.0,13.581699346405228,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TI,1009,15.0,14.699346405228757,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TI,1010,15.0,15.026143790849673,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TI,1011,15.0,15.764705882352942,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TI,1012,15.0,14.477124183006536,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TI,1013,15.0,15.222222222222223,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TI,1014,15.0,15.856209150326796,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IRE,1000,15.0,12.733333333333334,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IRE,1001,15.0,17.546236559139786,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IRE,1002,15.0,14.75268817204301,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IRE,1003,15.0,17.174193548387098,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IRE,1004,15.0,13.898924731182797,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IRE,1005,15.0,21.513978494623654,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IRE,1006,15.0,9.544086021505375,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IRE,1007,15.0,14.694623655913977,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IRE,1008,15.0,18.2752688172043,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IRE,1009,15.0,13.415053763440861,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IRE,1010,15.0,22.75698924731183,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IRE,1011,15.0,12.04516129032258,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IRE,1012,15.0,18.559139784946236,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IRE,1013,15.0,15.750537634408603,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IRE,1014,15.0,11.692473118279569,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TCM,1000,2.0,0.6451612903225806,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TCM,1001,2.0,5.6537634408602155,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TCM,1002,2.0,3.4731182795698925,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TCM,1003,2.0,7.791397849462366,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TCM,1004,2.0,2.3978494623655915,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TCM,1005,2.0,10.09032258064516,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TCM,1006,2.0,1.0451612903225806,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TCM,1007,2.0,1.810752688172043,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TCM,1008,2.0,8.653763440860214,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TCM,1009,2.0,3.0795698924731183,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TCM,1010,2.0,10.550537634408602,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TCM,1011,2.0,0.9913978494623655,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TCM,1012,2.0,9.281720430107528,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TCM,1013,2.0,4.645161290322581,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TCM,1014,2.0,0.9784946236559139,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TIM,1000,10.0,7.764705882352941,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TIM,1001,10.0,9.986928104575163,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TIM,1002,10.0,8.065359477124183,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TIM,1003,10.0,8.895424836601308,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TIM,1004,10.0,9.254901960784315,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TIM,1005,10.0,11.052287581699346,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TIM,1006,10.0,6.5359477124183005,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TIM,1007,10.0,8.66013071895425,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TIM,1008,10.0,9.215686274509803,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TIM,1009,10.0,7.431372549019608,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TIM,1010,10.0,11.522875816993464,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TIM,1011,10.0,7.450980392156863,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TIM,1012,10.0,9.647058823529411,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TIM,1013,10.0,9.313725490196079,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TIM,1014,10.0,6.026143790849673,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IREM,1000,10.0,13.655913978494622,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IREM,1001,10.0,9.490322580645161,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IREM,1002,10.0,12.346236559139786,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IREM,1003,10.0,10.765591397849462,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IREM,1004,10.0,12.378494623655914,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IREM,1005,10.0,7.759139784946237,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IREM,1006,10.0,16.572043010752687,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IREM,1007,10.0,11.948387096774194,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IREM,1008,10.0,10.225806451612904,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IREM,1009,10.0,13.531182795698927,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IREM,1010,10.0,6.838709677419355,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IREM,1011,10.0,14.537634408602152,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IREM,1012,10.0,9.359139784946237,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IREM,1013,10.0,10.924731182795698,7,10
+IREM→TI frozen,exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IREM,1014,10.0,15.623655913978494,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TC,1000,8.0,14.5,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TC,1001,8.0,11.867816091954024,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TC,1002,8.0,15.53448275862069,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TC,1003,8.0,14.554597701149424,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TC,1004,8.0,8.293103448275861,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TC,1005,8.0,8.132183908045977,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TC,1006,8.0,8.416666666666668,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TC,1007,8.0,11.060344827586206,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TC,1008,8.0,10.152298850574713,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TC,1009,8.0,12.10057471264368,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TC,1010,8.0,12.189655172413794,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TC,1011,8.0,12.971264367816092,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TC,1012,8.0,14.241379310344827,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TC,1013,8.0,10.994252873563218,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TC,1014,8.0,17.114942528735632,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,HTC,1000,8.0,9.903508771929824,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,HTC,1001,8.0,8.026315789473685,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,HTC,1002,8.0,5.912280701754386,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,HTC,1003,8.0,10.947368421052632,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,HTC,1004,8.0,10.850877192982455,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,HTC,1005,8.0,11.078947368421053,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,HTC,1006,8.0,6.798245614035087,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,HTC,1007,8.0,8.517543859649123,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,HTC,1008,8.0,22.166666666666668,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,HTC,1009,8.0,5.9561403508771935,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,HTC,1010,8.0,9.192982456140351,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,HTC,1011,8.0,5.175438596491228,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,HTC,1012,8.0,2.675438596491228,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,HTC,1013,8.0,9.535087719298245,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,HTC,1014,8.0,7.5,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TI,1000,15.0,14.862745098039216,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TI,1001,15.0,13.333333333333334,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TI,1002,15.0,13.934640522875815,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TI,1003,15.0,14.908496732026144,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TI,1004,15.0,14.431372549019608,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TI,1005,15.0,13.307189542483659,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TI,1006,15.0,13.862745098039216,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TI,1007,15.0,14.222222222222223,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TI,1008,15.0,13.241830065359478,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TI,1009,15.0,12.307189542483659,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TI,1010,15.0,15.405228758169933,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TI,1011,15.0,13.241830065359478,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TI,1012,15.0,13.49673202614379,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TI,1013,15.0,13.405228758169933,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TI,1014,15.0,12.313725490196079,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IRE,1000,15.0,17.049462365591395,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IRE,1001,15.0,15.39784946236559,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IRE,1002,15.0,17.11182795698925,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IRE,1003,15.0,17.07741935483871,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IRE,1004,15.0,16.80215053763441,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IRE,1005,15.0,16.27956989247312,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IRE,1006,15.0,15.490322580645161,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IRE,1007,15.0,15.843010752688171,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IRE,1008,15.0,16.4752688172043,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IRE,1009,15.0,15.096774193548388,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IRE,1010,15.0,16.516129032258064,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IRE,1011,15.0,16.29247311827957,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IRE,1012,15.0,15.834408602150539,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IRE,1013,15.0,15.410752688172042,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IRE,1014,15.0,16.15268817204301,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TCM,1000,2.0,4.617204301075269,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TCM,1001,2.0,4.425806451612903,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TCM,1002,2.0,7.427956989247312,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TCM,1003,2.0,6.595698924731183,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TCM,1004,2.0,3.4387096774193546,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TCM,1005,2.0,4.243010752688172,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TCM,1006,2.0,6.359139784946236,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TCM,1007,2.0,3.9096774193548387,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TCM,1008,2.0,6.219354838709678,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TCM,1009,2.0,2.4602150537634406,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TCM,1010,2.0,4.739784946236559,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TCM,1011,2.0,4.516129032258065,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TCM,1012,2.0,5.896774193548387,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TCM,1013,2.0,5.189247311827957,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TCM,1014,2.0,3.772043010752688,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TIM,1000,10.0,9.27450980392157,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TIM,1001,10.0,9.777777777777779,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TIM,1002,10.0,9.666666666666666,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TIM,1003,10.0,9.633986928104575,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TIM,1004,10.0,9.96078431372549,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TIM,1005,10.0,9.366013071895425,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TIM,1006,10.0,9.509803921568627,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TIM,1007,10.0,9.379084967320262,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TIM,1008,10.0,8.875816993464053,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TIM,1009,10.0,8.751633986928104,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TIM,1010,10.0,10.209150326797385,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TIM,1011,10.0,9.633986928104575,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TIM,1012,10.0,8.810457516339868,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TIM,1013,10.0,9.483660130718954,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TIM,1014,10.0,8.169934640522877,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IREM,1000,10.0,10.320430107526882,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IREM,1001,10.0,10.808602150537634,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IREM,1002,10.0,10.268817204301076,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IREM,1003,10.0,10.313978494623656,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IREM,1004,10.0,10.481720430107528,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IREM,1005,10.0,11.019354838709678,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IREM,1006,10.0,11.144086021505375,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IREM,1007,10.0,11.206451612903226,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IREM,1008,10.0,11.18494623655914,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IREM,1009,10.0,12.064516129032258,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IREM,1010,10.0,9.96774193548387,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IREM,1011,10.0,11.178494623655915,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IREM,1012,10.0,11.086021505376344,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IREM,1013,10.0,11.036559139784947,7,10
+IREM→IRE frozen,exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IREM,1014,10.0,11.978494623655914,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TC,1000,8.0,5.551724137931035,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TC,1001,8.0,23.057471264367816,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TC,1002,8.0,11.692528735632184,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TC,1003,8.0,14.264367816091955,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TC,1004,8.0,24.95689655172414,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TC,1005,8.0,33.17528735632184,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TC,1006,8.0,38.17816091954023,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TC,1007,8.0,20.45689655172414,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TC,1008,8.0,25.23563218390805,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TC,1009,8.0,18.977011494252874,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TC,1010,8.0,19.76436781609195,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TC,1011,8.0,22.525862068965516,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TC,1012,8.0,13.902298850574713,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TC,1013,8.0,21.767241379310345,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TC,1014,8.0,40.88505747126437,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,HTC,1000,8.0,7.324561403508771,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,HTC,1001,8.0,18.5,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,HTC,1002,8.0,10.93859649122807,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,HTC,1003,8.0,16.824561403508774,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,HTC,1004,8.0,25.42982456140351,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,HTC,1005,8.0,24.535087719298247,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,HTC,1006,8.0,26.00877192982456,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,HTC,1007,8.0,14.587719298245615,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,HTC,1008,8.0,34.70175438596491,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,HTC,1009,8.0,14.552631578947368,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,HTC,1010,8.0,16.026315789473685,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,HTC,1011,8.0,25.263157894736842,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,HTC,1012,8.0,3.5,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,HTC,1013,8.0,15.859649122807017,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,HTC,1014,8.0,23.649122807017545,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TI,1000,15.0,17.666666666666668,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TI,1001,15.0,8.163398692810457,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TI,1002,15.0,14.143790849673204,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TI,1003,15.0,12.405228758169933,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TI,1004,15.0,8.281045751633986,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TI,1005,15.0,8.477124183006536,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TI,1006,15.0,6.117647058823529,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TI,1007,15.0,12.483660130718954,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TI,1008,15.0,8.065359477124183,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TI,1009,15.0,12.81045751633987,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TI,1010,15.0,12.261437908496733,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TI,1011,15.0,9.928104575163399,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TI,1012,15.0,13.04575163398693,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TI,1013,15.0,8.235294117647058,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TI,1014,15.0,7.777777777777779,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IRE,1000,15.0,21.208602150537637,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IRE,1001,15.0,10.686021505376344,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IRE,1002,15.0,17.929032258064517,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IRE,1003,15.0,14.961290322580645,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IRE,1004,15.0,13.894623655913977,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IRE,1005,15.0,11.036559139784947,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IRE,1006,15.0,9.66021505376344,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IRE,1007,15.0,14.926881720430107,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IRE,1008,15.0,10.806451612903226,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IRE,1009,15.0,13.668817204301074,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IRE,1010,15.0,15.103225806451613,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IRE,1011,15.0,13.174193548387096,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IRE,1012,15.0,13.827956989247312,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IRE,1013,15.0,11.01720430107527,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IRE,1014,15.0,9.978494623655914,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TCM,1000,2.0,7.965591397849463,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TCM,1001,2.0,3.6,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TCM,1002,2.0,5.995698924731183,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TCM,1003,2.0,3.9870967741935486,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TCM,1004,2.0,5.488172043010753,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TCM,1005,2.0,2.3956989247311826,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TCM,1006,2.0,4.025806451612903,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TCM,1007,2.0,5.438709677419355,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TCM,1008,2.0,3.2838709677419353,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TCM,1009,2.0,1.0731182795698926,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TCM,1010,2.0,3.0021505376344084,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TCM,1011,2.0,2.838709677419355,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TCM,1012,2.0,2.3225806451612905,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TCM,1013,2.0,2.412903225806452,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TCM,1014,2.0,1.2258064516129032,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TIM,1000,10.0,10.73202614379085,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TIM,1001,10.0,7.333333333333333,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TIM,1002,10.0,9.450980392156863,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TIM,1003,10.0,9.098039215686274,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TIM,1004,10.0,7.705882352941177,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TIM,1005,10.0,5.738562091503268,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TIM,1006,10.0,4.993464052287582,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TIM,1007,10.0,7.686274509803922,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TIM,1008,10.0,6.169934640522876,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TIM,1009,10.0,9.30718954248366,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TIM,1010,10.0,8.686274509803921,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TIM,1011,10.0,7.803921568627451,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TIM,1012,10.0,8.797385620915033,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TIM,1013,10.0,6.921568627450981,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TIM,1014,10.0,5.882352941176471,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IREM,1000,10.0,7.664516129032258,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IREM,1001,10.0,15.219354838709677,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IREM,1002,10.0,9.929032258064517,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IREM,1003,10.0,11.595698924731183,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IREM,1004,10.0,13.739784946236558,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IREM,1005,10.0,15.255913978494622,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IREM,1006,10.0,18.04731182795699,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IREM,1007,10.0,12.567741935483872,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IREM,1008,10.0,16.316129032258065,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IREM,1009,10.0,12.268817204301076,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IREM,1010,10.0,11.649462365591399,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IREM,1011,10.0,14.139784946236558,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IREM,1012,10.0,11.913978494623656,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IREM,1013,10.0,15.281720430107526,7,10
+Fully recurrent,exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IREM,1014,10.0,16.778494623655913,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TC,1000,8.0,5.979885057471264,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TC,1001,8.0,21.261494252873565,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TC,1002,8.0,11.979885057471265,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TC,1003,8.0,12.020114942528735,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TC,1004,8.0,27.74137931034483,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TC,1005,8.0,25.67816091954023,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TC,1006,8.0,36.85632183908046,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TC,1007,8.0,22.669540229885055,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TC,1008,8.0,26.002873563218394,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TC,1009,8.0,16.10919540229885,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TC,1010,8.0,19.64367816091954,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TC,1011,8.0,22.841954022988503,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TC,1012,8.0,14.7183908045977,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TC,1013,8.0,22.810344827586206,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TC,1014,8.0,41.51724137931034,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,HTC,1000,8.0,7.5,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,HTC,1001,8.0,16.333333333333332,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,HTC,1002,8.0,11.675438596491228,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,HTC,1003,8.0,15.087719298245615,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,HTC,1004,8.0,27.438596491228072,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,HTC,1005,8.0,16.62280701754386,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,HTC,1006,8.0,26.035087719298247,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,HTC,1007,8.0,17.912280701754383,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,HTC,1008,8.0,34.68421052631579,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,HTC,1009,8.0,13.070175438596491,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,HTC,1010,8.0,15.675438596491228,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,HTC,1011,8.0,27.008771929824558,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,HTC,1012,8.0,4.570175438596491,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,HTC,1013,8.0,16.403508771929825,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,HTC,1014,8.0,25.780701754385962,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TI,1000,15.0,17.41176470588235,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TI,1001,15.0,8.843137254901961,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TI,1002,15.0,14.653594771241831,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TI,1003,15.0,13.163398692810459,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TI,1004,15.0,7.7254901960784315,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TI,1005,15.0,10.470588235294118,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TI,1006,15.0,6.183006535947712,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TI,1007,15.0,11.08496732026144,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TI,1008,15.0,7.849673202614379,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TI,1009,15.0,13.614379084967322,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TI,1010,15.0,12.477124183006536,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TI,1011,15.0,9.836601307189543,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TI,1012,15.0,12.633986928104576,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TI,1013,15.0,8.437908496732026,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TI,1014,15.0,7.326797385620916,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IRE,1000,15.0,20.93763440860215,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IRE,1001,15.0,11.627956989247311,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IRE,1002,15.0,18.462365591397848,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IRE,1003,15.0,15.886021505376345,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IRE,1004,15.0,13.161290322580646,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IRE,1005,15.0,12.544086021505375,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IRE,1006,15.0,9.929032258064517,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IRE,1007,15.0,13.655913978494622,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IRE,1008,15.0,10.578494623655914,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IRE,1009,15.0,14.311827956989248,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IRE,1010,15.0,15.215053763440862,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IRE,1011,15.0,13.0,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IRE,1012,15.0,13.63010752688172,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IRE,1013,15.0,11.23010752688172,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IRE,1014,15.0,9.589247311827956,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TCM,1000,2.0,7.554838709677419,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TCM,1001,2.0,3.9505376344086023,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TCM,1002,2.0,5.886021505376345,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TCM,1003,2.0,5.113978494623655,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TCM,1004,2.0,5.288172043010753,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TCM,1005,2.0,2.21505376344086,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TCM,1006,2.0,4.094623655913979,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TCM,1007,2.0,5.791397849462365,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TCM,1008,2.0,3.0623655913978496,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TCM,1009,2.0,1.4365591397849462,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TCM,1010,2.0,2.9870967741935486,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TCM,1011,2.0,3.0666666666666664,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TCM,1012,2.0,2.1913978494623656,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TCM,1013,2.0,2.3010752688172045,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TCM,1014,2.0,0.9720430107526881,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TIM,1000,10.0,10.705882352941176,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TIM,1001,10.0,7.522875816993465,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TIM,1002,10.0,9.627450980392156,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TIM,1003,10.0,9.50326797385621,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TIM,1004,10.0,7.294117647058823,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TIM,1005,10.0,6.869281045751634,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TIM,1006,10.0,5.124183006535947,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TIM,1007,10.0,6.9869281045751634,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TIM,1008,10.0,6.104575163398692,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TIM,1009,10.0,9.607843137254902,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TIM,1010,10.0,8.803921568627452,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TIM,1011,10.0,7.673202614379084,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TIM,1012,10.0,8.633986928104575,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TIM,1013,10.0,6.862745098039215,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,TIM,1014,10.0,5.6535947712418295,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IREM,1000,10.0,7.8086021505376335,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IREM,1001,10.0,14.546236559139784,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IREM,1002,10.0,9.41505376344086,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IREM,1003,10.0,10.939784946236559,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IREM,1004,10.0,14.417204301075268,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IREM,1005,10.0,13.69032258064516,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IREM,1006,10.0,17.827956989247312,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IREM,1007,10.0,13.860215053763442,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IREM,1008,10.0,16.44516129032258,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IREM,1009,10.0,11.69032258064516,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IREM,1010,10.0,11.53978494623656,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IREM,1011,10.0,14.273118279569893,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IREM,1012,10.0,12.167741935483871,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IREM,1013,10.0,15.236559139784946,7,10
+Faded from all-surrogate,exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5,IREM,1014,10.0,17.182795698924732,7,10
