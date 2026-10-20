@@ -28,7 +28,8 @@ uses the archived seed mapping; the saved cfg now also retains the fade points.
 Each child declares one result JSON and raster to the existing HPC completion
 contract. Its compact JSON additionally contains actual modulation-coefficient
 samples, rank-wise terminal coefficients, counts of instantiated modulated
-contacts, seven-population rate dynamics exported with `sim_data_analyzer`, and
+contacts, seven-population rate dynamics exported with the existing repository
+rate-processing helper, and
 pre/during/post-fade rate summaries. Existing synaptic-g plots have a corrected
 axis label; g and the dimensionless fade coefficient are separate quantities.
 
@@ -48,3 +49,17 @@ window summaries.
   The pilot now uses `CORE_POPS + MATX_POPS`, matching both archived branch-freeze
   cfgs. Background weights/rates/sections, baseline currents, mechanisms, targets,
   gains, and seed assignment are checked against the archived branch cfg.
+- All four combinations passed the archived-baseline comparison; the eight child
+  artifact paths are unique. Twelve HPC preflight/batch/interface tests passed.
+- Pushed documentation commit `0612925` and pilot commit
+  `e135ab7ef3fd0cd86bfdbdd916e0236a1bf524c6` to `origin/codex-hpc`.
+- Updated the clean automation checkout with `hpc-code-update`; prepared and
+  submitted `thal-irem-fade-pilot-20261020a` with `hpc-job-prepare` / `hpc-job`.
+  Controller Slurm job **118798**, submitted 2026-10-20 18:11:21 UTC (14:11 EDT).
+  Scientific result folder:
+  `exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_branch_fade_pilot_nseed_2_t_5.0_6.0_wmult_0.25_ee_0.5`.
+- First controller failed before child submission because `external/` is a local,
+  ignored dependency absent from the automation checkout. Removed that new remote
+  dependency: rate dynamics now use the existing repository helper with the same
+  requested bins/smoothing; local analysis uses `sim_data_analyzer` for archived
+  reference data. No simulations ran in attempt A.

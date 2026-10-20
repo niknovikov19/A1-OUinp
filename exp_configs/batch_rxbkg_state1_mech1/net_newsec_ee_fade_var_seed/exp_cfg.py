@@ -16,7 +16,6 @@ import pandas as pd
 from analysis.model_utils.net_utils import get_2pop_conns
 from analysis.ou_tuning import sim_res_proc_utils as proc
 from analysis.ou_tuning.netpyne_res_parse_utils import prepare_sim_result
-from external.sim_data_analyzer.xr_adapters import get_net_rate_dynamics_xr
 from conn_fader import ConnFader
 import diagnostics as diag
 
@@ -405,10 +404,10 @@ def get_pilot_diagnostics(sim):
     """Export compact full-record rates and numerical fading evidence. """
     cfg = sim.cfg
     sim_result = prepare_sim_result(sim)
-    rates = get_net_rate_dynamics_xr(sim_result, t_limits=(0, cfg.duration / 1000),
-                                     dt_bin=0.02, tau_smooth=0.05, pop_names=POPS_USED)
-    time_axis = next(dim for dim in rates.dims if dim != 'pop')
-    rates = rates.transpose('pop', time_axis)
+    rates = proc.calc_rate_dynamics(sim_result, t_limits=(0, cfg.duration / 1000),
+                                    dt_bin=0.02, tau_smooth=0.05, pops_used=POPS_USED)
+    time_s = rates[POPS_USED[0]][0].tolist()
+    rate_hz = [rates[pop][1].tolist() for pop in POPS_USED]
     coefficients = {name: list(mod['rec_a']) for name, mod in sim.ee_fader.modulators.items()}
     phases = {'before_fade': (1, 3), 'during_fade': (3, 5), 'after_fade': (5, 6)}
     phase_rates = {name: proc.calc_rates_and_cvs(sim_result, window)['rates']
@@ -418,9 +417,10 @@ def get_pilot_diagnostics(sim):
         'duration_ms': cfg.duration, 'fader_pts_ms': cfg.fader_pts,
         'target_rates_hz': {pop: cfg.target_rates[pop] for pop in POPS_USED},
         'phase_windows_s': phases, 'phase_rates_hz': phase_rates,
-        'rate_dynamics': {'time_s': rates[time_axis].values.tolist(),
-                          'pops': list(POPS_USED), 'rate_hz': rates.values.tolist(),
+        'rate_dynamics': {'time_s': time_s,
+                          'pops': list(POPS_USED), 'rate_hz': rate_hz,
                           'dt_bin_s': 0.02, 'tau_smooth_s': 0.05},
+        'rate_dynamics_backend': 'analysis.ou_tuning.sim_res_proc_utils.calc_rate_dynamics',
         'coefficient_record_dt_ms': 20, 'coefficients': coefficients,
         'contact_counts': sim.fader_contact_counts,
         'rank_endpoints': sim.fader_rank_endpoints,

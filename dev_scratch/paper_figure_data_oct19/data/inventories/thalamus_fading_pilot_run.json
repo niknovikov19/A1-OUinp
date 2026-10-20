@@ -1,0 +1,15 @@
+{
+  "run_id": "thal-irem-fade-pilot-20261020a",
+  "request_id": "thal-irem-fade-pilot",
+  "git_commit": "e135ab7ef3fd0cd86bfdbdd916e0236a1bf524c6",
+  "slurm_controller_job_id": 118798,
+  "submitted_at_utc": "2026-10-20T18:11:21.480592+00:00",
+  "request_sha256": "d0193befa09a9f19bf2d114ed8227faf9772eca4ce81c743e99f681f95af9680",
+  "rendered_script_sha256": "29cf0fec4f40142192662448a7a130314703fc5005435fb90f9639989187aa49",
+  "expected_result_path": "exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_branch_fade_pilot_nseed_2_t_5.0_6.0_wmult_0.25_ee_0.5",
+  "parameters": {"seed_main": [1000, 1001], "fade_post": ["TI", "IRE"]},
+  "duration_ms": 6000,
+  "summary_window_s": [5, 6],
+  "fade_window_s": [3, 5],
+  "production_table_columns_remain_blank": true
+}
