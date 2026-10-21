@@ -144,5 +144,13 @@
       "seed_main": 15
     },
     "status": "ok"
+  },
+  "resolved_common_cfg_differences": {
+    "GABABCtx": "Network construction sets the same MyExp2SynBBModulated mechanism; parameters match.",
+    "GABABThal": "Network construction sets the same MyExp2SynBBModulated mechanism; parameters match.",
+    "wmat": "Network construction multiplies the base matrix by wmult; the complete scaled matrix matches.",
+    "subnet_params": "Only the split-projection set and repository-specific target-rate path differ; populations, freezes, and global seed match.",
+    "saveFolder": "Assigned by the launcher for this run.",
+    "simLabel": "Assigned by the launcher for this child."
   }
 }
