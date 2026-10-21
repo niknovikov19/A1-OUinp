@@ -1,0 +1,23 @@
+{
+  "run_id": "thal-irem-ti-fade-20261020b",
+  "slurm_job_id": 118881,
+  "child_key": "net_newsec_ee_fade_var_seed_00003",
+  "simulation_commit": "cdeb4e10cd2b71e3baa9ffae45395fc626d8df6e",
+  "source": "Installed hpc-job log, seed 1003; bounded stdout page",
+  "stdout_start_offset": 6973,
+  "stdout_end_offset": 11625,
+  "log_excerpt": [
+    "Created modulator ee_pos for group ee (inv=False)",
+    "  Assigned conn ITh_IREM_TI to modulator ee_pos",
+    "Created modulator ee_neg for group ee (inv=True)",
+    "  Assigned conn frz_ITh_IREM_TI to modulator ee_neg",
+    "Connected modulator ee_pos to synapse of conn ITh_IREM_TI",
+    "Connected modulator ee_neg to synapse of conn frz_ITh_IREM_TI"
+  ],
+  "interpretation": {
+    "ee_pos": "Recurrent IREM→TI connections; fade in",
+    "ee_neg": "Surrogate IREMfrz→TI connections; fade out",
+    "group_name": "Hard-coded ee names the group; connection selection uses CONNS_SPLIT",
+    "plotted_quantity": "Representative synaptic conductance g; existing pmod y-axis label is misleading"
+  }
+}

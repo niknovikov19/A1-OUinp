@@ -102,3 +102,27 @@ parallel task work, extra status queries, or local-state checks.
   retain the 15 seeds, child IDs, compact manifest/checksums, and exact source
   commit. These completed-run rates are separate from both pilots and the
   cancelled partial attempt. The paper table has not been regenerated here.
+
+## Seed-1003 modulation legend check
+
+The `ee_pos` / `ee_neg` legend is a hard-coded group name, not a selection of
+E–E projections. The saved seed-1003 cfg specifies only `IREM, TI` as split.
+The actual simulation log (Slurm 118881) reports:
+
+```text
+Assigned conn ITh_IREM_TI to modulator ee_pos
+Assigned conn frz_ITh_IREM_TI to modulator ee_neg
+Connected modulator ee_pos to synapse of conn ITh_IREM_TI
+Connected modulator ee_neg to synapse of conn frz_ITh_IREM_TI
+```
+
+`modify_network()` selects recurrent IREM→TI and surrogate IREMfrz→TI rules
+from `CONNS_SPLIT`, then gives that group the generic name `ee`. The positive
+suffix means recurrence fades in; the negative suffix means surrogate input
+fades out. The run therefore selected the intended projection despite the
+misleading legend. No code or simulation settings were changed for this check.
+
+There is a separate existing axis-label issue: `ConnFader.setup_recording()`
+records a representative synapse's `g`, although `plot_recs()` labels it `pmod`.
+Thus this PNG plots synaptic conductance, not the numerical fading coefficient.
+[Bounded log excerpt and evidence](../data/inventories/irem_ti_seed1003_fader_labels.json).
