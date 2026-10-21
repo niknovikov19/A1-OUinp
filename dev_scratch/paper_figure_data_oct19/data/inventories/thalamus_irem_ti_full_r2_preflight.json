@@ -1,0 +1,29 @@
+{
+  "status": "passed",
+  "scientific_parameters_unchanged_from": "0bdf1a5be351ab7b18d6b60e980b836f83130fd4",
+  "experiment_changed_assignments": [
+    "EXP_LABEL"
+  ],
+  "experiment_functions_unchanged": true,
+  "reference_parameter_checks": "thalamus_irem_ti_full_preflight.json",
+  "simulation_job_resources": {
+    "partition": "cpu.q",
+    "nodes": 1,
+    "cores": 32,
+    "memory_gb": 128,
+    "wall_time_min": 60
+  },
+  "max_concurrent_simulation_jobs": 10,
+  "preflight": {
+    "schema_version": 1,
+    "request_id": "thal-irem-ti-fade",
+    "job_kind": "batch",
+    "target": "batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed",
+    "resolved_result_path": "exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_ti_fade_r2_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5",
+    "planned_jobs": 15,
+    "parameter_axis_sizes": {
+      "seed_main": 15
+    },
+    "status": "ok"
+  }
+}

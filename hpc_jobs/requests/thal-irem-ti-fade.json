@@ -4,7 +4,7 @@
   "job_kind": "batch",
   "target": "batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed",
   "template_path": "hpc_jobs/templates/batch.sh",
-  "expected_result_path": "exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_ti_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5",
+  "expected_result_path": "exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_ti_fade_r2_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5",
   "completion_files": [
     "jobs/index.jsonl",
     "results/result_00000_seed_1000.json",
@@ -63,10 +63,10 @@
   "simulation_job_resources": {
     "partition": "cpu.q",
     "nodes": 1,
-    "cores": 8,
-    "memory_gb": 32,
+    "cores": 32,
+    "memory_gb": 128,
     "wall_time_min": 60
   },
-  "max_concurrent_simulation_jobs": 2,
+  "max_concurrent_simulation_jobs": 10,
   "max_simulation_jobs": 15
 }
