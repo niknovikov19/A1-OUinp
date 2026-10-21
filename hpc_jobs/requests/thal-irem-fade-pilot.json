@@ -4,8 +4,18 @@
   "job_kind": "batch",
   "target": "batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed",
   "template_path": "hpc_jobs/templates/batch.sh",
-  "expected_result_path": "exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_branch_fade_pilot_nseed_2_t_5.0_6.0_wmult_0.25_ee_0.5",
-  "completion_files": ["jobs/index.jsonl"],
+  "expected_result_path": "exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_branch_fade_pilot_v2_nseed_2_t_5.0_6.0_wmult_0.25_ee_0.5",
+  "completion_files": [
+    "jobs/index.jsonl",
+    "results/result_00000_seed_1000.json",
+    "rasters/raster_00000_seed_1000.png",
+    "results/result_00001_seed_1000.json",
+    "rasters/raster_00001_seed_1000.png",
+    "results/result_00002_seed_1001.json",
+    "rasters/raster_00002_seed_1001.png",
+    "results/result_00003_seed_1001.json",
+    "rasters/raster_00003_seed_1001.png"
+  ],
   "top_level_resources": {
     "partition": "cpu.q",
     "nodes": 1,

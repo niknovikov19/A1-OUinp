@@ -63,3 +63,18 @@ window summaries.
   dependency: rate dynamics now use the existing repository helper with the same
   requested bins/smoothing; local analysis uses `sim_data_analyzer` for archived
   reference data. No simulations ran in attempt A.
+- Finalized and released failed attempt A with the protected utilities. Pushed
+  correction `a1d5bb23de7c6e934b44b3948193e4f7737556db`, updated and prepared
+  attempt B, and submitted controller **118799** at 18:15:19 UTC (14:15 EDT),
+  run ID `thal-irem-fade-pilot-20261020b`. Same four-run request and scientific
+  parameters; only the rate-export dependency changed.
+- Attempt B controller and all four children completed with scheduler exit 0.
+  Protected finalization nevertheless marked the run failed: the top-level
+  request declared only `jobs/index.jsonl`, whereas its child records also
+  declared the four result JSONs and four rasters. The helper requires every
+  child output to be included in the top-level completion list. This was a
+  request-definition error, not evidence of a failed simulation. It blocks the
+  result-inventory utility for attempt B. Corrected the nine-file manifest and
+  selected a fresh `_pilot_v2` result name for a clean rerun; old files and the
+  failed finalization record are preserved. Child logs confirm correct projection
+  labels and 6 s simulations (~18 s integration, ~32 s total per child).
