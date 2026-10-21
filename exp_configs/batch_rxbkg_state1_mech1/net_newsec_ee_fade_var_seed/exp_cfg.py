@@ -72,7 +72,7 @@ T0_CALC = 7 * 1e3
 #EXP_LABEL = 'thal_all_fade'
 #EXP_LABEL = 'a1_ee_0_irem_core_0'
 #EXP_LABEL = 'a1_ee_fade_irem_ire_0'
-EXP_LABEL = 'thal_irem_ti_fade_r2'
+EXP_LABEL = 'thal_irem_ire_fade'
 #EXP_LABEL = 'core_full'
 #EXP_LABEL = 'matx_full'
 #EXP_LABEL = 'irem_ire_0'
@@ -99,7 +99,7 @@ CONNS_FROZEN = []
 EE_FADER_ON = 1
 
 #CONNS_SPLIT = []
-CONNS_SPLIT = [('IREM', 'TI')]
+CONNS_SPLIT = [('IREM', 'IRE')]
 #CONNS_SPLIT = CONNS_THAL
 #CONNS_SPLIT = [(p1, p2) for p1 in ['TI', 'TIM'] for p2 in THAL_E_POPS]
 #CONNS_SPLIT = [(p1, p2) for p1 in THAL_E_POPS for p2 in ['TI', 'TIM']]
