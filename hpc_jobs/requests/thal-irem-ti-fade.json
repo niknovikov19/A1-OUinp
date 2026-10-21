@@ -63,7 +63,7 @@
   "simulation_job_resources": {
     "partition": "cpu.q",
     "nodes": 1,
-    "cores": 32,
+    "cores": 30,
     "memory_gb": 128,
     "wall_time_min": 60
   },

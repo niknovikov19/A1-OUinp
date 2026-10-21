@@ -65,3 +65,9 @@ parallel task work, extra status queries, or local-state checks.
   operational request resources change: 10 concurrent simulations, each 32 MPI
   ranks and 128 GiB. Batch-main resources remain 2 cores and 16 GiB.
 - After submission, start the watcher and wait without other task work or checks.
+- Protected preparation rejected the 32-core restart because the installed
+  per-simulation ceiling is 30 cores. No replacement job was submitted.
+  The user then selected **30 cores**, retaining concurrency **10** and
+  **128 GiB per simulation**. Discarded the uncommitted policy-update candidates;
+  no protected configuration or helper changed. The restart uses the same
+  fresh result label and unchanged scientific settings.
