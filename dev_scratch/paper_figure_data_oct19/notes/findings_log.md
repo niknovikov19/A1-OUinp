@@ -228,3 +228,30 @@ checkout, job, or result file was changed. The user subsequently requested that
 this rollback be committed, pushed, and fetched on lethe without updating its
 checked-out commit.
 
+## Pilot analysis resumed — 2026-10-20
+
+- The completion-list repair recovered attempt B and released its checkout;
+  all four simulations had completed. The installed `hpc-result` inventory now
+  works. Retrieved three missing result JSONs and verified the existing fourth
+  cache copy through that helper. Each JSON is about 116 kB; only 347 kB of new
+  scientific payload was transferred. No raw pickle or raster was retrieved.
+- The existing analysis script passed the saved protocol, population, finite-rate,
+  contact-count, coefficient-schedule, and eight-rank endpoint checks for all
+  four runs. Maximum recurrent-coefficient discrepancy is 0.000025; recurrent
+  and surrogate coefficients sum to one for every recorded sample after t=0.
+  The t=0 sample has both shared coefficients zero and is explicitly excluded;
+  terminal representative synaptic coefficients are 1/0 on every rank.
+- Read four existing local NetCDF reference caches with `sim_data_analyzer`.
+  Preserved checksummed pilot snapshots, 84 population/phase rows, a numerical
+  analysis report, and full/cropped rate plots. These operations read no mounted
+  simulation data.
+- The short pilot does not establish convergence to the historical bad outcome.
+  IREM→TI seed 1000 is already high before fading (TC/HTC 28.96/28.51 Hz), whereas
+  seed 1001 ends at 5.38/6.84 Hz. IREM→IRE endpoints are 14.84/13.08 and
+  8.57/11.87 Hz. Historical fully recurrent means are 22.29/18.51 Hz over 7–10 s.
+  The pilot measures only 5–6 s, immediately after the fade ends at 5 s.
+- Keep both production-table columns blank. Before a production cohort, use a
+  longer pilot and a fully recurrent control under the same code. Configure each
+  projection through existing parameter values in separate pinned revisions;
+  do not restore the removed batch axis. No experiment file or job was changed.
+

@@ -1,0 +1,169 @@
+{
+  "run_id": "thal-irem-fade-pilot-20261020b",
+  "validation": "saved_protocol_and_coefficients_passed",
+  "scientific_convergence": "not_established",
+  "runs": [
+    {
+      "source_cache": "exp_results_local/hpc_codex/thal-irem-fade-pilot-20261020b/net_newsec_ee_fade_var_seed_00000/result_00000_seed_1000.json",
+      "snapshot": "data/snapshots/pilot_thalamus_fading/irem_to_ti_seed_1000.json",
+      "sha256": "48ff10a63b6021e5c955de6dcb533631490469ba22d400ef12d67305638ce4d1",
+      "bytes": 115842,
+      "fade_projection": "IREM→TI",
+      "seed": 1000,
+      "max_coefficient_error": 2.500000000016378e-05,
+      "max_complement_error": 0.0,
+      "initial_sample_coefficients": [
+        0.0,
+        0.0
+      ],
+      "contact_counts": {
+        "recurrent": 2337,
+        "surrogate": 2459
+      },
+      "rank_endpoint_checks": "passed on all eight ranks",
+      "phase_mean_absolute_errors_hz": {
+        "before_fade": 7.846794138883818,
+        "during_fade": 5.617912096048537,
+        "after_fade": 6.069514475188824
+      }
+    },
+    {
+      "source_cache": "exp_results_local/hpc_codex/thal-irem-fade-pilot-20261020b/net_newsec_ee_fade_var_seed_00001/result_00001_seed_1000.json",
+      "snapshot": "data/snapshots/pilot_thalamus_fading/irem_to_ire_seed_1000.json",
+      "sha256": "1d824282569e29324d87fa35e2852b9c428e430d128dea970ab597ff17062ef5",
+      "bytes": 115662,
+      "fade_projection": "IREM→IRE",
+      "seed": 1000,
+      "max_coefficient_error": 2.500000000016378e-05,
+      "max_complement_error": 0.0,
+      "initial_sample_coefficients": [
+        0.0,
+        0.0
+      ],
+      "contact_counts": {
+        "recurrent": 2497,
+        "surrogate": 2407
+      },
+      "rank_endpoint_checks": "passed on all eight ranks",
+      "phase_mean_absolute_errors_hz": {
+        "before_fade": 2.4987303492323685,
+        "during_fade": 2.0422924541281886,
+        "after_fade": 3.087002701086289
+      }
+    },
+    {
+      "source_cache": "exp_results_local/hpc_codex/thal-irem-fade-pilot-20261020b/net_newsec_ee_fade_var_seed_00002/result_00002_seed_1001.json",
+      "snapshot": "data/snapshots/pilot_thalamus_fading/irem_to_ti_seed_1001.json",
+      "sha256": "60cfc1f6ec4a735d7801d5ae969176d32a781da1b4d531baea16067458eed3a0",
+      "bytes": 115499,
+      "fade_projection": "IREM→TI",
+      "seed": 1001,
+      "max_coefficient_error": 2.500000000016378e-05,
+      "max_complement_error": 0.0,
+      "initial_sample_coefficients": [
+        0.0,
+        0.0
+      ],
+      "contact_counts": {
+        "recurrent": 2441,
+        "surrogate": 2320
+      },
+      "rank_endpoint_checks": "passed on all eight ranks",
+      "phase_mean_absolute_errors_hz": {
+        "before_fade": 2.592814263460785,
+        "during_fade": 1.1333556032330385,
+        "after_fade": 2.62487954493313
+      }
+    },
+    {
+      "source_cache": "exp_results_local/hpc_codex/thal-irem-fade-pilot-20261020b/net_newsec_ee_fade_var_seed_00003/result_00003_seed_1001.json",
+      "snapshot": "data/snapshots/pilot_thalamus_fading/irem_to_ire_seed_1001.json",
+      "sha256": "03a37db956dcd457b8911e3bfad0d977e75ed0af67375e186a8da8c7eb49108c",
+      "bytes": 115678,
+      "fade_projection": "IREM→IRE",
+      "seed": 1001,
+      "max_coefficient_error": 2.500000000016378e-05,
+      "max_complement_error": 0.0,
+      "initial_sample_coefficients": [
+        0.0,
+        0.0
+      ],
+      "contact_counts": {
+        "recurrent": 2433,
+        "surrogate": 2430
+      },
+      "rank_endpoint_checks": "passed on all eight ranks",
+      "phase_mean_absolute_errors_hz": {
+        "before_fade": 1.9050485518251563,
+        "during_fade": 2.3256746279098257,
+        "after_fade": 2.010238381401387
+      }
+    }
+  ],
+  "historical_15_seed_mean_rates_hz": {
+    "irem_ti_0": {
+      "TC": 14.379501915708813,
+      "HTC": 11.794152046783624,
+      "TI": 15.13115468409586,
+      "IRE": 15.623512544802866,
+      "TCM": 4.739211469534051,
+      "TIM": 8.72156862745098,
+      "IREM": 11.730465949820788
+    },
+    "irem_ire_0": {
+      "TC": 12.141570881226054,
+      "HTC": 8.949122807017545,
+      "TI": 13.751633986928105,
+      "IRE": 16.188673835125446,
+      "TCM": 4.920716845878135,
+      "TIM": 9.366884531590413,
+      "IREM": 10.937347670250896
+    },
+    "thal_ee_1": {
+      "TC": 22.29272030651341,
+      "HTC": 18.51345029239766,
+      "TI": 10.657516339869282,
+      "IRE": 13.458637992831541,
+      "TCM": 3.670394265232974,
+      "TIM": 7.753812636165577,
+      "IREM": 13.491182795698924
+    },
+    "thal_all_fade": {
+      "TC": 21.85536398467433,
+      "HTC": 18.386549707602338,
+      "TI": 10.780827886710243,
+      "IRE": 13.583942652329746,
+      "TCM": 3.7274551971326164,
+      "TIM": 7.79825708061002,
+      "IREM": 13.402724014336917
+    }
+  },
+  "historical_sources": {
+    "irem_ti_0": {
+      "path": "dev_scratch/thal_frz/analysis/collected/exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5.nc",
+      "sha256": "b01cc422ffdb0daa8314fc4e474135ed0ee590e87dde68eacf2967fd9b9b356e"
+    },
+    "irem_ire_0": {
+      "path": "dev_scratch/thal_frz/analysis/collected/exp_irem_ire_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5.nc",
+      "sha256": "8831c7b4d896b7801c127f47286642dbc6e358ab44eb16086f13697f3c8ffac8"
+    },
+    "thal_ee_1": {
+      "path": "dev_scratch/thal_frz/analysis/collected/exp_thal_ee_1_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5.nc",
+      "sha256": "eb154bc34ca9005ceac53e398fcb91a398036e4b18c743b29a5d277a490509bc"
+    },
+    "thal_all_fade": {
+      "path": "dev_scratch/thal_frz/analysis/collected/exp_thal_all_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5.nc",
+      "sha256": "a00ae147e3e89b2e2932fa66762698d69c4381bef0a46d5b0bd3c1746fa88757"
+    }
+  },
+  "historical_window_s": [
+    7,
+    10
+  ],
+  "pilot_endpoint_window_s": [
+    5,
+    6
+  ],
+  "initial_coefficient_sample_note": "t=0 excluded from schedule/complement checks; shared-variable initialization transient",
+  "production_table_updated": false
+}

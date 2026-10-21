@@ -110,11 +110,14 @@ def main():
 
     # Read only local historical caches through sim_data_analyzer for context
     historical = {}
+    reference_sources = {}
     for label in ['irem_ti_0', 'irem_ire_0', 'thal_ee_1', 'thal_all_fade']:
         name = f'exp_{label}_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5.nc'
         path = DIR_REPO / 'dev_scratch/thal_frz/analysis/collected' / name
         with load_xr(path, data_type='dataset', engine='h5netcdf', load=True) as dataset:
             historical[label] = {pop: float(dataset['rate'].sel(pop=pop).mean()) for pop in POPS}
+        reference_sources[label] = {'path': str(path.relative_to(DIR_REPO)),
+                                    'sha256': hashlib.sha256(path.read_bytes()).hexdigest()}
 
     # Plot both seeds, all modeled populations, targets, and the fade interval
     figure, axes = plt.subplots(7, 2, figsize=(12, 15), sharex=True)
@@ -140,6 +143,23 @@ def main():
     plots = DIR_TASK / 'plots'
     plots.mkdir(exist_ok=True)
     figure.savefig(plots / 'thalamus_fading_pilot_rates.png', dpi=150)
+
+    # Save a second view so the initial discharge does not compress later dynamics
+    for column, post in enumerate(['TI', 'IRE']):
+        for row, pop in enumerate(POPS):
+            axis = axes[row, column]
+            values = [TARGETS[pop]]
+            for run in runs:
+                if run['fade_pair'][1] != post:
+                    continue
+                rates = run['rate_dynamics']
+                index = rates['pops'].index(pop)
+                values.extend(rate for time, rate in zip(rates['time_s'], rates['rate_hz'][index])
+                              if time >= 1)
+            margin = max((max(values) - min(values)) * 0.1, 0.5)
+            axis.set_xlim(1, 6)
+            axis.set_ylim(max(0, min(values) - margin), max(values) + margin)
+    figure.savefig(plots / 'thalamus_fading_pilot_rates_after_1s.png', dpi=150)
     plt.close(figure)
 
     # Write machine-readable results separately from the incomplete production table
@@ -148,8 +168,10 @@ def main():
         writer = csv.DictWriter(stream, fieldnames=list(phase_rows[0]), lineterminator='\n')
         writer.writeheader()
         writer.writerows(phase_rows)
-    report = {'run_id': args.run_id, 'validation': 'passed', 'runs': evidence,
+    report = {'run_id': args.run_id, 'validation': 'saved_protocol_and_coefficients_passed',
+              'scientific_convergence': 'not_established', 'runs': evidence,
               'historical_15_seed_mean_rates_hz': historical,
+              'historical_sources': reference_sources,
               'historical_window_s': [7, 10], 'pilot_endpoint_window_s': [5, 6],
               'initial_coefficient_sample_note': 't=0 excluded from schedule/complement checks; shared-variable initialization transient',
               'production_table_updated': False}
