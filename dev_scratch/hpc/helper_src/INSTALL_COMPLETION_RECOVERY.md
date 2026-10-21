@@ -1,7 +1,8 @@
 # Repair the output-list mismatch and recover the locked pilot
 
-Status: candidate prepared; protected installation and live recovery are pending.
-No new simulations are needed.
+Status: local and lethe installation passed for commit `ad2805c`. Live recovery,
+result inventory, repeated finalization/release, and checkout unlock passed on
+October 20, 2026. No simulations were rerun.
 
 ## What changes?
 
@@ -37,6 +38,10 @@ profile and omit rasters/raw data that do not match that profile.
 
 ## Install the reviewed code
 
+These steps document the completed installation. The run is now released;
+the installer deliberately requires the former active-run state, so do not rerun
+this recovery-specific installation after release.
+
 The [promotion rule](README.md#promotion-rule) requires the user to install
 protected copies. Codex must not execute candidate helpers as replacements or
 patch installed copies. These are manual installation steps, not commands that
@@ -52,7 +57,7 @@ still requires inspection/repeating installation before using the helpers.
 Set the full commit hash reported by Codex, then run:
 
 ```bash
-RECOVERY_COMMIT='<full 40-character recovery commit>'
+RECOVERY_COMMIT='ad2805cf57e81e868ef85f41949ed975f89e2e5c'
 sudo /usr/bin/python3 \
   /home/nnovikov/repo/A1-OUinp/dev_scratch/hpc/helper_src/promotion/promote_completion_recovery.py \
   local "$RECOVERY_COMMIT"
@@ -66,7 +71,7 @@ The active lock prevents checkout updates. Fetch the commit and export the
 installer from Git without checking it out:
 
 ```bash
-RECOVERY_COMMIT='<same full 40-character recovery commit>'
+RECOVERY_COMMIT='ad2805cf57e81e868ef85f41949ed975f89e2e5c'
 RECOVERY_REPO=/ddn/niknovikov19/repo/A1_OUinp_codex
 RECOVERY_SCRIPT=$(mktemp /tmp/promote-completion-recovery.XXXXXX.py)
 
@@ -92,18 +97,20 @@ Both installations must print `COMPLETION_RECOVERY_INSTALL=PASS` with the
 appropriate site. The output includes installed hashes. Return both outputs
 to Codex before proceeding.
 
-## Codex will finish through installed commands
+## Live acceptance results
 
-After both installations, Codex will:
+After both installations, Codex used the installed commands:
 
-1. Run `hpc-job --json finalize thal-irem-fade-pilot-20261020b` and check that
-   it reports `recovered`, four simulation IDs, and nine verified files.
-2. Repeat finalization to verify that it returns the same saved result.
-3. Request a result inventory to check that the eight simulation outputs are
-   available through normal retrieval.
-4. Run `hpc-job --json release thal-irem-fade-pilot-20261020b`, repeat it, and
-   check that `hpc-code-status` reports no active run.
+1. `hpc-job --json finalize thal-irem-fade-pilot-20261020b` returned `recovered`,
+   `complete`, four simulation IDs, and nine verified files.
+2. Repeating finalization returned `existing` with the same complete result.
+3. `hpc-result --json inventory thal-irem-fade-pilot-20261020b` listed all eight
+   simulation outputs: four result JSONs and four rasters.
+4. `hpc-job --json release thal-irem-fade-pilot-20261020b` returned `released`;
+   repeating it returned `existing` with the same release timestamp.
+5. `hpc-code-status --json` confirmed `active_run: false`, no update lock, and a
+   clean checkout at the original simulation commit `a1d5bb2`.
 
-If any named file is missing, Codex will report that fact rather than claim
-success. Releasing a settled failed run remains possible. These steps do not
-update the checkout or submit another pilot.
+The original failure was preserved by the recovery operation. No scientific
+payloads were downloaded and the checkout was not updated. Full command responses
+are saved in [live_acceptance.json](../list_mismatch_recovery/live_acceptance.json).

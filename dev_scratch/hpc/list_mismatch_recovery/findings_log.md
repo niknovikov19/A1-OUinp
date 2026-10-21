@@ -42,3 +42,26 @@
   hashes, and Git whitespace checks passed.
 - Protected installation, live re-finalization, normal result inventory, and
   explicit release remain pending. No simulation was rerun or data file changed.
+
+## Installed recovery — 2026-10-20
+
+- The user reported successful local and lethe installation of commit
+  `ad2805cf57e81e868ef85f41949ed975f89e2e5c`.
+- Installed `hpc-job finalize` returned `recovered` and `run_status: complete`
+  for `thal-irem-fade-pilot-20261020b`. It verified all nine required files and
+  retained child IDs 118800–118803. The helper identified itself as
+  `0.17.0-completion-recovery`, source SHA256
+  `d86f49f25d52affe7d2f8c22df9c1b506e13f41627941a09af3eb0be4b834ff8`.
+  Observation: `2026-10-21T00:39:14.107430+00:00` (October 20 locally).
+- Repeating installed finalization returned `existing` with the same complete
+  status and nine files. Normal installed result inventory succeeded and listed
+  four result JSONs and four rasters. No scientific payloads were downloaded.
+  Saved those command responses in `live_acceptance.json`.
+- Installed release returned `released` at `2026-10-21T00:40:09.870608+00:00`
+  (October 20 locally). Repeating release returned `existing` with the same
+  timestamp. Installed checkout status then confirmed `active_run: false`,
+  `update_lock_active: false`, and a clean checkout at the original `a1d5bb2`
+  simulation commit. Normal updates are no longer blocked by this run.
+- Live recovery and release are complete. No simulations were submitted or
+  rerun, the checkout was not updated, and no scientific payloads were downloaded.
+  The previously staged four pilot files remain separate from this recovery record.

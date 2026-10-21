@@ -1,0 +1,213 @@
+{
+  "repair_commit": "ad2805cf57e81e868ef85f41949ed975f89e2e5c",
+  "first_finalization_result": "recovered",
+  "repeated_finalization": {
+    "child_job_ids": [
+      118800,
+      118801,
+      118802,
+      118803
+    ],
+    "completion_files_verified": [
+      "jobs/index.jsonl",
+      "rasters/raster_00000_seed_1000.png",
+      "rasters/raster_00001_seed_1000.png",
+      "rasters/raster_00002_seed_1001.png",
+      "rasters/raster_00003_seed_1001.png",
+      "results/result_00000_seed_1000.json",
+      "results/result_00001_seed_1000.json",
+      "results/result_00002_seed_1001.json",
+      "results/result_00003_seed_1001.json"
+    ],
+    "helper": {
+      "name": "hpc-lethe-job",
+      "source_sha256": "d86f49f25d52affe7d2f8c22df9c1b506e13f41627941a09af3eb0be4b834ff8",
+      "version": "0.17.0-completion-recovery"
+    },
+    "local_config_sha256": "e36ed233606ada4ca4ab9e2ba61dfde836c89e36936a90903ac29820b970a035",
+    "observed_at_utc": "2026-10-21T00:39:14.141053+00:00",
+    "operation": "job-finalize",
+    "result": "existing",
+    "run_id": "thal-irem-fade-pilot-20261020b",
+    "run_status": "complete",
+    "scheduler_state": "COMPLETED",
+    "schema_version": 1,
+    "slurm_job_id": 118799,
+    "status": "ok"
+  },
+  "result_inventory": {
+    "helper": {
+      "name": "hpc-lethe-result",
+      "version": "0.16.0-compact-archive"
+    },
+    "inventory": {
+      "artifact_count": 8,
+      "artifacts": [
+        {
+          "artifact_type": "result-json",
+          "child_key": "net_newsec_ee_fade_var_seed_00000",
+          "mtime_ns": 1792520218000000000,
+          "parameters": {
+            "fade_post": "TI",
+            "seed_main": 1000
+          },
+          "relative_path": "exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_branch_fade_pilot_nseed_2_t_5.0_6.0_wmult_0.25_ee_0.5/results/result_00000_seed_1000.json",
+          "sha256": "48ff10a63b6021e5c955de6dcb533631490469ba22d400ef12d67305638ce4d1",
+          "size_bytes": 115842
+        },
+        {
+          "artifact_type": "raster",
+          "child_key": "net_newsec_ee_fade_var_seed_00000",
+          "mtime_ns": 1792520215000000000,
+          "parameters": {
+            "fade_post": "TI",
+            "seed_main": 1000
+          },
+          "relative_path": "exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_branch_fade_pilot_nseed_2_t_5.0_6.0_wmult_0.25_ee_0.5/rasters/raster_00000_seed_1000.png",
+          "sha256": null,
+          "size_bytes": 405247
+        },
+        {
+          "artifact_type": "result-json",
+          "child_key": "net_newsec_ee_fade_var_seed_00001",
+          "mtime_ns": 1792520218000000000,
+          "parameters": {
+            "fade_post": "IRE",
+            "seed_main": 1000
+          },
+          "relative_path": "exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_branch_fade_pilot_nseed_2_t_5.0_6.0_wmult_0.25_ee_0.5/results/result_00001_seed_1000.json",
+          "sha256": "1d824282569e29324d87fa35e2852b9c428e430d128dea970ab597ff17062ef5",
+          "size_bytes": 115662
+        },
+        {
+          "artifact_type": "raster",
+          "child_key": "net_newsec_ee_fade_var_seed_00001",
+          "mtime_ns": 1792520215000000000,
+          "parameters": {
+            "fade_post": "IRE",
+            "seed_main": 1000
+          },
+          "relative_path": "exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_branch_fade_pilot_nseed_2_t_5.0_6.0_wmult_0.25_ee_0.5/rasters/raster_00001_seed_1000.png",
+          "sha256": null,
+          "size_bytes": 408209
+        },
+        {
+          "artifact_type": "result-json",
+          "child_key": "net_newsec_ee_fade_var_seed_00002",
+          "mtime_ns": 1792520263000000000,
+          "parameters": {
+            "fade_post": "TI",
+            "seed_main": 1001
+          },
+          "relative_path": "exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_branch_fade_pilot_nseed_2_t_5.0_6.0_wmult_0.25_ee_0.5/results/result_00002_seed_1001.json",
+          "sha256": "60cfc1f6ec4a735d7801d5ae969176d32a781da1b4d531baea16067458eed3a0",
+          "size_bytes": 115499
+        },
+        {
+          "artifact_type": "raster",
+          "child_key": "net_newsec_ee_fade_var_seed_00002",
+          "mtime_ns": 1792520259000000000,
+          "parameters": {
+            "fade_post": "TI",
+            "seed_main": 1001
+          },
+          "relative_path": "exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_branch_fade_pilot_nseed_2_t_5.0_6.0_wmult_0.25_ee_0.5/rasters/raster_00002_seed_1001.png",
+          "sha256": null,
+          "size_bytes": 408617
+        },
+        {
+          "artifact_type": "result-json",
+          "child_key": "net_newsec_ee_fade_var_seed_00003",
+          "mtime_ns": 1792520263000000000,
+          "parameters": {
+            "fade_post": "IRE",
+            "seed_main": 1001
+          },
+          "relative_path": "exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_branch_fade_pilot_nseed_2_t_5.0_6.0_wmult_0.25_ee_0.5/results/result_00003_seed_1001.json",
+          "sha256": "03a37db956dcd457b8911e3bfad0d977e75ed0af67375e186a8da8c7eb49108c",
+          "size_bytes": 115678
+        },
+        {
+          "artifact_type": "raster",
+          "child_key": "net_newsec_ee_fade_var_seed_00003",
+          "mtime_ns": 1792520259000000000,
+          "parameters": {
+            "fade_post": "IRE",
+            "seed_main": 1001
+          },
+          "relative_path": "exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_branch_fade_pilot_nseed_2_t_5.0_6.0_wmult_0.25_ee_0.5/rasters/raster_00003_seed_1001.png",
+          "sha256": null,
+          "size_bytes": 409714
+        }
+      ],
+      "expected_result_path": "exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_branch_fade_pilot_nseed_2_t_5.0_6.0_wmult_0.25_ee_0.5",
+      "generated_at_utc": "2026-10-21T00:39:50.045160+00:00",
+      "git_commit": "a1d5bb23de7c6e934b44b3948193e4f7737556db",
+      "known_output_count": 8,
+      "run_id": "thal-irem-fade-pilot-20261020b",
+      "schema_version": 1
+    },
+    "local_config_sha256": "e36ed233606ada4ca4ab9e2ba61dfde836c89e36936a90903ac29820b970a035",
+    "operation": "result-inventory",
+    "result": "created",
+    "run_id": "thal-irem-fade-pilot-20261020b",
+    "schema_version": 1,
+    "status": "ok"
+  },
+  "release": {
+    "git_commit": "a1d5bb23de7c6e934b44b3948193e4f7737556db",
+    "helper": {
+      "name": "hpc-lethe-job",
+      "source_sha256": "d86f49f25d52affe7d2f8c22df9c1b506e13f41627941a09af3eb0be4b834ff8",
+      "version": "0.17.0-completion-recovery"
+    },
+    "local_config_sha256": "e36ed233606ada4ca4ab9e2ba61dfde836c89e36936a90903ac29820b970a035",
+    "operation": "job-release",
+    "released_at_utc": "2026-10-21T00:40:09.870608+00:00",
+    "result": "released",
+    "run_id": "thal-irem-fade-pilot-20261020b",
+    "schema_version": 1,
+    "status": "ok"
+  },
+  "repeated_release": {
+    "git_commit": "a1d5bb23de7c6e934b44b3948193e4f7737556db",
+    "helper": {
+      "name": "hpc-lethe-job",
+      "source_sha256": "d86f49f25d52affe7d2f8c22df9c1b506e13f41627941a09af3eb0be4b834ff8",
+      "version": "0.17.0-completion-recovery"
+    },
+    "local_config_sha256": "e36ed233606ada4ca4ab9e2ba61dfde836c89e36936a90903ac29820b970a035",
+    "operation": "job-release",
+    "released_at_utc": "2026-10-21T00:40:09.870608+00:00",
+    "result": "existing",
+    "run_id": "thal-irem-fade-pilot-20261020b",
+    "schema_version": 1,
+    "status": "ok"
+  },
+  "checkout_after_release": {
+    "checkout": {
+      "active_run": false,
+      "branch": "codex-hpc",
+      "branch_matches": true,
+      "change_count": 0,
+      "clean": true,
+      "commit": "a1d5bb23de7c6e934b44b3948193e4f7737556db",
+      "expected_branch": "codex-hpc",
+      "path": "/ddn/niknovikov19/repo/A1_OUinp_codex",
+      "quarantine_active": false,
+      "remote_commit": "ad2805cf57e81e868ef85f41949ed975f89e2e5c",
+      "update_lock_active": false
+    },
+    "helper": {
+      "name": "hpc-lethe-code",
+      "source_sha256": "e004cf00ac09e02f8a169399fc58bdb63d8dc8b8c2c2237343c500b34992a9c7",
+      "version": "0.14.0-recovery"
+    },
+    "local_config_sha256": "e36ed233606ada4ca4ab9e2ba61dfde836c89e36936a90903ac29820b970a035",
+    "operation": "code-status",
+    "remote_config_sha256": "a46836191b0560f03aba0a3c31888726cf966753e50ed6de42a47ccd784c2142",
+    "remote_host": "lethe",
+    "schema_version": 1,
+    "status": "ok"
+  }
+}
