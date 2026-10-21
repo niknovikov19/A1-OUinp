@@ -32,6 +32,7 @@ Saved seed-1000 raster examples with readable filenames are collected in
 - Per-population error table: [cortical panel](data/tables/population_error_table_cortex.csv), [thalamic panel](data/tables/population_error_table_thalamus.csv), and [caption](notes/population_error_table_caption.md).
 - Uncorrected thalamic fading comparison: [population-rate table](data/tables/population_rate_table_thalamus_fading.csv) and [caption and source documentation](notes/thalamus_fading_table_caption.md); two unavailable fading conditions remain blank.
 - [Parameter-only thalamic fading pilot](notes/thalamus_parameter_pilot.md): sequential two-seed runs using the existing experiment functions, with saved configurations and per-population rate summaries.
+- [Full IREM→TI fading run](notes/thalamus_irem_ti_full_run.md): 15 seeds and the archived `thal_all_fade` duration, population order, and background-seed mapping.
 - [Validation](data/inventories/validation.json): checks for all ten experiments.
 - [Findings log](notes/findings_log.md): investigation history and organization notes.
 - [Original task](notes/task.md): scope and remote-filesystem constraints.

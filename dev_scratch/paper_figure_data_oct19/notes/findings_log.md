@@ -285,3 +285,13 @@ checked-out commit.
   control is needed before interpreting same-numbered historical seeds as matched
   comparisons. The 15-seed table remains unchanged.
 
+## Full IREM→TI fade requested — 2026-10-20
+
+- The user requested the full `thal_all_fade` duration and 15-seed cohort for
+  IREM→TI restoration, then waiting without background work once the watcher is
+  operating. Execution log: [thalamus_irem_ti_full_run.md](thalamus_irem_ti_full_run.md).
+- Set the existing label, projection, population-order, and seed-count values.
+  The population order now matches the archived all-thalamus fade, including
+  its background-seed assignment. Duration remains 10 s and summary 7–10 s.
+  No experiment functions or completion helpers changed.
+
