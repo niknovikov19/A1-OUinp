@@ -1,0 +1,207 @@
+{
+  "run_id": "thal-ti-param-pilot-20261020",
+  "git_commit": "08e301a744634c5f210c6a2ff46e3c62b92d4408",
+  "projection": [
+    "IREM",
+    "TI"
+  ],
+  "saved_cfg_checks": "passed",
+  "window_s": [
+    7,
+    10
+  ],
+  "seeds": [
+    1000,
+    1001
+  ],
+  "runs": [
+    {
+      "seed": 1000,
+      "rates_hz": {
+        "TC": 29.979885057471265,
+        "HTC": 28.105263157894736,
+        "TI": 8.88888888888889,
+        "IRE": 11.748387096774193,
+        "TCM": 2.0150537634408603,
+        "TIM": 7.052287581699347,
+        "IREM": 14.9247311827957
+      },
+      "mean_absolute_error_hz": 8.476481370605734,
+      "timing": {
+        "initialTime": 0.005796194076538086,
+        "totalTime": 37.94022607803345,
+        "createTime": 0.08399033546447754,
+        "connectTime": 4.70742654800415,
+        "stimsTime": 0.07458829879760742,
+        "setrecordTime": 0.0004661083221435547,
+        "runTime": 25.221734285354614,
+        "gatherTime": 0.457500696182251,
+        "saveTime": 0.5354375839233398,
+        "plotTime": 6.0724265575408936
+      },
+      "cfg_sha256": "d7d60662d3412cc744f047115048a8fef1090bc525fed9505e121bce2f58b39e",
+      "result_sha256": "aa1101f2573bff93a1b95b86508e30c57ad693125a5da99ef9b4b08ebea2c3a8"
+    },
+    {
+      "seed": 1001,
+      "rates_hz": {
+        "TC": 7.344827586206897,
+        "HTC": 10.149122807017545,
+        "TI": 14.529411764705882,
+        "IRE": 17.2,
+        "TCM": 6.017204301075268,
+        "TIM": 10.11111111111111,
+        "IREM": 9.675268817204302
+      },
+      "mean_absolute_error_hz": 1.4182757215838346,
+      "timing": {
+        "initialTime": 0.00574183464050293,
+        "totalTime": 37.342528343200684,
+        "createTime": 0.07936406135559082,
+        "connectTime": 4.710180044174194,
+        "stimsTime": 0.07368993759155273,
+        "setrecordTime": 0.00030994415283203125,
+        "runTime": 25.226030588150024,
+        "gatherTime": 0.4441697597503662,
+        "saveTime": 0.5595521926879883,
+        "plotTime": 5.489359378814697
+      },
+      "cfg_sha256": "bf106e78c2a8aab1b3e0029926fdfa31645f026695ab34f79625bc0d9643eadf",
+      "result_sha256": "54f3c673e70d593a618bfb5ad6c61225bebf7797e88e6012c4e07901766e08b2"
+    }
+  ],
+  "historical_15_seed_mean_rates_hz": {
+    "IREM→TI frozen": {
+      "TC": 14.379501915708813,
+      "HTC": 11.794152046783624,
+      "TI": 15.13115468409586,
+      "IRE": 15.623512544802866,
+      "TCM": 4.739211469534051,
+      "TIM": 8.72156862745098,
+      "IREM": 11.730465949820788
+    },
+    "Fully recurrent": {
+      "TC": 22.29272030651341,
+      "HTC": 18.51345029239766,
+      "TI": 10.657516339869282,
+      "IRE": 13.458637992831541,
+      "TCM": 3.670394265232974,
+      "TIM": 7.753812636165577,
+      "IREM": 13.491182795698924
+    },
+    "Faded from all-surrogate": {
+      "TC": 21.85536398467433,
+      "HTC": 18.386549707602338,
+      "TI": 10.780827886710243,
+      "IRE": 13.583942652329746,
+      "TCM": 3.7274551971326164,
+      "TIM": 7.79825708061002,
+      "IREM": 13.402724014336917
+    }
+  },
+  "historical_same_numbered_seed_rates_hz": {
+    "IREM→TI frozen": {
+      "1000": {
+        "TC": 19.091954022988503,
+        "HTC": 23.12280701754386,
+        "TI": 16.647058823529413,
+        "IRE": 12.733333333333334,
+        "TCM": 0.6451612903225806,
+        "TIM": 7.764705882352941,
+        "IREM": 13.655913978494622
+      },
+      "1001": {
+        "TC": 8.445402298850574,
+        "HTC": 9.385964912280702,
+        "TI": 15.287581699346404,
+        "IRE": 17.546236559139786,
+        "TCM": 5.6537634408602155,
+        "TIM": 9.986928104575163,
+        "IREM": 9.490322580645161
+      }
+    },
+    "Fully recurrent": {
+      "1000": {
+        "TC": 5.551724137931035,
+        "HTC": 7.324561403508771,
+        "TI": 17.666666666666668,
+        "IRE": 21.208602150537637,
+        "TCM": 7.965591397849463,
+        "TIM": 10.73202614379085,
+        "IREM": 7.664516129032258
+      },
+      "1001": {
+        "TC": 23.057471264367816,
+        "HTC": 18.5,
+        "TI": 8.163398692810457,
+        "IRE": 10.686021505376344,
+        "TCM": 3.6,
+        "TIM": 7.333333333333333,
+        "IREM": 15.219354838709677
+      }
+    },
+    "Faded from all-surrogate": {
+      "1000": {
+        "TC": 5.979885057471264,
+        "HTC": 7.5,
+        "TI": 17.41176470588235,
+        "IRE": 20.93763440860215,
+        "TCM": 7.554838709677419,
+        "TIM": 10.705882352941176,
+        "IREM": 7.8086021505376335
+      },
+      "1001": {
+        "TC": 21.261494252873565,
+        "HTC": 16.333333333333332,
+        "TI": 8.843137254901961,
+        "IRE": 11.627956989247311,
+        "TCM": 3.9505376344086023,
+        "TIM": 7.522875816993465,
+        "IREM": 14.546236559139784
+      }
+    }
+  },
+  "reference_seed_note": "The same numeric seed does not ensure identical realized networks across static and split construction.",
+  "archive_manifest": {
+    "expected_result_path": "exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_ti_fade_param_pilot_nseed_2_t_7.0_10.0_wmult_0.25_ee_0.5",
+    "files": [
+      {
+        "hpc_path": "/ddn/niknovikov19/repo/A1_OUinp_codex/exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_ti_fade_param_pilot_nseed_2_t_7.0_10.0_wmult_0.25_ee_0.5/cfg/cfg_00000_seed_1000.json",
+        "path": "cfg/cfg_00000_seed_1000.json",
+        "sha256": "d7d60662d3412cc744f047115048a8fef1090bc525fed9505e121bce2f58b39e",
+        "size_bytes": 65016
+      },
+      {
+        "hpc_path": "/ddn/niknovikov19/repo/A1_OUinp_codex/exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_ti_fade_param_pilot_nseed_2_t_7.0_10.0_wmult_0.25_ee_0.5/cfg/cfg_00001_seed_1001.json",
+        "path": "cfg/cfg_00001_seed_1001.json",
+        "sha256": "bf106e78c2a8aab1b3e0029926fdfa31645f026695ab34f79625bc0d9643eadf",
+        "size_bytes": 65016
+      },
+      {
+        "hpc_path": "/ddn/niknovikov19/repo/A1_OUinp_codex/exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_ti_fade_param_pilot_nseed_2_t_7.0_10.0_wmult_0.25_ee_0.5/jobs/index.jsonl",
+        "path": "jobs/index.jsonl",
+        "sha256": "ce7298a9fb044b1f99836e0005d690606024de159929271e467ce355316fbf66",
+        "size_bytes": 1950
+      },
+      {
+        "hpc_path": "/ddn/niknovikov19/repo/A1_OUinp_codex/exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_ti_fade_param_pilot_nseed_2_t_7.0_10.0_wmult_0.25_ee_0.5/results/result_00000_seed_1000.json",
+        "path": "results/result_00000_seed_1000.json",
+        "sha256": "aa1101f2573bff93a1b95b86508e30c57ad693125a5da99ef9b4b08ebea2c3a8",
+        "size_bytes": 1504
+      },
+      {
+        "hpc_path": "/ddn/niknovikov19/repo/A1_OUinp_codex/exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_ti_fade_param_pilot_nseed_2_t_7.0_10.0_wmult_0.25_ee_0.5/results/result_00001_seed_1001.json",
+        "path": "results/result_00001_seed_1001.json",
+        "sha256": "54f3c673e70d593a618bfb5ad6c61225bebf7797e88e6012c4e07901766e08b2",
+        "size_bytes": 1491
+      }
+    ],
+    "git_commit": "08e301a744634c5f210c6a2ff46e3c62b92d4408",
+    "run_id": "thal-ti-param-pilot-20261020",
+    "schema_version": 1,
+    "total_bytes": 134977
+  },
+  "production_table_updated": false,
+  "coefficient_time_course_verified": false,
+  "limitation": "Unchanged experiment saves endpoint rates; no numerical coefficient trace or population-rate time course is exported."
+}

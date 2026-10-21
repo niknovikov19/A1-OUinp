@@ -4,7 +4,7 @@
   "job_kind": "batch",
   "target": "batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed",
   "template_path": "hpc_jobs/templates/batch.sh",
-  "expected_result_path": "exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_ti_fade_param_pilot_nseed_2_t_7.0_10.0_wmult_0.25_ee_0.5",
+  "expected_result_path": "exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_ire_fade_param_pilot_nseed_2_t_7.0_10.0_wmult_0.25_ee_0.5",
   "completion_files": [
     "jobs/index.jsonl",
     "results/result_00000_seed_1000.json",
