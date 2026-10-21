@@ -28,3 +28,31 @@ starts, wait for its report without background checks or parallel task work.
   `EXP_LABEL` and `CONNS_SPLIT` changed. Every experiment function is unchanged;
   resources and all 46 completion filenames match the previous full run.
   Evidence: `../data/inventories/thalamus_irem_ire_full_preflight.json`.
+- Pushed and updated lethe to `093736d432fc243c6ce440e9c4ef122eae7c8c14`.
+  Protected preparation accepted the 15-child request. Submitted run
+  `thal-irem-ire-fade-20261020`, main Slurm job **118897**, at
+  `2026-10-21T03:28:19.104703+00:00` (October 20, 23:28 EDT).
+  Request SHA256: `3c47baf3fc38d612555b7862a3f8bf3d869efc1ca323980a62569a07360d3338`.
+- Start the watcher with a 30-minute reporting interval and wait without other
+  task work, additional HPC queries, or local-state checks until it returns.
+
+## Completion
+
+- Waited for the watcher; it returned scheduler-terminal at
+  `2026-10-21T03:42:32.186310+00:00` (October 20, 23:42 EDT), reporting
+  main 118897 and all 15 simulations completed, without failures.
+- The normal finalizer recorded complete status and verified all 46 requested
+  files. Retrieved the compact archive only: 84,953 compressed bytes,
+  1,011,797 uncompressed bytes, 31 files (15 cfgs, 15 JSONs, child index).
+  Raw pickles and PNGs remain on HPC.
+- All 31 compact-file hashes passed. For every seed, the saved cfg equals the
+  corresponding completed full IREM→TI cfg after replacing only
+  `conns_split` with `{'IREM, IRE': 0.5}`. This checks the complete saved
+  configuration, including population order, input seeds, currents, and weights.
+  All 105 population rates are finite and nonnegative, with the 7–10 s window.
+- Normal release succeeded at `2026-10-21T03:43:47.845735+00:00`
+  (October 20, 23:43 EDT). No job or watcher remains active for this run.
+- [Run record and unrounded rates](../data/inventories/thalamus_irem_ire_full_run.json)
+  preserve source commit, child IDs, compact checksums, and all endpoint rates.
+  Both full single-projection fading cohorts are now complete; the paper table
+  has not been regenerated in this task.

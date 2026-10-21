@@ -309,3 +309,21 @@ checked-out commit.
   and manifest in `data/inventories/thalamus_irem_ti_full_r2_run.json`. Normal
   release succeeded; pilots and cancelled outputs remain separate.
 
+## Full IREM→IRE fade — 2026-10-20
+
+- The user requested the second full fading cohort. Changed only the existing
+  projection and result-label values; all experiment functions remained unchanged.
+  Preflight confirmed the matched 15-seed, 10 s, 7–10 s-window configuration and
+  concurrency 10 / 30 ranks / 128 GiB per simulation.
+- Submitted main 118897 at source commit `093736d432fc243c6ce440e9c4ef122eae7c8c14`.
+  Waited for the watcher without background checks or parallel task work. Its
+  terminal report confirmed completion of all 15 children. Normal finalization
+  verified all 46 files; the 84,953-byte compact archive contains 31 payloads.
+- Verified all compact hashes and all 15 saved cfgs. Each cfg differs from its
+  matching completed full IREM→TI cfg only in the selected projection. All 105
+  population rates passed finite/nonnegative checks. Saved rates, manifest,
+  source identity, and child IDs in `data/inventories/thalamus_irem_ire_full_run.json`.
+- Normal release succeeded. [Execution log](thalamus_irem_ire_full_run.md).
+  The earlier modulation legend was left unchanged; no simulation hooks or
+  compatibility functions were modified.
+

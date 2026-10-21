@@ -1,0 +1,507 @@
+{
+  "run_id": "thal-irem-ire-fade-20261020",
+  "request_id": "thal-irem-ire-fade",
+  "git_commit": "093736d432fc243c6ce440e9c4ef122eae7c8c14",
+  "slurm_main_job_id": 118897,
+  "submitted_at_utc": "2026-10-21T03:28:19.104703+00:00",
+  "request_sha256": "3c47baf3fc38d612555b7862a3f8bf3d869efc1ca323980a62569a07360d3338",
+  "rendered_script_sha256": "0e74826824f9ee8c236e3c9f6189e0a90ed75f8acc47e3cce989409810d7d4e0",
+  "seeds": [
+    1000,
+    1001,
+    1002,
+    1003,
+    1004,
+    1005,
+    1006,
+    1007,
+    1008,
+    1009,
+    1010,
+    1011,
+    1012,
+    1013,
+    1014
+  ],
+  "duration_ms": 10000,
+  "summary_window_s": [
+    7,
+    10
+  ],
+  "fade_window_s": [
+    3,
+    5
+  ],
+  "projection": [
+    "IREM",
+    "IRE"
+  ],
+  "population_order": [
+    "TC",
+    "HTC",
+    "TCM",
+    "TI",
+    "TIM",
+    "IRE",
+    "IREM"
+  ],
+  "expected_result_path": "exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_ire_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5",
+  "simulation_job_resources": {
+    "partition": "cpu.q",
+    "nodes": 1,
+    "cores": 30,
+    "memory_gb": 128,
+    "wall_time_min": 60
+  },
+  "max_concurrent_simulation_jobs": 10,
+  "status": "complete_and_released",
+  "saved_cfg_validation": "All 15 saved cfgs equal corresponding completed IREM-to-TI cfgs after replacing only conns_split with IREM, IRE.",
+  "finite_rate_validation": "passed_for_105_population_rates",
+  "completion_files_verified_count": 46,
+  "slurm_child_job_ids": [
+    118898,
+    118899,
+    118900,
+    118901,
+    118902,
+    118903,
+    118904,
+    118905,
+    118906,
+    118907,
+    118913,
+    118914,
+    118915,
+    118916,
+    118917
+  ],
+  "results": [
+    {
+      "seed_main": 1000,
+      "rates_hz": {
+        "TC": 6.252873563218391,
+        "HTC": 8.052631578947368,
+        "TCM": 7.696774193548387,
+        "TI": 17.045751633986928,
+        "TIM": 10.490196078431373,
+        "IRE": 20.627956989247313,
+        "IREM": 8.141935483870968
+      }
+    },
+    {
+      "seed_main": 1001,
+      "rates_hz": {
+        "TC": 24.591954022988503,
+        "HTC": 20.719298245614038,
+        "TCM": 3.0516129032258066,
+        "TI": 7.928104575163398,
+        "TIM": 7.248366013071895,
+        "IRE": 10.756989247311827,
+        "IREM": 15.356989247311828
+      }
+    },
+    {
+      "seed_main": 1002,
+      "rates_hz": {
+        "TC": 11.922413793103448,
+        "HTC": 10.87719298245614,
+        "TCM": 6.04516129032258,
+        "TI": 14.95424836601307,
+        "TIM": 9.61437908496732,
+        "IRE": 18.804301075268818,
+        "IREM": 9.26021505376344
+      }
+    },
+    {
+      "seed_main": 1003,
+      "rates_hz": {
+        "TC": 13.764367816091955,
+        "HTC": 15.254385964912279,
+        "TCM": 5.131182795698925,
+        "TI": 12.745098039215685,
+        "TIM": 9.209150326797387,
+        "IRE": 15.520430107526881,
+        "IREM": 11.408602150537634
+      }
+    },
+    {
+      "seed_main": 1004,
+      "rates_hz": {
+        "TC": 27.17528735632184,
+        "HTC": 26.096491228070175,
+        "TCM": 5.268817204301075,
+        "TI": 7.928104575163398,
+        "TIM": 7.411764705882353,
+        "IRE": 13.255913978494622,
+        "IREM": 14.245161290322581
+      }
+    },
+    {
+      "seed_main": 1005,
+      "rates_hz": {
+        "TC": 24.43103448275862,
+        "HTC": 15.736842105263158,
+        "TCM": 2.589247311827957,
+        "TI": 10.830065359477125,
+        "TIM": 6.9869281045751634,
+        "IRE": 13.010752688172044,
+        "IREM": 13.316129032258065
+      }
+    },
+    {
+      "seed_main": 1006,
+      "rates_hz": {
+        "TC": 38.833333333333336,
+        "HTC": 25.614035087719298,
+        "TCM": 4.004301075268817,
+        "TI": 6.111111111111112,
+        "TIM": 4.934640522875817,
+        "IRE": 9.731182795698924,
+        "IREM": 18.06451612903226
+      }
+    },
+    {
+      "seed_main": 1007,
+      "rates_hz": {
+        "TC": 20.974137931034484,
+        "HTC": 15.789473684210526,
+        "TCM": 5.58494623655914,
+        "TI": 11.96078431372549,
+        "TIM": 7.470588235294118,
+        "IRE": 14.460215053763442,
+        "IREM": 13.023655913978494
+      }
+    },
+    {
+      "seed_main": 1008,
+      "rates_hz": {
+        "TC": 25.47126436781609,
+        "HTC": 34.05263157894737,
+        "TCM": 2.847311827956989,
+        "TI": 7.980392156862745,
+        "TIM": 6.169934640522876,
+        "IRE": 10.623655913978496,
+        "IREM": 16.393548387096775
+      }
+    },
+    {
+      "seed_main": 1009,
+      "rates_hz": {
+        "TC": 15.097701149425287,
+        "HTC": 11.728070175438598,
+        "TCM": 1.5225806451612902,
+        "TI": 14.117647058823529,
+        "TIM": 9.882352941176471,
+        "IRE": 14.604301075268816,
+        "IREM": 11.376344086021504
+      }
+    },
+    {
+      "seed_main": 1010,
+      "rates_hz": {
+        "TC": 18.252873563218394,
+        "HTC": 16.05263157894737,
+        "TCM": 3.150537634408602,
+        "TI": 12.869281045751634,
+        "TIM": 8.92156862745098,
+        "IRE": 15.63010752688172,
+        "IREM": 11.247311827956988
+      }
+    },
+    {
+      "seed_main": 1011,
+      "rates_hz": {
+        "TC": 23.396551724137932,
+        "HTC": 27.973684210526315,
+        "TCM": 2.967741935483871,
+        "TI": 8.993464052287582,
+        "TIM": 7.137254901960785,
+        "IRE": 12.35483870967742,
+        "IREM": 14.95268817204301
+      }
+    },
+    {
+      "seed_main": 1012,
+      "rates_hz": {
+        "TC": 13.652298850574713,
+        "HTC": 3.6578947368421053,
+        "TCM": 2.2,
+        "TI": 12.92156862745098,
+        "TIM": 8.738562091503269,
+        "IRE": 13.72258064516129,
+        "IREM": 12.040860215053764
+      }
+    },
+    {
+      "seed_main": 1013,
+      "rates_hz": {
+        "TC": 20.123563218390807,
+        "HTC": 15.342105263157896,
+        "TCM": 2.1806451612903226,
+        "TI": 8.764705882352942,
+        "TIM": 7.183006535947712,
+        "IRE": 11.526881720430108,
+        "IREM": 14.806451612903226
+      }
+    },
+    {
+      "seed_main": 1014,
+      "rates_hz": {
+        "TC": 39.2787356321839,
+        "HTC": 24.166666666666668,
+        "TCM": 0.9053763440860215,
+        "TI": 7.705882352941177,
+        "TIM": 5.790849673202614,
+        "IRE": 9.965591397849463,
+        "IREM": 16.78494623655914
+      }
+    }
+  ],
+  "compact_archive": {
+    "cache_root": "exp_results_local/hpc_codex/thal-irem-ire-fade-20261020/compact",
+    "sha256": "cc7a4067b14ad51e3cfb0474b42f4c7661751158a8561ddd625eae4db31083ef",
+    "manifest_sha256": "669ecd4b72636d6bc12bd38aa80953c69f924aaf4f9067572a2a2205d526a024",
+    "size_bytes": 84953,
+    "total_bytes": 1011797,
+    "file_count": 31
+  },
+  "archive_manifest": {
+    "expected_result_path": "exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_ire_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5",
+    "files": [
+      {
+        "hpc_path": "/ddn/niknovikov19/repo/A1_OUinp_codex/exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_ire_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5/cfg/cfg_00000_seed_1000.json",
+        "path": "cfg/cfg_00000_seed_1000.json",
+        "sha256": "e5c22ae42a6be865b5eb427e4a4f1db5066b3ad8da4fdfa4d6a59e5be2138b35",
+        "size_bytes": 65017
+      },
+      {
+        "hpc_path": "/ddn/niknovikov19/repo/A1_OUinp_codex/exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_ire_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5/cfg/cfg_00001_seed_1001.json",
+        "path": "cfg/cfg_00001_seed_1001.json",
+        "sha256": "9320d3e5157474a8518e497c75341e3127e2318dfc30aa19af78ad5f457ec319",
+        "size_bytes": 65017
+      },
+      {
+        "hpc_path": "/ddn/niknovikov19/repo/A1_OUinp_codex/exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_ire_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5/cfg/cfg_00002_seed_1002.json",
+        "path": "cfg/cfg_00002_seed_1002.json",
+        "sha256": "c2cf5ce75d663e9ffbdf992ebc882e1ecc353d63426ea73c1c373adfc462d1f3",
+        "size_bytes": 65017
+      },
+      {
+        "hpc_path": "/ddn/niknovikov19/repo/A1_OUinp_codex/exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_ire_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5/cfg/cfg_00003_seed_1003.json",
+        "path": "cfg/cfg_00003_seed_1003.json",
+        "sha256": "3df4c474425e786421b2abd7ea1b0ba59ea9bd3fb58ab7bcfbd8992953e67624",
+        "size_bytes": 65017
+      },
+      {
+        "hpc_path": "/ddn/niknovikov19/repo/A1_OUinp_codex/exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_ire_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5/cfg/cfg_00004_seed_1004.json",
+        "path": "cfg/cfg_00004_seed_1004.json",
+        "sha256": "2eb02099bc4bd8ac9878b75b2ae3ccd3b8510f739192399cb46fe5f5e2ad0c82",
+        "size_bytes": 65017
+      },
+      {
+        "hpc_path": "/ddn/niknovikov19/repo/A1_OUinp_codex/exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_ire_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5/cfg/cfg_00005_seed_1005.json",
+        "path": "cfg/cfg_00005_seed_1005.json",
+        "sha256": "8ce00a4248fd37000284a67d7189de9a1adeee466d53c34a8a6112b4d5041841",
+        "size_bytes": 65017
+      },
+      {
+        "hpc_path": "/ddn/niknovikov19/repo/A1_OUinp_codex/exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_ire_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5/cfg/cfg_00006_seed_1006.json",
+        "path": "cfg/cfg_00006_seed_1006.json",
+        "sha256": "a3b728a75363d462d1215c1e757b64ba83bcdacddb0ef7ef428f58b067a1add1",
+        "size_bytes": 65017
+      },
+      {
+        "hpc_path": "/ddn/niknovikov19/repo/A1_OUinp_codex/exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_ire_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5/cfg/cfg_00007_seed_1007.json",
+        "path": "cfg/cfg_00007_seed_1007.json",
+        "sha256": "a0dd399014996a1d8afe46f19c2b89a9d53d883ca79f2f1e57ed507205d130a5",
+        "size_bytes": 65017
+      },
+      {
+        "hpc_path": "/ddn/niknovikov19/repo/A1_OUinp_codex/exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_ire_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5/cfg/cfg_00008_seed_1008.json",
+        "path": "cfg/cfg_00008_seed_1008.json",
+        "sha256": "455be16ecb74cf93b14063c025f673d28f3523b33b6495883e4e4aaead065c6d",
+        "size_bytes": 65017
+      },
+      {
+        "hpc_path": "/ddn/niknovikov19/repo/A1_OUinp_codex/exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_ire_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5/cfg/cfg_00009_seed_1009.json",
+        "path": "cfg/cfg_00009_seed_1009.json",
+        "sha256": "dad843486d6b5a8de2d45de968dd8e0610698d4bb68fd67427f0fc022047bf82",
+        "size_bytes": 65017
+      },
+      {
+        "hpc_path": "/ddn/niknovikov19/repo/A1_OUinp_codex/exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_ire_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5/cfg/cfg_00010_seed_1010.json",
+        "path": "cfg/cfg_00010_seed_1010.json",
+        "sha256": "455ebeed9fe6d9d5c88f6f94af3a1bc45bc445d2bc5b7939f59161994e9296c8",
+        "size_bytes": 65017
+      },
+      {
+        "hpc_path": "/ddn/niknovikov19/repo/A1_OUinp_codex/exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_ire_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5/cfg/cfg_00011_seed_1011.json",
+        "path": "cfg/cfg_00011_seed_1011.json",
+        "sha256": "2eb056b2113402eb6848732e9dbd0e193ddef8acd3ec3f27b23b4438ac9a6e61",
+        "size_bytes": 65017
+      },
+      {
+        "hpc_path": "/ddn/niknovikov19/repo/A1_OUinp_codex/exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_ire_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5/cfg/cfg_00012_seed_1012.json",
+        "path": "cfg/cfg_00012_seed_1012.json",
+        "sha256": "d88ac977d309de658bae4da97213f5b185c059efff4441f4117a69f19303d1c8",
+        "size_bytes": 65017
+      },
+      {
+        "hpc_path": "/ddn/niknovikov19/repo/A1_OUinp_codex/exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_ire_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5/cfg/cfg_00013_seed_1013.json",
+        "path": "cfg/cfg_00013_seed_1013.json",
+        "sha256": "94c197419ecd3416c7154448874f5583b1b88d67fa8ab748cdce9079ae4d3130",
+        "size_bytes": 65017
+      },
+      {
+        "hpc_path": "/ddn/niknovikov19/repo/A1_OUinp_codex/exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_ire_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5/cfg/cfg_00014_seed_1014.json",
+        "path": "cfg/cfg_00014_seed_1014.json",
+        "sha256": "5b2fb79b1a2b07d84c3fc43c49eeec94c9b58225979d083e817f9064807c24bb",
+        "size_bytes": 65017
+      },
+      {
+        "hpc_path": "/ddn/niknovikov19/repo/A1_OUinp_codex/exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_ire_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5/jobs/index.jsonl",
+        "path": "jobs/index.jsonl",
+        "sha256": "f779f12ba97550f60024d7611a9c133b5fb619462c089294f6bb85f7d5a031f9",
+        "size_bytes": 14010
+      },
+      {
+        "hpc_path": "/ddn/niknovikov19/repo/A1_OUinp_codex/exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_ire_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5/results/result_00000_seed_1000.json",
+        "path": "results/result_00000_seed_1000.json",
+        "sha256": "c2ce399c14f1a2679e1a1b5fef15695ae054d807ba8c65cfe21d6873ee4acb0e",
+        "size_bytes": 1508
+      },
+      {
+        "hpc_path": "/ddn/niknovikov19/repo/A1_OUinp_codex/exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_ire_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5/results/result_00001_seed_1001.json",
+        "path": "results/result_00001_seed_1001.json",
+        "sha256": "49a8ad4c5c49bc931563fc7e4202c422882f446fa0b53622561996ce2ce6dbe6",
+        "size_bytes": 1510
+      },
+      {
+        "hpc_path": "/ddn/niknovikov19/repo/A1_OUinp_codex/exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_ire_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5/results/result_00002_seed_1002.json",
+        "path": "results/result_00002_seed_1002.json",
+        "sha256": "d542f67786794fdd49c2fde72fc940cc7c9bd44e6ad821921a4e0c56e4a5cbec",
+        "size_bytes": 1500
+      },
+      {
+        "hpc_path": "/ddn/niknovikov19/repo/A1_OUinp_codex/exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_ire_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5/results/result_00003_seed_1003.json",
+        "path": "results/result_00003_seed_1003.json",
+        "sha256": "004fb83dbefd7a8319c7ce6eef6823e7e8d895768bab99c3e8377e20a6517afc",
+        "size_bytes": 1497
+      },
+      {
+        "hpc_path": "/ddn/niknovikov19/repo/A1_OUinp_codex/exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_ire_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5/results/result_00004_seed_1004.json",
+        "path": "results/result_00004_seed_1004.json",
+        "sha256": "60d43d5072e413f8622d7eb96ec4c4fa38c98f33dea141146c5cd8963101f6ce",
+        "size_bytes": 1504
+      },
+      {
+        "hpc_path": "/ddn/niknovikov19/repo/A1_OUinp_codex/exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_ire_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5/results/result_00005_seed_1005.json",
+        "path": "results/result_00005_seed_1005.json",
+        "sha256": "a148f726f7d5eec9719b8ab840548f1f16cadb1a9827102b8522970eec0ac31e",
+        "size_bytes": 1503
+      },
+      {
+        "hpc_path": "/ddn/niknovikov19/repo/A1_OUinp_codex/exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_ire_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5/results/result_00006_seed_1006.json",
+        "path": "results/result_00006_seed_1006.json",
+        "sha256": "6085375acb41f7e370e9de0f5dfb05d1f1984deef19b5b4331c7c1832ffcae7e",
+        "size_bytes": 1501
+      },
+      {
+        "hpc_path": "/ddn/niknovikov19/repo/A1_OUinp_codex/exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_ire_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5/results/result_00007_seed_1007.json",
+        "path": "results/result_00007_seed_1007.json",
+        "sha256": "107b23dbb02ea3399b01c09503ba1457305acf1e74b5846470381ea336353bc9",
+        "size_bytes": 1504
+      },
+      {
+        "hpc_path": "/ddn/niknovikov19/repo/A1_OUinp_codex/exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_ire_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5/results/result_00008_seed_1008.json",
+        "path": "results/result_00008_seed_1008.json",
+        "sha256": "4ba26278b867c5663606771d2c0472d630f5f57ad95e8ad96abf394d16b25a19",
+        "size_bytes": 1501
+      },
+      {
+        "hpc_path": "/ddn/niknovikov19/repo/A1_OUinp_codex/exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_ire_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5/results/result_00009_seed_1009.json",
+        "path": "results/result_00009_seed_1009.json",
+        "sha256": "535a033d1d8d1a7b168b71f6f52b938a8e829a205f9b3bd8719db183bb869457",
+        "size_bytes": 1509
+      },
+      {
+        "hpc_path": "/ddn/niknovikov19/repo/A1_OUinp_codex/exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_ire_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5/results/result_00010_seed_1010.json",
+        "path": "results/result_00010_seed_1010.json",
+        "sha256": "637cf8ca121ac06905321d52b762c131f131889844820ff15ce2828993b5436e",
+        "size_bytes": 1500
+      },
+      {
+        "hpc_path": "/ddn/niknovikov19/repo/A1_OUinp_codex/exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_ire_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5/results/result_00011_seed_1011.json",
+        "path": "results/result_00011_seed_1011.json",
+        "sha256": "f8c67e1f1a815abf4540e3f394ce4ecb1269294b1b0af74de7c716a1da1e9b42",
+        "size_bytes": 1500
+      },
+      {
+        "hpc_path": "/ddn/niknovikov19/repo/A1_OUinp_codex/exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_ire_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5/results/result_00012_seed_1012.json",
+        "path": "results/result_00012_seed_1012.json",
+        "sha256": "3de294867734bdc857cfcd917a2ac4728be4d87f938d3d6a91cf89ce843e4eb5",
+        "size_bytes": 1492
+      },
+      {
+        "hpc_path": "/ddn/niknovikov19/repo/A1_OUinp_codex/exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_ire_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5/results/result_00013_seed_1013.json",
+        "path": "results/result_00013_seed_1013.json",
+        "sha256": "b1a823fd545d610797aaf6297dbbcdedad5de572899f2c7dd225f0eaaf01f592",
+        "size_bytes": 1508
+      },
+      {
+        "hpc_path": "/ddn/niknovikov19/repo/A1_OUinp_codex/exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_ire_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5/results/result_00014_seed_1014.json",
+        "path": "results/result_00014_seed_1014.json",
+        "sha256": "9ba5dfdb02c4392cddd480d0438ad79a7421956d465ad1eb880d7f62431b342f",
+        "size_bytes": 1495
+      }
+    ],
+    "git_commit": "093736d432fc243c6ce440e9c4ef122eae7c8c14",
+    "run_id": "thal-irem-ire-fade-20261020",
+    "schema_version": 1,
+    "total_bytes": 1011797
+  },
+  "released_at_utc": "2026-10-21T03:43:47.845735+00:00",
+  "watcher_report": {
+    "attention": [],
+    "attention_omitted": 0,
+    "changes": {
+      "discovered": 16
+    },
+    "child_state_counts": {
+      "COMPLETED": 15
+    },
+    "codex_check_sec": 1800,
+    "detail": null,
+    "evidence_directory": "/home/nnovikov/repo/A1-OUinp/exp_results_local/hpc_codex/thal-irem-ire-fade-20261020/watch",
+    "expected_child_coverage_verified": false,
+    "identity": {
+      "git_commit": "093736d432fc243c6ce440e9c4ef122eae7c8c14",
+      "main_id": 118897
+    },
+    "last_good_at_utc": "2026-10-21T03:42:28.492092+00:00",
+    "last_status_at_utc": "2026-10-21T03:42:28.492092+00:00",
+    "log_diagnostics": [
+      {
+        "child_key": null,
+        "state": "backlog"
+      }
+    ],
+    "main_state": "COMPLETED",
+    "observation_age_sec": 3.694218158721924,
+    "observed_children": 15,
+    "output_files_verified": false,
+    "previously_observed_children": 15,
+    "reason": "scheduler-terminal",
+    "reported_at_utc": "2026-10-21T03:42:32.186310+00:00",
+    "run_id": "thal-irem-ire-fade-20261020",
+    "schema_version": 1,
+    "sequence": 2,
+    "session_elapsed_sec": 10.30499435600359,
+    "status_unavailable": false,
+    "uncertainty": {
+      "missing_children": [],
+      "unknown_job_ids": []
+    },
+    "until": null
+  }
+}
