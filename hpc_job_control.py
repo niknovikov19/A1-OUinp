@@ -7,6 +7,7 @@ from hpc_job import validate_repo_path
 from hpc_job_lifecycle import (
     HpcJobLifecycleError,
     SLURM_TERMINAL_STATES,
+    get_required_completion_files,
     validate_prepared_record,
 )
 
@@ -78,7 +79,10 @@ def validate_scheduler_job(value, expected_job_id):
 def get_terminal_scheduler_state(job):
     """Return a supported terminal Slurm token or reject nonterminal state."""
     job = validate_scheduler_job(job, job.get('job_id'))
-    token = job['raw_state'].strip().split(maxsplit=1)[0].rstrip('+').upper()
+    tokens = job['raw_state'].strip().split(maxsplit=1)
+    if not tokens or job['accounting_gap'] or job['source'] == 'missing':
+        raise HpcJobLifecycleError('Scheduler state is unknown')
+    token = tokens[0].rstrip('+').upper()
     if token not in SLURM_TERMINAL_STATES:
         raise HpcJobLifecycleError('Scheduler state is not terminal')
     return token
@@ -193,9 +197,10 @@ def read_log_stream(fpath, cursor, max_bytes, max_lines):
     }
 
 
-def find_completion_files(repo_root, prepared):
-    """Return declared completion files that exist below the expected result."""
+def find_completion_files(repo_root, prepared, child_records=()):
+    """Check request and child completion paths without scanning result directories. """
     prepared = validate_prepared_record(prepared)
+    required = get_required_completion_files(prepared, child_records)
     repo_root = Path(repo_root)
     result_relpath = validate_repo_path(
         prepared['expected_result_path'],
@@ -216,7 +221,7 @@ def find_completion_files(repo_root, prepared):
             raise HpcJobLifecycleError('Result path contains a symlink')
         current /= part
     present = []
-    for relpath in prepared['completion_files']:
+    for relpath in required:
         fpath = result_root / relpath
         current = result_root
         for part in Path(relpath).parts:

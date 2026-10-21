@@ -330,6 +330,9 @@ class HpcJobControlLifecycleTests(unittest.TestCase):
                 'max_cursor_payload_bytes': 16384,
             },
         }
+        scheduler_patch = patch.object(LETHE, 'scheduler_status', return_value=(make_scheduler_job(), NOW))
+        scheduler_patch.start()
+        self.addCleanup(scheduler_patch.stop)
 
     def tearDown(self):
         """Remove the isolated lifecycle fixture."""
@@ -351,6 +354,172 @@ class HpcJobControlLifecycleTests(unittest.TestCase):
         )
         reconciled = LETHE.load_submission(self.config, self.prepared)
         return receipt, reconciled
+
+    def make_batch_output_fixture(self):
+        """Create four simulations whose outputs were omitted from the request. """
+        old = self.prepared
+        self.prepared = {
+            **old, 'job_kind': 'batch', 'simulation_job_limit': 4,
+            'completion_files': ['jobs/index.jsonl'],
+        }
+        for fpath in (self.run_dir / 'run.json', self.state / 'runs' / f'{self.run_id}.json'):
+            replace_state_record(fpath, old, self.prepared)
+        (self.run_dir / 'run.json').chmod(0o444)
+        result = self.prepared['expected_result_path']
+        children = []
+        for index in range(4):
+            key = f'run_{index:05d}'
+            child = {
+                'schema_version': 1, 'run_id': self.run_id,
+                'child_key': key, 'slurm_job_id': 117951 + index,
+                'parameters': {'seed': index},
+                'stdout_path': f'{result}/jobs/{key}.run',
+                'stderr_path': f'{result}/jobs/{key}.err',
+                'expected_outputs': [f'{result}/results/{key}.json', f'{result}/rasters/{key}.png'],
+                'submitted_at_utc': NOW,
+            }
+            children.append(child)
+            for output in child['expected_outputs']:
+                fpath = self.repo / output
+                fpath.parent.mkdir(parents=True, exist_ok=True)
+                fpath.write_text('{}\n')
+        index_path = self.repo / result / 'jobs/index.jsonl'
+        index_path.parent.mkdir(parents=True)
+        index_path.write_text(''.join(canonical_json(child) + '\n' for child in children))
+        receipt, _ = self.submit_fixture()
+        scheduler_patch = patch.object(
+            LETHE, 'scheduler_statuses',
+            return_value=([make_scheduler_job(child['slurm_job_id']) for child in children], NOW),
+        )
+        scheduler_patch.start()
+        self.addCleanup(scheduler_patch.stop)
+        return children, receipt
+
+    def write_legacy_output_failure(self, children, receipt):
+        """Save the exact old failure without the new requirements field. """
+        final = build_final_record(
+            self.prepared, receipt, 'COMPLETED', ['jobs/index.jsonl'], children, LATER,
+        )
+        final.pop('completion_files_required')
+        final['status'] = 'failed'
+        LETHE.write_dual_record(
+            self.state / 'finals' / f'{self.run_id}.json',
+            self.run_dir / 'final.json', final, 'final',
+        )
+        return final
+
+    def test_request_subset_finalizes_and_releases(self):
+        """Verify all nine files without requiring duplicate declarations. """
+        self.make_batch_output_fixture()
+        final = LETHE.finalize_job(self.config, self.run_id)
+        self.assertEqual(final['run_status'], 'complete')
+        self.assertEqual(len(final['completion_files_verified']), 9)
+        self.assertEqual(LETHE.finalize_job(self.config, self.run_id)['result'], 'existing')
+        self.assertEqual(LETHE.release_job(self.config, self.run_id)['result'], 'released')
+        self.assertEqual(LETHE.release_job(self.config, self.run_id)['result'], 'existing')
+
+    def test_missing_child_file_is_failed_and_releasable(self):
+        """Reject missing child results even when the request-listed index exists. """
+        children, _ = self.make_batch_output_fixture()
+        (self.repo / children[0]['expected_outputs'][0]).unlink()
+        final = LETHE.finalize_job(self.config, self.run_id)
+        self.assertEqual(final['run_status'], 'failed')
+        self.assertEqual(len(final['completion_files_verified']), 8)
+        self.assertEqual(LETHE.finalize_job(self.config, self.run_id)['result'], 'existing')
+        self.assertEqual(LETHE.release_job(self.config, self.run_id)['result'], 'released')
+
+    def test_old_failure_is_preserved_rechecked_and_released(self):
+        """Recover the locked pilot pattern through persisted records and release. """
+        children, receipt = self.make_batch_output_fixture()
+        old = self.write_legacy_output_failure(children, receipt)
+        result = LETHE.finalize_job(self.config, self.run_id)
+        self.assertEqual(result['result'], 'recovered')
+        self.assertEqual(result['run_status'], 'complete')
+        backup = read_state_record(self.run_dir / 'final-output-recovery.json', 'recovery')
+        self.assertEqual(backup['original_final'], old)
+        self.assertEqual(len(backup['replacement_final']['completion_files_verified']), 9)
+        self.assertEqual(LETHE.finalize_job(self.config, self.run_id)['result'], 'existing')
+        self.assertEqual(LETHE.release_job(self.config, self.run_id)['result'], 'released')
+
+    def test_recovery_does_not_claim_success_when_a_child_output_is_missing(self):
+        """Preserve the old failure and record actual missing-file evidence. """
+        children, receipt = self.make_batch_output_fixture()
+        old = self.write_legacy_output_failure(children, receipt)
+        (self.repo / children[0]['expected_outputs'][0]).unlink()
+        result = LETHE.finalize_job(self.config, self.run_id)
+        self.assertEqual(result['result'], 'recovered')
+        self.assertEqual(result['run_status'], 'failed')
+        backup = read_state_record(self.run_dir / 'final-output-recovery.json', 'recovery')
+        self.assertEqual(backup['original_final'], old)
+        self.assertEqual(LETHE.release_job(self.config, self.run_id)['result'], 'released')
+
+    def test_released_legacy_failure_is_not_rewritten(self):
+        """Keep repeated finalization unchanged after explicit legacy release. """
+        children, receipt = self.make_batch_output_fixture()
+        old = self.write_legacy_output_failure(children, receipt)
+        self.assertEqual(LETHE.release_job(self.config, self.run_id)['result'], 'released')
+        self.assertEqual(LETHE.finalize_job(self.config, self.run_id)['result'], 'existing')
+        self.assertEqual(read_state_record(self.run_dir / 'final.json', 'final'), old)
+        self.assertFalse((self.run_dir / 'final-output-recovery.json').exists())
+
+    def test_recovery_resumes_after_only_one_final_copy_was_replaced(self):
+        """Resume a recorded recovery after failure between the two atomic writes. """
+        children, receipt = self.make_batch_output_fixture()
+        self.write_legacy_output_failure(children, receipt)
+        replace = LETHE.replace_state_record
+        calls = []
+
+        # Interrupt the second final replacement after the journal has been saved
+        def interrupted_replace(fpath, old, new):
+            """Fail once after the protected final copy was updated. """
+            calls.append(fpath)
+            if len(calls) == 2:
+                raise OSError('simulated interruption')
+            replace(fpath, old, new)
+
+        with patch.object(LETHE, 'replace_state_record', side_effect=interrupted_replace):
+            with self.assertRaisesRegex(OSError, 'simulated interruption'):
+                LETHE.finalize_job(self.config, self.run_id)
+        self.assertTrue((self.state / 'active-run.json').exists())
+        self.assertEqual(LETHE.finalize_job(self.config, self.run_id)['result'], 'recovered')
+        self.assertEqual(LETHE.release_job(self.config, self.run_id)['result'], 'released')
+
+    def test_live_child_blocks_recovery_and_release(self):
+        """Keep the checkout locked while any recorded simulation is running. """
+        children, receipt = self.make_batch_output_fixture()
+        old = self.write_legacy_output_failure(children, receipt)
+        jobs = [make_scheduler_job(child['slurm_job_id']) for child in children]
+        jobs[0] = make_scheduler_job(children[0]['slurm_job_id'], 'RUNNING')
+        with patch.object(LETHE, 'scheduler_statuses', return_value=(jobs, NOW)):
+            with self.assertRaises(HpcJobLifecycleError):
+                LETHE.finalize_job(self.config, self.run_id)
+            with self.assertRaises(HpcJobLifecycleError):
+                LETHE.release_job(self.config, self.run_id)
+        self.assertEqual(read_state_record(self.run_dir / 'final.json', 'final'), old)
+        self.assertTrue((self.state / 'active-run.json').exists())
+
+    def test_child_symlink_cannot_satisfy_completion(self):
+        """Keep child file checks as strict as request file checks. """
+        children, _ = self.make_batch_output_fixture()
+        fpath = self.repo / children[0]['expected_outputs'][0]
+        fpath.unlink()
+        fpath.symlink_to(self.run_dir / 'request.json')
+        with self.assertRaises(LETHE.RejectedInput):
+            LETHE.finalize_job(self.config, self.run_id)
+        self.assertFalse((self.run_dir / 'final.json').exists())
+
+    def test_unknown_child_blocks_release_without_corrupting_records(self):
+        """Reject missing accounting evidence without treating it as termination. """
+        children, _ = self.make_batch_output_fixture()
+        LETHE.finalize_job(self.config, self.run_id)
+        unknown = make_scheduler_job(children[0]['slurm_job_id'])
+        unknown.update(raw_state='', normalized_state='unknown', source='missing', accounting_gap=True)
+        jobs = [unknown] + [make_scheduler_job(child['slurm_job_id']) for child in children[1:]]
+        with patch.object(LETHE, 'scheduler_statuses', return_value=(jobs, NOW)):
+            with self.assertRaisesRegex(HpcJobLifecycleError, 'unknown'):
+                LETHE.release_job(self.config, self.run_id)
+        self.assertTrue((self.state / 'active-run.json').exists())
+        self.assertFalse((self.run_dir / 'release.json').exists())
 
     def test_intent_precedes_receipt_and_reconciles_to_protected_state(self):
         """Persist the active marker and intent before accepting one receipt."""

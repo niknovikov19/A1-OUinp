@@ -72,7 +72,8 @@ def build_archive(repo_root, prepared, final, destination):
     if final['status'] != 'complete':
         raise HpcResultError('Only complete runs can be archived')
     selected = []
-    for relative in prepared['completion_files']:
+    required = final.get('completion_files_required', prepared['completion_files'])
+    for relative in required:
         try:
             selected.append(compact_path(relative))
         except HpcResultError:

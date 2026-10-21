@@ -1,0 +1,18 @@
+{
+  "hpc_job_lifecycle.py": {
+    "old": "fe5305e4da158d1de26c926f4257f781a5a35b39bd6a8eac01519fb2562ee593",
+    "new": "02f2579219c1c6384ffeb9df94ba36a7f6ce1c8372508d92eae205ca7750e654"
+  },
+  "hpc_job_control.py": {
+    "old": "95a58889e3a7622282a95556e5e7aad44d9e4b1b5456b07398da73618f98de8d",
+    "new": "aca5649af373232afe5f3970c6235e70e365b994f4fd50549e37504988f854e2"
+  },
+  "hpc_archive.py": {
+    "old": "6e4e182a45e02b80ba1d4b936521851c8c89a4c583386500fee9af880d9843cc",
+    "new": "c7e50c828338505621ffd90c084ca95cb2b55b744a10f76f5ba02a976068cdce"
+  },
+  "dev_scratch/hpc/helper_src/remote_lethe/hpc-lethe-job": {
+    "old": "71904f27142bd0be7fb139df266439dace971b50e88c60018127ce02e4a2cb26",
+    "new": "d86f49f25d52affe7d2f8c22df9c1b506e13f41627941a09af3eb0be4b834ff8"
+  }
+}

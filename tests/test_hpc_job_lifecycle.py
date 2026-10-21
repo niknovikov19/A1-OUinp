@@ -12,6 +12,7 @@ from hpc_job_lifecycle import (
     build_unknown_submission,
     create_state_record,
     decide_submission,
+    get_required_completion_files,
     parse_child_records,
     read_state_record,
     remove_state_record,
@@ -211,6 +212,57 @@ class ChildRecordTests(unittest.TestCase):
 
 
 class FinalizeReleaseTests(unittest.TestCase):
+    def test_extra_child_outputs_are_required_without_repeating_the_request(self):
+        """Allow extra results while requiring every request and child file. """
+        prepared = make_prepared()
+        prepared['completion_files'] = ['jobs/index.jsonl']
+        intent, _ = decide_submission(None, prepared, NOW)
+        receipt = build_submission_receipt(intent, prepared, 117900, LATER)
+        children = [make_child(prepared), make_child(prepared, 'sim-001', 120002)]
+        required = get_required_completion_files(prepared, children)
+        self.assertEqual(required, ['jobs/index.jsonl', 'result.json'])
+        for state in ('COMPLETED', 'FAILED', 'CANCELLED'):
+            for present in (required, ['jobs/index.jsonl']):
+                with self.subTest(state=state, present=present):
+                    final = build_final_record(
+                        prepared, receipt, state, present + ['unused.txt'], children, LATER,
+                    )
+                    expected_status = 'complete' if state == 'COMPLETED' and present == required else 'failed'
+                    self.assertEqual(final['status'], expected_status)
+                    restored = json.loads(json.dumps(final))
+                    self.assertEqual(validate_final_record(restored, prepared), final)
+                    active = build_active_run_marker(prepared, NOW)
+                    release_active_run(active, restored, prepared, LATER)
+
+    def test_old_failed_batch_can_release_without_claiming_success(self):
+        """Read the historical failure even when its missing reason was not saved. """
+        prepared = make_prepared()
+        intent, _ = decide_submission(None, prepared, NOW)
+        receipt = build_submission_receipt(intent, prepared, 117900, LATER)
+        children = [make_child(prepared), make_child(prepared, 'sim-001', 120002)]
+        final = build_final_record(prepared, receipt, 'COMPLETED', ['result.json'], children, LATER)
+        final.pop('completion_files_required')
+        final['status'] = 'failed'
+        self.assertEqual(validate_final_record(final, prepared)['status'], 'failed')
+        active = build_active_run_marker(prepared, NOW)
+        self.assertEqual(release_active_run(active, final, prepared, LATER)['status'], 'released')
+
+    def test_new_required_files_cannot_omit_request_files(self):
+        """Reject altered requirements and duplicate verification entries. """
+        prepared = make_prepared()
+        intent, _ = decide_submission(None, prepared, NOW)
+        receipt = build_submission_receipt(intent, prepared, 117900, LATER)
+        children = [make_child(prepared), make_child(prepared, 'sim-001', 120002)]
+        final = build_final_record(prepared, receipt, 'COMPLETED', ['result.json'], children, LATER)
+        for changes in (
+            {'completion_files_required': ['other.json']},
+            {'completion_files_required': ['../result.json']},
+            {'completion_files_verified': ['result.json', 'result.json']},
+            {'status': 'failed'},
+        ):
+            with self.subTest(changes=changes), self.assertRaises(HpcJobLifecycleError):
+                validate_final_record({**final, **changes}, prepared)
+
     def test_complete_run_requires_files_then_releases_commit_lock(self):
         prepared = make_prepared()
         intent, _ = decide_submission(None, prepared, NOW)

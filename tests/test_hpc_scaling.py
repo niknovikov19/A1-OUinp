@@ -252,6 +252,17 @@ class CompactArchiveTests(unittest.TestCase):
             unpack_archive(self.archive, self.metadata, destination)
         self.assertEqual((destination / 'cfg/job_00000.json').read_text(), 'user change')
 
+    def test_archive_includes_verified_children_not_repeated_in_request(self):
+        """Keep compact child outputs when the request lists only the index. """
+        required = list(self.prepared['completion_files'])
+        self.prepared['completion_files'] = ['jobs/index.jsonl']
+        final = {**self.final, 'completion_files_required': required}
+        destination = self.root / 'combined.tar.gz'
+        metadata = build_archive(self.root, self.prepared, final, destination)
+        manifest = read_archive(destination, metadata)
+        self.assertEqual(len(manifest['files']), 241)
+        self.assertNotIn('raw.pkl', [item['path'] for item in manifest['files']])
+
     def test_symlink_unfinalized_and_tampered_archive_rejected(self):
         """Reject unsafe sources, absent final evidence, and corrupted transfers. """
         path = self.root / self.result_root / 'cfg/job_00000.json'

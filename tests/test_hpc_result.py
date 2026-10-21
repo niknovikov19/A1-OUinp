@@ -146,6 +146,15 @@ class HpcResultTests(unittest.TestCase):
         self.assertIsNotNone(inventory['artifacts'][0]['sha256'])
         self.assertNotIn('large.bin', str(inventory))
 
+    def test_inventory_accepts_child_outputs_not_repeated_in_the_request(self):
+        """Retrieve child files verified by the repaired finalization rule. """
+        required = list(self.prepared['completion_files'])
+        self.prepared['completion_files'] = ['jobs/index.jsonl']
+        self.final['completion_files_required'] = required
+        inventory = self.build_inventory()
+        artifact = select_artifact(inventory, 'run_00001', 'result-json')
+        self.assertEqual(read_inventory_artifact(self.repo, artifact, 1024), b'{"seed": 2}\n')
+
     def test_exact_selection_and_bounded_read(self):
         """Read one exact known artifact and reject unknown selectors. """
         inventory = self.build_inventory()

@@ -8,6 +8,7 @@ import stat
 
 from hpc_job import (
     HpcJobValidationError,
+    MAX_COMPLETION_FILES,
     canonical_json,
     validate_git_commit,
     validate_repo_path,
@@ -413,6 +414,35 @@ def build_active_run_marker(prepared, timestamp):
     }
 
 
+def get_required_completion_files(prepared, child_records):
+    """Combine request files and validated child outputs below the result root. """
+    prepared = validate_prepared_record(prepared)
+    records = parse_child_records(
+        b'\n'.join(canonical_json(record).encode() for record in child_records),
+        prepared,
+    )
+    result_root = PurePosixPath(prepared['expected_result_path'])
+    required = set(prepared['completion_files'])
+    for record in records:
+        for output in record['expected_outputs']:
+            relpath = PurePosixPath(output).relative_to(result_root).as_posix()
+            try:
+                required.add(validate_repo_path(relpath, 'child completion file'))
+            except HpcJobValidationError as exc:
+                raise HpcJobLifecycleError(str(exc)) from exc
+    if len(required) > MAX_COMPLETION_FILES:
+        raise HpcJobLifecycleError('Combined completion files exceed the limit')
+    return sorted(required)
+
+
+def _get_final_status(prepared, state, required, verified, child_job_ids):
+    """Apply the same completion rule when writing and reading final records. """
+    complete = required <= verified
+    if prepared['job_kind'] == 'batch':
+        complete &= len(child_job_ids) == prepared['simulation_job_limit']
+    return 'complete' if state == 'COMPLETED' and complete else 'failed'
+
+
 def validate_final_record(record, prepared):
     """Validate one terminal record against its prepared job."""
     record = _require_mapping(record, 'final record')
@@ -424,6 +454,8 @@ def validate_final_record(record, prepared):
         'child_job_ids',
         'finalized_at_utc',
     }
+    if 'completion_files_required' in record:
+        required.add('completion_files_required')
     _require_exact_keys(record, required, 'final record')
     binding = get_submission_binding(prepared)
     if any(record[key] != value for key, value in binding.items()):
@@ -445,7 +477,29 @@ def validate_final_record(record, prepared):
         }
     except HpcJobValidationError as exc:
         raise HpcJobLifecycleError(str(exc)) from exc
-    if not verified <= expected:
+    if len(verified) != len(completion_files):
+        raise HpcJobLifecycleError('Duplicate verified completion file')
+
+    # New batch records retain every required file instead of repeating the request
+    has_required = 'completion_files_required' in record
+    if has_required:
+        paths = record['completion_files_required']
+        if prepared['job_kind'] != 'batch' or not isinstance(paths, list):
+            raise HpcJobLifecycleError('Invalid required completion files')
+        if not paths or len(paths) > MAX_COMPLETION_FILES:
+            raise HpcJobLifecycleError('Invalid required completion-file count')
+        try:
+            required_files = {
+                validate_repo_path(path, 'required completion file')
+                for path in paths
+            }
+        except HpcJobValidationError as exc:
+            raise HpcJobLifecycleError(str(exc)) from exc
+        if len(required_files) != len(paths) or not expected <= required_files:
+            raise HpcJobLifecycleError('Required completion files differ from request')
+    else:
+        required_files = expected
+    if not verified <= required_files:
         raise HpcJobLifecycleError('Unexpected verified completion file')
     child_job_ids = record['child_job_ids']
     valid_ids = isinstance(child_job_ids, list) and all(
@@ -458,17 +512,16 @@ def validate_final_record(record, prepared):
         raise HpcJobLifecycleError('Final child-job count exceeds prepared limit')
     if prepared['job_kind'] == 'single' and child_job_ids:
         raise HpcJobLifecycleError('Single job has child-job IDs')
-    complete_evidence = verified == expected
-    if prepared['job_kind'] == 'batch':
-        complete_evidence &= (
-            len(child_job_ids) == prepared['simulation_job_limit']
-        )
-    expected_status = (
-        'complete'
-        if state == 'COMPLETED' and complete_evidence
-        else 'failed'
+    expected_status = _get_final_status(
+        prepared, state, required_files, verified, child_job_ids,
     )
-    if record['status'] != expected_status:
+
+    # Old failed batches omitted the output-mismatch reason from their final records
+    legacy_failure = (
+        not has_required and prepared['job_kind'] == 'batch' and
+        record['status'] == 'failed'
+    )
+    if record['status'] != expected_status and not legacy_failure:
         raise HpcJobLifecycleError('Final status differs from run evidence')
     return record
 
@@ -497,36 +550,27 @@ def build_final_record(
         }
     except HpcJobValidationError as exc:
         raise HpcJobLifecycleError(str(exc)) from exc
-    expected = set(prepared['completion_files'])
     records = parse_child_records(
         b'\n'.join(canonical_json(record).encode() for record in child_records),
         prepared,
     )
-    declared_outputs = {
-        (PurePosixPath(prepared['expected_result_path']) / path).as_posix()
-        for path in prepared['completion_files']
-    }
-    child_outputs_declared = all(
-        set(record['expected_outputs']) <= declared_outputs
-        for record in records
+    required = set(get_required_completion_files(prepared, records))
+    child_job_ids = [record['slurm_job_id'] for record in records]
+    status_value = _get_final_status(
+        prepared, scheduler_state, required, present, child_job_ids,
     )
-    complete_evidence = present == expected and child_outputs_declared
-    if prepared['job_kind'] == 'batch':
-        complete_evidence &= len(records) == prepared['simulation_job_limit']
-    status_value = (
-        'complete'
-        if scheduler_state == 'COMPLETED' and complete_evidence
-        else 'failed'
-    )
-    return {
+    final = {
         **get_submission_binding(prepared),
         'status': status_value,
         'slurm_job_id': submission['slurm_job_id'],
         'scheduler_state': scheduler_state,
-        'completion_files_verified': sorted(expected & present),
-        'child_job_ids': [record['slurm_job_id'] for record in records],
+        'completion_files_verified': sorted(required & present),
+        'child_job_ids': child_job_ids,
         'finalized_at_utc': _validate_timestamp(timestamp, 'final timestamp'),
     }
+    if prepared['job_kind'] == 'batch':
+        final['completion_files_required'] = sorted(required)
+    return validate_final_record(final, prepared)
 
 
 def release_active_run(active_marker, final_record, prepared, timestamp):

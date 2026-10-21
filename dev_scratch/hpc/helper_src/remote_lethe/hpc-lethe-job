@@ -36,6 +36,7 @@ from hpc_job_lifecycle import (
     build_active_run_marker,
     build_final_record,
     decide_submission,
+    get_required_completion_files,
     parse_child_records,
     read_state_record,
     record_sha256,
@@ -51,7 +52,7 @@ from hpc_job_lifecycle import (
 )
 
 
-HELPER_VERSION = '0.16.0-chunked-monitoring'
+HELPER_VERSION = '0.17.0-completion-recovery'
 EXIT_SUCCESS = 0
 EXIT_REJECTED = 2
 EXIT_UNKNOWN = 3
@@ -857,6 +858,93 @@ def load_child_records(config, prepared, _scheduler_state):
     return records
 
 
+def observe_terminal_run(config, prepared, submission):
+    """Require the main and every recorded child to have ended before mutation. """
+    job, observed = scheduler_status(config, prepared, submission)
+    terminal = get_terminal_scheduler_state(job)
+    records = load_child_records(config, prepared, terminal)
+    child_ids = [record['slurm_job_id'] for record in records]
+    if child_ids:
+        children, observed = scheduler_statuses(config, child_ids)
+        for child in children:
+            get_terminal_scheduler_state(child)
+    return terminal, records, observed
+
+
+def needs_output_recovery(final, prepared, child_records):
+    """Recognize the old failure with child outputs missing from the request. """
+    final = validate_final_record(final, prepared)
+    required = set(get_required_completion_files(prepared, child_records))
+    child_ids = [record['slurm_job_id'] for record in child_records]
+    return (
+        prepared['job_kind'] == 'batch' and
+        'completion_files_required' not in final and
+        final['status'] == 'failed' and
+        final['scheduler_state'] == 'COMPLETED' and
+        set(final['completion_files_verified']) == set(prepared['completion_files']) and
+        final['child_job_ids'] == child_ids and
+        len(child_ids) == prepared['simulation_job_limit'] and
+        required != set(prepared['completion_files'])
+    )
+
+
+def recover_output_final(config, prepared, submission, state, paths):
+    """Preserve the old failure and resume replacement of both final copies. """
+    state_backup = state['final'].with_suffix('.output-recovery.json')
+    run_backup = paths['final'].with_name('final-output-recovery.json')
+    backup_exists = state_backup.exists() or run_backup.exists()
+    if backup_exists:
+        if not state_backup.exists() or not run_backup.exists():
+            raise JobFailure('Output-recovery records are incomplete')
+        recovery = read_state_record(state_backup, 'output recovery')
+        repository = read_state_record(run_backup, 'output recovery')
+        if canonical_json(recovery) != canonical_json(repository):
+            raise JobFailure('Output-recovery records differ')
+        if set(recovery) != {'schema_version', 'original_final', 'replacement_final'}:
+            raise JobFailure('Invalid output-recovery record')
+        if recovery['schema_version'] != 1:
+            raise JobFailure('Invalid output-recovery version')
+        old = validate_final_record(recovery['original_final'], prepared)
+        new = validate_final_record(recovery['replacement_final'], prepared)
+        if 'completion_files_required' not in new:
+            raise JobFailure('Recovery replacement lacks required files')
+    else:
+        old = read_state_record(state['final'], 'protected final record')
+        repository = read_state_record(paths['final'], 'repository final record')
+        if canonical_json(old) != canonical_json(repository):
+            raise JobFailure('Final records differ')
+        records = load_child_records(config, prepared, None)
+        if not needs_output_recovery(old, prepared, records):
+            return None
+
+    # Do not alter records after release or while any recorded allocation is active
+    if state['release'].exists() or paths['release'].exists():
+        raise RejectedInput('Cannot recover a released run')
+    marker = read_state_record(state['active'], 'active-run marker')
+    release_active_run(marker, old, prepared, datetime.now(timezone.utc).isoformat())
+    terminal, records, observed = observe_terminal_run(config, prepared, submission)
+    if not needs_output_recovery(old, prepared, records):
+        raise JobFailure('Original final record is not an output-list failure')
+    if not backup_exists:
+        present = find_completion_files(config['git']['automation_checkout'], prepared, records)
+        new = build_final_record(
+            prepared, submission, terminal, present, records,
+            datetime.now(timezone.utc).isoformat(),
+        )
+        recovery = {'schema_version': 1, 'original_final': old, 'replacement_final': new}
+        write_dual_record(state_backup, run_backup, recovery, 'output recovery')
+
+    # Each atomic replacement can be resumed after a failure between the two writes
+    for fpath in (state['final'], paths['final']):
+        current = read_state_record(fpath, 'final record')
+        if canonical_json(current) == canonical_json(new):
+            continue
+        if canonical_json(current) != canonical_json(old):
+            raise JobFailure('Final record differs from output recovery')
+        replace_state_record(fpath, old, new)
+    return final_result(prepared, new, 'recovered', observed)
+
+
 def finalize_job(config, run_id):
     """Record one terminal scheduler state and declared-file evidence."""
     lock_id = acquire_lock(config['state']['job_lock'], 'job-operation lock')
@@ -868,6 +956,18 @@ def finalize_job(config, run_id):
         if state['final'].exists() or paths['final'].exists():
             if not state['final'].exists() or not paths['final'].exists():
                 raise JobFailure('Final records are incomplete')
+            state_backup = state['final'].with_suffix('.output-recovery.json')
+            final_data = read_state_record(state['final'], 'protected final record')
+            run_data = read_state_record(paths['final'], 'repository final record')
+            pending_recovery = state_backup.exists() and (
+                'completion_files_required' not in final_data or
+                canonical_json(final_data) != canonical_json(run_data)
+            )
+            released = state['release'].exists() or paths['release'].exists()
+            if not released and (pending_recovery or 'completion_files_required' not in final_data):
+                recovered = recover_output_final(config, prepared, submission, state, paths)
+                if recovered is not None:
+                    return recovered
             final = validate_final_record(
                 read_state_record(state['final'], 'protected final record'),
                 prepared,
@@ -884,14 +984,13 @@ def finalize_job(config, run_id):
                 'existing',
                 final['finalized_at_utc'],
             )
-        job, observed = scheduler_status(config, prepared, submission)
         try:
-            terminal = get_terminal_scheduler_state(job)
+            terminal, child_records, observed = observe_terminal_run(config, prepared, submission)
             present = find_completion_files(
                 config['git']['automation_checkout'],
                 prepared,
+                child_records,
             )
-            child_records = load_child_records(config, prepared, terminal)
             final = build_final_record(
                 prepared,
                 submission,
@@ -968,6 +1067,11 @@ def release_job(config, run_id):
         )
         if canonical_json(final) != canonical_json(repository_final):
             raise JobFailure('Final records differ')
+        submission = load_submission(config, prepared)
+        _, child_records, _ = observe_terminal_run(config, prepared, submission)
+        child_ids = [record['slurm_job_id'] for record in child_records]
+        if final['child_job_ids'] != child_ids:
+            raise JobFailure('Final child-job IDs differ from the current index')
         marker = read_state_record(state['active'], 'active-run marker')
         release = release_active_run(
             marker,

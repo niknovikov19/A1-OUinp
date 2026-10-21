@@ -10,6 +10,12 @@ acceptance passed, including the `hpc-status` compatibility correction.
 The [60-child / concurrency-ten policy](INSTALL_BATCH_60_CONCURRENCY_10.md)
 is installed after both Gate-B promotions passed; per-job limits are unchanged.
 
+The [completion recovery repair](INSTALL_COMPLETION_RECOVERY.md) is a new
+candidate, pending installation. It checks request and child output files
+together, preserves and repairs the old list-mismatch failure, and checks
+recorded jobs before release. The B1/B2 descriptions below describe the older
+installed behavior until that repair is promoted.
+
 The future [large-batch status and lifecycle refactor plan](../status_scaling_refactor_plan.md)
 separates scheduler-query bounds from total batch size and records temporary
 policy recommendations for the current implementation.
