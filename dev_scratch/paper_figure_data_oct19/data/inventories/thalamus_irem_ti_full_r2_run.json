@@ -1,0 +1,510 @@
+{
+  "run_id": "thal-irem-ti-fade-20261020b",
+  "request_id": "thal-irem-ti-fade",
+  "git_commit": "cdeb4e10cd2b71e3baa9ffae45395fc626d8df6e",
+  "slurm_main_job_id": 118876,
+  "submitted_at_utc": "2026-10-21T03:08:13.676040+00:00",
+  "request_sha256": "7b9248709c8c71c42c9dba3d1ab2d0cf3b762073fc6d253cd89b604bd763ac55",
+  "rendered_script_sha256": "d225a86054368cd4a26a7c0f8c542ec89256f55e92dec1a7df78ccd26a652916",
+  "seeds": [
+    1000,
+    1001,
+    1002,
+    1003,
+    1004,
+    1005,
+    1006,
+    1007,
+    1008,
+    1009,
+    1010,
+    1011,
+    1012,
+    1013,
+    1014
+  ],
+  "duration_ms": 10000,
+  "summary_window_s": [
+    7,
+    10
+  ],
+  "fade_window_s": [
+    3,
+    5
+  ],
+  "population_order": [
+    "TC",
+    "HTC",
+    "TCM",
+    "TI",
+    "TIM",
+    "IRE",
+    "IREM"
+  ],
+  "expected_result_path": "exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_ti_fade_r2_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5",
+  "simulation_job_resources": {
+    "partition": "cpu.q",
+    "nodes": 1,
+    "cores": 30,
+    "memory_gb": 128,
+    "wall_time_min": 60
+  },
+  "max_concurrent_simulation_jobs": 10,
+  "status": "complete_and_released",
+  "replaces_cancelled_run": "thal-irem-ti-fade-20261020",
+  "reuse_partial_results": false,
+  "saved_cfg_validation": "passed_for_all_15_seeds",
+  "finite_rate_validation": "passed_for_105_population_rates",
+  "completion_files_verified_count": 46,
+  "slurm_child_job_ids": [
+    118878,
+    118879,
+    118880,
+    118881,
+    118882,
+    118883,
+    118884,
+    118885,
+    118886,
+    118887,
+    118888,
+    118889,
+    118891,
+    118892,
+    118893
+  ],
+  "results": [
+    {
+      "seed_main": 1000,
+      "rates_hz": {
+        "TC": 6.066091954022988,
+        "HTC": 8.087719298245613,
+        "TCM": 7.982795698924731,
+        "TI": 17.235294117647058,
+        "TIM": 10.588235294117647,
+        "IRE": 20.974193548387095,
+        "IREM": 7.933333333333334
+      }
+    },
+    {
+      "seed_main": 1001,
+      "rates_hz": {
+        "TC": 21.445402298850574,
+        "HTC": 16.24561403508772,
+        "TCM": 3.713978494623656,
+        "TI": 8.88888888888889,
+        "TIM": 7.633986928104575,
+        "IRE": 11.731182795698924,
+        "IREM": 14.511827956989249
+      }
+    },
+    {
+      "seed_main": 1002,
+      "rates_hz": {
+        "TC": 12.586206896551724,
+        "HTC": 11.5,
+        "TCM": 6.458064516129032,
+        "TI": 14.209150326797385,
+        "TIM": 9.372549019607844,
+        "IRE": 17.90967741935484,
+        "IREM": 9.886021505376343
+      }
+    },
+    {
+      "seed_main": 1003,
+      "rates_hz": {
+        "TC": 11.261494252873563,
+        "HTC": 14.456140350877194,
+        "TCM": 5.602150537634409,
+        "TI": 13.660130718954248,
+        "TIM": 9.61437908496732,
+        "IRE": 16.44301075268817,
+        "IREM": 10.686021505376344
+      }
+    },
+    {
+      "seed_main": 1004,
+      "rates_hz": {
+        "TC": 26.448275862068964,
+        "HTC": 25.842105263157894,
+        "TCM": 5.030107526881721,
+        "TI": 7.882352941176471,
+        "TIM": 7.392156862745098,
+        "IRE": 13.470967741935484,
+        "IREM": 14.070967741935483
+      }
+    },
+    {
+      "seed_main": 1005,
+      "rates_hz": {
+        "TC": 26.614942528735632,
+        "HTC": 18.157894736842106,
+        "TCM": 2.5978494623655917,
+        "TI": 10.137254901960784,
+        "TIM": 6.529411764705882,
+        "IRE": 12.311827956989246,
+        "IREM": 14.008602150537635
+      }
+    },
+    {
+      "seed_main": 1006,
+      "rates_hz": {
+        "TC": 38.491379310344826,
+        "HTC": 25.535087719298247,
+        "TCM": 3.7182795698924735,
+        "TI": 6.1568627450980395,
+        "TIM": 4.947712418300654,
+        "IRE": 9.795698924731182,
+        "IREM": 17.969892473118282
+      }
+    },
+    {
+      "seed_main": 1007,
+      "rates_hz": {
+        "TC": 20.614942528735632,
+        "HTC": 15.07017543859649,
+        "TCM": 6.189247311827957,
+        "TI": 12.071895424836601,
+        "TIM": 7.509803921568627,
+        "IRE": 14.458064516129033,
+        "IREM": 12.95483870967742
+      }
+    },
+    {
+      "seed_main": 1008,
+      "rates_hz": {
+        "TC": 26.79885057471264,
+        "HTC": 35.973684210526315,
+        "TCM": 3.081720430107527,
+        "TI": 7.509803921568627,
+        "TIM": 5.947712418300653,
+        "IRE": 10.352688172043012,
+        "IREM": 16.75268817204301
+      }
+    },
+    {
+      "seed_main": 1009,
+      "rates_hz": {
+        "TC": 15.801724137931034,
+        "HTC": 12.631578947368421,
+        "TCM": 1.2193548387096773,
+        "TI": 14.130718954248366,
+        "TIM": 9.771241830065359,
+        "IRE": 14.686021505376345,
+        "IREM": 11.4
+      }
+    },
+    {
+      "seed_main": 1010,
+      "rates_hz": {
+        "TC": 20.02873563218391,
+        "HTC": 15.8859649122807,
+        "TCM": 2.9935483870967743,
+        "TI": 12.209150326797385,
+        "TIM": 8.594771241830065,
+        "IRE": 15.12258064516129,
+        "IREM": 11.716129032258065
+      }
+    },
+    {
+      "seed_main": 1011,
+      "rates_hz": {
+        "TC": 23.45977011494253,
+        "HTC": 27.763157894736842,
+        "TCM": 2.7440860215053764,
+        "TI": 9.07843137254902,
+        "TIM": 7.307189542483661,
+        "IRE": 12.451612903225806,
+        "IREM": 14.825806451612904
+      }
+    },
+    {
+      "seed_main": 1012,
+      "rates_hz": {
+        "TC": 14.301724137931034,
+        "HTC": 4.026315789473684,
+        "TCM": 2.243010752688172,
+        "TI": 12.836601307189541,
+        "TIM": 8.66013071895425,
+        "IRE": 13.670967741935485,
+        "IREM": 12.09247311827957
+      }
+    },
+    {
+      "seed_main": 1013,
+      "rates_hz": {
+        "TC": 23.859195402298848,
+        "HTC": 16.807017543859647,
+        "TCM": 2.225806451612903,
+        "TI": 7.718954248366013,
+        "TIM": 6.633986928104575,
+        "IRE": 10.804301075268818,
+        "IREM": 15.64731182795699
+      }
+    },
+    {
+      "seed_main": 1014,
+      "rates_hz": {
+        "TC": 43.70977011494253,
+        "HTC": 25.140350877192983,
+        "TCM": 0.778494623655914,
+        "TI": 6.967320261437908,
+        "TIM": 5.392156862745098,
+        "IRE": 9.606451612903227,
+        "IREM": 17.46451612903226
+      }
+    }
+  ],
+  "compact_archive": {
+    "cache_root": "exp_results_local/hpc_codex/thal-irem-ti-fade-20261020b/compact",
+    "sha256": "99b81063ebc84df3bcc4aa5c55490094abb6fb57fe8cc45add096b8f5e466c05",
+    "manifest_sha256": "1a87cd2daf4617949179347bc74a6489d67fb2995030084d972291151565b29e",
+    "size_bytes": 84977,
+    "total_bytes": 1011907,
+    "file_count": 31
+  },
+  "archive_manifest": {
+    "expected_result_path": "exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_ti_fade_r2_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5",
+    "files": [
+      {
+        "hpc_path": "/ddn/niknovikov19/repo/A1_OUinp_codex/exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_ti_fade_r2_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5/cfg/cfg_00000_seed_1000.json",
+        "path": "cfg/cfg_00000_seed_1000.json",
+        "sha256": "48329519681504d76a19c2bddbd61399fe5d562f63fdd08ef3ea685b5454d173",
+        "size_bytes": 65016
+      },
+      {
+        "hpc_path": "/ddn/niknovikov19/repo/A1_OUinp_codex/exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_ti_fade_r2_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5/cfg/cfg_00001_seed_1001.json",
+        "path": "cfg/cfg_00001_seed_1001.json",
+        "sha256": "7f2e13be2b4ea4373f7b8131acf5eb59d9e14424e5a3ad65a7981ca65d59e6f5",
+        "size_bytes": 65016
+      },
+      {
+        "hpc_path": "/ddn/niknovikov19/repo/A1_OUinp_codex/exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_ti_fade_r2_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5/cfg/cfg_00002_seed_1002.json",
+        "path": "cfg/cfg_00002_seed_1002.json",
+        "sha256": "43ee49b989b538b8e93e6150d7ab2ba9c470c16bdb8c614d6a65b68af3329592",
+        "size_bytes": 65016
+      },
+      {
+        "hpc_path": "/ddn/niknovikov19/repo/A1_OUinp_codex/exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_ti_fade_r2_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5/cfg/cfg_00003_seed_1003.json",
+        "path": "cfg/cfg_00003_seed_1003.json",
+        "sha256": "76c429fff67f69bb69194d3352bf6590171da49c05fb49d1da8390018c557d3d",
+        "size_bytes": 65016
+      },
+      {
+        "hpc_path": "/ddn/niknovikov19/repo/A1_OUinp_codex/exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_ti_fade_r2_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5/cfg/cfg_00004_seed_1004.json",
+        "path": "cfg/cfg_00004_seed_1004.json",
+        "sha256": "5929d00c9665cd44cdefe82ca8057c5d95daaf4d522ccc0e7ab5cf4b32ce9e4d",
+        "size_bytes": 65016
+      },
+      {
+        "hpc_path": "/ddn/niknovikov19/repo/A1_OUinp_codex/exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_ti_fade_r2_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5/cfg/cfg_00005_seed_1005.json",
+        "path": "cfg/cfg_00005_seed_1005.json",
+        "sha256": "80976480716e3fdcc0c69da1285c3f918995674dd6ab9285a9b8a8b4ab0a8890",
+        "size_bytes": 65016
+      },
+      {
+        "hpc_path": "/ddn/niknovikov19/repo/A1_OUinp_codex/exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_ti_fade_r2_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5/cfg/cfg_00006_seed_1006.json",
+        "path": "cfg/cfg_00006_seed_1006.json",
+        "sha256": "ab59ceb8eba64065ec2a9584e8431969a1b21527f2d878c54d3f5140afeaef5b",
+        "size_bytes": 65016
+      },
+      {
+        "hpc_path": "/ddn/niknovikov19/repo/A1_OUinp_codex/exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_ti_fade_r2_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5/cfg/cfg_00007_seed_1007.json",
+        "path": "cfg/cfg_00007_seed_1007.json",
+        "sha256": "343e0e086f33da0095b5593a46ad22ef7e896f42cd31908b76cf1662c0b039f6",
+        "size_bytes": 65016
+      },
+      {
+        "hpc_path": "/ddn/niknovikov19/repo/A1_OUinp_codex/exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_ti_fade_r2_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5/cfg/cfg_00008_seed_1008.json",
+        "path": "cfg/cfg_00008_seed_1008.json",
+        "sha256": "b6e5366b275edab026210615fffd94e90097f01cdb621160d789644aae7e10f3",
+        "size_bytes": 65016
+      },
+      {
+        "hpc_path": "/ddn/niknovikov19/repo/A1_OUinp_codex/exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_ti_fade_r2_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5/cfg/cfg_00009_seed_1009.json",
+        "path": "cfg/cfg_00009_seed_1009.json",
+        "sha256": "a8f2674971a1cb36d30c7fd1444027396277f0ddd82719961f30884e4885c16b",
+        "size_bytes": 65016
+      },
+      {
+        "hpc_path": "/ddn/niknovikov19/repo/A1_OUinp_codex/exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_ti_fade_r2_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5/cfg/cfg_00010_seed_1010.json",
+        "path": "cfg/cfg_00010_seed_1010.json",
+        "sha256": "2457437ca957ee3228e40588de012bd9a55c205f07144d1fe51e624cb42aa21a",
+        "size_bytes": 65016
+      },
+      {
+        "hpc_path": "/ddn/niknovikov19/repo/A1_OUinp_codex/exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_ti_fade_r2_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5/cfg/cfg_00011_seed_1011.json",
+        "path": "cfg/cfg_00011_seed_1011.json",
+        "sha256": "8b55b3db47e988814e74ce7512a93ca51ce3e75cd8d1fb119f6c48fbc0430258",
+        "size_bytes": 65016
+      },
+      {
+        "hpc_path": "/ddn/niknovikov19/repo/A1_OUinp_codex/exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_ti_fade_r2_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5/cfg/cfg_00012_seed_1012.json",
+        "path": "cfg/cfg_00012_seed_1012.json",
+        "sha256": "c080651b3f00e7d45a2887bdc401d93237cf59a7bac55aa8b9f04dc84e79c24e",
+        "size_bytes": 65016
+      },
+      {
+        "hpc_path": "/ddn/niknovikov19/repo/A1_OUinp_codex/exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_ti_fade_r2_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5/cfg/cfg_00013_seed_1013.json",
+        "path": "cfg/cfg_00013_seed_1013.json",
+        "sha256": "a875c9d0e40f3559fc4ced22cb6d189d60849ed78e4f90dc7837655e22e2e731",
+        "size_bytes": 65016
+      },
+      {
+        "hpc_path": "/ddn/niknovikov19/repo/A1_OUinp_codex/exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_ti_fade_r2_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5/cfg/cfg_00014_seed_1014.json",
+        "path": "cfg/cfg_00014_seed_1014.json",
+        "sha256": "dfe1b9a644abacbefaa04eb7243361052a99c37a53c9448a4d0718e3d293ed02",
+        "size_bytes": 65016
+      },
+      {
+        "hpc_path": "/ddn/niknovikov19/repo/A1_OUinp_codex/exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_ti_fade_r2_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5/jobs/index.jsonl",
+        "path": "jobs/index.jsonl",
+        "sha256": "d666206eb12290e3b5663b8557e6d35e96387c79c09b5a43e102efd2ad3c1903",
+        "size_bytes": 14130
+      },
+      {
+        "hpc_path": "/ddn/niknovikov19/repo/A1_OUinp_codex/exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_ti_fade_r2_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5/results/result_00000_seed_1000.json",
+        "path": "results/result_00000_seed_1000.json",
+        "sha256": "59d009dfa61345208a016323da584d3ebbc799fc46b94168af94b5f9bf9498d6",
+        "size_bytes": 1500
+      },
+      {
+        "hpc_path": "/ddn/niknovikov19/repo/A1_OUinp_codex/exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_ti_fade_r2_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5/results/result_00001_seed_1001.json",
+        "path": "results/result_00001_seed_1001.json",
+        "sha256": "98a965d6ffe350c09d76b06c26bd76b5f7bf7e2ade7f71a9d18858e77a7422a4",
+        "size_bytes": 1500
+      },
+      {
+        "hpc_path": "/ddn/niknovikov19/repo/A1_OUinp_codex/exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_ti_fade_r2_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5/results/result_00002_seed_1002.json",
+        "path": "results/result_00002_seed_1002.json",
+        "sha256": "3f6ada00f37a995400be22e18a8ad3a1508cf69636713c55a6bfd2cd2e7d8a27",
+        "size_bytes": 1497
+      },
+      {
+        "hpc_path": "/ddn/niknovikov19/repo/A1_OUinp_codex/exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_ti_fade_r2_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5/results/result_00003_seed_1003.json",
+        "path": "results/result_00003_seed_1003.json",
+        "sha256": "d11c870e72fbaaf06a48a414e380a0502dcdc1cc66ee314072f8d92f20b1efb0",
+        "size_bytes": 1500
+      },
+      {
+        "hpc_path": "/ddn/niknovikov19/repo/A1_OUinp_codex/exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_ti_fade_r2_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5/results/result_00004_seed_1004.json",
+        "path": "results/result_00004_seed_1004.json",
+        "sha256": "557f8944a27d832f448ff20fd411a7421b6cb799c8f4275b7b034f9ab4e35e74",
+        "size_bytes": 1509
+      },
+      {
+        "hpc_path": "/ddn/niknovikov19/repo/A1_OUinp_codex/exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_ti_fade_r2_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5/results/result_00005_seed_1005.json",
+        "path": "results/result_00005_seed_1005.json",
+        "sha256": "57fa23dde9bb4684efcfb9eacc7175add8474b41d03f5c8ea2f6bdc76f6cb97e",
+        "size_bytes": 1506
+      },
+      {
+        "hpc_path": "/ddn/niknovikov19/repo/A1_OUinp_codex/exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_ti_fade_r2_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5/results/result_00006_seed_1006.json",
+        "path": "results/result_00006_seed_1006.json",
+        "sha256": "9bb849ee67c74cc1d18db61cf1804a725bbbacfede3eef0263e9511fd33c5623",
+        "size_bytes": 1504
+      },
+      {
+        "hpc_path": "/ddn/niknovikov19/repo/A1_OUinp_codex/exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_ti_fade_r2_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5/results/result_00007_seed_1007.json",
+        "path": "results/result_00007_seed_1007.json",
+        "sha256": "8c982596d05f0311b4adb1dc03546a46b36342b8dee8d86b39fc1132ef5ce759",
+        "size_bytes": 1502
+      },
+      {
+        "hpc_path": "/ddn/niknovikov19/repo/A1_OUinp_codex/exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_ti_fade_r2_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5/results/result_00008_seed_1008.json",
+        "path": "results/result_00008_seed_1008.json",
+        "sha256": "e3e7df1d0b1b993445bbe5b3794a0064e0631b361383ef6cab2b1500abc0e533",
+        "size_bytes": 1499
+      },
+      {
+        "hpc_path": "/ddn/niknovikov19/repo/A1_OUinp_codex/exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_ti_fade_r2_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5/results/result_00009_seed_1009.json",
+        "path": "results/result_00009_seed_1009.json",
+        "sha256": "17ec0706ebb49b08e603cce61d3486a49d780efb660eccbe0ecc672a2539e80c",
+        "size_bytes": 1494
+      },
+      {
+        "hpc_path": "/ddn/niknovikov19/repo/A1_OUinp_codex/exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_ti_fade_r2_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5/results/result_00010_seed_1010.json",
+        "path": "results/result_00010_seed_1010.json",
+        "sha256": "abe3dec39782c187acbfb536d7d2006ebaa218a8b3fa29940a0f9d207c10b394",
+        "size_bytes": 1507
+      },
+      {
+        "hpc_path": "/ddn/niknovikov19/repo/A1_OUinp_codex/exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_ti_fade_r2_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5/results/result_00011_seed_1011.json",
+        "path": "results/result_00011_seed_1011.json",
+        "sha256": "382edad5e094047f5753a3ecbe90e1eacf6c2d0ecaf84672ba584a86551b57f0",
+        "size_bytes": 1507
+      },
+      {
+        "hpc_path": "/ddn/niknovikov19/repo/A1_OUinp_codex/exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_ti_fade_r2_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5/results/result_00012_seed_1012.json",
+        "path": "results/result_00012_seed_1012.json",
+        "sha256": "1dc4ac7b96af4b23c660f24dfd36015f81abf795eddfe22474aee85217c564d9",
+        "size_bytes": 1505
+      },
+      {
+        "hpc_path": "/ddn/niknovikov19/repo/A1_OUinp_codex/exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_ti_fade_r2_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5/results/result_00013_seed_1013.json",
+        "path": "results/result_00013_seed_1013.json",
+        "sha256": "3e5fb36cff12422d1ffc03da236d8ece908b80e7bf1f2853c4d6206ac6a6bcca",
+        "size_bytes": 1502
+      },
+      {
+        "hpc_path": "/ddn/niknovikov19/repo/A1_OUinp_codex/exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_ti_fade_r2_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5/results/result_00014_seed_1014.json",
+        "path": "results/result_00014_seed_1014.json",
+        "sha256": "ec0ab6bfb67060bf1ab6922e2706b094e794378457553a9fe7bae1a6b370b143",
+        "size_bytes": 1505
+      }
+    ],
+    "git_commit": "cdeb4e10cd2b71e3baa9ffae45395fc626d8df6e",
+    "run_id": "thal-irem-ti-fade-20261020b",
+    "schema_version": 1,
+    "total_bytes": 1011907
+  },
+  "released_at_utc": "2026-10-21T03:14:04.515226+00:00",
+  "watcher_report": {
+    "attention": [],
+    "attention_omitted": 0,
+    "changes": {
+      "discovered": 16,
+      "transition": 11
+    },
+    "child_state_counts": {
+      "COMPLETED": 15
+    },
+    "codex_check_sec": 1800,
+    "detail": null,
+    "evidence_directory": "/home/nnovikov/repo/A1-OUinp/exp_results_local/hpc_codex/thal-irem-ti-fade-20261020b/watch",
+    "expected_child_coverage_verified": false,
+    "identity": {
+      "git_commit": "cdeb4e10cd2b71e3baa9ffae45395fc626d8df6e",
+      "main_id": 118876
+    },
+    "last_good_at_utc": "2026-10-21T03:12:46.437674+00:00",
+    "last_status_at_utc": "2026-10-21T03:12:46.437674+00:00",
+    "log_diagnostics": [
+      {
+        "child_key": null,
+        "state": "backlog"
+      },
+      {
+        "child_key": null,
+        "state": "backlog"
+      }
+    ],
+    "main_state": "COMPLETED",
+    "observation_age_sec": 3.6585304737091064,
+    "observed_children": 15,
+    "output_files_verified": false,
+    "previously_observed_children": 15,
+    "reason": "scheduler-terminal",
+    "reported_at_utc": "2026-10-21T03:12:50.096205+00:00",
+    "run_id": "thal-irem-ti-fade-20261020b",
+    "schema_version": 1,
+    "sequence": 5,
+    "session_elapsed_sec": 143.42702216500766,
+    "status_unavailable": false,
+    "uncertainty": {
+      "missing_children": [],
+      "unknown_job_ids": []
+    },
+    "until": null
+  }
+}

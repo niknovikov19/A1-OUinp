@@ -294,4 +294,18 @@ checked-out commit.
   The population order now matches the archived all-thalamus fade, including
   its background-seed assignment. Duration remains 10 s and summary 7–10 s.
   No experiment functions or completion helpers changed.
+- The initial concurrency-two attempt (main 118869) was cancelled at the user's
+  request; four children completed and two were cancelled. Finalized and released
+  it, preserving all partial files. The user then selected concurrency 10,
+  30 ranks, and 128 GiB per simulation after the protected 30-core ceiling rejected
+  a 32-core request. No protected policy changed.
+- Restarted all 15 seeds in fresh label `thal_irem_ti_fade_r2`, source commit
+  `cdeb4e10cd2b71e3baa9ffae45395fc626d8df6e`, main 118876. Waited for the
+  watcher without parallel task work or background checks. Its terminal report
+  confirmed completion of all 15 children. Normal finalization verified 46 files.
+- Retrieved the 84,977-byte compact archive, verified its 31 payloads, and checked
+  all saved scientific cfgs against the all-thalamus fade reference. All 15 cfgs,
+  seed mappings, and 105 finite population rates passed. Saved unrounded rates
+  and manifest in `data/inventories/thalamus_irem_ti_full_r2_run.json`. Normal
+  release succeeded; pilots and cancelled outputs remain separate.
 

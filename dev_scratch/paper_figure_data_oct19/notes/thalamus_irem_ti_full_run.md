@@ -20,10 +20,11 @@ parallel task work, extra status queries, or local-state checks.
 - Fade schedule: surrogate through 3 s, linear restoration at 3–5 s, recurrence
   through 10 s. The historical image supports 3–5 s fading, but its cfg does not
   serialize the schedule; exact historical timing is not independently verified.
-- Label: `thal_irem_ti_fade`; expected result directory:
-  `exp_thal_irem_ti_fade_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5`.
-- Keep two concurrent simulations within this single batch, each 8 MPI ranks,
-  32 GiB, and 60 min. Batch main: 2 cores, 16 GiB, 120 min.
+- Completed-run label: `thal_irem_ti_fade_r2`; result directory:
+  `exp_thal_irem_ti_fade_r2_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5`.
+- Completed-run resources: concurrency 10, each simulation 30 MPI ranks,
+  128 GiB, and 60 min. Batch main: 2 cores, 16 GiB, 120 min.
+  The initial lower-resource attempt was cancelled, as recorded below.
 - Request completion evidence includes the child index and all 15 cfgs, result
   JSONs, and rasters. Compact retrieval excludes large raw files and PNGs.
 - No experiment function or compatibility helper will change. No numerical
@@ -71,3 +72,33 @@ parallel task work, extra status queries, or local-state checks.
   **128 GiB per simulation**. Discarded the uncommitted policy-update candidates;
   no protected configuration or helper changed. The restart uses the same
   fresh result label and unchanged scientific settings.
+- Pushed and updated lethe to `cdeb4e10cd2b71e3baa9ffae45395fc626d8df6e`.
+  Protected preparation accepted all 15 children, concurrency 10, 30 ranks,
+  and 128 GiB per simulation. Submitted replacement run
+  `thal-irem-ti-fade-20261020b`, main Slurm job **118876**, at
+  `2026-10-21T03:08:13.676040+00:00` (October 20, 23:08 EDT).
+  Request SHA256: `7b9248709c8c71c42c9dba3d1ab2d0cf3b762073fc6d253cd89b604bd763ac55`.
+  All 15 seeds restart from scratch; cancelled-run outputs remain separate.
+- Starting the replacement watcher's 30-minute session; waiting without
+  background checks or other task work until it returns.
+
+## Completion
+
+- Waited for the replacement watcher's terminal report without parallel work
+  or additional checks. It reported main 118876 and all 15 children completed,
+  with no failures, at `2026-10-21T03:12:50.096205+00:00` (October 20, 23:12 EDT).
+- The normal finalizer verified all 46 requested files and recorded the run as
+  complete. Retrieved only the compact archive: 84,977 compressed bytes,
+  1,011,907 uncompressed bytes, 31 files (15 cfgs, 15 JSONs, child index).
+  Raw pickles and rasters remain on HPC.
+- Checked all 31 compact-file hashes, all 15 saved configurations and seeds,
+  the population order and per-population background-seed mapping, baseline
+  currents, mechanisms, gains, targets, and scaled weights against the
+  `thal_all_fade` reference. All checks passed. All 105 population rates are
+  finite and nonnegative, with the intended 7–10 s summary window.
+- Normal release succeeded at `2026-10-21T03:14:04.515226+00:00`
+  (October 20, 23:14 EDT). No job or watcher remains active for this run.
+- [Run provenance and unrounded rates](../data/inventories/thalamus_irem_ti_full_r2_run.json)
+  retain the 15 seeds, child IDs, compact manifest/checksums, and exact source
+  commit. These completed-run rates are separate from both pilots and the
+  cancelled partial attempt. The paper table has not been regenerated here.
