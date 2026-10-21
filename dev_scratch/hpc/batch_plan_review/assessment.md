@@ -3,6 +3,12 @@
 2026-10-20. This document proposes changes; it does not describe an implemented
 replacement. This review changed documentation only.
 
+Implementation update: the [narrow completion repair](../helper_src/INSTALL_COMPLETION_RECOVERY.md)
+is installed and the pilot checkout was released. The
+[local watcher](../watch_implementation/README.md) is now implemented separately.
+The full batch-plan and portability changes below remain proposals. Descriptions
+of the original list-mismatch failure refer to the implementation before that repair.
+
 ## Recommendation
 
 Before submitting any simulations, the batch main should write a complete list
@@ -15,8 +21,8 @@ Slurm operations can stay. Preparation, submission records, completion checks,
 release, and result retrieval need coordinated changes. We should repeat most
 Gate B tests and selected Gate A tests.
 
-We should first repair the current failure to release the pilot checkout. A new
-record format will not, by itself, repair the existing inconsistent `final.json`.
+The immediate repair and pilot release are complete. They do not implement the
+full batch-plan redesign proposed here.
 
 ## Terms identify programs, machines, and files
 
@@ -36,19 +42,19 @@ compare hashes to detect whether they are using the same plan.
 | **Batch main** | `grid_search_slurm_local.py`, including its BatchTools submission code | It runs autonomously as a Slurm job on a compute node. It selects simulations, submits their jobs, and monitors their progress. |
 | **Simulation job** | `run_exp.py` and the experiment code it calls | It runs autonomously as another Slurm job on compute nodes. It runs one simulation and writes scientific output files. |
 | **Project code** | Python functions that interpret this repository's experiments: currently `hpc_preflight.py`, `exp_cfg.py`, `batch_params.py`, and related functions | Codex can call preflight locally. The batch main and simulation jobs execute the relevant functions on compute nodes. Lethe helpers must not import this code. |
-| **Local watcher (proposed; not implemented)** | A separate Python program that repeatedly calls the installed local commands, saves observations, and prepares reports | Codex would start it on the local computer. It would check HPC without involving Codex in each check, then return a report for Codex to read. |
+| **Local watcher** | `hpc_watch.py`, started through `dev_scratch/hpc/watch_run.py`; it repeatedly calls installed status/log commands and saves observations | Codex or the user starts it on the local computer. It checks HPC without involving Codex in each check, then returns a report for Codex or the user to read. |
 
 The local commands and remote helpers are separate programs. Calling a local
 command currently performs one operation and exits; it does not start continuous
 monitoring. The batch main and simulation jobs continue independently of Codex.
 
-We agreed to separate repeated monitoring from Codex's own checks in the
-[local watcher plan](../local_watch_plan.md), but the watcher has not been
-implemented or installed. It would periodically request Slurm status and read
-selected logs through the existing local commands. Codex would read its reports
-less often, with a proposed default of 30 minutes or earlier on a problem or
-job termination. The watcher would be an ordinary local process, outside the AI
-model. How the tools would wait and return control to Codex still needs testing.
+The [local watcher](../watch_implementation/README.md) implements the separation
+described in the [watcher plan](../local_watch_plan.md). It periodically requests
+Slurm status and selected logs through the existing local commands. It returns
+a routine report after 30 minutes by default, or earlier on a problem or job
+termination. Codex must wait for the process and read its report. Short waits
+have been tested; actual 30-minute chat timing remains unmeasured. The watcher
+runs as an ordinary local process, outside the AI model.
 
 A **job request** is a JSON file, currently under `hpc_jobs/requests/`. It selects
 an experiment, resources, limits, and output location. It is data, not a program

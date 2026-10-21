@@ -1,0 +1,9 @@
+{
+  "elapsed_sec": 12.066468076998717,
+  "simulated_hpc_checks": 6,
+  "model_checks_after_launch": 1,
+  "waiting_tool_calls": 1,
+  "real_30_minute_chat_wait_tested": false,
+  "reason": "checkpoint",
+  "evidence_directory": "exp_results_local/hpc_codex/watch_acceptance/wait-1792546970194490794"
+}

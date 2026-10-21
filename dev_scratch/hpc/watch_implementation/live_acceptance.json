@@ -1,0 +1,46 @@
+{
+  "report": {
+    "attention": [],
+    "attention_omitted": 0,
+    "changes": {
+      "discovered": 5
+    },
+    "child_state_counts": {
+      "COMPLETED": 4
+    },
+    "codex_check_sec": 30,
+    "detail": null,
+    "evidence_directory": "/home/nnovikov/repo/A1-OUinp/exp_results_local/hpc_codex/thal-irem-fade-pilot-20261020b/watch",
+    "expected_child_coverage_verified": false,
+    "identity": {
+      "git_commit": "a1d5bb23de7c6e934b44b3948193e4f7737556db",
+      "main_id": 118799
+    },
+    "last_good_at_utc": "2026-10-21T01:44:50.661940+00:00",
+    "last_status_at_utc": "2026-10-21T01:44:50.661940+00:00",
+    "log_diagnostics": [],
+    "main_state": "COMPLETED",
+    "observation_age_sec": 4.487467527389526,
+    "observed_children": 4,
+    "output_files_verified": false,
+    "previously_observed_children": 4,
+    "reason": "scheduler-terminal",
+    "reported_at_utc": "2026-10-21T01:44:55.149408+00:00",
+    "run_id": "thal-irem-fade-pilot-20261020b",
+    "schema_version": 1,
+    "sequence": 2,
+    "session_elapsed_sec": 9.73382313500042,
+    "status_unavailable": false,
+    "uncertainty": {
+      "missing_children": [],
+      "unknown_job_ids": []
+    },
+    "until": null
+  },
+  "exit_code": 0,
+  "operations": [
+    "status",
+    "log:main"
+  ],
+  "remote_mutations": false
+}

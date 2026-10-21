@@ -1,9 +1,11 @@
 # H1: local HPC waiting and reporting plan
 
-Status: discussion draft, 2026-10-15. The user agreed to bounded resumable
-watcher sessions, thirty-minute routine checkpoints, and completion handoff to Codex.
-Runtime implementation and installation have not been approved. Remaining
-design choices and defaults below are proposals until agreed.
+Status: implementation authorized on 2026-10-20. The earlier agreement covers
+bounded resumable sessions, thirty-minute routine checkpoints, and completion
+handoff to Codex. The local implementation uses the polling/log defaults below;
+see [usage](watch_implementation/README.md) and the
+[implementation findings](watch_implementation/findings_log.md) for tests and
+remaining tool-wait limitations. This document preserves the original design.
 
 ## Outcome and scope
 

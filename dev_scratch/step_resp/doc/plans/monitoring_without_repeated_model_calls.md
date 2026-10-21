@@ -1,10 +1,12 @@
 # H1: routine waiting without involving Codex for every HPC check
 
-Origin/status: suggested by the assistant during the token-usage discussion;
-not an approved implementation task. Discussion and detailed planning requested
-on 2026-10-15. Bounded resumable watcher sessions, thirty-minute routine checkpoints,
-and completion handoff to Codex are agreed; see the
-[draft implementation plan](../../../hpc/local_watch_plan.md).
+Origin/status: suggested during the token-usage discussion and planned on
+2026-10-15. Implementation was authorized on 2026-10-20. The local watcher now
+implements bounded resumable sessions and reports; see
+[usage](../../../hpc/watch_implementation/README.md) and
+[acceptance findings](../../../hpc/watch_implementation/findings_log.md).
+The text below preserves the original proposal. A real short waiting test and
+completed-run check passed; actual 30-minute chat timing remains unmeasured.
 Proposed priority: P1 for recurring HPC work. This is a code improvement, not a
 new scientific experiment.
 
