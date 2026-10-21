@@ -212,3 +212,19 @@ copies, with short descriptive filenames under `evidence/rasters/`. That folder'
 README, manifest CSV, and copy audit preserve provenance; the existing root ignore
 rule excludes its PNGs. No pickle was opened or new simulation launched.
 
+## Experiment rollback — 2026-10-20
+
+Restored `net_newsec_ee_fade_var_seed` to its pre-pilot version (`0612925`),
+retaining only `get_batch_completion_files()` for HPC compatibility. Removed
+the added `fade_post` batch axis, dynamic projection selection, diagnostics,
+and changed simulation hooks; restored the original parameter values too.
+Verified that `batch_params.py` matches the original exactly and that the
+experiment's Python syntax tree differs only by the compatibility function.
+Checked the original 15-seed batch and its declared output filenames. Removed
+the obsolete staged `_pilot_v2` label edit; unrelated staged files are unchanged.
+Existing pilot data remain associated with their original simulation commit;
+the old pilot request does not describe the restored configuration. No HPC
+checkout, job, or result file was changed. The user subsequently requested that
+this rollback be committed, pushed, and fetched on lethe without updating its
+checked-out commit.
+

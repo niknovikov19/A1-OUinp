@@ -15,7 +15,6 @@ import pandas as pd
 
 from analysis.model_utils.net_utils import get_2pop_conns
 from analysis.ou_tuning import sim_res_proc_utils as proc
-from analysis.ou_tuning.netpyne_res_parse_utils import prepare_sim_result
 from conn_fader import ConnFader
 import diagnostics as diag
 
@@ -55,8 +54,8 @@ CONNS_THAL_ETHAL = [(p1, p2) for p1 in THAL_POPS for p2 in THAL_E_POPS]
 
 
 # Duration and rate calculation window
-SIM_DURATION = 6000
-T0_CALC = 5000
+SIM_DURATION = 15 * 1e3
+T0_CALC = 10 * 1e3
 
 #EXP_LABEL = 'ctx_ee_fade'
 #EXP_LABEL = 'ctx_ee_0'
@@ -73,13 +72,14 @@ T0_CALC = 5000
 #EXP_LABEL = 'thal_all_fade'
 #EXP_LABEL = 'a1_ee_0_irem_core_0'
 #EXP_LABEL = 'a1_ee_fade_irem_ire_0'
-EXP_LABEL = 'thal_irem_branch_fade_pilot'
+EXP_LABEL = 'a1_irem_ire_0'
 #EXP_LABEL = 'core_full'
 #EXP_LABEL = 'matx_full'
 #EXP_LABEL = 'irem_ire_0'
 
 #POPS_USED = PYR_POPS + PV_POPS + SOM_POPS + VIP_POPS + NGF_POPS
-POPS_USED = CORE_POPS + MATX_POPS
+POPS_USED = (PYR_POPS + PV_POPS + SOM_POPS + VIP_POPS +
+             NGF_POPS + THAL_E_POPS + THAL_I_POPS)
 #POPS_USED = L2_POPS
 #POPS_USED = CORE_POPS
 #POPS_USED = MATX_POPS
@@ -93,21 +93,22 @@ POPS_USED = CORE_POPS + MATX_POPS
 #CONNS_FROZEN = [(p1, p2) for p1 in THAL_POPS for p2 in ['TI', 'TIM']]
 #CONNS_FROZEN = [(p1, p2) for p1 in ['IREM'] for p2 in ['IRE']] + CONNS_EE
 #CONNS_FROZEN = [(p1, p2) for p1 in ['IREM'] for p2 in CORE_POPS] + CONNS_EE
-CONNS_FROZEN = []
+CONNS_FROZEN = [(p1, p2) for p1 in ['IREM'] for p2 in ['IRE']]
 #CONNS_FROZEN = [(p1, p2) for p1 in MATX_POPS for p2 in ['TI']]
 #CONNS_FROZEN = []
 
-EE_FADER_ON = 1
+EE_FADER_ON = 0
 
 #CONNS_SPLIT = []
-CONNS_SPLIT = [('IREM', 'TI')]
+CONNS_SPLIT = [(p1, p2) for p1, p2 in CONNS_EE
+               if (p1 in POPS_USED) and (p2 in POPS_USED)]
 #CONNS_SPLIT = CONNS_THAL
 #CONNS_SPLIT = [(p1, p2) for p1 in ['TI', 'TIM'] for p2 in THAL_E_POPS]
 #CONNS_SPLIT = [(p1, p2) for p1 in THAL_E_POPS for p2 in ['TI', 'TIM']]
 
 # Surr->recurrent fader timecourse (time, rec:surr ratio)
 #FADER_PTS = [(0, 0), (3000, 0), (5000, 1), (SIM_DURATION, 1)]
-FADER_PTS = [(0, 0), (3000, 0), (5000, 1), (SIM_DURATION, 1)]
+FADER_PTS = [(0, 0), (6000, 0), (8000, 1), (SIM_DURATION, 1)]
 #FADER_PTS = [(0, 1), (SIM_DURATION, 1)]
 
 # Background spiking input
@@ -144,9 +145,7 @@ def gen_exp_name_sub(cfg):
 
 
 def get_batch_completion_files(child_key, parameters):
-    """Declare one result summary and raster for each pilot child. """
-    if set(parameters) != {'seed_main', 'fade_post'}:
-        raise ValueError('Unexpected fading-pilot batch parameters')
+    """Declare existing result and raster filenames for HPC completion checks. """
     job_id = child_key.rsplit('_', 1)[1]
     postfix = f"{job_id}_seed_{parameters['seed_main']}"
     return [f'results/result_{postfix}.json', f'rasters/raster_{postfix}.png']
@@ -159,10 +158,6 @@ def apply_exp_cfg(cfg):
 
     # Left point (ms) of the calculation time window (r, cv, ...)
     cfg.t0_calc = T0_CALC
-
-    # Persist the schedule and let the batch select one fading target per child
-    cfg.fader_pts = list(FADER_PTS)
-    cfg.fade_post = None
 
     # Populations to use
     pops_active = POPS_USED
@@ -320,7 +315,7 @@ def modify_net_params_2(cfg, params):
         return
 
     # Set distinct synMech labels for surrogate and recurrent inputs
-    split_pairs = {tuple(pair.split(', ')) for pair in cfg.subnet_params['conns_split']}
+    split_pairs = set(CONNS_SPLIT)
     rank = int(h.ParallelContext().id())
     for cname, conn in params.connParams.items():
         kind, pops_pre_base, pops_post = _rule_kind_and_base_pops(
@@ -348,8 +343,7 @@ def modify_network(sim):
 
     # Find recurrent/surrogate conns for positive/inverse modulation
     conns_pos, conns_neg = [], []
-    split_pairs = [pair.split(', ') for pair in sim.cfg.subnet_params['conns_split']]
-    for pop_pre, pop_post in split_pairs:
+    for pop_pre, pop_post in CONNS_SPLIT:
         conns_pos_ = get_2pop_conns(sim, pop_pre, pop_post)   # recurrent conns
         conns_neg_ = get_2pop_conns(sim, pop_pre + 'frz', pop_post)   # surrogate inputs
         conns_pos += conns_pos_
@@ -359,74 +353,14 @@ def modify_network(sim):
         group_name='ee',
         conns_pos=conns_pos,
         conns_neg=conns_neg,
-        pts=sim.cfg.fader_pts
+        pts=FADER_PTS
     )
 
     fader.create_modulators()
     fader.connect_modulators()
     fader.setup_recording(rec_dt=1)
 
-    # Record actual modulation coefficients separately from the existing g traces
-    for mod in fader.modulators.values():
-        mod['rec_a'] = h.Vector()
-        mod['rec_a'].record(mod['hobj']._ref_z_shared, 20)
-
-    # Count instantiated recurrent and surrogate contacts across all ranks
-    positive = set(conns_pos)
-    negative = set(conns_neg)
-    local_pos = sum(conn.get('label') in positive for cell in sim.net.cells for conn in cell.conns)
-    local_neg = sum(conn.get('label') in negative for cell in sim.net.cells for conn in cell.conns)
-    sim.fader_contact_counts = {
-        'recurrent': int(sim.pc.allreduce(local_pos, 1)),
-        'surrogate': int(sim.pc.allreduce(local_neg, 1)),
-    }
-    if min(sim.fader_contact_counts.values()) <= 0:
-        raise ValueError('Fading requires both recurrent and surrogate contacts')
-
     sim.ee_fader = fader
-
-
-def post_run_parallel(sim):
-    """Gather terminal modulation evidence while rank-local synapses exist. """
-    if not EE_FADER_ON:
-        return
-    endpoints = {}
-    for name, mod in sim.ee_fader.modulators.items():
-        syn = mod['syn']
-        endpoints[name] = {'shared_coefficient': float(mod['hobj'].z_shared),
-                           'synaptic_coefficient': float(syn.pmod),
-                           'effective_coefficient': float(syn.m),
-                           'use_pmod': int(syn.use_pmod)}
-    sim.fader_rank_endpoints = sim.pc.py_allgather(endpoints)
-
-
-def get_pilot_diagnostics(sim):
-    """Export compact full-record rates and numerical fading evidence. """
-    cfg = sim.cfg
-    sim_result = prepare_sim_result(sim)
-    rates = proc.calc_rate_dynamics(sim_result, t_limits=(0, cfg.duration / 1000),
-                                    dt_bin=0.02, tau_smooth=0.05, pops_used=POPS_USED)
-    time_s = rates[POPS_USED[0]][0].tolist()
-    rate_hz = [rates[pop][1].tolist() for pop in POPS_USED]
-    coefficients = {name: list(mod['rec_a']) for name, mod in sim.ee_fader.modulators.items()}
-    phases = {'before_fade': (1, 3), 'during_fade': (3, 5), 'after_fade': (5, 6)}
-    phase_rates = {name: proc.calc_rates_and_cvs(sim_result, window)['rates']
-                   for name, window in phases.items()}
-    return {
-        'seed_main': cfg.seed_main, 'fade_pair': ['IREM', cfg.fade_post],
-        'duration_ms': cfg.duration, 'fader_pts_ms': cfg.fader_pts,
-        'target_rates_hz': {pop: cfg.target_rates[pop] for pop in POPS_USED},
-        'phase_windows_s': phases, 'phase_rates_hz': phase_rates,
-        'rate_dynamics': {'time_s': time_s,
-                          'pops': list(POPS_USED), 'rate_hz': rate_hz,
-                          'dt_bin_s': 0.02, 'tau_smooth_s': 0.05},
-        'rate_dynamics_backend': 'analysis.ou_tuning.sim_res_proc_utils.calc_rate_dynamics',
-        'coefficient_record_dt_ms': 20, 'coefficients': coefficients,
-        'contact_counts': sim.fader_contact_counts,
-        'rank_endpoints': sim.fader_rank_endpoints,
-        'subnet_params': cfg.subnet_params,
-        'baseline_iclamp': cfg.IClamp,
-    }
 
 
 def post_run(sim):
@@ -481,8 +415,6 @@ def post_run(sim):
         res = {}
         res['timing'] = sim.timingData
         res |= proc.calc_rates_and_cvs(sim, t_limits, nspikes_min=3)
-        if EE_FADER_ON:
-            res['pilot'] = get_pilot_diagnostics(sim)
         if REC_TRACES:
             res |= proc.calc_v_stats(sim, t_limits, med_win=0.05)
         fpath_res = dirpath_res_sub / 'results' / f'result_{postfix}.json'
@@ -493,7 +425,6 @@ def post_run(sim):
     if EE_FADER_ON and NEED_RUN:
         #gathered = sim.ee_fader.gather_recs()
         sim.ee_fader.plot_recs()
-        plt.ylabel('Representative synaptic g (µS)')
         fpath_wmod = (dirpath_res_sub / 'wmod_figs' / f'wmod_{postfix}.png')
         plt.savefig(fpath_wmod, dpi=300)
 
