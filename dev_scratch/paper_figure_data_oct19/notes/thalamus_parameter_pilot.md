@@ -67,3 +67,76 @@ second. Use installed HPC-Codex helpers and the local watcher.
   completion list, and AST check. Relative to the IREM→TI experiment revision,
   only `EXP_LABEL` and `CONNS_SPLIT` changed; every function is unchanged.
   Evidence: `data/inventories/thalamus_param_pilot_ire_preflight.json`.
+- Pushed IREM→TI evidence and IREM→IRE parameter selection as
+  `450eb40527233b21522a4b8bb8b16164891699f9`, then updated the released checkout.
+  Prepared and submitted `thal-ire-param-pilot-20261020`, main job **118863**,
+  at `2026-10-21T02:32:59.963315+00:00` (October 20, 22:32 EDT).
+  Request SHA256: `1372444ba8b3d5a3927d5a20ccee678b1371d2cc910d7dbb0eede0f840e1bbc0`.
+  This is the sole active batch; it started after IREM→TI was released.
+- The watcher returned scheduler-terminal for IREM→IRE main 118863 and both
+  children 118864/118865. Normal finalization verified all seven files.
+  Retrieved a five-file archive: 12,372 compressed bytes / 135,001 uncompressed
+  bytes. Saved-cfg/input/seed and finite-rate checks passed for both simulations.
+  Released the run at `2026-10-21T02:41:00.723792+00:00` (October 20, 22:41 EDT).
+  Both batches are complete and released; neither raw pickle nor raster was
+  downloaded.
+- The user clarified the watcher workflow: Codex should wait while it runs,
+  rather than repeatedly inspecting local state or doing parallel task work.
+  After that correction, waited for its terminal report before resuming analysis.
+
+## Pilot results
+
+Rates are modeled-population rates over 7–10 s, in Hz.
+
+| Restored projection | Seed | TC | HTC |
+|---|---:|---:|---:|
+| IREM→TI | 1000 | 29.98 | 28.11 |
+| IREM→IRE | 1000 | 29.34 | 27.11 |
+| IREM→TI | 1001 | 7.34 | 10.15 |
+| IREM→IRE | 1001 | 6.80 | 9.51 |
+
+Both targets are 8 Hz. For the same seed, the two restoration routes give
+similar endpoint rates: across all seven populations the largest absolute
+route difference is 1.00 Hz for seed 1000 and 1.24 Hz for seed 1001. Seed 1000
+has high core excitatory rates in both conditions; seed 1001 has much lower core
+rates in both. This supports route similarity for these two seeds, without
+establishing convergence, stationarity, or monostability from endpoint rates alone.
+
+The pilot preserves the population order of the archived single-projection
+frozen references: TC, HTC, TI, IRE, TCM, TIM, IREM. Archived fully recurrent and
+all-surrogate-fading references instead use TC, HTC, TCM, TI, TIM, IRE, IREM.
+The existing seed assignment depends on that order, so TI, IRE, TCM, and TIM have
+different background seeds despite identical `seed_main`. Other construction
+differences can also change the realized network. Historical per-seed rates are
+therefore context, not an identical-network control. A fully recurrent control
+with the pilot's parameter ordering would resolve this comparison before a
+larger cohort. No additional control was submitted in this task.
+
+The unchanged experiment exports endpoint rates and CVs. It does not export
+numerical coefficient traces or full population-rate time courses; the retained
+source commit specifies the fade schedule. No old diagnostic functions were
+reintroduced, and conductance plots are not treated as coefficient measurements.
+
+## Files and regeneration
+
+- [IREM→TI population rates](../data/tables/thalamus_param_pilot_ti_rates.csv).
+- [IREM→IRE population rates](../data/tables/thalamus_param_pilot_ire_rates.csv).
+- [IREM→TI checks and provenance](../data/inventories/thalamus_param_pilot_ti_analysis.json).
+- [IREM→IRE checks and provenance](../data/inventories/thalamus_param_pilot_ire_analysis.json).
+- [Saved cfgs and result JSONs](../data/snapshots/parameter_only_pilot/).
+- [Analysis script](../code/analyze_thalamus_param_pilot.py), using
+  `sim_data_analyzer` for local JSON/reference-cache loading.
+
+Each CSV contains the seven modeled populations, target, individual seed rates,
+two-seed mean and sample SD (ddof=1), and historical 15-seed mean rates for the
+corresponding frozen, fully recurrent, and all-surrogate-fading conditions.
+All rates are in Hz and rounded to two decimals; JSONs preserve full precision.
+These are pilot comparisons. The historical population-order caveat above applies,
+and both missing 15-seed paper-table columns remain blank.
+
+Regenerate from the ignored, helper-verified local compact archives with:
+
+```bash
+/home/nnovikov/conda_env/netpyne/bin/python dev_scratch/paper_figure_data_oct19/code/analyze_thalamus_param_pilot.py thal-ti-param-pilot-20261020 TI
+/home/nnovikov/conda_env/netpyne/bin/python dev_scratch/paper_figure_data_oct19/code/analyze_thalamus_param_pilot.py thal-ire-param-pilot-20261020 IRE
+```

@@ -161,6 +161,71 @@
       }
     }
   },
+  "historical_setup": {
+    "IREM→TI frozen": {
+      "population_order": [
+        "TC",
+        "HTC",
+        "TI",
+        "IRE",
+        "TCM",
+        "TIM",
+        "IREM"
+      ],
+      "matches_pilot_population_order": true,
+      "exc_background_seeds_at_seed_1000": {
+        "TC": 11000,
+        "HTC": 11001,
+        "TI": 11002,
+        "IRE": 11003,
+        "TCM": 11004,
+        "TIM": 11005,
+        "IREM": 11006
+      }
+    },
+    "Fully recurrent": {
+      "population_order": [
+        "TC",
+        "HTC",
+        "TCM",
+        "TI",
+        "TIM",
+        "IRE",
+        "IREM"
+      ],
+      "matches_pilot_population_order": false,
+      "exc_background_seeds_at_seed_1000": {
+        "TC": 11000,
+        "HTC": 11001,
+        "TI": 11003,
+        "IRE": 11005,
+        "TCM": 11002,
+        "TIM": 11004,
+        "IREM": 11006
+      }
+    },
+    "Faded from all-surrogate": {
+      "population_order": [
+        "TC",
+        "HTC",
+        "TCM",
+        "TI",
+        "TIM",
+        "IRE",
+        "IREM"
+      ],
+      "matches_pilot_population_order": false,
+      "exc_background_seeds_at_seed_1000": {
+        "TC": 11000,
+        "HTC": 11001,
+        "TI": 11003,
+        "IRE": 11005,
+        "TCM": 11002,
+        "TIM": 11004,
+        "IREM": 11006
+      }
+    }
+  },
   "reference_seed_note": "The same numeric seed does not ensure identical realized networks across static and split construction.",
   "archive_manifest": {
     "expected_result_path": "exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_ti_fade_param_pilot_nseed_2_t_7.0_10.0_wmult_0.25_ee_0.5",

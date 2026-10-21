@@ -255,3 +255,33 @@ checked-out commit.
   projection through existing parameter values in separate pinned revisions;
   do not restore the removed batch axis. No experiment file or job was changed.
 
+## Parameter-only pilot — 2026-10-20
+
+- The user requested a fresh pilot with experiment changes restricted to existing
+  parameter values or HPC compatibility helpers, and required sequential batches.
+- Prepared IREM→TI with two seeds, 10 s duration, 3–5 s fading, and 7–10 s rates.
+  AST checks confirm that every function, including the existing completion
+  helper, is unchanged. Local preflight and archived baseline-input comparisons
+  passed. Commit `08e301a`; main 118859 and simulations 118860/118861 completed.
+- Normal finalization verified seven files. Downloaded a 12.4 kB compact archive
+  containing cfgs, results, and index; analyzed through `sim_data_analyzer` and
+  direct saved-cfg checks. TC/HTC endpoints were 29.98/28.11 Hz (seed 1000) and
+  7.34/10.15 Hz (seed 1001). Released the batch before changing conditions.
+- Changed only the existing projection and result-label values for IREM→IRE,
+  repeated preflight/AST checks, committed as `450eb40`, pushed and updated lethe,
+  then submitted main 118863. Only this second batch is active.
+- Detailed incremental execution log: [thalamus_parameter_pilot.md](thalamus_parameter_pilot.md).
+- IREM→IRE main 118863 and children 118864/118865 completed; normal finalization
+  verified all seven files, compact retrieval and local analysis passed, and
+  release succeeded. Both sequential batches are finished and released.
+- The two routes give similar endpoint rates within each seed (largest absolute
+  seven-population differences 1.00 and 1.24 Hz). TC/HTC are high for seed 1000
+  and much lower for seed 1001 in both conditions. Endpoint data alone cannot
+  establish convergence or monostability.
+- Confirmed a reference limitation: both frozen references share the pilot's
+  population order, whereas archived fully recurrent/all-surrogate-fading runs
+  use another order. Existing background seeds depend on that order. Saved these
+  order/seed details in both analysis reports; an identically ordered recurrent
+  control is needed before interpreting same-numbered historical seeds as matched
+  comparisons. The 15-seed table remains unchanged.
+

@@ -48,6 +48,7 @@ def main():
     labels = [f'IREM→{args.post} frozen', 'Fully recurrent', 'Faded from all-surrogate']
     historical = {}
     historical_seeds = {}
+    historical_setup = {}
     for label in labels:
         source = sources['conditions'][label]
         path = DIR_REPO / source['local_rate_cache']
@@ -58,6 +59,14 @@ def main():
                 seed: {pop: float(dataset['rate'].sel(seed_main=seed, pop=pop)) for pop in POPS}
                 for seed in SEEDS
             }
+        reference_cfg = json.loads((DIR_REPO / source['local_cfg']).read_text())['simConfig']
+        historical_setup[label] = {
+            'population_order': reference_cfg['subnet_params']['pops_active'],
+            'matches_pilot_population_order': reference_cfg['subnet_params']['pops_active'] == POPS,
+            'exc_background_seeds_at_seed_1000': {
+                pop: reference_cfg['bkg_spike_inputs'][pop]['exc']['seed'] for pop in POPS
+            },
+        }
     source = sources['conditions'][labels[0]]
     reference = json.loads((DIR_REPO / source['local_cfg']).read_text())['simConfig']
     targets = sources['target_rates_hz']
@@ -123,6 +132,7 @@ def main():
               'window_s': [7, 10], 'seeds': SEEDS, 'runs': evidence,
               'historical_15_seed_mean_rates_hz': historical,
               'historical_same_numbered_seed_rates_hz': historical_seeds,
+              'historical_setup': historical_setup,
               'reference_seed_note': 'The same numeric seed does not ensure identical realized networks across static and split construction.',
               'archive_manifest': manifest, 'production_table_updated': False,
               'coefficient_time_course_verified': False,

@@ -32,6 +32,10 @@ future chat update. Codex must wait for the process and read its report. Short
 tool waits are measured in the findings log; a real 30-minute chat wait has not
 been measured.
 
+While the watcher runs, Codex should wait for its report. Do not repeatedly read
+its local state or continue other task work during that wait. Resume task work
+after a checkpoint, attention report, or termination report returns.
+
 ## Read the report
 
 | `reason` | Meaning | Exit code |

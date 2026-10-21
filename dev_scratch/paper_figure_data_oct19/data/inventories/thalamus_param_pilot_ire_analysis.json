@@ -1,0 +1,272 @@
+{
+  "run_id": "thal-ire-param-pilot-20261020",
+  "git_commit": "450eb40527233b21522a4b8bb8b16164891699f9",
+  "projection": [
+    "IREM",
+    "IRE"
+  ],
+  "saved_cfg_checks": "passed",
+  "window_s": [
+    7,
+    10
+  ],
+  "seeds": [
+    1000,
+    1001
+  ],
+  "runs": [
+    {
+      "seed": 1000,
+      "rates_hz": {
+        "TC": 29.344827586206897,
+        "HTC": 27.105263157894736,
+        "TI": 8.882352941176471,
+        "IRE": 11.427956989247312,
+        "TCM": 1.881720430107527,
+        "TIM": 7.0130718954248366,
+        "IREM": 15.09032258064516
+      },
+      "mean_absolute_error_hz": 8.333615866970092,
+      "timing": {
+        "initialTime": 0.005625486373901367,
+        "totalTime": 38.003562688827515,
+        "createTime": 0.08452391624450684,
+        "connectTime": 4.711937427520752,
+        "stimsTime": 0.0729527473449707,
+        "setrecordTime": 0.00025177001953125,
+        "runTime": 25.610858917236328,
+        "gatherTime": 0.4613349437713623,
+        "saveTime": 0.38794827461242676,
+        "plotTime": 5.8843464851379395
+      },
+      "cfg_sha256": "649bca997698603c0733b922b9396d3812f74af1a68a611502eb16cd6577e516",
+      "result_sha256": "ab5fa81efc59bf93bdd9e953d1786ec904e8834b4905d5bc608fb1425717a9c0"
+    },
+    {
+      "seed": 1001,
+      "rates_hz": {
+        "TC": 6.795977011494253,
+        "HTC": 9.508771929824562,
+        "TI": 15.633986928104576,
+        "IRE": 18.438709677419354,
+        "TCM": 6.520430107526882,
+        "TIM": 10.5359477124183,
+        "IREM": 8.795698924731182
+      },
+      "mean_absolute_error_hz": 1.863738631295463,
+      "timing": {
+        "initialTime": 0.005588531494140625,
+        "totalTime": 37.50001502037048,
+        "createTime": 0.07632040977478027,
+        "connectTime": 4.75133204460144,
+        "stimsTime": 0.0746910572052002,
+        "setrecordTime": 0.0002162456512451172,
+        "runTime": 25.543172597885132,
+        "gatherTime": 0.4455134868621826,
+        "saveTime": 0.40334367752075195,
+        "plotTime": 5.428207159042358
+      },
+      "cfg_sha256": "8a589b08ea4306222f288c6f6d61f694a5c217f92b34385440d5d7dc0934cb32",
+      "result_sha256": "9de35a87b39c31f39c442ddfe6e0ba91a3e0f9edeb61749c62c06a485df90659"
+    }
+  ],
+  "historical_15_seed_mean_rates_hz": {
+    "IREM→IRE frozen": {
+      "TC": 12.141570881226054,
+      "HTC": 8.949122807017545,
+      "TI": 13.751633986928105,
+      "IRE": 16.188673835125446,
+      "TCM": 4.920716845878135,
+      "TIM": 9.366884531590413,
+      "IREM": 10.937347670250896
+    },
+    "Fully recurrent": {
+      "TC": 22.29272030651341,
+      "HTC": 18.51345029239766,
+      "TI": 10.657516339869282,
+      "IRE": 13.458637992831541,
+      "TCM": 3.670394265232974,
+      "TIM": 7.753812636165577,
+      "IREM": 13.491182795698924
+    },
+    "Faded from all-surrogate": {
+      "TC": 21.85536398467433,
+      "HTC": 18.386549707602338,
+      "TI": 10.780827886710243,
+      "IRE": 13.583942652329746,
+      "TCM": 3.7274551971326164,
+      "TIM": 7.79825708061002,
+      "IREM": 13.402724014336917
+    }
+  },
+  "historical_same_numbered_seed_rates_hz": {
+    "IREM→IRE frozen": {
+      "1000": {
+        "TC": 14.5,
+        "HTC": 9.903508771929824,
+        "TI": 14.862745098039216,
+        "IRE": 17.049462365591395,
+        "TCM": 4.617204301075269,
+        "TIM": 9.27450980392157,
+        "IREM": 10.320430107526882
+      },
+      "1001": {
+        "TC": 11.867816091954024,
+        "HTC": 8.026315789473685,
+        "TI": 13.333333333333334,
+        "IRE": 15.39784946236559,
+        "TCM": 4.425806451612903,
+        "TIM": 9.777777777777779,
+        "IREM": 10.808602150537634
+      }
+    },
+    "Fully recurrent": {
+      "1000": {
+        "TC": 5.551724137931035,
+        "HTC": 7.324561403508771,
+        "TI": 17.666666666666668,
+        "IRE": 21.208602150537637,
+        "TCM": 7.965591397849463,
+        "TIM": 10.73202614379085,
+        "IREM": 7.664516129032258
+      },
+      "1001": {
+        "TC": 23.057471264367816,
+        "HTC": 18.5,
+        "TI": 8.163398692810457,
+        "IRE": 10.686021505376344,
+        "TCM": 3.6,
+        "TIM": 7.333333333333333,
+        "IREM": 15.219354838709677
+      }
+    },
+    "Faded from all-surrogate": {
+      "1000": {
+        "TC": 5.979885057471264,
+        "HTC": 7.5,
+        "TI": 17.41176470588235,
+        "IRE": 20.93763440860215,
+        "TCM": 7.554838709677419,
+        "TIM": 10.705882352941176,
+        "IREM": 7.8086021505376335
+      },
+      "1001": {
+        "TC": 21.261494252873565,
+        "HTC": 16.333333333333332,
+        "TI": 8.843137254901961,
+        "IRE": 11.627956989247311,
+        "TCM": 3.9505376344086023,
+        "TIM": 7.522875816993465,
+        "IREM": 14.546236559139784
+      }
+    }
+  },
+  "historical_setup": {
+    "IREM→IRE frozen": {
+      "population_order": [
+        "TC",
+        "HTC",
+        "TI",
+        "IRE",
+        "TCM",
+        "TIM",
+        "IREM"
+      ],
+      "matches_pilot_population_order": true,
+      "exc_background_seeds_at_seed_1000": {
+        "TC": 11000,
+        "HTC": 11001,
+        "TI": 11002,
+        "IRE": 11003,
+        "TCM": 11004,
+        "TIM": 11005,
+        "IREM": 11006
+      }
+    },
+    "Fully recurrent": {
+      "population_order": [
+        "TC",
+        "HTC",
+        "TCM",
+        "TI",
+        "TIM",
+        "IRE",
+        "IREM"
+      ],
+      "matches_pilot_population_order": false,
+      "exc_background_seeds_at_seed_1000": {
+        "TC": 11000,
+        "HTC": 11001,
+        "TI": 11003,
+        "IRE": 11005,
+        "TCM": 11002,
+        "TIM": 11004,
+        "IREM": 11006
+      }
+    },
+    "Faded from all-surrogate": {
+      "population_order": [
+        "TC",
+        "HTC",
+        "TCM",
+        "TI",
+        "TIM",
+        "IRE",
+        "IREM"
+      ],
+      "matches_pilot_population_order": false,
+      "exc_background_seeds_at_seed_1000": {
+        "TC": 11000,
+        "HTC": 11001,
+        "TI": 11003,
+        "IRE": 11005,
+        "TCM": 11002,
+        "TIM": 11004,
+        "IREM": 11006
+      }
+    }
+  },
+  "reference_seed_note": "The same numeric seed does not ensure identical realized networks across static and split construction.",
+  "archive_manifest": {
+    "expected_result_path": "exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_ire_fade_param_pilot_nseed_2_t_7.0_10.0_wmult_0.25_ee_0.5",
+    "files": [
+      {
+        "hpc_path": "/ddn/niknovikov19/repo/A1_OUinp_codex/exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_ire_fade_param_pilot_nseed_2_t_7.0_10.0_wmult_0.25_ee_0.5/cfg/cfg_00000_seed_1000.json",
+        "path": "cfg/cfg_00000_seed_1000.json",
+        "sha256": "649bca997698603c0733b922b9396d3812f74af1a68a611502eb16cd6577e516",
+        "size_bytes": 65017
+      },
+      {
+        "hpc_path": "/ddn/niknovikov19/repo/A1_OUinp_codex/exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_ire_fade_param_pilot_nseed_2_t_7.0_10.0_wmult_0.25_ee_0.5/cfg/cfg_00001_seed_1001.json",
+        "path": "cfg/cfg_00001_seed_1001.json",
+        "sha256": "8a589b08ea4306222f288c6f6d61f694a5c217f92b34385440d5d7dc0934cb32",
+        "size_bytes": 65017
+      },
+      {
+        "hpc_path": "/ddn/niknovikov19/repo/A1_OUinp_codex/exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_ire_fade_param_pilot_nseed_2_t_7.0_10.0_wmult_0.25_ee_0.5/jobs/index.jsonl",
+        "path": "jobs/index.jsonl",
+        "sha256": "8dd3e1ed792b1efd2bc1aec4e477873427b003c587b0cb5193eb7d6dcb0e68da",
+        "size_bytes": 1960
+      },
+      {
+        "hpc_path": "/ddn/niknovikov19/repo/A1_OUinp_codex/exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_ire_fade_param_pilot_nseed_2_t_7.0_10.0_wmult_0.25_ee_0.5/results/result_00000_seed_1000.json",
+        "path": "results/result_00000_seed_1000.json",
+        "sha256": "ab5fa81efc59bf93bdd9e953d1786ec904e8834b4905d5bc608fb1425717a9c0",
+        "size_bytes": 1505
+      },
+      {
+        "hpc_path": "/ddn/niknovikov19/repo/A1_OUinp_codex/exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_ire_fade_param_pilot_nseed_2_t_7.0_10.0_wmult_0.25_ee_0.5/results/result_00001_seed_1001.json",
+        "path": "results/result_00001_seed_1001.json",
+        "sha256": "9de35a87b39c31f39c442ddfe6e0ba91a3e0f9edeb61749c62c06a485df90659",
+        "size_bytes": 1502
+      }
+    ],
+    "git_commit": "450eb40527233b21522a4b8bb8b16164891699f9",
+    "run_id": "thal-ire-param-pilot-20261020",
+    "schema_version": 1,
+    "total_bytes": 135001
+  },
+  "production_table_updated": false,
+  "coefficient_time_course_verified": false,
+  "limitation": "Unchanged experiment saves endpoint rates; no numerical coefficient trace or population-rate time course is exported."
+}
