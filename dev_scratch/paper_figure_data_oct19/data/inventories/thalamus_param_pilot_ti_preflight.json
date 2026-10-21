@@ -1,0 +1,87 @@
+{
+  "status": "passed",
+  "changed_assignments": {
+    "exp_cfg.py": [
+      "SIM_DURATION",
+      "T0_CALC",
+      "EXP_LABEL",
+      "POPS_USED",
+      "CONNS_FROZEN",
+      "EE_FADER_ON",
+      "CONNS_SPLIT",
+      "FADER_PTS"
+    ],
+    "batch_params.py": [
+      "N_SEEDS"
+    ]
+  },
+  "all_experiment_functions_unchanged": true,
+  "batch_axes": {
+    "seed_main": [
+      1000,
+      1001
+    ]
+  },
+  "projection": [
+    "IREM",
+    "TI"
+  ],
+  "fader_pts_ms": [
+    [
+      0,
+      0
+    ],
+    [
+      3000,
+      0
+    ],
+    [
+      5000,
+      1
+    ],
+    [
+      10000.0,
+      1
+    ]
+  ],
+  "reference_cfg": "dev_scratch/thal_frz/cfg/exp_irem_ti_0_nseed_15_t_7.0_10.0_wmult_0.25_ee_0.5__cfg_00000_seed_1000.json",
+  "reference_cfg_sha256": "013439a97bf6654cd668446debbc364797cf7bf58fc8bbc1856a0acfdd4962b4",
+  "matched_reference_fields": [
+    "bkg_spike_inputs",
+    "IClamp",
+    "mech_changes",
+    "wmult",
+    "EEGain",
+    "EIGain",
+    "IEGain",
+    "IIGain",
+    "connRandomSecFromList",
+    "connWeightSecByLength",
+    "addSubConn",
+    "seeds",
+    "target_rates",
+    "subnet_params.global_seed",
+    "subnet_params.pops_active"
+  ],
+  "completion_files": [
+    "jobs/index.jsonl",
+    "results/result_00000_seed_1000.json",
+    "rasters/raster_00000_seed_1000.png",
+    "cfg/cfg_00000_seed_1000.json",
+    "results/result_00001_seed_1001.json",
+    "rasters/raster_00001_seed_1001.png",
+    "cfg/cfg_00001_seed_1001.json"
+  ],
+  "preflight": {
+    "schema_version": 1,
+    "request_id": "thal-irem-fade-pilot",
+    "job_kind": "batch",
+    "target": "batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed",
+    "resolved_result_path": "exp_results/batch_rxbkg_state1_mech1/net_newsec_ee_fade_var_seed/exp_thal_irem_ti_fade_param_pilot_nseed_2_t_7.0_10.0_wmult_0.25_ee_0.5",
+    "planned_jobs": 2,
+    "parameter_axis_sizes": {
+      "seed_main": 2
+    },
+    "status": "ok"
+  }
+}

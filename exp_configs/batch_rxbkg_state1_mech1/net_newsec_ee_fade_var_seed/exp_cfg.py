@@ -54,8 +54,8 @@ CONNS_THAL_ETHAL = [(p1, p2) for p1 in THAL_POPS for p2 in THAL_E_POPS]
 
 
 # Duration and rate calculation window
-SIM_DURATION = 15 * 1e3
-T0_CALC = 10 * 1e3
+SIM_DURATION = 10 * 1e3
+T0_CALC = 7 * 1e3
 
 #EXP_LABEL = 'ctx_ee_fade'
 #EXP_LABEL = 'ctx_ee_0'
@@ -72,14 +72,13 @@ T0_CALC = 10 * 1e3
 #EXP_LABEL = 'thal_all_fade'
 #EXP_LABEL = 'a1_ee_0_irem_core_0'
 #EXP_LABEL = 'a1_ee_fade_irem_ire_0'
-EXP_LABEL = 'a1_irem_ire_0'
+EXP_LABEL = 'thal_irem_ti_fade_param_pilot'
 #EXP_LABEL = 'core_full'
 #EXP_LABEL = 'matx_full'
 #EXP_LABEL = 'irem_ire_0'
 
 #POPS_USED = PYR_POPS + PV_POPS + SOM_POPS + VIP_POPS + NGF_POPS
-POPS_USED = (PYR_POPS + PV_POPS + SOM_POPS + VIP_POPS +
-             NGF_POPS + THAL_E_POPS + THAL_I_POPS)
+POPS_USED = CORE_POPS + MATX_POPS
 #POPS_USED = L2_POPS
 #POPS_USED = CORE_POPS
 #POPS_USED = MATX_POPS
@@ -93,22 +92,21 @@ POPS_USED = (PYR_POPS + PV_POPS + SOM_POPS + VIP_POPS +
 #CONNS_FROZEN = [(p1, p2) for p1 in THAL_POPS for p2 in ['TI', 'TIM']]
 #CONNS_FROZEN = [(p1, p2) for p1 in ['IREM'] for p2 in ['IRE']] + CONNS_EE
 #CONNS_FROZEN = [(p1, p2) for p1 in ['IREM'] for p2 in CORE_POPS] + CONNS_EE
-CONNS_FROZEN = [(p1, p2) for p1 in ['IREM'] for p2 in ['IRE']]
+CONNS_FROZEN = []
 #CONNS_FROZEN = [(p1, p2) for p1 in MATX_POPS for p2 in ['TI']]
 #CONNS_FROZEN = []
 
-EE_FADER_ON = 0
+EE_FADER_ON = 1
 
 #CONNS_SPLIT = []
-CONNS_SPLIT = [(p1, p2) for p1, p2 in CONNS_EE
-               if (p1 in POPS_USED) and (p2 in POPS_USED)]
+CONNS_SPLIT = [('IREM', 'TI')]
 #CONNS_SPLIT = CONNS_THAL
 #CONNS_SPLIT = [(p1, p2) for p1 in ['TI', 'TIM'] for p2 in THAL_E_POPS]
 #CONNS_SPLIT = [(p1, p2) for p1 in THAL_E_POPS for p2 in ['TI', 'TIM']]
 
 # Surr->recurrent fader timecourse (time, rec:surr ratio)
 #FADER_PTS = [(0, 0), (3000, 0), (5000, 1), (SIM_DURATION, 1)]
-FADER_PTS = [(0, 0), (6000, 0), (8000, 1), (SIM_DURATION, 1)]
+FADER_PTS = [(0, 0), (3000, 0), (5000, 1), (SIM_DURATION, 1)]
 #FADER_PTS = [(0, 1), (SIM_DURATION, 1)]
 
 # Background spiking input
